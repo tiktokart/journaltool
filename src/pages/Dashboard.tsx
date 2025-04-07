@@ -50,7 +50,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         Neutral: 0.0
       };
       
-      // Enhanced PDF text processing
       if (pdfText && pdfText.length > 0) {
         console.log("Processing PDF text of length:", pdfText.length);
         
@@ -130,7 +129,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
       
       const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
       
-      // Generate embedding points using the actual words from the PDF
       const embeddingPoints = generateMockPoints(
         false, 
         emotionalDistribution, 
@@ -165,7 +163,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         "Hobbies", "Travel", "Home", "Money"
       ];
 
-      // Use actual words from PDF for themes when available
       if (customWordBank.length > 20) {
         const potentialThemes = customWordBank.slice(0, 20);
         const selectedThemes = [];
@@ -206,7 +203,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         });
       }
 
-      // Improved key phrases calculation using actual words from the PDF
       const wordFrequency: Record<string, { count: number, sentiment: number, emotionalTone: string }> = {};
       embeddingPoints.forEach(point => {
         if (point.word) {
@@ -316,7 +312,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
   });
 };
 
-// Sample wellbeing suggestions
 const wellbeingSuggestions = [
   {
     title: "Practice Mindfulness",
@@ -350,7 +345,6 @@ const wellbeingSuggestions = [
   }
 ];
 
-// Sample mental health resources
 const mentalHealthResources = [
   {
     name: "Crisis Text Line",
@@ -791,3 +785,246 @@ const Dashboard = () => {
                       <div className="text-sm font-normal flex items-center text-muted-foreground">
                         <CircleDot className="h-4 w-4 mr-2" />
                         <span>
+                          Hover or click on words to see emotional relationships.
+                        </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="h-[500px] relative">
+                        <DocumentEmbedding 
+                          points={filteredPoints}
+                          onPointClick={handlePointClick}
+                          isInteractive={true}
+                          focusOnWord={selectedWord || null}
+                          sourceDescription={sentimentData.sourceDescription}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="overview" className="mt-6">
+                  <SentimentOverview 
+                    data={sentimentData.distribution}
+                    sentiment={sentimentData.overallSentiment}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="timeline" className="mt-6">
+                  <SentimentTimeline 
+                    data={sentimentData.timeline}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="themes" className="mt-6">
+                  <EntitySentiment 
+                    data={sentimentData.entities}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="keyphrases" className="mt-6">
+                  <KeyPhrases 
+                    data={sentimentData.keyPhrases}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+              </Tabs>
+              
+              <div className="mt-8 mb-4">
+                <Card className="border border-border shadow-md bg-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-xl">
+                      <Brain className="h-5 w-5 mr-2 text-primary" />
+                      Emotional Clusters
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-6">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Adjust the number of emotional clusters visible in the visualization:
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium">4</span>
+                        <Slider 
+                          value={[visibleClusterCount]} 
+                          min={4}
+                          max={12}
+                          step={1}
+                          onValueChange={(value) => setVisibleClusterCount(value[0])}
+                          className="flex-1"
+                        />
+                        <span className="text-sm font-medium">12</span>
+                        <span className="bg-primary/10 text-primary px-2 py-1 rounded-md text-sm font-medium ml-2">
+                          {visibleClusterCount}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="mt-8 mb-4">
+                <Card className="border border-border shadow-md bg-card">
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="flex items-center text-xl">
+                        <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
+                        Word Comparison
+                      </CardTitle>
+                      
+                      <div className="flex gap-2">
+                        <Popover open={compareSearchOpen} onOpenChange={setCompareSearchOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-9">
+                              <Search className="h-4 w-4 mr-2" />
+                              Add Word
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-0" align="end">
+                            <Command>
+                              <CommandInput 
+                                placeholder="Search words..." 
+                                value={compareSearchTerm}
+                                onValueChange={handleCompareSearchChange}
+                              />
+                              <CommandList>
+                                <CommandEmpty>No matching words</CommandEmpty>
+                                <CommandGroup>
+                                  {compareSearchResults.map((point) => (
+                                    <CommandItem 
+                                      key={point.id} 
+                                      onSelect={() => handleAddToComparison(point)}
+                                    >
+                                      <div className="flex items-center">
+                                        <div 
+                                          className="w-3 h-3 rounded-full mr-2" 
+                                          style={{ 
+                                            backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                          }} 
+                                        />
+                                        <span>{point.word}</span>
+                                      </div>
+                                      <span className="ml-auto text-xs text-muted-foreground">
+                                        {point.emotionalTone || "Neutral"}
+                                      </span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        
+                        {compareWords.length > 0 && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-9"
+                            onClick={handleClearComparison}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Clear All
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <WordComparison 
+                      words={compareWords}
+                      onRemoveWord={handleRemoveFromComparison}
+                      calculateRelationship={calculateRelationship}
+                      onAddWordClick={() => setCompareSearchOpen(true)}
+                      sourceDescription={sentimentData.sourceDescription}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="mt-8">
+                <Card className="border border-border shadow-md bg-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-xl">
+                      <Heart className="h-5 w-5 mr-2 text-primary" />
+                      Resources & Support
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs value={resourcesTab} onValueChange={setResourcesTab} className="space-y-4">
+                      <TabsList>
+                        <TabsTrigger value="wellbeing">Wellbeing Suggestions</TabsTrigger>
+                        <TabsTrigger value="resources">Mental Health Resources</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="wellbeing">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                          {wellbeingSuggestions.map((suggestion, index) => (
+                            <div 
+                              key={index} 
+                              className="border rounded-lg p-4 bg-card/50"
+                            >
+                              <div className="flex items-center mb-2">
+                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                                  {suggestion.category}
+                                </Badge>
+                              </div>
+                              <h3 className="font-medium text-lg">{suggestion.title}</h3>
+                              <p className="text-sm text-muted-foreground mt-1 mb-3">{suggestion.description}</p>
+                              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                                <strong>Benefit:</strong> {suggestion.benefit}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="resources">
+                        <div className="grid md:grid-cols-2 gap-4 mt-2">
+                          {mentalHealthResources.map((resource, index) => (
+                            <div 
+                              key={index} 
+                              className="border rounded-lg p-4 bg-card/50"
+                            >
+                              <div className="flex items-center mb-2">
+                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                                  {resource.category}
+                                </Badge>
+                              </div>
+                              <h3 className="font-medium text-lg">{resource.name}</h3>
+                              <p className="text-sm text-muted-foreground mt-1 mb-3">{resource.description}</p>
+                              {resource.contact && (
+                                <p className="text-sm mt-2">
+                                  <strong>Contact:</strong> {resource.contact}
+                                </p>
+                              )}
+                              <p className="text-sm mt-2">
+                                <strong>Website:</strong> {resource.website}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div className="mt-6 text-sm text-center text-muted-foreground">
+                          <div className="flex items-center justify-center">
+                            <Info className="h-4 w-4 mr-1" />
+                            These resources are provided for informational purposes only. 
+                            Please consult with healthcare professionals for personalized advice.
+                          </div>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
