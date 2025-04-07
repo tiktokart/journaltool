@@ -20,6 +20,7 @@ interface EmbeddingSceneProps {
   isCompareMode?: boolean;
   depressedJournalReference?: boolean;
   onFocusEmotionalGroup?: (tone: string) => void;
+  selectedEmotionalGroup?: string | null;
 }
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
@@ -35,7 +36,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   selectedPoint,
   comparisonPoint,
   isCompareMode = false,
-  onFocusEmotionalGroup
+  onFocusEmotionalGroup,
+  selectedEmotionalGroup
 }) => {
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = externalContainerRef || internalContainerRef;
@@ -58,6 +60,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const animationFrameIdRef = useRef<number | null>(null);
   const isDraggingRef = useRef<boolean>(false);
   const rotationRef = useRef<THREE.Vector3>(new THREE.Vector3(0.0001, 0.0002, 0));
+  const filteredPointsRef = useRef<Point[]>([]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -175,7 +178,17 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     };
   }, [cameraRef, containerRef, controlsRef]);
 
+  // Create a memoized version of points that gets filtered by emotional group
   useEffect(() => {
+    if (selectedEmotionalGroup) {
+      filteredPointsRef.current = points.filter(p => 
+        (p.emotionalTone || "Neutral") === selectedEmotionalGroup
+      );
+    } else {
+      filteredPointsRef.current = points;
+    }
+    
+    // Now update the emotional groups based on ALL points (not filtered)
     emotionalGroupsRef.current.clear();
     
     const emotionalGroups = new Map<string, Point[]>();
@@ -205,7 +218,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       
       emotionalGroupsRef.current.set(tone, new THREE.Vector3(centerX, centerY, centerZ));
     });
-  }, [points]);
+  }, [points, selectedEmotionalGroup]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -220,10 +233,13 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     spheresRef.current = [];
     
+    // Use filtered points instead of all points
+    const pointsToRender = filteredPointsRef.current;
+    
     // Increased sphere size significantly (from 0.04 to 0.12)
     const sphereGeometry = new THREE.SphereGeometry(0.12, 16, 16);
     
-    points.forEach((point, index) => {
+    pointsToRender.forEach((point, index) => {
       const isSelected = selectedPoint && point.id === selectedPoint.id;
       const isComparison = comparisonPoint && point.id === comparisonPoint.id;
       
@@ -244,6 +260,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       sphere.position.set(point.position[0], point.position[1], point.position[2]);
       
       sphere.userData.pointIndex = index;
+      sphere.userData.pointId = point.id;
       
       spheresGroup.add(sphere);
       
@@ -280,7 +297,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         const pointIndex = object.userData.pointIndex;
         
         if (pointIndex !== undefined && onPointHover) {
-          onPointHover(points[pointIndex]);
+          onPointHover(pointsToRender[pointIndex]);
         }
       } else if (onPointHover) {
         onPointHover(null);
@@ -305,7 +322,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         const pointIndex = object.userData.pointIndex;
         
         if (pointIndex !== undefined) {
-          const clickedPoint = points[pointIndex];
+          const clickedPoint = pointsToRender[pointIndex];
           
           if (!isCompareMode && selectedPoint && clickedPoint.id === selectedPoint.id) {
             if (onPointSelect) {
@@ -331,7 +348,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         containerRef.current.removeEventListener('mousemove', handleMouseMove);
       }
     };
-  }, [points, isInteractive, onPointSelect, onPointHover, containerRef, selectedPoint, comparisonPoint, isCompareMode]);
+  }, [filteredPointsRef.current, isInteractive, onPointSelect, onPointHover, containerRef, selectedPoint, comparisonPoint, isCompareMode, selectedEmotionalGroup]);
 
   const focusOnPoint = useCallback((targetPoint: Point | null) => {
     if (!targetPoint || !cameraRef.current || !controlsRef.current) return;
@@ -402,6 +419,29 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     }
   }, [cameraRef, onFocusEmotionalGroup]);
 
+  const resetEmotionalGroupFilter = useCallback(() => {
+    if (!cameraRef.current || !controlsRef.current) return;
+    
+    isZoomingRef.current = true;
+    
+    gsap.to(cameraRef.current.position, {
+      x: 0,
+      y: 0,
+      z: 20,
+      duration: 1.5,
+      ease: "power2.inOut",
+      onUpdate: () => {
+        if (controlsRef.current) {
+          controlsRef.current.target.set(0, 0, 0);
+          controlsRef.current.update();
+        }
+      },
+      onComplete: () => {
+        isZoomingRef.current = false;
+      }
+    });
+  }, [cameraRef]);
+
   useEffect(() => {
     if (focusOnWord) {
       const targetPoint = points.find(point => point.word === focusOnWord);
@@ -414,13 +454,15 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       window.documentEmbeddingActions = {};
     }
     window.documentEmbeddingActions.focusOnEmotionalGroup = focusOnEmotionalGroup;
+    window.documentEmbeddingActions.resetEmotionalGroupFilter = resetEmotionalGroupFilter;
     
     return () => {
       if (window.documentEmbeddingActions) {
         window.documentEmbeddingActions.focusOnEmotionalGroup = undefined;
+        window.documentEmbeddingActions.resetEmotionalGroupFilter = undefined;
       }
     };
-  }, [focusOnEmotionalGroup]);
+  }, [focusOnEmotionalGroup, resetEmotionalGroupFilter]);
 
   useEffect(() => {
     const scene = sceneRef.current;

@@ -9,7 +9,7 @@ import { ZoomControls } from './embedding/ZoomControls';
 import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
 import ParticleBackground from './embedding/ParticleBackground';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { ChevronDown, ChevronUp, CircleDot, Target } from 'lucide-react';
+import { ChevronDown, ChevronUp, CircleDot, Target, RotateCcw } from 'lucide-react';
 import { Button } from './ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
@@ -181,6 +181,14 @@ export const DocumentEmbedding = ({
     }
   };
   
+  const resetEmotionalGroupFilter = () => {
+    setSelectedEmotionalGroup(null);
+    if (window.documentEmbeddingActions && 
+        window.documentEmbeddingActions.resetEmotionalGroupFilter) {
+      window.documentEmbeddingActions.resetEmotionalGroupFilter();
+    }
+  };
+  
   return (
     <div className="relative w-full h-full">
       <div 
@@ -210,6 +218,7 @@ export const DocumentEmbedding = ({
         comparisonPoint={comparisonPoint}
         isCompareMode={isCompareMode}
         onFocusEmotionalGroup={handleFocusEmotionalGroup}
+        selectedEmotionalGroup={selectedEmotionalGroup}
       />
       
       {isInteractive && (
@@ -259,6 +268,21 @@ export const DocumentEmbedding = ({
             </div>
             
             <CollapsibleContent className="mt-1 space-y-1">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-muted-foreground">Filter by emotion:</span>
+                {selectedEmotionalGroup && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={resetEmotionalGroupFilter}
+                    className="h-6 py-0 px-1 text-xs"
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Reset
+                  </Button>
+                )}
+              </div>
+              
               {emotionalGroups.map(group => (
                 <Button
                   key={group}
@@ -293,6 +317,7 @@ declare global {
     documentEmbeddingPoints?: Point[];
     documentEmbeddingActions?: {
       focusOnEmotionalGroup?: (tone: string) => void;
+      resetEmotionalGroupFilter?: () => void;
     };
   }
 }
