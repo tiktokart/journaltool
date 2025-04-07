@@ -165,7 +165,7 @@ const Dashboard = () => {
     }
   }, [sentimentData, pdfText, fileName]);
 
-  const handleFileUpload = (files: File[], extractedText?: string) => {
+  const handleFilesAdded = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
       const file = files[0];
       setFile(file);
@@ -293,7 +293,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <FileUploader 
-                onFilesAdded={handleFileUpload}
+                onFilesAdded={handleFilesAdded}
                 fileInputRef={fileInputRef}
               />
               {file && (
@@ -358,25 +358,32 @@ const Dashboard = () => {
                   </TabsContent>
                   
                   <TabsContent value="wordcomparison" className="mt-6">
-                    <WordComparison 
-                      words={selectedWord ? [
-                        {
-                          id: "selected-word",
-                          word: selectedWord,
-                          color: [0.5, 0.5, 0.8],
-                          sentiment: 0.7,
-                          emotionalTone: "Positive"
-                        }
-                      ] : []}
-                      onRemoveWord={() => handleResetComparison()}
-                      calculateRelationship={() => ({
-                        spatialSimilarity: 0.7,
-                        sentimentSimilarity: 0.8,
-                        sameEmotionalGroup: true,
-                        sharedKeywords: ["keyword1", "keyword2"]
-                      })}
-                      sourceDescription={fileName || "Uploaded Document"}
-                    />
+                    {selectedWord ? (
+                      <WordComparison 
+                        words={[
+                          {
+                            id: "selected-word",
+                            word: selectedWord,
+                            color: [0.5, 0.5, 0.8],
+                            sentiment: 0.7,
+                            position: [0, 0, 0], // Add the required position property
+                            emotionalTone: "Positive"
+                          }
+                        ]}
+                        onRemoveWord={() => handleResetComparison()}
+                        calculateRelationship={() => ({
+                          spatialSimilarity: 0.7,
+                          sentimentSimilarity: 0.8,
+                          sameEmotionalGroup: true,
+                          sharedKeywords: ["keyword1", "keyword2"]
+                        })}
+                        sourceDescription={fileName || "Uploaded Document"}
+                      />
+                    ) : (
+                      <div className="text-center p-6">
+                        <p className="text-muted-foreground">Select a word from the document to see analysis</p>
+                      </div>
+                    )}
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -392,7 +399,7 @@ const Dashboard = () => {
                 <div className="w-full h-[600px]">
                   <DocumentEmbedding 
                     points={points}
-                    onPointClick={(point) => console.log("Clicked point:", point)}
+                    onPointClick={(point) => point && handleWordClick(point.word)}
                     isInteractive={true}
                     focusOnWord={null}
                     sourceDescription={fileName || "Uploaded Document"}

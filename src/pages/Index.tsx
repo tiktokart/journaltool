@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -11,6 +11,10 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
+import { FileUploader } from "@/components/FileUploader";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const exampleJournalData = {
   overallSentiment: {
@@ -131,7 +135,7 @@ const Home = () => {
             </p>
           </div>
           
-          <div className="rounded-lg overflow-hidden shadow-xl border min-h-[350px] border-border relative">
+          <div className="rounded-lg overflow-hidden shadow-xl border min-h-[450px] border-border relative">
             <DocumentEmbedding 
               points={points}
               onPointClick={() => {}}
@@ -141,7 +145,7 @@ const Home = () => {
           </div>
         </div>
         
-        <div className="space-y-8">
+        <div className="space-y-8 mb-16">
           <h2 className="text-2xl font-semibold tracking-tight">See How It Works</h2>
           
           <Card className="shadow-md border-border">
@@ -194,6 +198,38 @@ const Home = () => {
               </Tabs>
             </CardContent>
           </Card>
+        </div>
+        
+        {/* New section for PDF Upload */}
+        <div className="space-y-8 mb-16">
+          <h2 className="text-2xl font-semibold tracking-tight">Upload a PDF: Your story, your life</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex flex-col justify-center">
+              <h3 className="text-xl font-medium mb-4">Transform your personal documents into emotional insights</h3>
+              <p className="mb-6 text-muted-foreground">
+                Upload your journal entries, therapy notes, or personal reflections and let our AI extract 
+                the emotional patterns within your writing. Gain clarity on your emotional journey and track 
+                your progress over time.
+              </p>
+              <div className="mt-4">
+                <Link to="/dashboard">
+                  <Button className="flex items-center gap-2">
+                    Try it yourself <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            <div className="bg-secondary/20 rounded-lg p-6 border border-border">
+              <FileUploader 
+                onFilesAdded={(files) => {
+                  console.log("Files added:", files);
+                  window.location.href = "/dashboard";
+                }}
+              />
+            </div>
+          </div>
         </div>
       </main>
       
