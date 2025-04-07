@@ -857,6 +857,7 @@ const Dashboard = () => {
                           focusOnWord={selectedWord || null}
                           sourceDescription={sentimentData.sourceDescription}
                           onResetView={handleResetVisualization}
+                          visibleClusterCount={visibleClusterCount}
                         />
                       </div>
                     </CardContent>
@@ -916,7 +917,12 @@ const Dashboard = () => {
                           min={4}
                           max={12}
                           step={1}
-                          onValueChange={(value) => setVisibleClusterCount(value[0])}
+                          onValueChange={(value) => {
+                            setVisibleClusterCount(value[0]);
+                            if (activeTab === "embedding") {
+                              toast.info(`Visualization updated to show ${value[0]} emotional clusters`);
+                            }
+                          }}
                           className="flex-1"
                         />
                         <span className="text-sm font-medium">12</span>

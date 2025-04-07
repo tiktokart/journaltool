@@ -21,6 +21,7 @@ interface EmbeddingSceneProps {
   onFocusEmotionalGroup?: (tone: string) => void;
   selectedEmotionalGroup?: string | null;
   onResetView?: () => void;
+  visibleClusterCount?: number;
 }
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
@@ -38,7 +39,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   isCompareMode = false,
   onFocusEmotionalGroup,
   selectedEmotionalGroup,
-  onResetView
+  onResetView,
+  visibleClusterCount = 8
 }) => {
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = externalContainerRef || internalContainerRef;
@@ -62,6 +64,37 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const isDraggingRef = useRef<boolean>(false);
   const rotationRef = useRef<THREE.Vector3>(new THREE.Vector3(0.0001, 0.0002, 0));
   const filteredPointsRef = useRef<Point[]>([]);
+  const activeEmotionalGroupsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    if (!points.length) return;
+    
+    const emotionCounts: Record<string, number> = {};
+    points.forEach(point => {
+      const emotion = point.emotionalTone || "Neutral";
+      emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+    });
+    
+    const sortedEmotions = Object.entries(emotionCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([emotion]) => emotion);
+    
+    activeEmotionalGroupsRef.current = sortedEmotions.slice(0, visibleClusterCount);
+    
+    if (selectedEmotionalGroup) {
+      filteredPointsRef.current = points.filter(p => 
+        (p.emotionalTone || "Neutral") === selectedEmotionalGroup
+      );
+    } else {
+      filteredPointsRef.current = points.filter(p => 
+        activeEmotionalGroupsRef.current.includes(p.emotionalTone || "Neutral")
+      );
+    }
+    
+    if (spheresGroupRef.current) {
+      updateSpheres();
+    }
+  }, [points, visibleClusterCount, selectedEmotionalGroup]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -185,7 +218,9 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         (p.emotionalTone || "Neutral") === selectedEmotionalGroup
       );
     } else {
-      filteredPointsRef.current = points;
+      filteredPointsRef.current = points.filter(p => 
+        activeEmotionalGroupsRef.current.includes(p.emotionalTone || "Neutral")
+      );
     }
     
     emotionalGroupsRef.current.clear();
@@ -217,9 +252,11 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       
       emotionalGroupsRef.current.set(tone, new THREE.Vector3(centerX, centerY, centerZ));
     });
-  }, [points, selectedEmotionalGroup]);
+    
+    updateSpheres();
+  }, [points, selectedEmotionalGroup, visibleClusterCount]);
 
-  useEffect(() => {
+  const updateSpheres = () => {
     const scene = sceneRef.current;
     
     if (spheresGroupRef.current) {
@@ -274,78 +311,83 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       spheresGroup.rotation.x = Math.random() * 0.2;
       spheresGroup.rotation.y = Math.random() * 0.2;
     }
-    
+  };
+
+  const handlePointHover = (event: MouseEvent) => {
+    if (!isInteractive || !containerRef.current || !spheresGroupRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1,
+      -((event.clientY - containerRect.top) / containerRect.height) * 2 + 1
+    );
+
     const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
+    raycaster.setFromCamera(mouse, cameraRef.current!);
 
-    const handleMouseMove = (event: MouseEvent) => {
-      if (!isInteractive || !containerRef.current || !spheresGroupRef.current) return;
+    const intersects = raycaster.intersectObjects(spheresGroupRef.current.children);
 
-      const containerRect = containerRef.current.getBoundingClientRect();
-      mouse.x = ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1;
-      mouse.y = -((event.clientY - containerRect.top) / containerRect.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, cameraRef.current!);
-
-      const intersects = raycaster.intersectObjects(spheresGroupRef.current.children);
-
-      if (intersects.length > 0) {
-        const object = intersects[0].object as THREE.Mesh;
-        const pointIndex = object.userData.pointIndex;
-        
-        if (pointIndex !== undefined && onPointHover) {
-          onPointHover(pointsToRender[pointIndex]);
-        }
-      } else if (onPointHover) {
-        onPointHover(null);
-      }
-    };
-
-    const handlePointClick = (event: MouseEvent) => {
-      if (!isInteractive || !containerRef.current || !spheresGroupRef.current) return;
+    if (intersects.length > 0) {
+      const object = intersects[0].object as THREE.Mesh;
+      const pointIndex = object.userData.pointIndex;
       
-      if (isDraggingRef.current) return;
+      if (pointIndex !== undefined && onPointHover) {
+        onPointHover(filteredPointsRef.current[pointIndex]);
+      }
+    } else if (onPointHover) {
+      onPointHover(null);
+    }
+  };
 
-      const containerRect = containerRef.current.getBoundingClientRect();
-      mouse.x = ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1;
-      mouse.y = -((event.clientY - containerRect.top) / containerRect.height) * 2 + 1;
+  const handlePointClick = (event: MouseEvent) => {
+    if (!isInteractive || !containerRef.current || !spheresGroupRef.current) return;
+    
+    if (isDraggingRef.current) return;
 
-      raycaster.setFromCamera(mouse, cameraRef.current!);
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1,
+      -((event.clientY - containerRect.top) / containerRect.height) * 2 + 1
+    );
 
-      const intersects = raycaster.intersectObjects(spheresGroupRef.current.children);
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, cameraRef.current!);
 
-      if (intersects.length > 0) {
-        const object = intersects[0].object as THREE.Mesh;
-        const pointIndex = object.userData.pointIndex;
+    const intersects = raycaster.intersectObjects(spheresGroupRef.current.children);
+
+    if (intersects.length > 0) {
+      const object = intersects[0].object as THREE.Mesh;
+      const pointIndex = object.userData.pointIndex;
+      
+      if (pointIndex !== undefined) {
+        const clickedPoint = filteredPointsRef.current[pointIndex];
         
-        if (pointIndex !== undefined) {
-          const clickedPoint = pointsToRender[pointIndex];
-          
-          if (!isCompareMode && selectedPoint && clickedPoint.id === selectedPoint.id) {
-            if (onPointSelect) {
-              onPointSelect(null);
-            }
-          } else {
-            if (onPointSelect) {
-              onPointSelect(clickedPoint);
-            }
+        if (!isCompareMode && selectedPoint && clickedPoint.id === selectedPoint.id) {
+          if (onPointSelect) {
+            onPointSelect(null);
+          }
+        } else {
+          if (onPointSelect) {
+            onPointSelect(clickedPoint);
           }
         }
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     if (isInteractive && containerRef.current) {
       containerRef.current.addEventListener('click', handlePointClick);
-      containerRef.current.addEventListener('mousemove', handleMouseMove);
+      containerRef.current.addEventListener('mousemove', handlePointHover);
     }
 
     return () => {
       if (isInteractive && containerRef.current) {
         containerRef.current.removeEventListener('click', handlePointClick);
-        containerRef.current.removeEventListener('mousemove', handleMouseMove);
+        containerRef.current.removeEventListener('mousemove', handlePointHover);
       }
     };
-  }, [filteredPointsRef.current, isInteractive, onPointSelect, onPointHover, containerRef, selectedPoint, comparisonPoint, isCompareMode, selectedEmotionalGroup]);
+  }, [filteredPointsRef.current, isInteractive, onPointSelect, onPointHover, containerRef, selectedPoint, comparisonPoint, isCompareMode, selectedEmotionalGroup, visibleClusterCount]);
 
   const focusOnPoint = useCallback((targetPoint: Point | null) => {
     if (!targetPoint || !cameraRef.current || !controlsRef.current) return;

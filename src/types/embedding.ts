@@ -19,5 +19,6 @@ export interface DocumentEmbeddingProps {
   onComparePoint?: (point1: Point, point2: Point) => void;  
   onSearchSelect?: (point: Point) => void;  
   sourceDescription?: string;
-  onResetView?: () => void;  // Adding this prop to support resetting the view
+  onResetView?: () => void;
+  visibleClusterCount?: number;  // Added to control the number of emotional clusters displayed
 }

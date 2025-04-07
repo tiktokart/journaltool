@@ -1,3 +1,4 @@
+
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -22,7 +23,8 @@ export const DocumentEmbedding = ({
   onComparePoint,
   onSearchSelect,
   sourceDescription,
-  onResetView
+  onResetView,
+  visibleClusterCount = 8
 }: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -266,6 +268,7 @@ export const DocumentEmbedding = ({
         onFocusEmotionalGroup={handleFocusEmotionalGroup}
         selectedEmotionalGroup={selectedEmotionalGroup}
         onResetView={handleResetView}
+        visibleClusterCount={visibleClusterCount}
       />
       
       {isInteractive && (
@@ -306,11 +309,11 @@ export const DocumentEmbedding = ({
           <Collapsible 
             open={isEmotionalGroupsOpen} 
             onOpenChange={setIsEmotionalGroupsOpen}
-            className="w-full"
+            className="w-full max-w-[200px]"
           >
             <div className="flex items-center justify-between">
               <div className="text-xs font-semibold flex items-center">
-                <Target className="h-3 w-3 mr-1" />
+                <Target className="h-3 w-3 mr-1.5" />
                 Jump to Emotional Group
               </div>
               <CollapsibleTrigger asChild>
