@@ -11,6 +11,7 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const particlesRef = useRef<THREE.Points | null>(null);
+  const animationIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || points.length === 0) return;
@@ -24,9 +25,15 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
     camera.position.z = 15;
     cameraRef.current = camera;
 
-    // Create renderer with transparency
-    const renderer = new THREE.WebGLRenderer({ alpha: true });
+    // Create renderer with transparency and anti-flickering settings
+    const renderer = new THREE.WebGLRenderer({ 
+      alpha: true,
+      antialias: true,
+      preserveDrawingBuffer: true // Helps reduce flickering
+    });
     renderer.setClearColor(0x000000, 0);
+    // Set pixel ratio to device pixel ratio to improve quality
+    renderer.setPixelRatio(window.devicePixelRatio);
     rendererRef.current = renderer;
 
     // Setup the renderer size
@@ -200,26 +207,28 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
       opacity: 0.7,
       blending: THREE.AdditiveBlending,
       sizeAttenuation: true,
+      depthWrite: false // Helps with transparency rendering
     });
     
     const particles = new THREE.Points(particleGeometry, particleMaterial);
     particlesRef.current = particles;
     scene.add(particles);
 
-    // Animation loop
+    // Animation loop with slower rotation
     const animate = () => {
-      requestAnimationFrame(animate);
+      animationIdRef.current = requestAnimationFrame(animate);
       
       if (particlesRef.current) {
-        particlesRef.current.rotation.x += 0.0002;
-        particlesRef.current.rotation.y += 0.0001;
+        // Slowed down rotation speed to reduce flickering
+        particlesRef.current.rotation.x += 0.0001;
+        particlesRef.current.rotation.y += 0.00005;
       }
       
       renderer.render(scene, camera);
     };
     
     // Start the animation and keep track of the ID
-    const animationId = requestAnimationFrame(animate);
+    animationIdRef.current = requestAnimationFrame(animate);
     
     // Handle window resize
     const handleResize = () => {
@@ -237,16 +246,28 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
     window.addEventListener('resize', handleResize);
     
     return () => {
-      cancelAnimationFrame(animationId);
+      if (animationIdRef.current !== null) {
+        cancelAnimationFrame(animationIdRef.current);
+      }
       window.removeEventListener('resize', handleResize);
       
       if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
+        try {
+          containerRef.current.removeChild(renderer.domElement);
+        } catch (e) {
+          console.log("Error removing canvas element", e);
+        }
       }
       
-      particleGeometry.dispose();
-      particleMaterial.dispose();
-      renderer.dispose();
+      if (particleGeometry) {
+        particleGeometry.dispose();
+      }
+      if (particleMaterial) {
+        particleMaterial.dispose();
+      }
+      if (renderer) {
+        renderer.dispose();
+      }
     };
   }, [containerRef, points]);
 

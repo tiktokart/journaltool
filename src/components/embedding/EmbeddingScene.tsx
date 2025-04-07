@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -66,7 +65,11 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     }
     const camera = cameraRef.current;
 
-    rendererRef.current = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    rendererRef.current = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true,
+      preserveDrawingBuffer: true
+    });
     const renderer = rendererRef.current!;
     
     if (!containerRef.current) return;
@@ -84,20 +87,21 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     const controlsInstance = new OrbitControls(camera, renderer.domElement);
     controlsRef.current = controlsInstance;
     controlsInstance.enableDamping = true;
-    controlsInstance.dampingFactor = 0.05;
+    controlsInstance.dampingFactor = 0.1;
     controlsInstance.screenSpacePanning = false;
     controlsInstance.minDistance = 1;
     controlsInstance.maxDistance = 30;
     controlsInstance.maxPolarAngle = Math.PI / 2;
-    controlsInstance.autoRotateSpeed = 0.5;
+    controlsInstance.autoRotateSpeed = 0.2;
     controlsInstance.autoRotate = true;
     controlsInstance.enableZoom = true;
     controlsInstance.zoomSpeed = 1.0;
     controlsInstance.update();
     
+    let animationFrameId: number;
+    
     const animate = () => {
-      requestAnimationFrame(animate);
-      // Only update controls if not zooming
+      animationFrameId = requestAnimationFrame(animate);
       if (!isZoomingRef.current) {
         controlsInstance.update();
       }
@@ -114,58 +118,48 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       camera.updateProjectionMatrix();
     };
     
-    // Improved wheel event handler for zooming
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
       
-      // Pause auto-rotation during zoom
       if (controlsRef.current) {
         controlsRef.current.autoRotate = false;
       }
       
-      // Set zooming flag to pause orbit controls updates
       isZoomingRef.current = true;
       
-      // Clear any existing timeout
       if (zoomTimeoutRef.current !== null) {
         window.clearTimeout(zoomTimeoutRef.current);
       }
       
-      // Determine zoom direction (in/out)
       const zoomDirection = event.deltaY > 0 ? 1 : -1;
-      
-      // Amount to zoom - adjust this value as needed
-      const zoomAmount = 1.0;
+      const zoomAmount = 0.8;
       
       if (zoomDirection > 0) {
-        // Zoom out
         const targetZ = Math.min(camera.position.z + zoomAmount, 30);
         gsap.to(camera.position, {
           z: targetZ,
-          duration: 0.3,
+          duration: 0.4,
           ease: "power2.out"
         });
       } else {
-        // Zoom in
         const targetZ = Math.max(camera.position.z - zoomAmount, 1);
         gsap.to(camera.position, {
           z: targetZ,
-          duration: 0.3,
+          duration: 0.4,
           ease: "power2.out"
         });
       }
       
-      // Resume auto-rotation after zooming completes
       zoomTimeoutRef.current = window.setTimeout(() => {
         if (controlsRef.current) {
           controlsRef.current.autoRotate = true;
         }
         isZoomingRef.current = false;
-      }, 500);
+      }, 800);
     };
     
     const handleMiddleMouseDown = (event: MouseEvent) => {
-      if (event.button === 1) { // Middle mouse button
+      if (event.button === 1) {
         event.preventDefault();
         isMiddleMouseDownRef.current = true;
         lastMousePositionRef.current = { x: event.clientX, y: event.clientY };
@@ -202,7 +196,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     };
     
     const handleMouseUp = (event: MouseEvent) => {
-      if (event.button === 1) { // Middle mouse button
+      if (event.button === 1) {
         isMiddleMouseDownRef.current = false;
         if (controlsRef.current) {
           controlsRef.current.enabled = true;
@@ -240,6 +234,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       document.removeEventListener('mousemove', handleMiddleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       
+      cancelAnimationFrame(animationFrameId);
+      
       if (zoomTimeoutRef.current !== null) {
         window.clearTimeout(zoomTimeoutRef.current);
       }
@@ -253,10 +249,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   }, [cameraRef, containerRef, controlsRef]);
 
   useEffect(() => {
-    // Calculate and store the centers of emotional groups
     emotionalGroupsRef.current.clear();
     
-    // Group points by emotional tone
     const emotionalGroups = new Map<string, Point[]>();
     
     points.forEach(point => {
@@ -267,7 +261,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       emotionalGroups.get(tone)!.push(point);
     });
     
-    // Calculate center for each group
     emotionalGroups.forEach((groupPoints, tone) => {
       if (groupPoints.length === 0) return;
       
@@ -520,12 +513,10 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const focusOnPoint = useCallback((targetPoint: Point | null) => {
     if (!targetPoint || !cameraRef.current || !controlsRef.current) return;
     
-    // Pause auto-rotation during focus animation
     if (controlsRef.current) {
       controlsRef.current.autoRotate = false;
     }
     
-    // Set zooming flag to pause orbit controls updates
     isZoomingRef.current = true;
     
     const point = new THREE.Vector3(targetPoint.position[0], targetPoint.position[1], targetPoint.position[2]);
@@ -549,7 +540,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         }
       },
       onComplete: () => {
-        // Resume auto-rotation after focus completes
         if (controlsRef.current) {
           controlsRef.current.autoRotate = true;
         }
@@ -558,19 +548,16 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     });
   }, [cameraRef]);
 
-  // Focus on emotional group centers
   const focusOnEmotionalGroup = useCallback((emotionalTone: string) => {
     if (!cameraRef.current || !controlsRef.current) return;
     
     const groupCenter = emotionalGroupsRef.current.get(emotionalTone);
     if (!groupCenter) return;
     
-    // Pause auto-rotation during focus animation
     if (controlsRef.current) {
       controlsRef.current.autoRotate = false;
     }
     
-    // Set zooming flag to pause orbit controls updates
     isZoomingRef.current = true;
     
     const point = groupCenter;
@@ -579,7 +566,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     startPosition.copy(cameraRef.current.position);
     
     const endPosition = new THREE.Vector3();
-    endPosition.copy(point).add(new THREE.Vector3(0, 0, 10)); // Zoomed out a bit more for groups
+    endPosition.copy(point).add(new THREE.Vector3(0, 0, 10));
     
     gsap.to(cameraRef.current.position, {
       x: endPosition.x,
@@ -594,7 +581,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         }
       },
       onComplete: () => {
-        // Resume auto-rotation after focus completes
         if (controlsRef.current) {
           controlsRef.current.autoRotate = true;
         }
@@ -614,7 +600,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     }
   }, [focusOnWord, points, focusOnPoint]);
 
-  // Expose the focusOnEmotionalGroup function to parent components
   useEffect(() => {
     if (!window.documentEmbeddingActions) {
       window.documentEmbeddingActions = {};
