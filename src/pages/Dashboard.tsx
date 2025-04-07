@@ -475,7 +475,7 @@ const Dashboard = () => {
               
               <Card className="mb-6 border border-border shadow-md bg-card">
                 <CardHeader className="pb-3">
-                  <div className="flex items-center">
+                  <div className="flex items-center justify-between">
                     <BookOpen className="h-5 w-5 mr-2 text-primary" />
                     <CardTitle className="text-xl">Document Summary</CardTitle>
                   </div>
@@ -514,6 +514,9 @@ const Dashboard = () => {
                             value={searchTerm}
                             onChange={(e) => {
                               setSearchTerm(e.target.value);
+                              if (uniqueWords.length > 0) {
+                                setOpen(true);
+                              }
                             }}
                             onFocus={() => {
                               if (uniqueWords.length > 0) {
