@@ -134,63 +134,8 @@ const Index = () => {
               Journal Analysis Tool
             </h1>
             <p className="text-lg text-gray-400 max-w-2xl text-center mb-8">
-              Visual analysis of anxiety and emotional patterns in a panic attack journal entry
+              A digital tool to understand your dreams and emotions
             </p>
-            
-            <div className="w-full max-w-md mb-6">
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <div className="relative w-full">
-                    <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Search for a word or emotion..." 
-                      value={searchValue}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      className="pl-8"
-                      onClick={() => {
-                        setOpen(true);
-                        if (searchValue.trim()) {
-                          handleSearchChange(searchValue);
-                        }
-                      }}
-                    />
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent className="p-0 w-[300px]" align="start">
-                  <Command>
-                    <CommandInput 
-                      placeholder="Search words or emotions..." 
-                      value={searchValue}
-                      onValueChange={handleSearchChange}
-                    />
-                    <CommandList>
-                      <CommandEmpty>No results found</CommandEmpty>
-                      <CommandGroup>
-                        {searchResults.map((point) => (
-                          <CommandItem
-                            key={point.id}
-                            onSelect={() => handleSearchSelect(point)}
-                            value={point.word}
-                            className="flex items-center gap-2"
-                          >
-                            <div 
-                              className="w-3 h-3 rounded-full flex-shrink-0" 
-                              style={{ 
-                                backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
-                              }} 
-                            />
-                            <span>{point.word}</span>
-                            <span className="ml-auto text-xs text-muted-foreground">
-                              {point.emotionalTone}
-                            </span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
             
             <div className="w-full max-w-2xl mb-6 text-center">
               <Card className="bg-muted/30 border-border">
@@ -203,25 +148,182 @@ const Index = () => {
               </Card>
             </div>
             
-            <div className="w-full max-w-6xl mb-8 relative">
-              <div className="absolute top-2 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground">
-                <CircleDot className="h-4 w-4 mr-2" />
-                <span>Hover or click on words to see emotional groupings. Click again to deselect.</span>
+            <div className="w-full max-w-6xl mb-8 flex flex-col md:flex-row gap-6">
+              <div className="w-full md:w-2/3 relative">
+                <div className="absolute top-2 left-4 z-10 text-sm font-normal flex items-center text-muted-foreground">
+                  <CircleDot className="h-4 w-4 mr-2" />
+                  <span>Hover or click on words to see emotional groupings.</span>
+                </div>
+                <div className="aspect-[16/9] bg-white border border-border rounded-xl overflow-hidden shadow-lg">
+                  <DocumentEmbedding 
+                    isInteractive={true} 
+                    depressedJournalReference={true} 
+                    onPointClick={handlePointClick}
+                    focusOnWord={focusWord}
+                    onComparePoint={handlePointCompare}
+                    onSearchSelect={handleVisualSearchSelect}
+                    points={points}
+                  />
+                </div>
               </div>
-              <div className="aspect-[16/9] bg-white border border-border rounded-xl overflow-hidden shadow-lg">
-                <DocumentEmbedding 
-                  isInteractive={true} 
-                  depressedJournalReference={true} 
-                  onPointClick={handlePointClick}
-                  focusOnWord={focusWord}
-                  onComparePoint={handlePointCompare}
-                  onSearchSelect={handleVisualSearchSelect}
-                  points={points}
-                />
+              
+              <div className="w-full md:w-1/3 flex flex-col gap-4">
+                <div className="w-full">
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <div className="relative w-full">
+                        <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          placeholder="Search for a word or emotion..." 
+                          value={searchValue}
+                          onChange={(e) => handleSearchChange(e.target.value)}
+                          className="pl-8"
+                          onClick={() => {
+                            setOpen(true);
+                            if (searchValue.trim()) {
+                              handleSearchChange(searchValue);
+                            }
+                          }}
+                        />
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0 w-[300px]" align="start">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Search words or emotions..." 
+                          value={searchValue}
+                          onValueChange={handleSearchChange}
+                        />
+                        <CommandList>
+                          <CommandEmpty>No results found</CommandEmpty>
+                          <CommandGroup>
+                            {searchResults.map((point) => (
+                              <CommandItem
+                                key={point.id}
+                                onSelect={() => handleSearchSelect(point)}
+                                value={point.word}
+                                className="flex items-center gap-2"
+                              >
+                                <div 
+                                  className="w-3 h-3 rounded-full flex-shrink-0" 
+                                  style={{ 
+                                    backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                  }} 
+                                />
+                                <span>{point.word}</span>
+                                <span className="ml-auto text-xs text-muted-foreground">
+                                  {point.emotionalTone}
+                                </span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                {selectedPoint ? (
+                  <Card className="w-full border border-border shadow-sm bg-card">
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-sm font-medium mb-1">Emotional Grouping</h3>
+                          <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">
+                            {selectedPoint.emotionalTone || "Neutral"}
+                          </p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium mb-1">Word</h3>
+                          <p className="text-xl bg-muted p-2 rounded flex items-center justify-center">
+                            {selectedPoint.word}
+                          </p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium mb-1">Sentiment Analysis</h3>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ 
+                                backgroundColor: `rgb(${selectedPoint.color[0] * 255}, ${selectedPoint.color[1] * 255}, ${selectedPoint.color[2] * 255})` 
+                              }} 
+                            />
+                            <span className="text-sm">
+                              Score: {selectedPoint.sentiment.toFixed(2)}
+                              {selectedPoint.sentiment >= 0.7 ? " (Very Positive)" : 
+                                selectedPoint.sentiment >= 0.5 ? " (Positive)" : 
+                                selectedPoint.sentiment >= 0.4 ? " (Neutral)" : 
+                                selectedPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {selectedPoint.relationships && selectedPoint.relationships.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-medium mb-1 flex items-center gap-1">
+                              Related Words
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <InfoIcon className="h-3 w-3 cursor-help text-muted-foreground" />
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80 text-xs">
+                                  Words that are emotionally connected to the selected word. 
+                                  Connection strength indicates how closely related they are.
+                                </HoverCardContent>
+                              </HoverCard>
+                            </h3>
+                            <ul className="text-sm">
+                              {selectedPoint.relationships.map((rel, i) => (
+                                <li key={i} className="py-1 border-b border-border last:border-0">
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">{rel.word}</span>
+                                    <span className="text-muted-foreground">Connection: {(rel.strength * 100).toFixed(0)}%</span>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {!isComparing && (
+                          <Button
+                            onClick={toggleCompareMode}
+                            className="w-full"
+                          >
+                            Compare with another word
+                          </Button>
+                        )}
+                        
+                        {isComparing && (
+                          <Button 
+                            variant="outline" 
+                            onClick={handleClearComparison}
+                            className="w-full"
+                          >
+                            <RotateCcw className="h-3 w-3 mr-1" />
+                            Cancel comparison
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="w-full border border-border shadow-sm bg-muted/50">
+                    <CardContent className="py-12 flex flex-col items-center justify-center text-center">
+                      <div className="mb-3 p-3 rounded-full bg-muted/50">
+                        <InfoIcon className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-medium">No word selected</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Click on any word in the visualization to see details about it
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
             
-            {isComparing && selectedPoint && comparisonPoint ? (
+            {isComparing && selectedPoint && comparisonPoint && (
               <Card className="mb-8 w-full max-w-6xl border border-border shadow-sm bg-card animate-fade-in">
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-center mb-4">
@@ -380,68 +482,6 @@ const Index = () => {
                               }
                             })()}
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : selectedPoint && (
-              <Card className="mb-8 w-full max-w-6xl border border-border shadow-sm bg-card animate-fade-in">
-                <CardContent className="pt-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Emotional Grouping</h3>
-                      <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">
-                        {selectedPoint.emotionalTone || "Neutral"}
-                      </p>
-                      <h3 className="text-sm font-medium mt-3 mb-1">Word</h3>
-                      <p className="text-xl bg-muted p-2 rounded flex items-center justify-center">
-                        {selectedPoint.word}
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Sentiment Analysis</h3>
-                      <div className="flex items-center gap-2 mb-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ 
-                            backgroundColor: `rgb(${selectedPoint.color[0] * 255}, ${selectedPoint.color[1] * 255}, ${selectedPoint.color[2] * 255})` 
-                          }} 
-                        />
-                        <span className="text-sm">
-                          Score: {selectedPoint.sentiment.toFixed(2)}
-                          {selectedPoint.sentiment >= 0.7 ? " (Very Positive)" : 
-                            selectedPoint.sentiment >= 0.5 ? " (Positive)" : 
-                            selectedPoint.sentiment >= 0.4 ? " (Neutral)" : 
-                            selectedPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
-                        </span>
-                      </div>
-                      
-                      {selectedPoint.relationships && selectedPoint.relationships.length > 0 && (
-                        <div>
-                          <h3 className="text-sm font-medium mt-3 mb-1 flex items-center gap-1">
-                            Related Words
-                            <HoverCard>
-                              <HoverCardTrigger asChild>
-                                <InfoIcon className="h-3 w-3 cursor-help text-muted-foreground" />
-                              </HoverCardTrigger>
-                              <HoverCardContent className="w-80 text-xs">
-                                Words that are emotionally connected to the selected word. 
-                                Connection strength indicates how closely related they are.
-                              </HoverCardContent>
-                            </HoverCard>
-                          </h3>
-                          <ul className="text-sm">
-                            {selectedPoint.relationships.map((rel, i) => (
-                              <li key={i} className="py-1 border-b border-border last:border-0">
-                                <div className="flex justify-between">
-                                  <span className="font-medium">{rel.word}</span>
-                                  <span className="text-muted-foreground">Connection: {(rel.strength * 100).toFixed(0)}%</span>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
                         </div>
                       )}
                     </div>
