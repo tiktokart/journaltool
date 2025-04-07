@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +19,10 @@ import { generateMockPoints } from "@/utils/embeddingUtils";
 import { toast } from "sonner";
 
 interface SentimentData {
-  overallSentiment: number;
+  overallSentiment: {
+    score: number;
+    label: string;
+  };
   distribution: {
     positive: number;
     neutral: number;
@@ -149,15 +153,8 @@ const Dashboard = () => {
   useEffect(() => {
     if (sentimentData && pdfText) {
       const wordPoints = generateMockPoints(pdfText, {
-        overallSentiment: {
-          score: sentimentData.overallSentiment,
-          label: sentimentData.overallSentiment < 0.4 ? "Negative" : sentimentData.overallSentiment > 0.6 ? "Positive" : "Neutral"
-        },
-        distribution: {
-          positive: Math.round(sentimentData.distribution.positive * 100),
-          neutral: Math.round(sentimentData.distribution.neutral * 100),
-          negative: Math.round(sentimentData.distribution.negative * 100)
-        },
+        overallSentiment: sentimentData.overallSentiment,
+        distribution: sentimentData.distribution,
         timeline: sentimentData.timeline,
         entities: sentimentData.entities,
         keyPhrases: sentimentData.keyPhrases,
@@ -196,7 +193,10 @@ const Dashboard = () => {
       const neutralVal = 1 - positiveVal - negativeVal; // Calculate neutral to make sum = 1
       
       const mockSentimentData: SentimentData = {
-        overallSentiment: Math.random() * 0.6 + 0.2, // 0.2 to 0.8
+        overallSentiment: {
+          score: Math.random() * 0.6 + 0.2, // 0.2 to 0.8
+          label: (Math.random() * 0.6 + 0.2) < 0.4 ? "Negative" : (Math.random() * 0.6 + 0.2) > 0.6 ? "Positive" : "Neutral"
+        },
         distribution: {
           positive: positiveVal,
           neutral: neutralVal,
@@ -293,7 +293,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <FileUploader 
-                onFileUpload={handleFileUpload}
+                onFilesAdded={handleFileUpload}
                 fileInputRef={fileInputRef}
               />
               {file && (
@@ -359,10 +359,23 @@ const Dashboard = () => {
                   
                   <TabsContent value="wordcomparison" className="mt-6">
                     <WordComparison 
-                      selectedWord={selectedWord}
-                      relatedWords={relatedWords}
-                      onWordClick={handleWordClick}
-                      onResetComparison={handleResetComparison}
+                      words={selectedWord ? [
+                        {
+                          id: "selected-word",
+                          word: selectedWord,
+                          color: [0.5, 0.5, 0.8],
+                          sentiment: 0.7,
+                          emotionalTone: "Positive"
+                        }
+                      ] : []}
+                      onRemoveWord={() => handleResetComparison()}
+                      calculateRelationship={() => ({
+                        spatialSimilarity: 0.7,
+                        sentimentSimilarity: 0.8,
+                        sameEmotionalGroup: true,
+                        sharedKeywords: ["keyword1", "keyword2"]
+                      })}
+                      sourceDescription={fileName || "Uploaded Document"}
                     />
                   </TabsContent>
                 </Tabs>
@@ -381,6 +394,7 @@ const Dashboard = () => {
                     points={points}
                     onPointClick={(point) => console.log("Clicked point:", point)}
                     isInteractive={true}
+                    focusOnWord={null}
                     sourceDescription={fileName || "Uploaded Document"}
                   />
                 </div>
