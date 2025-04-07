@@ -134,34 +134,52 @@ const analyzePdfContent = (file: File): Promise<any> => {
         });
       }
 
-      // Extract most common words based on frequency for KeyPhrases
-      // Create a map of words by frequency from embeddingPoints
-      const wordFrequency: Record<string, number> = {};
+      // Extract most common words from embeddingPoints
+      const wordFrequency: Record<string, { count: number, sentiment: number, emotionalTone: string }> = {};
       embeddingPoints.forEach(point => {
         if (point.word) {
-          wordFrequency[point.word] = (wordFrequency[point.word] || 0) + 1;
+          if (!wordFrequency[point.word]) {
+            wordFrequency[point.word] = { 
+              count: 0, 
+              sentiment: 0, 
+              emotionalTone: point.emotionalTone || "Neutral" 
+            };
+          }
+          wordFrequency[point.word].count += 1;
+          wordFrequency[point.word].sentiment += point.sentiment;
         }
+      });
+      
+      // Average the sentiment for each word
+      Object.keys(wordFrequency).forEach(word => {
+        const entry = wordFrequency[word];
+        entry.sentiment = entry.sentiment / entry.count;
       });
       
       // Sort words by frequency
       const sortedWords = Object.entries(wordFrequency)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 15); // Get top 15 words
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 30); // Get top 30 words for more comprehensive display
       
-      // Create key phrases from sorted words
-      const keyPhrases = sortedWords.map(([word, count]) => {
-        // Determine sentiment for the word
-        const pointWithWord = embeddingPoints.find(p => p.word === word);
-        let sentiment = "neutral";
-        if (pointWithWord) {
-          if (pointWithWord.sentiment >= 0.6) sentiment = "positive";
-          else if (pointWithWord.sentiment <= 0.4) sentiment = "negative";
+      // Create key phrases with proper sentiment categorization
+      const keyPhrases = sortedWords.map(([word, data]) => {
+        // Determine sentiment category
+        let sentimentCategory: "positive" | "neutral" | "negative" = "neutral";
+        if (data.sentiment >= 0.6) {
+          sentimentCategory = "positive";
+        } else if (data.sentiment <= 0.4) {
+          sentimentCategory = "negative";
+        }
+        
+        // For words with emotional tone "Neutral", ensure they're categorized as neutral
+        if (data.emotionalTone === "Neutral") {
+          sentimentCategory = "neutral";
         }
         
         return {
           text: word,
-          sentiment: sentiment,
-          count: count
+          sentiment: sentimentCategory,
+          count: data.count
         };
       });
 

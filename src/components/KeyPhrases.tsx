@@ -69,7 +69,7 @@ export const KeyPhrases = ({ data }: KeyPhrasesProps) => {
           {renderWordGroup(negativeItems, "Negative Words", "negative")}
         </div>
         <div className="mt-6 text-sm text-center text-muted-foreground">
-          The most frequently used words in your document, grouped by sentiment and sized by frequency.
+          All commonly used words in your document, grouped by sentiment and sized by frequency.
         </div>
       </CardContent>
     </Card>

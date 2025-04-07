@@ -9,14 +9,17 @@ interface HoverInfoPanelProps {
 export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
   if (!point) return null;
   
+  // Use gray color for neutral words
+  const emotionColor = point.emotionalTone === "Neutral" 
+    ? "rgb(128, 128, 128)" 
+    : getEmotionColor(point.emotionalTone || "");
+  
   return (
     <div className="absolute bottom-4 left-4 bg-card p-3 rounded-lg shadow-md max-w-xs z-10">
       <div className="flex items-center mb-2">
         <div 
           className="w-3 h-3 rounded-full mr-2" 
-          style={{ 
-            backgroundColor: getEmotionColor(point.emotionalTone || "")
-          }} 
+          style={{ backgroundColor: emotionColor }} 
         />
         <span className="font-medium">{point.emotionalTone || "Neutral"}</span>
       </div>
