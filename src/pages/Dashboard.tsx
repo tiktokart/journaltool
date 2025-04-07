@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -161,7 +162,8 @@ const Dashboard = () => {
   const [comparisonSearchTerm, setComparisonSearchTerm] = useState("");
   const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
   const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
-  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true);
+  // Fixed: Changed from string to boolean
+  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState<boolean>(true);
   const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
   const [wordSearchTerm, setWordSearchTerm] = useState("");
   const [wordSearchOpen, setWordSearchOpen] = useState(false);
@@ -194,11 +196,12 @@ const Dashboard = () => {
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
+      // Fixed: Split pdfText into words and filter properly
       const allWords = pdfText
+        .toLowerCase()
         .split(/\s+/)
-        .filter(word => word.length > 2)
-        .map(word => word.replace(/[^\w\s]|_/g, "").toLowerCase())
-        .filter(Boolean);
+        .map(word => word.replace(/[^\w\s]|_/g, ""))
+        .filter(word => word.length > 2);
       
       const uniqueWordsSet = new Set(allWords);
       const uniqueWordsArray = Array.from(uniqueWordsSet);

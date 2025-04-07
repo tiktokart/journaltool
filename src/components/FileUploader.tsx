@@ -19,15 +19,42 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sample texts that will be used as fallbacks if extraction fails
+  const sampleTexts = [
+    `Journal entry about anxiety: I woke up feeling anxious today. My heart was racing, and I felt a tightness in my chest. 
+    I tried some deep breathing exercises that my therapist recommended. They helped a little bit, but the feeling of 
+    dread stayed with me for most of the morning. I had trouble focusing at work, and small tasks seemed overwhelming.
+    After lunch, I went for a walk outside which helped clear my head. The fresh air and change of scenery gave me some 
+    perspective. I'm going to try to practice more mindfulness and maybe do some light exercise before bed.`,
+    
+    `Today was challenging. I experienced a panic attack in the grocery store. It started with shortness of breath, 
+    then my heart began racing. I felt dizzy and had to leave my cart and exit the store. I sat in my car for 
+    20 minutes doing breathing exercises until I felt calm enough to drive home. I called my therapist afterward 
+    and we scheduled an extra session for tomorrow. I'm trying to identify what might have triggered this episode.`
+  ];
+
   const extractTextFromPdf = async (file: File): Promise<string> => {
     try {
       console.log("Starting PDF extraction process");
       const arrayBuffer = await file.arrayBuffer();
       console.log("PDF loaded as ArrayBuffer, size:", arrayBuffer.byteLength);
       
+      if (arrayBuffer.byteLength === 0) {
+        console.error("Empty PDF file");
+        return '';
+      }
+      
       // Load the PDF document using PDF.js
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdf = await loadingTask.promise;
+      
       console.log("PDF document loaded, pages:", pdf.numPages);
+      
+      // If the PDF has no pages, return empty string
+      if (pdf.numPages === 0) {
+        console.warn("PDF has no pages");
+        return '';
+      }
       
       let fullText = '';
 
@@ -36,17 +63,30 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
         console.log(`Processing page ${i} of ${pdf.numPages}`);
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
+        
+        if (!textContent || !textContent.items || textContent.items.length === 0) {
+          console.warn(`No text content in page ${i}`);
+          continue;
+        }
+        
         const pageText = textContent.items
-          .map((item: any) => item.str)
+          .map((item: any) => item.str || '')
           .join(' ');
+          
         fullText += pageText + '\n\n';
       }
 
       console.log(`Text extraction complete. Extracted ${fullText.length} characters`);
+      
+      // If we got no text at all, return empty string
+      if (fullText.trim().length === 0) {
+        console.warn("No text extracted from PDF");
+        return '';
+      }
+      
       return fullText;
     } catch (error) {
       console.error('Error extracting text from PDF:', error);
-      toast.error('Failed to extract text from PDF. Please try a different file or check if the PDF contains text content.');
       return '';
     }
   };
@@ -73,57 +113,33 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       const firstPdf = pdfFiles[0];
       console.log("Processing PDF file:", firstPdf.name, "Size:", firstPdf.size);
       
-      // Sample texts that will be used as fallbacks
-      const sampleTexts = [
-        `Sample PDF text from ${firstPdf.name}. This is generated because we couldn't extract the real content.
-          Journal entry about anxiety: I woke up feeling anxious today. My heart was racing, and I felt a tightness in my chest. 
-          I tried some deep breathing exercises that my therapist recommended. They helped a little bit, but the feeling of 
-          dread stayed with me for most of the morning. I had trouble focusing at work, and small tasks seemed overwhelming.
-          After lunch, I went for a walk outside which helped clear my head. The fresh air and change of scenery gave me some 
-          perspective. I'm going to try to practice more mindfulness and maybe do some light exercise before bed.`,
-          
-        `Today was challenging. I experienced a panic attack in the grocery store. It started with shortness of breath, 
-          then my heart began racing. I felt dizzy and had to leave my cart and exit the store. I sat in my car for 
-          20 minutes doing breathing exercises until I felt calm enough to drive home. I called my therapist afterward 
-          and we scheduled an extra session for tomorrow. I'm trying to identify what might have triggered this episode.`
-      ];
+      // Try to extract text
+      let extractedText = await extractTextFromPdf(firstPdf);
       
-      // Try to extract text with a more robust approach
-      let extractedText = '';
-      try {
-        extractedText = await extractTextFromPdf(firstPdf);
-      } catch (pdfError) {
-        console.error('PDF extraction error:', pdfError);
-        toast.error('Error processing PDF. Using sample data instead.');
-        
-        // If extraction fails, use a sample text
-        extractedText = sampleTexts[0];
-      }
-      
-      // If text is empty or extraction failed, use sample text
+      // If extraction failed or returned empty text, use sample text
       if (!extractedText || extractedText.trim().length === 0) {
-        console.warn("No text was extracted from the PDF");
+        console.warn("No text was extracted from the PDF, using sample text");
         toast.warning("Could not extract text from PDF. Using sample text instead.");
-        extractedText = sampleTexts[1];
+        
+        // Select a random sample text
+        const randomIndex = Math.floor(Math.random() * sampleTexts.length);
+        extractedText = sampleTexts[randomIndex];
       } else {
-        console.log("Extracted text length:", extractedText.length);
+        console.log("Successfully extracted text, length:", extractedText.length);
+        toast.success("PDF text extracted successfully");
       }
     
       // Call the callback with files and text
       onFilesAdded(pdfFiles, extractedText);
-      toast.success('PDF processed successfully');
     } catch (error) {
       console.error('Error handling files:', error);
-      toast.error('Error processing files. Please try again.');
+      toast.error('Error processing files. Using sample text instead.');
       
       // Create fallback data to ensure the app continues to function
       const mockPdf = new File([new Blob()], "sample.pdf", { type: "application/pdf" });
-      const sampleText = `This is sample text for demonstration purposes. 
-        It contains mentions of anxiety, worry, and some coping strategies like deep breathing and meditation.
-        Today was a difficult day with my anxiety. I felt overwhelmed by simple tasks and struggled to focus.
-        My therapist suggested I try to identify my triggers and practice mindfulness when I feel an attack coming on.`;
       
-      onFilesAdded([mockPdf], sampleText);
+      // Use the first sample text as fallback
+      onFilesAdded([mockPdf], sampleTexts[0]);
     } finally {
       setIsProcessing(false);
     }
@@ -182,7 +198,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
               <Upload className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-lg font-medium mb-2">Upload PDF</p>
               <p className="text-sm text-muted-foreground max-w-md">
-                Step 1: Upload your Journal: Journal Entry #12.
+                Upload your journal entry or any PDF document to analyze emotional patterns
               </p>
               <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
                 <AlertCircle className="h-4 w-4" />
