@@ -348,6 +348,9 @@ const Dashboard = () => {
       setFilteredPoints(results.embeddingPoints);
       setAnalysisComplete(true);
       
+      // Save to localStorage for use in other pages
+      localStorage.setItem("sentimentData", JSON.stringify(results));
+      
       const words = results.embeddingPoints
         .map((point: Point) => point.word)
         .filter((word: string, index: number, self: string[]) => 
@@ -603,9 +606,8 @@ const Dashboard = () => {
               </Card>
               
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid grid-cols-6 md:w-[900px]">
+                <TabsList className="grid grid-cols-5 md:w-[900px]">
                   <TabsTrigger value="embedding">Latent Emotional Analysis</TabsTrigger>
-                  <TabsTrigger value="comparison">Word Comparison</TabsTrigger>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="timeline">Timeline</TabsTrigger>
                   <TabsTrigger value="themes">Themes</TabsTrigger>
