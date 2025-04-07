@@ -1,3 +1,4 @@
+
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -6,6 +7,7 @@ import { HoverInfoPanel } from './embedding/HoverInfoPanel';
 import { EmotionsLegend } from './embedding/EmotionsLegend';
 import { ZoomControls } from './embedding/ZoomControls';
 import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
+import ParticleBackground from './embedding/ParticleBackground';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CircleDot } from 'lucide-react';
 
@@ -154,10 +156,12 @@ export const DocumentEmbedding = ({
     <div className="relative w-full h-full">
       <div 
         ref={containerRef} 
-        className="w-full h-full rounded-lg overflow-hidden"
+        className="w-full h-full rounded-lg overflow-hidden bg-white/50"
       />
       
-      <div className="absolute top-3 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground">
+      <ParticleBackground containerRef={containerRef} points={displayPoints} />
+      
+      <div className="absolute top-3 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground bg-card/70 backdrop-blur-sm px-2 py-1 rounded-md">
         <CircleDot className="h-4 w-4 mr-2" />
         <span>Hover or click on words to see emotional groupings.</span>
       </div>
