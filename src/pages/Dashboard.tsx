@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +13,7 @@ import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
 import { Loader2, CircleDot, Search, FileText, X } from "lucide-react";
 import { Point } from "@/types/embedding";
-import { generateMockPoints } from "@/utils/embeddingUtils";
+import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
 import { 
   Command,
   CommandEmpty,
@@ -35,8 +34,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
       const fileName = file.name.toLowerCase();
       const seed = fileName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       
-      const randomMultiplier = ((seed % 100) / 100) * 0.4 + 0.8;
-      
+      let customWordBank: string[] = [];
       let emotionalDistribution = {
         Joy: 0.15,
         Sadness: 0.25,
@@ -49,21 +47,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         Neutral: 0.0
       };
       
-      if (fileName.includes('happy') || fileName.includes('joy')) {
-        emotionalDistribution.Joy = 0.4;
-        emotionalDistribution.Sadness = 0.05;
-      } else if (fileName.includes('sad') || fileName.includes('depress')) {
-        emotionalDistribution.Sadness = 0.5;
-        emotionalDistribution.Joy = 0.05;
-      } else if (fileName.includes('anger') || fileName.includes('mad')) {
-        emotionalDistribution.Anger = 0.4;
-        emotionalDistribution.Trust = 0.05;
-      } else if (fileName.includes('fear') || fileName.includes('anxiety')) {
-        emotionalDistribution.Fear = 0.4;
-        emotionalDistribution.Trust = 0.05;
-      }
-      
-      let customWordBank: string[] = [];
       if (pdfText && pdfText.length > 0) {
         const cleanText = pdfText
           .toLowerCase()
@@ -77,6 +60,53 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
           .filter(word => word.length > 2 && !stopWords.has(word))
           .filter((word, index, self) => self.indexOf(word) === index)
           .slice(0, 200);
+          
+        const emotionWords = {
+          Joy: ['happy', 'joy', 'delight', 'pleased', 'glad', 'content', 'satisfied'],
+          Sadness: ['sad', 'sorrow', 'unhappy', 'depressed', 'gloomy', 'miserable'],
+          Anger: ['angry', 'mad', 'furious', 'outraged', 'annoyed', 'irritated'],
+          Fear: ['afraid', 'scared', 'frightened', 'terrified', 'anxious', 'worried'],
+          Surprise: ['surprised', 'amazed', 'astonished', 'shocked', 'startled'],
+          Disgust: ['disgusted', 'repulsed', 'revolted', 'appalled', 'distaste'],
+          Trust: ['trust', 'believe', 'faith', 'confidence', 'reliable', 'depend'],
+          Anticipation: ['expect', 'anticipate', 'look forward', 'await', 'hope']
+        };
+        
+        const emotionCounts: Record<string, number> = {
+          Joy: 0, Sadness: 0, Anger: 0, Fear: 0, Surprise: 0, Disgust: 0, Trust: 0, Anticipation: 0
+        };
+        
+        const words = cleanText.split(' ');
+        words.forEach(word => {
+          for (const [emotion, keywords] of Object.entries(emotionWords)) {
+            if (keywords.some(keyword => word.includes(keyword))) {
+              emotionCounts[emotion] += 1;
+            }
+          }
+        });
+        
+        const totalEmotionWords = Object.values(emotionCounts).reduce((sum, count) => sum + count, 0) || 1;
+        
+        for (const emotion in emotionCounts) {
+          if (totalEmotionWords > 0) {
+            emotionalDistribution[emotion as keyof typeof emotionalDistribution] = 
+              0.1 + (emotionCounts[emotion] / totalEmotionWords) * 0.7;
+          }
+        }
+      } else {
+        if (fileName.includes('happy') || fileName.includes('joy')) {
+          emotionalDistribution.Joy = 0.4;
+          emotionalDistribution.Sadness = 0.05;
+        } else if (fileName.includes('sad') || fileName.includes('depress')) {
+          emotionalDistribution.Sadness = 0.5;
+          emotionalDistribution.Joy = 0.05;
+        } else if (fileName.includes('anger') || fileName.includes('mad')) {
+          emotionalDistribution.Anger = 0.4;
+          emotionalDistribution.Trust = 0.05;
+        } else if (fileName.includes('fear') || fileName.includes('anxiety')) {
+          emotionalDistribution.Fear = 0.4;
+          emotionalDistribution.Trust = 0.05;
+        }
       }
       
       const overallSentiment = 
@@ -101,12 +131,12 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
       const negativePercentage = Math.round((1 - normalizedSentiment) * 0.5 * 100);
       const neutralPercentage = 100 - positivePercentage - negativePercentage;
 
-      const pageCount = 5 + Math.floor((seed % 10));
+      const pageCount = pdfText ? Math.ceil(pdfText.length / 2000) : 5 + Math.floor((seed % 10));
       const timeline = [];
       let prevScore = normalizedSentiment * 0.8;
 
       for (let i = 1; i <= pageCount; i++) {
-        const volatility = 0.15;
+        const volatility = pdfText ? 0.1 : 0.15;
         const trend = (normalizedSentiment - prevScore) * 0.3;
         const randomChange = (Math.random() * 2 - 1) * volatility;
         let newScore = prevScore + randomChange + trend;
@@ -366,6 +396,9 @@ const Dashboard = () => {
                 <FileText className="h-5 w-5 mr-2 text-primary" />
                 <span className="text-sm">
                   <span className="font-medium">Currently analyzing:</span> {sentimentData.fileName} ({(sentimentData.fileSize / 1024 / 1024).toFixed(2)} MB)
+                  {sentimentData.wordCount > 0 && (
+                    <> • <span className="font-medium">{sentimentData.wordCount}</span> unique words extracted</>
+                  )}
                 </span>
               </div>
               
