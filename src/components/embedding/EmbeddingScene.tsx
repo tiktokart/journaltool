@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -119,7 +120,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
     const vertices: number[] = [];
     const colors: number[] = [];
-    const sizes: number[] = [];
+    const pointSizes: number[] = []; // Renamed from 'sizes' to avoid conflict with built-in attribute
 
     points.forEach(point => {
       vertices.push(point.position[0], point.position[1], point.position[2]);
@@ -136,10 +137,10 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
           Math.min(1, point.color[1] * 1.5), 
           Math.min(1, point.color[2] * 1.5)
         );
-        sizes.push(0.15); // Make them bigger
+        pointSizes.push(0.15); // Make them bigger
       } else {
         colors.push(point.color[0], point.color[1], point.color[2]);
-        sizes.push(0.1); // Regular size
+        pointSizes.push(0.1); // Regular size
       }
     });
 
@@ -147,8 +148,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     
-    // Add size attribute
-    geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+    // Add a custom attribute for size instead of using the built-in one
+    geometry.setAttribute('pointSize', new THREE.Float32BufferAttribute(pointSizes, 1));
 
     const material = new THREE.PointsMaterial({
       size: 0.1,
@@ -158,17 +159,17 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       sizeAttenuation: true
     });
 
-    // Custom shader to handle different sizes
+    // Update the custom shader to use our custom attribute instead
     material.onBeforeCompile = (shader) => {
       shader.vertexShader = shader.vertexShader
         .replace(
           'void main() {',
-          `attribute float size;
+          `attribute float pointSize;
            void main() {`
         )
         .replace(
           'gl_PointSize = size;',
-          'gl_PointSize = size * 150.0;'
+          'gl_PointSize = pointSize * 150.0;'
         );
     };
 
