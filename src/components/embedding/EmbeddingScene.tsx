@@ -56,6 +56,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const zoomTimeoutRef = useRef<number | null>(null);
   const animationFrameIdRef = useRef<number | null>(null);
   const isDraggingRef = useRef<boolean>(false);
+  const mouseDownTimeRef = useRef<number>(0);
+  const mouseDownPositionRef = useRef<{x: number, y: number}>({x: 0, y: 0});
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -100,20 +102,47 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     controlsInstance.zoomSpeed = 1.2;
     controlsInstance.panSpeed = 0.8;
     
-    const handleMouseDown = () => {
-      isDraggingRef.current = true;
+    const handleMouseDown = (event: MouseEvent) => {
+      mouseDownTimeRef.current = Date.now();
+      mouseDownPositionRef.current = { x: event.clientX, y: event.clientY };
+      isDraggingRef.current = false;
+    };
+    
+    const handleMouseMove = (event: MouseEvent) => {
+      if (Date.now() - mouseDownTimeRef.current > 150) {
+        const deltaX = Math.abs(event.clientX - mouseDownPositionRef.current.x);
+        const deltaY = Math.abs(event.clientY - mouseDownPositionRef.current.y);
+        
+        if (deltaX > 5 || deltaY > 5) {
+          isDraggingRef.current = true;
+        }
+      }
     };
     
     const handleMouseUp = () => {
-      isDraggingRef.current = false;
+      setTimeout(() => {
+        isDraggingRef.current = false;
+      }, 10);
     };
     
     const handleMouseLeave = () => {
       isDraggingRef.current = false;
     };
     
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      
+      if (event.deltaY < 0) {
+        zoomIn(camera);
+      } else {
+        zoomOut(camera);
+      }
+    };
+    
     if (containerRef.current) {
       containerRef.current.addEventListener('mousedown', handleMouseDown);
+      containerRef.current.addEventListener('mousemove', handleMouseMove);
+      containerRef.current.addEventListener('wheel', handleWheel, { passive: false });
       window.addEventListener('mouseup', handleMouseUp);
       containerRef.current.addEventListener('mouseleave', handleMouseLeave);
     }
@@ -146,6 +175,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       window.removeEventListener('resize', handleResize);
       if (containerRef.current) {
         containerRef.current.removeEventListener('mousedown', handleMouseDown);
+        containerRef.current.removeEventListener('mousemove', handleMouseMove);
+        containerRef.current.removeEventListener('wheel', handleWheel);
         containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
       }
       window.removeEventListener('mouseup', handleMouseUp);

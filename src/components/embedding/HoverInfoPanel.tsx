@@ -39,7 +39,7 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
       <div className="text-xs flex justify-between mb-2">
         <span>Sentiment: {getSentimentLabel(point.sentiment)}</span>
         {point.emotionalTone && (
-          <span>Emotional Tone: {point.emotionalTone}</span>
+          <span>Emotional Group: {point.emotionalTone}</span>
         )}
       </div>
       
