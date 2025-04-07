@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -352,7 +353,7 @@ const Dashboard = () => {
       setConnectedPoints([]);
     }
     
-    toast(`Selected: "${point.word}" (${point.emotionalTone || "Neutral"})`);
+    toast(`Selected: "${point.word}" (${point.emotionalTone || 'Neutral'})`);
   };
   
   const handleSelectWord = (word: string) => {
@@ -789,7 +790,38 @@ const Dashboard = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      {compareWords.length === 0 ? (
-                        <div className="py-12 flex flex-col items-center justify-center text-center">
-                          <div className="mb-3 p-4 rounded-full bg-muted/50">
-                            <GitCompareArrows className="h-
+                      <WordComparison 
+                        words={compareWords} 
+                        onRemoveWord={handleRemoveFromComparison}
+                        calculateRelationship={calculateRelationship}
+                        onAddWordClick={() => setCompareSearchOpen(true)}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="overview" className="mt-6">
+                  <SentimentOverview data={sentimentData} />
+                </TabsContent>
+                
+                <TabsContent value="timeline" className="mt-6">
+                  <SentimentTimeline data={sentimentData.timeline} />
+                </TabsContent>
+                
+                <TabsContent value="themes" className="mt-6">
+                  <EntitySentiment data={sentimentData.entities} />
+                </TabsContent>
+                
+                <TabsContent value="keyphrases" className="mt-6">
+                  <KeyPhrases data={sentimentData.keyPhrases} />
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
