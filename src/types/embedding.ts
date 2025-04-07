@@ -15,4 +15,5 @@ export interface DocumentEmbeddingProps {
   onPointClick?: (point: Point) => void;
   isInteractive?: boolean;
   depressedJournalReference?: boolean;  // New prop for home page
+  focusOnWord?: string | null;         // Adding this prop to fix the type error
 }
