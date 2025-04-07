@@ -617,7 +617,7 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
-                      focusOnWord={Boolean(selectedWord)}
+                      focusOnWord={selectedWord}
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
                       visibleClusterCount={visibleClusterCount}
@@ -816,7 +816,7 @@ const Dashboard = () => {
                         </div>
                         
                         <WordComparison 
-                          words={wordsForComparison} 
+                          words={wordsForComparison}
                           onRemoveWord={handleRemoveWordFromComparison}
                           calculateRelationship={calculateRelationship}
                           onAddWordClick={handleAddWordToComparison}
