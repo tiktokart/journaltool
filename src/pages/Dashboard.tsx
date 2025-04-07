@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
+// Helper function to convert color array to RGB string
 const getRGBColorString = (color: number[]): string => {
   return `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`;
 };
@@ -584,7 +586,7 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
-                      focusOnWord={selectedWord ? true : false}
+                      focusOnWord={selectedWord !== null} {/* Fixed: Using boolean instead of string */}
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
                       visibleClusterCount={visibleClusterCount}
