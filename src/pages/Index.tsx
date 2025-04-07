@@ -119,7 +119,6 @@ By evening, I was exhausted from fighting my anxiety all day. I managed to do so
 
 const Home = () => {
   const navigate = useNavigate();
-  // Fix: Pass a boolean (false) instead of a string to isInteractive
   const [points] = useState<Point[]>(() => generateMockPoints(exampleJournalText, exampleJournalData));
 
   return (
