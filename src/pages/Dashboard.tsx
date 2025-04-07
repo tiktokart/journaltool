@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -364,9 +363,9 @@ const Dashboard = () => {
     if (!point1 || !point2) return null;
     
     const distance = Math.sqrt(
-      Math.pow(point1.position[0] - point2.position[0], 2) +
-      Math.pow(point1.position[1] - point2.position[1], 2) +
-      Math.pow(point1.position[2] - point2.position[2], 2)
+      Math.pow(Number(point1.position[0]) - Number(point2.position[0]), 2) +
+      Math.pow(Number(point1.position[1]) - Number(point2.position[1]), 2) +
+      Math.pow(Number(point1.position[2]) - Number(point2.position[2]), 2)
     );
     
     const spatialSimilarity = Math.max(0, 1 - (distance / 2));
