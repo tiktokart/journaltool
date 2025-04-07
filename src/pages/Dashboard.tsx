@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -787,27 +786,30 @@ const Dashboard = () => {
                         <TabsContent value="clusters" className="mt-2">
                           <div className="bg-muted/30 rounded-lg p-4 min-h-[400px]">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              {Object.entries(getEmotionColor()).map(([emotion, colorInfo]) => (
-                                <div 
-                                  key={emotion} 
-                                  className="p-3 rounded-lg border" 
-                                  style={{
-                                    backgroundColor: `rgba(${colorInfo.rgb[0]}, ${colorInfo.rgb[1]}, ${colorInfo.rgb[2]}, 0.1)`,
-                                    borderColor: `rgba(${colorInfo.rgb[0]}, ${colorInfo.rgb[1]}, ${colorInfo.rgb[2]}, 0.5)`
-                                  }}
-                                >
-                                  <h3 className="font-medium text-center mb-2">{emotion}</h3>
-                                  <div className="text-xs text-muted-foreground">
-                                    {filteredPoints
-                                      .filter(p => p.emotionalTone === emotion)
-                                      .slice(0, 5)
-                                      .map(p => p.word)
-                                      .join(", ")}
-                                    {filteredPoints.filter(p => p.emotionalTone === emotion).length > 5 && 
-                                      ` and ${filteredPoints.filter(p => p.emotionalTone === emotion).length - 5} more...`}
+                              {Object.entries(getEmotionColor()).map(([emotion, colorInfo]) => {
+                                const colorData = colorInfo as { rgb: number[] };
+                                return (
+                                  <div 
+                                    key={emotion} 
+                                    className="p-3 rounded-lg border" 
+                                    style={{
+                                      backgroundColor: `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.1)`,
+                                      borderColor: `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.5)`
+                                    }}
+                                  >
+                                    <h3 className="font-medium text-center mb-2">{emotion}</h3>
+                                    <div className="text-xs text-muted-foreground">
+                                      {filteredPoints
+                                        .filter(p => p.emotionalTone === emotion)
+                                        .slice(0, 5)
+                                        .map(p => p.word)
+                                        .join(", ")}
+                                      {filteredPoints.filter(p => p.emotionalTone === emotion).length > 5 && 
+                                        ` and ${filteredPoints.filter(p => p.emotionalTone === emotion).length - 5} more...`}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </div>
                         </TabsContent>
