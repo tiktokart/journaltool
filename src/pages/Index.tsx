@@ -80,7 +80,6 @@ const Index = () => {
     if (points.length === 0) {
       const embedPoints = (window as any).documentEmbeddingPoints;
       if (embedPoints && Array.isArray(embedPoints) && embedPoints.length > 0) {
-        // Modified to prioritize emotional tone search
         const results = embedPoints.filter(point => 
           (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
           point.word.toLowerCase().includes(value.toLowerCase()) ||
@@ -89,7 +88,6 @@ const Index = () => {
           ))
         );
         
-        // Sort results to prioritize emotional tone matches
         results.sort((a, b) => {
           const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
           const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
@@ -107,7 +105,6 @@ const Index = () => {
       return;
     }
     
-    // Modified to prioritize emotional tone search for when points are loaded
     const results = points.filter(point => 
       (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
       point.word.toLowerCase().includes(value.toLowerCase()) ||
@@ -116,7 +113,6 @@ const Index = () => {
       ))
     );
     
-    // Sort results to prioritize emotional tone matches
     results.sort((a, b) => {
       const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
       const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
@@ -137,7 +133,6 @@ const Index = () => {
       return;
     }
     
-    // Modified to prioritize emotional tone search
     const results = points.filter(point => 
       (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
       point.word.toLowerCase().includes(value.toLowerCase()) ||
@@ -146,7 +141,6 @@ const Index = () => {
       ))
     );
     
-    // Sort results to prioritize emotional tone matches
     results.sort((a, b) => {
       const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
       const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
@@ -167,7 +161,6 @@ const Index = () => {
       return;
     }
     
-    // Modified to prioritize emotional tone search
     const results = points.filter(point => 
       (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
       point.word.toLowerCase().includes(value.toLowerCase()) ||
@@ -176,7 +169,6 @@ const Index = () => {
       ))
     );
     
-    // Sort results to prioritize emotional tone matches
     results.sort((a, b) => {
       const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
       const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
@@ -280,59 +272,6 @@ const Index = () => {
               
               <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="w-full flex flex-col gap-4">
-                  <div className="w-full">
-                    <Popover open={open} onOpenChange={setOpen}>
-                      <PopoverTrigger asChild>
-                        <div className="relative w-full">
-                          <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            placeholder="Search by emotion or word" 
-                            value={searchValue}
-                            onChange={(e) => {
-                              handleSearchChange(e.target.value);
-                              setOpen(true);
-                            }}
-                            className="pl-8"
-                            onFocus={() => setOpen(true)}
-                          />
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent className="p-0 w-[300px]" align="start">
-                        <Command>
-                          <CommandInput 
-                            placeholder="Search by emotion or word" 
-                            value={searchValue}
-                            onValueChange={handleSearchChange}
-                          />
-                          <CommandList>
-                            <CommandEmpty>No results found</CommandEmpty>
-                            <CommandGroup>
-                              {searchResults.map((point) => (
-                                <CommandItem
-                                  key={point.id}
-                                  onSelect={() => handleSearchSelect(point)}
-                                  value={point.word}
-                                  className="flex items-center gap-2"
-                                >
-                                  <div 
-                                    className="w-3 h-3 rounded-full flex-shrink-0" 
-                                    style={{ 
-                                      backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
-                                    }} 
-                                  />
-                                  <span>{point.word}</span>
-                                  <span className="ml-auto text-xs text-muted-foreground">
-                                    {point.emotionalTone}
-                                  </span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  
                   {selectedPoint ? (
                     <Card className="w-full border border-border shadow-sm bg-card h-full flex-grow">
                       <CardContent className="pt-6">
