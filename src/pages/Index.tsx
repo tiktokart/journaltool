@@ -219,12 +219,8 @@ const Index = () => {
               </Card>
             </div>
             
-            <div className="w-full max-w-6xl mb-8 flex flex-col md:flex-row gap-6">
-              <div className="w-full md:w-2/3 relative">
-                <div className="absolute top-2 left-4 z-10 text-sm font-normal flex items-center text-muted-foreground">
-                  <CircleDot className="h-4 w-4 mr-2" />
-                  <span>Hover or click on words to see emotional groupings.</span>
-                </div>
+            <div className="w-full max-w-6xl mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="w-full relative">
                 <div className="aspect-[16/9] bg-white border border-border rounded-xl overflow-hidden shadow-lg">
                   <DocumentEmbedding 
                     isInteractive={true} 
@@ -238,7 +234,7 @@ const Index = () => {
                 </div>
               </div>
               
-              <div className="w-full md:w-1/3 flex flex-col gap-4">
+              <div className="w-full flex flex-col gap-4">
                 <div className="w-full">
                   <Popover open={open} onOpenChange={setOpen}>
                     <PopoverTrigger asChild>

@@ -7,6 +7,7 @@ import { EmotionsLegend } from './embedding/EmotionsLegend';
 import { ZoomControls } from './embedding/ZoomControls';
 import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { CircleDot } from 'lucide-react';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -156,6 +157,11 @@ export const DocumentEmbedding = ({
         className="w-full h-full rounded-lg overflow-hidden"
       />
       
+      <div className="absolute top-3 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground">
+        <CircleDot className="h-4 w-4 mr-2" />
+        <span>Hover or click on words to see emotional groupings.</span>
+      </div>
+      
       <EmbeddingScene 
         containerRef={containerRef}
         cameraRef={cameraRef}
@@ -178,8 +184,6 @@ export const DocumentEmbedding = ({
             onZoomIn={handleZoomIn} 
             onZoomOut={handleZoomOut}
             onResetZoom={handleResetZoom}
-            onSearchSelect={handleVisualSearchSelect}
-            points={displayPoints}
           />
           
           {selectedPoint && (
