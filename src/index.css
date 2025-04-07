@@ -69,4 +69,24 @@
   .glass-panel {
     @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-lg;
   }
+  
+  .relationship-analysis {
+    @apply bg-orange-950/30 border border-orange-300/30;
+  }
+  
+  .relationship-analysis-panel {
+    @apply bg-black/40 text-white rounded-md p-2;
+  }
+  
+  .relationship-analysis-heading {
+    @apply text-orange-200 font-medium;
+  }
+  
+  .relationship-analysis-label {
+    @apply text-orange-100 text-xs font-medium;
+  }
+  
+  .relationship-analysis-tag {
+    @apply bg-orange-900/70 text-orange-100 px-2 py-1 rounded-full text-xs;
+  }
 }
