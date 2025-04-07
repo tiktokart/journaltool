@@ -787,14 +787,16 @@ const Dashboard = () => {
                           <div className="bg-muted/30 rounded-lg p-4 min-h-[400px]">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                               {Object.entries(getEmotionColor()).map(([emotion, colorInfo]) => {
-                                const colorData = colorInfo as { rgb: number[] };
+                                const colorData = colorInfo as any;
+                                const rgb = colorData.rgb || [128, 128, 128]; // Default to gray if rgb is missing
+                                
                                 return (
                                   <div 
                                     key={emotion} 
                                     className="p-3 rounded-lg border" 
                                     style={{
-                                      backgroundColor: `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.1)`,
-                                      borderColor: `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.5)`
+                                      backgroundColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.1)`,
+                                      borderColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.5)`
                                     }}
                                   >
                                     <h3 className="font-medium text-center mb-2">{emotion}</h3>
