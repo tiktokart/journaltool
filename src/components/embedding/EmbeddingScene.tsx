@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -60,7 +59,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     camera.aspect = containerWidth / containerHeight;
     camera.updateProjectionMatrix();
-    camera.position.z = 5;
+    camera.position.z = 8;
 
     scene.background = null;
 
@@ -70,7 +69,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     controlsInstance.dampingFactor = 0.05;
     controlsInstance.screenSpacePanning = false;
     controlsInstance.minDistance = 1;
-    controlsInstance.maxDistance = 10;
+    controlsInstance.maxDistance = 15;
     controlsInstance.maxPolarAngle = Math.PI / 2;
     controlsInstance.autoRotateSpeed = 0.5;
     controlsInstance.autoRotate = true;
@@ -189,7 +188,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     };
   }, [points, isInteractive, onPointSelect, onPointHover, containerRef]);
 
-  // Add lines between connected points
   useEffect(() => {
     const scene = sceneRef.current;
     
@@ -246,13 +244,17 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       
       const linesMaterial = new THREE.LineBasicMaterial({
         vertexColors: true,
-        linewidth: 2,
+        linewidth: 3,
         transparent: true,
-        opacity: 0.7
+        opacity: 0.9
       });
       
       linesRef.current = new THREE.LineSegments(linesGeometry, linesMaterial);
       scene.add(linesRef.current);
+      
+      if (rendererRef.current && cameraRef.current) {
+        rendererRef.current.render(scene, cameraRef.current);
+      }
     }
   }, [points, connectedPoints, focusOnWord]);
 
@@ -261,14 +263,12 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     const point = new THREE.Vector3(targetPoint.position[0], targetPoint.position[1], targetPoint.position[2]);
     
-    // Create temporary vectors for the interpolation
     const startPosition = new THREE.Vector3();
     startPosition.copy(cameraRef.current.position);
     
     const endPosition = new THREE.Vector3();
-    endPosition.copy(point).add(new THREE.Vector3(0, 0, 2));
+    endPosition.copy(point).add(new THREE.Vector3(0, 0, 4));
     
-    // Animate the camera position
     gsap.to(cameraRef.current.position, {
       x: endPosition.x,
       y: endPosition.y,
@@ -277,7 +277,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       ease: "power2.inOut",
       onUpdate: () => {
         if (controlsRef.current) {
-          // Update the target to look at the point
           controlsRef.current.target.set(point.x, point.y, point.z);
           controlsRef.current.update();
         }
@@ -311,7 +310,7 @@ export const zoomOut = (camera: THREE.PerspectiveCamera | null) => {
   if (!camera) return;
   
   gsap.to(camera.position, {
-    z: Math.min(camera.position.z + 1, 10),
+    z: Math.min(camera.position.z + 1, 15),
     duration: 0.5,
     ease: "power2.out"
   });
