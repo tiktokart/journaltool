@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -7,12 +6,13 @@ import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { InfoIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const Index = () => {
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
@@ -31,6 +31,7 @@ const Index = () => {
   const [secondWordSearchOpen, setSecondWordSearchOpen] = useState(false);
   const [firstWordSearchResults, setFirstWordSearchResults] = useState<Point[]>([]);
   const [secondWordSearchResults, setSecondWordSearchResults] = useState<Point[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const checkForPoints = () => {
@@ -260,6 +261,13 @@ const Index = () => {
     };
   };
 
+  const handleResetVisualization = () => {
+    setSelectedPoint(null);
+    setFocusWord(null);
+    setComparisonPoint(null);
+    toast.info("Visualization reset");
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -286,19 +294,171 @@ const Index = () => {
             </div>
             
             <div className="w-full max-w-6xl mb-8 flex flex-col gap-6">
-              <div className="w-full relative">
-                <div className="aspect-[21/9] bg-white border border-border rounded-xl overflow-hidden shadow-lg">
-                  <DocumentEmbedding 
-                    isInteractive={true} 
-                    depressedJournalReference={true} 
-                    onPointClick={handlePointClick}
-                    focusOnWord={focusWord}
-                    onComparePoint={handlePointCompare}
-                    onSearchSelect={handleVisualSearchSelect}
-                    points={points}
-                  />
-                </div>
-              </div>
+              <Card className="border border-border shadow-md overflow-hidden bg-card">
+                <CardHeader className="z-10">
+                  <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
+                    <CardTitle className="flex items-center">
+                      <span>Latent Emotional Analysis</span>
+                    </CardTitle>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleResetVisualization}
+                        className="h-9"
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Reset View
+                      </Button>
+                      
+                      <div className="relative w-full md:w-64">
+                        <div className="relative w-full">
+                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="Search words or emotions..." 
+                            className="pl-8 w-full pr-8"
+                            value={searchTerm}
+                            onChange={(e) => {
+                              setSearchTerm(e.target.value);
+                              setOpen(true);
+                            }}
+                            onFocus={() => setOpen(true)}
+                          />
+                          {searchTerm && (
+                            <button 
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                              onClick={() => {
+                                setSearchTerm("");
+                                setSelectedPoint(null);
+                                setFocusWord(null);
+                              }}
+                            >
+                              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                            </button>
+                          )}
+                        </div>
+                        {open && (
+                          <div 
+                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
+                          >
+                            <Command>
+                              <CommandInput 
+                                placeholder="Search words..." 
+                                value={searchTerm}
+                                onValueChange={setSearchTerm}
+                              />
+                              <CommandList>
+                                <CommandEmpty>No results found</CommandEmpty>
+                                <CommandGroup>
+                                  {points
+                                    .filter(point => point.word.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                                    (point.emotionalTone && point.emotionalTone.toLowerCase().includes(searchTerm.toLowerCase())))
+                                    .slice(0, 100)
+                                    .map((point) => (
+                                      <CommandItem 
+                                        key={point.id} 
+                                        value={point.word}
+                                        onSelect={() => handleSearchSelect(point)}
+                                      >
+                                        <div 
+                                          className="w-3 h-3 rounded-full mr-2" 
+                                          style={{ 
+                                            backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                          }} 
+                                        />
+                                        {point.word}
+                                        <span className="ml-auto text-xs text-muted-foreground">
+                                          {point.emotionalTone || "Neutral"}
+                                        </span>
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm font-normal flex items-center text-muted-foreground">
+                    <CircleDot className="h-4 w-4 mr-2" />
+                    <span>
+                      Hover or click on words to see emotional relationships. Use the Reset View button when needed.
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="h-[500px] relative">
+                    <DocumentEmbedding 
+                      isInteractive={true} 
+                      depressedJournalReference={true} 
+                      onPointClick={handlePointClick}
+                      focusOnWord={focusWord}
+                      onComparePoint={handlePointCompare}
+                      onSearchSelect={handleVisualSearchSelect}
+                      points={points}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                  <TabsTrigger value="themes">Themes</TabsTrigger>
+                  <TabsTrigger value="keyphrases">Key Words</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="overview" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Sentiment Overview</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">Analysis of the overall sentiment in the document.</p>
+                      {/* Placeholder for sentiment overview content */}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="timeline" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Timeline Analysis</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">How sentiment changes throughout the document.</p>
+                      {/* Placeholder for timeline content */}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="themes" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Theme Analysis</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">Key themes identified in the document.</p>
+                      {/* Placeholder for themes content */}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="keyphrases" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Key Words</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">Important words and phrases identified in the document.</p>
+                      {/* Placeholder for key phrases content */}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
               
               <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="w-full flex flex-col gap-4">
