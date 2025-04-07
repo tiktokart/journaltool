@@ -875,4 +875,19 @@ const Dashboard = () => {
   );
 };
 
+const handleResetVisualization = () => {
+  setSelectedWord(null);
+  setSelectedPoint(null);
+  setComparisonWord(null);
+  setComparisonPoint(null);
+  setSelectedCluster(null);
+  setFilteredPoints(points);
+  toast.info("Visualization reset");
+};
+
+const handleClearSearch = () => {
+  setSearchTerm("");
+  setOpen(false);
+};
+
 export default Dashboard;
