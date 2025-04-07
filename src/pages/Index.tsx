@@ -785,30 +785,4 @@ const Index = () => {
                                               }} 
                                             />
                                             <span>{point.word}</span>
-                                            <span className="ml-auto text-xs font-medium">
-                                              {point.emotionalTone}
-                                            </span>
-                                          </CommandItem>
-                                        ))}
-                                      </CommandGroup>
-                                    </CommandList>
-                                  </Command>
-                                </PopoverContent>
-                              </Popover>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default Index;
+                                            <span className="ml-auto text-xs font
