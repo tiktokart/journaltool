@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -246,7 +245,6 @@ const Dashboard = () => {
       });
       setClusterPoints(clusterPointsMap);
       
-      // Fix 1: Making window.documentEmbeddingPoints a reference to mockPoints
       window.documentEmbeddingPoints = mockPoints;
     }
   }, [sentimentData, pdfText]);
@@ -621,11 +619,11 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
-                      depressedJournalReference={false} // Fixed: Using boolean instead of string
+                      depressedJournalReference={false}
                       focusOnWord={selectedWord}
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
-                      visibleClusterCount={visibleClusterCount} // This should already be a number
+                      visibleClusterCount={visibleClusterCount}
                     />
                   </div>
                 </CardContent>
