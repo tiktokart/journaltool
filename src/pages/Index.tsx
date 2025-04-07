@@ -1,8 +1,8 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, CircleDot } from "lucide-react";
+import { ArrowRight, CircleDot, Search } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
@@ -11,15 +11,64 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { InfoIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const Index = () => {
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [searchValue, setSearchValue] = useState("");
+  const [open, setOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<Point[]>([]);
+  const [focusWord, setFocusWord] = useState<string | null>(null);
+  const [points, setPoints] = useState<Point[]>([]);
+
+  // Get points from the visualization for search
+  useEffect(() => {
+    // We'll use the mock points generated in DocumentEmbedding
+    // This effect will run after the first render
+    const timer = setTimeout(() => {
+      setPoints([]); // Placeholder - points will be generated within the DocumentEmbedding
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handlePointClick = (point: Point) => {
     setSelectedPoint(point);
     toast(`Selected: "${point.word}" (${point.emotionalTone})`);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+    
+    if (!value.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    // Filter points based on search value
+    const results = points.filter(point => 
+      point.word.toLowerCase().includes(value.toLowerCase()) ||
+      (point.keywords && point.keywords.some(keyword => 
+        keyword.toLowerCase().includes(value.toLowerCase())
+      ))
+    );
+    
+    setSearchResults(results);
+  };
+
+  const handleSearchSelect = (point: Point) => {
+    setSelectedPoint(point);
+    setFocusWord(point.word);
+    setOpen(false);
+    toast(`Zooming to: "${point.word}"`);
+  };
+
+  // This function will be called when the DocumentEmbedding renders its points
+  const handlePointsUpdate = (updatedPoints: Point[]) => {
+    setPoints(updatedPoints);
   };
 
   return (
@@ -36,6 +85,53 @@ const Index = () => {
               Visualize emotional patterns in your journal through interactive latent emotional analysis
             </p>
             
+            {/* Search Bar */}
+            <div className="w-full max-w-md mb-8">
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <div className="relative w-full">
+                    <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Search for a word or emotion..." 
+                      value={searchValue}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="pl-8"
+                      onClick={() => setOpen(true)}
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[300px]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search words or emotions..." />
+                    <CommandList>
+                      <CommandEmpty>No results found</CommandEmpty>
+                      <CommandGroup>
+                        {searchResults.map((point) => (
+                          <CommandItem
+                            key={point.id}
+                            onSelect={() => handleSearchSelect(point)}
+                            value={point.word}
+                            className="flex items-center gap-2"
+                          >
+                            <div 
+                              className="w-3 h-3 rounded-full flex-shrink-0" 
+                              style={{ 
+                                backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                              }} 
+                            />
+                            <span>{point.word}</span>
+                            <span className="ml-auto text-xs text-muted-foreground">
+                              {point.emotionalTone}
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            
             {/* 3D Visualization Container */}
             <div className="w-full max-w-6xl mb-8 relative">
               <div className="absolute top-2 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground">
@@ -47,6 +143,7 @@ const Index = () => {
                   isInteractive={true} 
                   depressedJournalReference={true} 
                   onPointClick={handlePointClick}
+                  focusOnWord={focusWord}
                 />
               </div>
             </div>

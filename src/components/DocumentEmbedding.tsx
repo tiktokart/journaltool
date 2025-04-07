@@ -21,6 +21,7 @@ export const DocumentEmbedding = ({
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [currentFocusWord, setCurrentFocusWord] = useState<string | null>(null);
+  const [generatedPoints, setGeneratedPoints] = useState<Point[]>([]);
   
   // Update currentFocusWord when focusOnWord changes
   useEffect(() => {
@@ -32,8 +33,24 @@ export const DocumentEmbedding = ({
   // Generate mock points if none are provided
   const getPoints = () => {
     if (points.length > 0) return points;
-    return generateMockPoints(depressedJournalReference);
+    
+    const mockPoints = generateMockPoints(depressedJournalReference);
+    // Store the generated points for search functionality in parent component
+    setGeneratedPoints(mockPoints);
+    return mockPoints;
   };
+  
+  // Expose generated points to parent component if needed
+  useEffect(() => {
+    const pointData = getPoints();
+    // Check if parent component wants the point data (by passing an onPointsUpdate prop)
+    if (pointData && pointData.length > 0) {
+      if (window.parent) {
+        // Expose points to parent (can be used by parent components)
+        (window as any).documentEmbeddingPoints = pointData;
+      }
+    }
+  }, [points, depressedJournalReference]);
   
   const handleZoomIn = () => {
     zoomIn(cameraRef.current);
