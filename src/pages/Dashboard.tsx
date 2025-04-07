@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,8 +32,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
+// Analyzer function that takes pdfText and filename to generate mock analysis data
+// Fixed TypeScript issue: argument types and return type
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
-  return new Promise((resolve) => {
+  return new Promise<any>((resolve) => {
     setTimeout(() => {
       const mockData = {
         overallSentiment: {
@@ -54,8 +57,8 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
           sentiment: Math.random() * 0.8 + 0.1,
           mentions: Math.floor(Math.random() * 10) + 1,
           contexts: Array.from({ length: Math.floor(Math.random() * 3) + 1 }, () => 
-            "Context: " + pdfText.substring(Math.floor(Math.random() * pdfText.length), 
-            Math.floor(Math.random() * pdfText.length) + 100).trim()
+            "Context: " + pdfText.substring(Math.floor(Math.random() * Math.max(pdfText.length, 1)), 
+            Math.floor(Math.random() * Math.max(pdfText.length, 1)) + 100).trim()
           )
         })),
         keyPhrases: Array.from({ length: 12 }, (_, i) => ({
@@ -183,17 +186,21 @@ const Dashboard = () => {
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
+      // Fixed: Better handling of pdfText and word extraction
       const allWords = pdfText
         .split(/\s+/)
         .filter(word => word.length > 2)
         .map(word => word.replace(/[^\w\s]|_/g, "").toLowerCase())
         .filter(Boolean);
       
-      const uniqueWordsSet = [...new Set(allWords)];
-      setUniqueWords(uniqueWordsSet);
+      // Use a Set to store unique words then convert back to array
+      const uniqueWordsSet = new Set(allWords);
+      const uniqueWordsArray = Array.from(uniqueWordsSet);
+      setUniqueWords(uniqueWordsArray);
       
-      console.log(`Total unique words found: ${uniqueWordsSet.length}`);
+      console.log(`Total unique words found: ${uniqueWordsArray.length}`);
       
+      // Handle clusters
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
         return {
@@ -205,25 +212,34 @@ const Dashboard = () => {
       
       setEmotionalClusters(clusters);
       
+      // Set up color map for clusters
       const colorMap: Record<string, string> = {};
       clusters.forEach((cluster: any) => {
         colorMap[cluster.name] = cluster.color;
       });
       setClusterColors(colorMap);
       
+      // Initialize expanded state for clusters
       const expandedMap: Record<string, boolean> = {};
       clusters.forEach((cluster: any) => {
         expandedMap[cluster.name] = false;
       });
       setClusterExpanded(expandedMap);
       
+      // Assign points to clusters
       const clusterPointsMap: Record<string, Point[]> = {};
       clusters.forEach((cluster: any) => {
         const clusterSize = cluster.size;
-        const assignedPoints = mockPoints
-          .filter(p => !Object.values(clusterPointsMap).flat().some(cp => cp.id === p.id))
-          .sort(() => 0.5 - Math.random())
-          .slice(0, clusterSize);
+        // Fix spread operator issue - filter points that haven't been assigned yet
+        const availablePoints = mockPoints.filter(p => 
+          !Object.values(clusterPointsMap).some(assignedPoints => 
+            assignedPoints.some(ap => ap.id === p.id)
+          )
+        );
+        
+        // Get random subset for this cluster
+        const shuffled = [...availablePoints].sort(() => 0.5 - Math.random());
+        const assignedPoints = shuffled.slice(0, Math.min(clusterSize, shuffled.length));
         
         clusterPointsMap[cluster.name] = assignedPoints;
       });

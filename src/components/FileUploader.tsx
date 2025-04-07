@@ -37,7 +37,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent({
-          normalizeWhitespace: true,
+          // Fixed: Remove normalizeWhitespace as it's not in the type definition
           disableCombineTextItems: false
         });
         

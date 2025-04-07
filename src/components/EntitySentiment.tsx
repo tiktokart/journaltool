@@ -4,18 +4,23 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Info } from "lucide-react";
 
 interface EntitySentimentProps {
-  data: Array<{ name: string; score: number; mentions: number }>;
+  data: Array<{ 
+    name: string; 
+    sentiment: number; // Renamed from score for consistency
+    mentions: number;
+    contexts?: Array<string>;
+  }>;
   sourceDescription?: string; // Add this to show where data came from
 }
 
 export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProps) => {
-  // Sort data by score for better visualization
-  const sortedData = [...data].sort((a, b) => b.score - a.score);
+  // Sort data by sentiment for better visualization
+  const sortedData = [...data].sort((a, b) => b.sentiment - a.sentiment);
 
-  // Determine color for each bar based on score
-  const getColor = (score: number) => {
-    if (score >= 0.6) return "#27AE60";
-    if (score >= 0.4) return "#3498DB";
+  // Determine color for each bar based on sentiment
+  const getColor = (sentiment: number) => {
+    if (sentiment >= 0.6) return "#27AE60";
+    if (sentiment >= 0.4) return "#3498DB";
     return "#E74C3C";
   };
 
@@ -63,11 +68,11 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                   }}
                 />
-                <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="sentiment" radius={[0, 4, 4, 0]}>
                   {sortedData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getColor(entry.score)} />
+                    <Cell key={`cell-${index}`} fill={getColor(entry.sentiment)} />
                   ))}
-                  <LabelList dataKey="score" position="right" formatter={(value: number) => value.toFixed(2)} />
+                  <LabelList dataKey="sentiment" position="right" formatter={(value: number) => value.toFixed(2)} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
