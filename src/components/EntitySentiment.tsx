@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 
 interface EntitySentimentProps {
   data: Array<{ name: string; score: number; mentions: number }>;
@@ -76,7 +75,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
         <div className="mt-4 text-sm text-center text-muted-foreground">
           {sourceDescription ? (
             <div className="flex items-center justify-center">
-              <InfoCircle className="h-4 w-4 mr-1" />
+              <Info className="h-4 w-4 mr-1" />
               {sourceDescription}
             </div>
           ) : (

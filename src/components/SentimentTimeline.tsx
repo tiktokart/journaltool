@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 
 interface SentimentTimelineProps {
   data: Array<{ page: number; score: number }>;
@@ -110,7 +109,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
         <div className="mt-4 text-sm text-center text-muted-foreground">
           {sourceDescription ? (
             <div className="flex items-center justify-center">
-              <InfoCircle className="h-4 w-4 mr-1" />
+              <Info className="h-4 w-4 mr-1" />
               {sourceDescription}
             </div>
           ) : (

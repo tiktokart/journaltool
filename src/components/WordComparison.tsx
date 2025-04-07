@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight, X, Search, GitCompareArrows, InfoCircle } from 'lucide-react';
+import { ArrowLeftRight, X, Search, GitCompareArrows, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface WordComparisonProps {
@@ -55,7 +54,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
         
         {sourceDescription && (
           <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
-            <InfoCircle className="h-4 w-4 mr-1" />
+            <Info className="h-4 w-4 mr-1" />
             {sourceDescription}
           </div>
         )}
@@ -214,7 +213,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
       
       {sourceDescription && words.length > 0 && (
         <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
-          <InfoCircle className="h-4 w-4 mr-1" />
+          <Info className="h-4 w-4 mr-1" />
           {sourceDescription}
         </div>
       )}

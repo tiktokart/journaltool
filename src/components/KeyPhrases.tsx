@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 
 interface KeyPhrasesProps {
   data: Array<{ 
@@ -73,7 +72,7 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
         <div className="mt-6 text-sm text-center text-muted-foreground">
           {sourceDescription ? (
             <div className="flex items-center justify-center">
-              <InfoCircle className="h-4 w-4 mr-1" />
+              <Info className="h-4 w-4 mr-1" />
               {sourceDescription}
             </div>
           ) : (

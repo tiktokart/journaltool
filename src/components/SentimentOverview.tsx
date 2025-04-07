@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { InfoCircle } from "lucide-react"; 
+import { Info } from "lucide-react"; 
 
 interface SentimentOverviewProps {
   data: {
@@ -117,7 +116,7 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
         {sourceDescription && (
           <div className="px-6 pb-4 text-sm text-center text-muted-foreground">
             <div className="flex items-center justify-center">
-              <InfoCircle className="h-4 w-4 mr-1" />
+              <Info className="h-4 w-4 mr-1" />
               {sourceDescription}
             </div>
           </div>
