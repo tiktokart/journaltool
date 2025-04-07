@@ -517,11 +517,13 @@ const Dashboard = () => {
                             value={searchTerm}
                             onChange={(e) => {
                               setSearchTerm(e.target.value);
+                              // Fix for search click issue - always open dropdown on input
                               if (uniqueWords.length > 0) {
                                 setOpen(true);
                               }
                             }}
-                            onFocus={() => {
+                            onClick={() => {
+                              // Fix for search click issue - open dropdown on click
                               if (uniqueWords.length > 0) {
                                 setOpen(true);
                               }
@@ -775,11 +777,13 @@ const Dashboard = () => {
                             value={wordSearchTerm}
                             onChange={(e) => {
                               setWordSearchTerm(e.target.value);
-                              if (uniqueWords.length > 0 && !wordSearchOpen) {
+                              // Fix for search click issue
+                              if (uniqueWords.length > 0) {
                                 setWordSearchOpen(true);
                               }
                             }}
-                            onFocus={() => {
+                            onClick={() => {
+                              // Fix for search click issue - open dropdown on click
                               if (uniqueWords.length > 0) {
                                 setWordSearchOpen(true);
                               }
@@ -805,9 +809,8 @@ const Dashboard = () => {
                                 value={wordSearchTerm}
                                 onValueChange={(value) => {
                                   setWordSearchTerm(value);
-                                  if (!wordSearchOpen) {
-                                    setWordSearchOpen(true);
-                                  }
+                                  // Always show dropdown while typing
+                                  setWordSearchOpen(true);
                                 }}
                               />
                               <CommandList>
