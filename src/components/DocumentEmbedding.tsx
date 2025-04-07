@@ -379,9 +379,10 @@ export const DocumentEmbedding = ({
   );
 };
 
+// Export the window interface extension separately, not as part of the component
+// This avoids the duplicate declaration error
 declare global {
   interface Window {
-    documentEmbeddingPoints?: Point[];
     documentEmbeddingActions?: {
       focusOnEmotionalGroup?: (tone: string) => void;
       resetEmotionalGroupFilter?: () => void;

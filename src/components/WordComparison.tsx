@@ -8,15 +8,16 @@ import { Button } from '@/components/ui/button';
 
 interface WordComparisonProps {
   words: Point[];
-  onRemoveWord: (point: Point) => void;
-  calculateRelationship: (point1: Point, point2: Point) => {
+  onSelectWord?: (point: Point) => void; // Make this optional
+  onRemoveWord?: (point: Point) => void; // Make this optional
+  calculateRelationship?: (point1: Point, point2: Point) => {
     spatialSimilarity: number;
     sentimentSimilarity: number;
     sameEmotionalGroup: boolean;
     sharedKeywords: string[];
   } | null;
-  onAddWordClick: () => void;
-  sourceDescription?: string; // Add this to show where words came from
+  onAddWordClick?: () => void; // Make this optional
+  sourceDescription?: string;
 }
 
 export const WordComparison: React.FC<WordComparisonProps> = ({ 
@@ -24,7 +25,8 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
   onRemoveWord, 
   calculateRelationship,
   onAddWordClick,
-  sourceDescription
+  sourceDescription,
+  onSelectWord
 }) => {
   // Handle document clicks to close any open dropdowns
   useEffect(() => {
@@ -59,14 +61,16 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
             </>
           )}
         </p>
-        <Button 
-          variant="outline" 
-          className="mt-4"
-          onClick={onAddWordClick}
-        >
-          <Search className="h-4 w-4 mr-2" />
-          Search Words
-        </Button>
+        {onAddWordClick && (
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={onAddWordClick}
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Search Words
+          </Button>
+        )}
         
         {sourceDescription && (
           <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
@@ -83,15 +87,20 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {words.map((word) => (
           <div key={word.id} className="border rounded-md p-4 relative">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="absolute top-2 right-2 h-6 w-6"
-              onClick={() => onRemoveWord(word)}
+            {onRemoveWord && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-2 right-2 h-6 w-6"
+                onClick={() => onRemoveWord(word)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+            <div 
+              className="flex items-center gap-2 mb-3 cursor-pointer" 
+              onClick={() => onSelectWord && onSelectWord(word)}
             >
-              <X className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2 mb-3">
               <div 
                 className="w-4 h-4 rounded-full" 
                 style={{ 
@@ -118,7 +127,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
         ))}
       </div>
       
-      {words.length > 1 && (
+      {words.length > 1 && calculateRelationship && (
         <div>
           <h3 className="text-lg font-medium mb-4">Relationship Analysis</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -5,7 +5,7 @@ interface Window {
     resetEmotionalGroupFilter?: () => void;
     resetView?: () => void;
   };
-  documentEmbeddingPoints?: Point[]; // Updated to use Point[] instead of any[]
+  documentEmbeddingPoints?: import('./types/embedding').Point[]; // Use import instead of direct reference
 }
 
 // Add interface for String prototype extension if we decide to use it
