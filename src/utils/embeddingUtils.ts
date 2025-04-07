@@ -1,6 +1,7 @@
 
 import * as THREE from 'three';
 import { Point } from '../types/embedding';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface EmotionalDistribution {
   Joy: number;
@@ -25,6 +26,30 @@ const emotionColors = {
   Trust: new THREE.Color(0, 0.6, 0.6),    // Teal
   Anticipation: new THREE.Color(1, 0.6, 0), // Orange
   Neutral: new THREE.Color(0.5, 0.5, 0.5)  // Gray
+};
+
+// Export the getEmotionColor function for use in other components
+export const getEmotionColor = (emotionName: string): string => {
+  if (!emotionName || emotionName === 'Neutral') {
+    return 'rgb(128, 128, 128)'; // Default gray for neutral or missing emotion
+  }
+  
+  const emotion = emotionName as keyof typeof emotionColors;
+  if (emotionColors[emotion]) {
+    const color = emotionColors[emotion];
+    return `rgb(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)})`;
+  }
+  
+  return 'rgb(128, 128, 128)'; // Fallback to gray
+};
+
+// Export the getSentimentLabel function for use in other components
+export const getSentimentLabel = (sentiment: number): string => {
+  if (sentiment >= 0.7) return "Very Positive";
+  if (sentiment >= 0.5) return "Positive";
+  if (sentiment >= 0.4) return "Neutral";
+  if (sentiment >= 0.25) return "Negative";
+  return "Very Negative";
 };
 
 // Random words for the visualization
@@ -176,13 +201,15 @@ export const generateMockPoints = (
     
     for (let j = 0; j < relationshipCount && j < availableWords.length; j++) {
       relationships.push({
+        id: uuidv4(),
         word: availableWords[Math.floor(Math.random() * availableWords.length)],
         strength: 0.3 + Math.random() * 0.7
       });
     }
     
-    // Create the point
+    // Create the point with the required id property
     points.push({
+      id: uuidv4(),
       position: [position.x, position.y, position.z],
       color: [color.r, color.g, color.b],
       word: word,
