@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -342,6 +343,8 @@ export const EmbeddingScene = ({
     const distance = 5;
     const offsetPosition = targetPosition.clone().add(new THREE.Vector3(0, 0, distance));
     
+    // Fix: Store the current camera position and controls target in local variables
+    // instead of trying to modify read-only ref.current properties
     const startPosition = internalCameraRef.current.position.clone();
     const startTarget = controlsRef.current.target.clone();
     const endTarget = targetPosition.clone();
@@ -354,12 +357,20 @@ export const EmbeddingScene = ({
       const progress = Math.min(elapsed / duration, 1);
       const easeProgress = 1 - Math.pow(1 - progress, 3);
       
-      internalCameraRef.current!.position.lerpVectors(startPosition, offsetPosition, easeProgress);
+      // Update the camera position using the lerp method which modifies the object directly
+      if (internalCameraRef.current) {
+        internalCameraRef.current.position.lerpVectors(startPosition, offsetPosition, easeProgress);
+      }
       
+      // Create a temporary vector for the new target
       const newTarget = new THREE.Vector3();
       newTarget.lerpVectors(startTarget, endTarget, easeProgress);
-      controlsRef.current!.target.copy(newTarget);
-      controlsRef.current!.update();
+      
+      // Update the controls target
+      if (controlsRef.current) {
+        controlsRef.current.target.copy(newTarget);
+        controlsRef.current.update();
+      }
       
       if (progress < 1) {
         requestAnimationFrame(animateCamera);
