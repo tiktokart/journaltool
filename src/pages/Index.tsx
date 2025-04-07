@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
@@ -12,7 +11,6 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
-import { useNavigate } from "react-router-dom";
 
 const exampleJournalData = {
   overallSentiment: {
@@ -116,8 +114,7 @@ By evening, I was exhausted from fighting my anxiety all day. I managed to do so
 `;
 
 const Home = () => {
-  const navigate = useNavigate();
-  // Fix for Line 119 - ensuring isInteractive is a boolean, not a string
+  // Fix for ensuring isInteractive is a boolean, not a string
   const [points] = useState<Point[]>(() => generateMockPoints(exampleJournalText, exampleJournalData));
 
   return (
@@ -125,29 +122,13 @@ const Home = () => {
       <Header />
       
       <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 mb-12">
+        <div className="flex flex-col gap-8 mb-12">
           <div className="space-y-6">
             <h1 className="text-4xl font-bold tracking-tight">Emotional Intelligence for Mental Health</h1>
             <p className="text-lg text-muted-foreground">
               Analyze your journal entries, therapy notes, and personal narratives 
               to gain deeper insights into your emotional patterns and mental health journey.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                size="lg"
-                onClick={() => navigate('/dashboard')}
-                className="flex-grow sm:flex-grow-0"
-              >
-                Try It Now
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="flex-grow sm:flex-grow-0"
-              >
-                Learn More
-              </Button>
-            </div>
           </div>
           
           <div className="rounded-lg overflow-hidden shadow-xl border min-h-[350px] border-border relative">
@@ -212,14 +193,6 @@ const Home = () => {
                 </TabsContent>
               </Tabs>
             </CardContent>
-            <CardFooter>
-              <Button 
-                onClick={() => navigate('/dashboard')}
-                className="w-full md:w-auto"
-              >
-                Upload Your Journal
-              </Button>
-            </CardFooter>
           </Card>
         </div>
       </main>
