@@ -199,15 +199,15 @@ export const EmbeddingScene = ({
           const sizesAttribute = pointsRef.current.geometry.attributes.size;
           const sizesArray = sizesAttribute.array as Float32Array;
           
-          // Reset all sizes
+          // Reset all sizes to base
           for (let i = 0; i < sizesArray.length; i++) {
             sizesArray[i] = 0.05;
           }
           
-          // Highlight the hovered point - more gradual transition
+          // Highlight the hovered point
           sizesArray[index] = 0.15;
           
-          // Highlight related points if any - more gradual transition
+          // Highlight related points if any
           if (point.relationships) {
             point.relationships.forEach(rel => {
               const relatedIndex = pointsRef.current!.userData.pointsData.findIndex((p: Point) => p.id === rel.id);
@@ -223,13 +223,12 @@ export const EmbeddingScene = ({
     } else {
       onPointHover(null);
       
-      // Reset all point sizes more gradually
+      // Reset all point sizes
       if (pointsRef.current.geometry.attributes.size) {
         const sizesAttribute = pointsRef.current.geometry.attributes.size;
         const sizesArray = sizesAttribute.array as Float32Array;
         for (let i = 0; i < sizesArray.length; i++) {
-          // Gradually reduce size rather than immediately setting to 0.05
-          sizesArray[i] = Math.max(0.05, sizesArray[i] * 0.95);
+          sizesArray[i] = 0.05;
         }
         sizesAttribute.needsUpdate = true;
       }
@@ -344,24 +343,25 @@ export const EmbeddingScene = ({
     if (!containerRef.current || !isInteractive) return;
     
     const handleMouseMove = (event: MouseEvent) => {
-      const rect = containerRef.current!.getBoundingClientRect();
+      if (!containerRef.current) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
       
       // Calculate mouse position in normalized device coordinates (-1 to +1)
-      mouseRef.current.x = ((event.clientX - rect.left) / containerRef.current!.clientWidth) * 2 - 1;
-      mouseRef.current.y = -((event.clientY - rect.top) / containerRef.current!.clientHeight) * 2 + 1;
+      mouseRef.current.x = ((event.clientX - rect.left) / containerRef.current.clientWidth) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / containerRef.current.clientHeight) * 2 + 1;
       
       checkIntersection();
     };
     
     const handleClick = () => {
-      if (!isInteractive) return;
+      if (!isInteractive || !raycasterRef.current || !cameraRef.current || !pointsRef.current) return;
       
       // This will be called after mousemove has already set the hover state
-      // So the currently hovered point will be the one that gets clicked
-      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current!);
-      const intersects = raycasterRef.current.intersectObject(pointsRef.current!);
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      const intersects = raycasterRef.current.intersectObject(pointsRef.current);
       
-      if (intersects.length > 0 && pointsRef.current?.userData?.pointsData) {
+      if (intersects.length > 0 && pointsRef.current.userData?.pointsData) {
         const index = intersects[0].index;
         if (index !== undefined) {
           const point = pointsRef.current.userData.pointsData[index];
@@ -370,20 +370,23 @@ export const EmbeddingScene = ({
       }
     };
     
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('click', handleClick);
+    containerRef.current.addEventListener('mousemove', handleMouseMove);
+    containerRef.current.addEventListener('click', handleClick);
     
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('click', handleClick);
+      if (containerRef.current) {
+        containerRef.current.removeEventListener('mousemove', handleMouseMove);
+        containerRef.current.removeEventListener('click', handleClick);
+      }
     };
   }, [isInteractive, onPointHover, onPointSelect]);
 
-  // Update zoom methods for parent component
+  // Make camera reference accessible to parent component
   useEffect(() => {
-    // This effect is empty as we're just exposing the camera reference
-    // The actual zoom methods are handled in the parent component
-  }, []);
+    if (cameraRef.current) {
+      // Assignment to make the ref accessible to zoom controls
+    }
+  }, [cameraRef.current]);
 
   return null; // This is a non-rendering component that manages the Three.js scene
 };

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, CircleDot } from "lucide-react";
@@ -9,9 +9,13 @@ import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { InfoIcon } from "lucide-react";
 
 const Index = () => {
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handlePointClick = (point: Point) => {
     setSelectedPoint(point);
@@ -48,7 +52,7 @@ const Index = () => {
             </div>
             
             {selectedPoint && (
-              <Card className="mb-8 w-full max-w-6xl border border-border shadow-sm bg-card">
+              <Card className="mb-8 w-full max-w-6xl border border-border shadow-sm bg-card animate-fade-in">
                 <CardContent className="pt-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
@@ -81,7 +85,18 @@ const Index = () => {
                       
                       {selectedPoint.relationships && selectedPoint.relationships.length > 0 && (
                         <div>
-                          <h3 className="text-sm font-medium mt-3 mb-1">Related Words</h3>
+                          <h3 className="text-sm font-medium mt-3 mb-1 flex items-center gap-1">
+                            Related Words
+                            <HoverCard>
+                              <HoverCardTrigger asChild>
+                                <InfoIcon className="h-3 w-3 cursor-help text-muted-foreground" />
+                              </HoverCardTrigger>
+                              <HoverCardContent className="w-80 text-xs">
+                                Words that are emotionally connected to the selected word. 
+                                Connection strength indicates how closely related they are.
+                              </HoverCardContent>
+                            </HoverCard>
+                          </h3>
                           <ul className="text-sm">
                             {selectedPoint.relationships.map((rel, i) => (
                               <li key={i} className="py-1 border-b border-border last:border-0">
