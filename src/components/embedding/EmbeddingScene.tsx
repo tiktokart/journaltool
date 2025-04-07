@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -355,7 +356,9 @@ export const EmbeddingScene = ({
       const easeProgress = 1 - Math.pow(1 - progress, 3);
       
       if (internalCameraRef.current) {
-        internalCameraRef.current.position.lerpVectors(startPosition, offsetPosition, easeProgress);
+        const newPosition = new THREE.Vector3();
+        newPosition.lerpVectors(startPosition, offsetPosition, easeProgress);
+        internalCameraRef.current.position.copy(newPosition);
       }
       
       if (controlsRef.current) {
