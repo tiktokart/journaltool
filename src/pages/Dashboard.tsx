@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,9 +122,11 @@ const analyzePdfContent = (file: File): Promise<any> => {
 
       // Extract most common words based on frequency for KeyPhrases
       // Create a map of words by frequency from embeddingPoints
-      const wordFrequency = {};
+      const wordFrequency: Record<string, number> = {};
       embeddingPoints.forEach(point => {
-        wordFrequency[point.word] = (wordFrequency[point.word] || 0) + 1;
+        if (point.word) {
+          wordFrequency[point.word] = (wordFrequency[point.word] || 0) + 1;
+        }
       });
       
       // Sort words by frequency
@@ -183,7 +184,7 @@ const Dashboard = () => {
   const handleFileUpload = (files: File[]) => {
     if (files && files.length > 0) {
       setFile(files[0]);
-      toast.success(`File "${files[0].name}" uploaded successfully`);
+      toast.success(`File "${files[0].name}" uploaded successfully");
       // Reset sentiment data when a new file is uploaded
       if (sentimentData) {
         setSentimentData(null);
