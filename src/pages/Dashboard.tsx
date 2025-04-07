@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -494,9 +495,14 @@ const Dashboard = () => {
               <Card className="border border-border shadow-md overflow-hidden bg-card mb-8">
                 <CardHeader className="z-10">
                   <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-                    <CardTitle className="flex items-center">
-                      <span>Latent Emotional Analysis</span>
-                    </CardTitle>
+                    <div>
+                      <CardTitle className="flex items-center">
+                        <span>Latent Emotional Analysis</span>
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        This is data analyzed from a made up experience of a Panic Attack
+                      </p>
+                    </div>
                     
                     <div className="flex items-center space-x-2">
                       <Button 
@@ -509,66 +515,54 @@ const Dashboard = () => {
                         Reset View
                       </Button>
                     
-                      <div className="relative w-full md:w-64">
-                        <div className="relative w-full">
-                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            placeholder="Search words or emotions..." 
-                            className="pl-8 w-full pr-8"
-                            value={searchTerm}
-                            onChange={(e) => {
-                              setSearchTerm(e.target.value);
-                              if (uniqueWords.length > 0) {
-                                setOpen(true);
-                              }
-                            }}
-                            onFocus={() => {
-                              if (uniqueWords.length > 0) {
-                                setOpen(true);
-                              }
-                            }}
-                          />
-                          {searchTerm && (
-                            <button 
-                              className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                              onClick={handleClearSearch}
-                            >
-                              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                            </button>
-                          )}
-                        </div>
-                        {uniqueWords.length > 0 && open && (
-                          <div 
-                            ref={searchDropdownRef}
-                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
-                          >
-                            <Command>
-                              <CommandInput 
-                                placeholder="Search words..." 
-                                value={searchTerm}
-                                onValueChange={setSearchTerm}
+                      <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-9 w-full md:w-64">
+                            <Search className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              {searchTerm || "Search words or emotions..."}
+                            </span>
+                            {searchTerm && (
+                              <X 
+                                className="h-4 w-4 ml-2 text-muted-foreground hover:text-foreground"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleClearSearch();
+                                }}
                               />
-                              <CommandList>
-                                <CommandEmpty>No results found</CommandEmpty>
-                                <CommandGroup>
-                                  {uniqueWords
-                                    .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
-                                    .slice(0, 100)
-                                    .map((word) => (
-                                      <CommandItem 
-                                        key={word} 
-                                        value={word}
-                                        onSelect={handleSelectWord}
-                                      >
-                                        {word}
-                                      </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </div>
-                        )}
-                      </div>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent 
+                          className="p-0 w-full md:w-64 max-h-[300px] overflow-y-auto"
+                          ref={searchDropdownRef}
+                        >
+                          <Command>
+                            <CommandInput 
+                              placeholder="Search words..." 
+                              value={searchTerm}
+                              onValueChange={setSearchTerm}
+                            />
+                            <CommandList>
+                              <CommandEmpty>No results found</CommandEmpty>
+                              <CommandGroup>
+                                {uniqueWords
+                                  .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
+                                  .slice(0, 100)
+                                  .map((word) => (
+                                    <CommandItem 
+                                      key={word} 
+                                      value={word}
+                                      onSelect={handleSelectWord}
+                                    >
+                                      {word}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                   <div className="text-sm font-normal flex items-center text-muted-foreground">
@@ -767,66 +761,54 @@ const Dashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="mb-4">
-                      <div className="relative">
-                        <div className="relative w-full">
-                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            placeholder="Search for words to compare..." 
-                            className="pl-8 w-full pr-8"
-                            value={wordSearchTerm}
-                            onChange={(e) => {
-                              setWordSearchTerm(e.target.value);
-                              if (uniqueWords.length > 0 && !wordSearchOpen) {
-                                setWordSearchOpen(true);
-                              }
-                            }}
-                            onFocus={() => {
-                              if (uniqueWords.length > 0) {
-                                setWordSearchOpen(true);
-                              }
-                            }}
-                          />
-                          {wordSearchTerm && (
-                            <button 
-                              className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                              onClick={() => setWordSearchTerm("")}
-                            >
-                              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                            </button>
-                          )}
-                        </div>
-                        {uniqueWords.length > 0 && wordSearchOpen && (
-                          <div 
-                            ref={wordSearchRef}
-                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
-                          >
-                            <Command>
-                              <CommandInput 
-                                placeholder="Search words..." 
-                                value={wordSearchTerm}
-                                onValueChange={setWordSearchTerm}
+                      <Popover open={wordSearchOpen} onOpenChange={setWordSearchOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start">
+                            <Search className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              {wordSearchTerm || "Search for words to compare..."}
+                            </span>
+                            {wordSearchTerm && (
+                              <X 
+                                className="h-4 w-4 ml-auto text-muted-foreground hover:text-foreground"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setWordSearchTerm("");
+                                }}
                               />
-                              <CommandList>
-                                <CommandEmpty>No results found</CommandEmpty>
-                                <CommandGroup>
-                                  {uniqueWords
-                                    .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
-                                    .slice(0, 100)
-                                    .map((word) => (
-                                      <CommandItem 
-                                        key={word} 
-                                        value={word}
-                                        onSelect={handleSelectWordForComparison}
-                                      >
-                                        {word}
-                                      </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </div>
-                        )}
-                      </div>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent 
+                          className="p-0 w-full max-h-[300px] overflow-y-auto"
+                          ref={wordSearchRef}
+                        >
+                          <Command>
+                            <CommandInput 
+                              placeholder="Search words..." 
+                              value={wordSearchTerm}
+                              onValueChange={setWordSearchTerm}
+                            />
+                            <CommandList>
+                              <CommandEmpty>No results found</CommandEmpty>
+                              <CommandGroup>
+                                {uniqueWords
+                                  .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
+                                  .slice(0, 100)
+                                  .map((word) => (
+                                    <CommandItem 
+                                      key={word} 
+                                      value={word}
+                                      onSelect={handleSelectWordForComparison}
+                                    >
+                                      {word}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     
                     <WordComparison
