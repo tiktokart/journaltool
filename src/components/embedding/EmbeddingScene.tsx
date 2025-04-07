@@ -55,6 +55,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const isZoomingRef = useRef<boolean>(false);
   const zoomTimeoutRef = useRef<number | null>(null);
   const animationFrameIdRef = useRef<number | null>(null);
+  const isDraggingRef = useRef<boolean>(false);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -96,6 +97,28 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     controlsInstance.enableZoom = false; // Disable built-in zoom, we'll handle it ourselves
     controlsInstance.enableRotate = true; // Make sure rotation is enabled
     controlsInstance.rotateSpeed = 0.5; // Reduced rotation speed for smoother control
+    
+    const handleMouseDown = () => {
+      isDraggingRef.current = true;
+      controlsInstance.autoRotate = false;
+    };
+    
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      controlsInstance.autoRotate = true;
+    };
+    
+    const handleMouseLeave = () => {
+      isDraggingRef.current = false;
+      controlsInstance.autoRotate = true;
+    };
+    
+    if (containerRef.current) {
+      containerRef.current.addEventListener('mousedown', handleMouseDown);
+      window.addEventListener('mouseup', handleMouseUp);
+      containerRef.current.addEventListener('mouseleave', handleMouseLeave);
+    }
+    
     controlsInstance.update();
     
     const animate = () => {
@@ -168,7 +191,10 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       window.removeEventListener('resize', handleResize);
       if (containerRef.current) {
         containerRef.current.removeEventListener('wheel', handleWheel);
+        containerRef.current.removeEventListener('mousedown', handleMouseDown);
+        containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
       }
+      window.removeEventListener('mouseup', handleMouseUp);
       
       if (zoomTimeoutRef.current !== null) {
         window.clearTimeout(zoomTimeoutRef.current);
@@ -294,6 +320,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
     const handlePointClick = (event: MouseEvent) => {
       if (!isInteractive || !containerRef.current || !spheresGroupRef.current) return;
+      
+      if (isDraggingRef.current) return;
 
       const containerRect = containerRef.current.getBoundingClientRect();
       mouse.x = ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1;

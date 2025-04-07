@@ -1,8 +1,7 @@
-
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
-import { generateMockPoints } from '../utils/embeddingUtils';
+import { generateMockPoints, getEmotionColor } from '../utils/embeddingUtils';
 import { HoverInfoPanel } from './embedding/HoverInfoPanel';
 import { EmotionsLegend } from './embedding/EmotionsLegend';
 import { ZoomControls } from './embedding/ZoomControls';
@@ -81,7 +80,6 @@ export const DocumentEmbedding = ({
       (window as any).documentEmbeddingPoints = displayPoints;
       console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
       
-      // Extract unique emotional groups
       const uniqueGroups = new Set<string>();
       displayPoints.forEach(point => {
         if (point.emotionalTone) {
@@ -268,6 +266,10 @@ export const DocumentEmbedding = ({
                   className="h-7 text-xs justify-start px-2 w-full"
                   onClick={() => focusOnEmotionalGroup(group)}
                 >
+                  <div 
+                    className="w-3 h-3 rounded-full mr-1.5" 
+                    style={{ backgroundColor: getEmotionColor(group) }}
+                  />
                   {group}
                 </Button>
               ))}
@@ -285,7 +287,6 @@ export const DocumentEmbedding = ({
   );
 };
 
-// Add global type definitions
 declare global {
   interface Window {
     documentEmbeddingPoints?: Point[];
