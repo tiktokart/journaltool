@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -18,7 +17,7 @@ const Index = () => {
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerRef = useRef<HTMLDivElement>(null);
   const [searchValue, setSearchValue] = useState("");
   const [open, setOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Point[]>([]);
@@ -81,13 +80,24 @@ const Index = () => {
     if (points.length === 0) {
       const embedPoints = (window as any).documentEmbeddingPoints;
       if (embedPoints && Array.isArray(embedPoints) && embedPoints.length > 0) {
+        // Modified to prioritize emotional tone search
         const results = embedPoints.filter(point => 
+          (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
           point.word.toLowerCase().includes(value.toLowerCase()) ||
           (point.keywords && point.keywords.some(keyword => 
             keyword.toLowerCase().includes(value.toLowerCase())
-          )) ||
-          (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase()))
+          ))
         );
+        
+        // Sort results to prioritize emotional tone matches
+        results.sort((a, b) => {
+          const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
+          const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
+          
+          if (aEmotionMatch && !bEmotionMatch) return -1;
+          if (!aEmotionMatch && bEmotionMatch) return 1;
+          return 0;
+        });
         
         setSearchResults(results);
         return;
@@ -97,13 +107,24 @@ const Index = () => {
       return;
     }
     
+    // Modified to prioritize emotional tone search for when points are loaded
     const results = points.filter(point => 
+      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
       point.word.toLowerCase().includes(value.toLowerCase()) ||
       (point.keywords && point.keywords.some(keyword => 
         keyword.toLowerCase().includes(value.toLowerCase())
-      )) ||
-      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase()))
+      ))
     );
+    
+    // Sort results to prioritize emotional tone matches
+    results.sort((a, b) => {
+      const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
+      const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
+      
+      if (aEmotionMatch && !bEmotionMatch) return -1;
+      if (!aEmotionMatch && bEmotionMatch) return 1;
+      return 0;
+    });
     
     setSearchResults(results);
   };
@@ -116,13 +137,24 @@ const Index = () => {
       return;
     }
     
+    // Modified to prioritize emotional tone search
     const results = points.filter(point => 
+      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
       point.word.toLowerCase().includes(value.toLowerCase()) ||
       (point.keywords && point.keywords.some(keyword => 
         keyword.toLowerCase().includes(value.toLowerCase())
-      )) ||
-      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase()))
+      ))
     );
+    
+    // Sort results to prioritize emotional tone matches
+    results.sort((a, b) => {
+      const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
+      const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
+      
+      if (aEmotionMatch && !bEmotionMatch) return -1;
+      if (!aEmotionMatch && bEmotionMatch) return 1;
+      return 0;
+    });
     
     setFirstWordSearchResults(results);
   };
@@ -135,13 +167,24 @@ const Index = () => {
       return;
     }
     
+    // Modified to prioritize emotional tone search
     const results = points.filter(point => 
+      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
       point.word.toLowerCase().includes(value.toLowerCase()) ||
       (point.keywords && point.keywords.some(keyword => 
         keyword.toLowerCase().includes(value.toLowerCase())
-      )) ||
-      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase()))
+      ))
     );
+    
+    // Sort results to prioritize emotional tone matches
+    results.sort((a, b) => {
+      const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
+      const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
+      
+      if (aEmotionMatch && !bEmotionMatch) return -1;
+      if (!aEmotionMatch && bEmotionMatch) return 1;
+      return 0;
+    });
     
     setSecondWordSearchResults(results);
   };
@@ -243,7 +286,7 @@ const Index = () => {
                         <div className="relative w-full">
                           <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                           <Input 
-                            placeholder="Search for a word" 
+                            placeholder="Search by emotion or word" 
                             value={searchValue}
                             onChange={(e) => handleSearchChange(e.target.value)}
                             className="pl-8"
@@ -259,7 +302,7 @@ const Index = () => {
                       <PopoverContent className="p-0 w-[300px]" align="start">
                         <Command>
                           <CommandInput 
-                            placeholder="Search for a word" 
+                            placeholder="Search by emotion or word" 
                             value={searchValue}
                             onValueChange={handleSearchChange}
                           />
@@ -323,7 +366,7 @@ const Index = () => {
                                 <div className="relative w-full">
                                   <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                   <Input 
-                                    placeholder="Change first word..." 
+                                    placeholder="Search by emotion..." 
                                     value={firstWordSearchValue}
                                     onChange={(e) => handleFirstWordSearchChange(e.target.value)}
                                     className="pl-8 text-sm"
@@ -339,7 +382,7 @@ const Index = () => {
                               <PopoverContent className="p-0 w-[300px]" align="start">
                                 <Command>
                                   <CommandInput 
-                                    placeholder="Search first word..." 
+                                    placeholder="Search by emotion..." 
                                     value={firstWordSearchValue}
                                     onValueChange={handleFirstWordSearchChange}
                                   />
@@ -360,7 +403,7 @@ const Index = () => {
                                             }} 
                                           />
                                           <span>{point.word}</span>
-                                          <span className="ml-auto text-xs text-muted-foreground">
+                                          <span className="ml-auto text-xs font-medium">
                                             {point.emotionalTone}
                                           </span>
                                         </CommandItem>
@@ -485,7 +528,7 @@ const Index = () => {
                                     <div className="relative w-full">
                                       <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                       <Input 
-                                        placeholder="Change first word..." 
+                                        placeholder="Search by emotion..." 
                                         value={firstWordSearchValue}
                                         onChange={(e) => handleFirstWordSearchChange(e.target.value)}
                                         className="pl-8 text-sm"
@@ -501,7 +544,7 @@ const Index = () => {
                                   <PopoverContent className="p-0 w-[300px]" align="start">
                                     <Command>
                                       <CommandInput 
-                                        placeholder="Search first word..." 
+                                        placeholder="Search by emotion..." 
                                         value={firstWordSearchValue}
                                         onValueChange={handleFirstWordSearchChange}
                                       />
@@ -522,7 +565,7 @@ const Index = () => {
                                                 }} 
                                               />
                                               <span>{point.word}</span>
-                                              <span className="ml-auto text-xs text-muted-foreground">
+                                              <span className="ml-auto text-xs font-medium">
                                                 {point.emotionalTone}
                                               </span>
                                             </CommandItem>
@@ -576,7 +619,7 @@ const Index = () => {
                                   <div className="relative w-full">
                                     <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input 
-                                      placeholder="Search for first word..." 
+                                      placeholder="Search by emotion..." 
                                       value={firstWordSearchValue}
                                       onChange={(e) => handleFirstWordSearchChange(e.target.value)}
                                       className="pl-8 text-sm"
@@ -592,7 +635,7 @@ const Index = () => {
                                 <PopoverContent className="p-0 w-[300px]" align="start">
                                   <Command>
                                     <CommandInput 
-                                      placeholder="Search first word..." 
+                                      placeholder="Search by emotion..." 
                                       value={firstWordSearchValue}
                                       onValueChange={handleFirstWordSearchChange}
                                     />
@@ -613,7 +656,7 @@ const Index = () => {
                                               }} 
                                             />
                                             <span>{point.word}</span>
-                                            <span className="ml-auto text-xs text-muted-foreground">
+                                            <span className="ml-auto text-xs font-medium">
                                               {point.emotionalTone}
                                             </span>
                                           </CommandItem>
@@ -658,7 +701,7 @@ const Index = () => {
                                     <div className="relative w-full">
                                       <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                       <Input 
-                                        placeholder="Change second word..." 
+                                        placeholder="Search by emotion..." 
                                         value={secondWordSearchValue}
                                         onChange={(e) => handleSecondWordSearchChange(e.target.value)}
                                         className="pl-8 text-sm"
@@ -674,7 +717,7 @@ const Index = () => {
                                   <PopoverContent className="p-0 w-[300px]" align="start">
                                     <Command>
                                       <CommandInput 
-                                        placeholder="Search second word..." 
+                                        placeholder="Search by emotion..." 
                                         value={secondWordSearchValue}
                                         onValueChange={handleSecondWordSearchChange}
                                       />
@@ -695,7 +738,7 @@ const Index = () => {
                                                 }} 
                                               />
                                               <span>{point.word}</span>
-                                              <span className="ml-auto text-xs text-muted-foreground">
+                                              <span className="ml-auto text-xs font-medium">
                                                 {point.emotionalTone}
                                               </span>
                                             </CommandItem>
@@ -749,132 +792,6 @@ const Index = () => {
                                   <div className="relative w-full">
                                     <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input 
-                                      placeholder="Search for second word..." 
+                                      placeholder="Search by emotion..." 
                                       value={secondWordSearchValue}
-                                      onChange={(e) => handleSecondWordSearchChange(e.target.value)}
-                                      className="pl-8 text-sm"
-                                      onClick={() => {
-                                        setSecondWordSearchOpen(true);
-                                        if (secondWordSearchValue.trim()) {
-                                          handleSecondWordSearchChange(secondWordSearchValue);
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                </PopoverTrigger>
-                                <PopoverContent className="p-0 w-[300px]" align="start">
-                                  <Command>
-                                    <CommandInput 
-                                      placeholder="Search second word..." 
-                                      value={secondWordSearchValue}
-                                      onValueChange={handleSecondWordSearchChange}
-                                    />
-                                    <CommandList>
-                                      <CommandEmpty>No results found</CommandEmpty>
-                                      <CommandGroup>
-                                        {secondWordSearchResults.map((point) => (
-                                          <CommandItem
-                                            key={point.id}
-                                            onSelect={() => handleSecondWordSearchSelect(point)}
-                                            value={point.word}
-                                            className="flex items-center gap-2"
-                                          >
-                                            <div 
-                                              className="w-3 h-3 rounded-full flex-shrink-0" 
-                                              style={{ 
-                                                backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
-                                              }} 
-                                            />
-                                            <span>{point.word}</span>
-                                            <span className="ml-auto text-xs text-muted-foreground">
-                                              {point.emotionalTone}
-                                            </span>
-                                          </CommandItem>
-                                        ))}
-                                      </CommandGroup>
-                                    </CommandList>
-                                  </Command>
-                                </PopoverContent>
-                              </Popover>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {selectedPoint && comparisonPoint && (
-                        <div className="md:col-span-2 border border-dashed border-orange-300 rounded-md p-4 bg-orange-950/30 dark:bg-orange-950/30">
-                          <h4 className="text-sm font-medium mb-2 text-orange-200">Relationship Analysis</h4>
-                          
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-xs font-medium mb-1 text-orange-100">Sentiment Difference</p>
-                              <div className="flex items-center justify-between gap-2 bg-black/40 p-2 rounded-md">
-                                <span className="text-sm text-white">{selectedPoint.word}: {selectedPoint.sentiment.toFixed(2)}</span>
-                                <span className="text-sm font-bold text-white">
-                                  {Math.abs(selectedPoint.sentiment - comparisonPoint.sentiment).toFixed(2)} 
-                                  <span className="text-xs ml-1 font-normal text-orange-200">difference</span>
-                                </span>
-                                <span className="text-sm text-white">{comparisonPoint.word}: {comparisonPoint.sentiment.toFixed(2)}</span>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <p className="text-xs font-medium mb-1 text-orange-100">Emotional Connection</p>
-                              <div className="bg-black/40 p-2 rounded-md">
-                                <p className="text-sm text-center text-white">
-                                  {selectedPoint.emotionalTone === comparisonPoint.emotionalTone ? 
-                                    `Both words share the same emotional tone: ${selectedPoint.emotionalTone || "Neutral"}` : 
-                                    `Different emotional tones: "${selectedPoint.word}" is ${selectedPoint.emotionalTone || "Neutral"} while "${comparisonPoint.word}" is ${comparisonPoint.emotionalTone || "Neutral"}`}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {selectedPoint.keywords && comparisonPoint.keywords && (
-                            <div className="mt-3">
-                              <p className="text-xs font-medium mb-1 text-orange-100">Concept Overlap</p>
-                              <div className="bg-black/40 p-2 rounded-md">
-                                {(() => {
-                                  const sharedKeywords = selectedPoint.keywords?.filter(k => 
-                                    comparisonPoint.keywords?.includes(k)
-                                  );
-                                  
-                                  if (sharedKeywords && sharedKeywords.length > 0) {
-                                    return (
-                                      <div>
-                                        <p className="text-sm mb-1 text-white">These words share {sharedKeywords.length} concept{sharedKeywords.length > 1 ? 's' : ''}:</p>
-                                        <div className="flex flex-wrap gap-1">
-                                          {sharedKeywords.map((keyword, idx) => (
-                                            <span key={idx} className="text-xs bg-orange-900/70 px-2 py-1 rounded-full text-orange-100">{keyword}</span>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    );
-                                  } else {
-                                    return <p className="text-sm text-white">No shared concepts found between these words.</p>;
-                                  }
-                                })()}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-            
-            <Button asChild size="lg" className="rounded-md mt-4">
-              <Link to="/dashboard" className="flex items-center gap-2">
-                Analyze Documents <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default Index;
+                                      onChange={(e) => handleSecond

@@ -15,7 +15,7 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
     : getEmotionColor(point.emotionalTone || "");
   
   return (
-    <div className="absolute bottom-4 left-4 bg-card p-3 rounded-lg shadow-md max-w-xs z-10">
+    <div className="absolute bottom-4 left-4 bg-card p-3 rounded-lg shadow-md max-w-xs z-10 border border-border">
       <div className="flex items-center mb-2">
         <div 
           className="w-3 h-3 rounded-full mr-2" 
