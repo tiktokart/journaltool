@@ -318,7 +318,7 @@ const Dashboard = () => {
     if (files && files.length > 0) {
       setFile(files[0]);
       setPdfText(extractedText || "");
-      toast.success(`File "${files[0].name}" uploaded successfully`);
+      toast.success(`File "${files[0].name}" uploaded successfully");
       
       if (extractedText && extractedText.length > 0) {
         const wordCount = extractedText.split(/\s+/).length;
@@ -786,7 +786,7 @@ const Dashboard = () => {
                         <TabsContent value="clusters" className="mt-2">
                           <div className="bg-muted/30 rounded-lg p-4 min-h-[400px]">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              {Object.entries(getEmotionColor()).map(([emotion, colorInfo]) => {
+                              {Object.entries(getEmotionColor("default")).map(([emotion, colorInfo]) => {
                                 const colorData = colorInfo as any;
                                 const rgb = colorData.rgb || [128, 128, 128]; // Default to gray if rgb is missing
                                 
