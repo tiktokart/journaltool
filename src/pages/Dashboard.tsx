@@ -245,7 +245,9 @@ const Dashboard = () => {
       });
       setClusterPoints(clusterPointsMap);
       
-      window.documentEmbeddingPoints = mockPoints;
+      if (window.documentEmbeddingPoints !== undefined) {
+        window.documentEmbeddingPoints = mockPoints;
+      }
     }
   }, [sentimentData, pdfText]);
 
