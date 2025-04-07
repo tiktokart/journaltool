@@ -48,7 +48,8 @@ const analyzePdfContent = (file: File): Promise<any> => {
         Surprise: 0.05,
         Disgust: 0.05,
         Trust: 0.1,
-        Anticipation: 0.1
+        Anticipation: 0.1,
+        Neutral: 0.0  // Add the Neutral property that was missing
       };
       
       // Adjust based on keywords in filename
