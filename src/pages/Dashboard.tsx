@@ -798,4 +798,53 @@ const Dashboard = () => {
                         {uniqueWords.length > 0 && wordSearchOpen && (
                           <div 
                             ref={wordSearchRef}
-                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z
+                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
+                          >
+                            <Command>
+                              <CommandInput 
+                                placeholder="Search words..." 
+                                value={wordSearchTerm}
+                                onValueChange={setWordSearchTerm}
+                              />
+                              <CommandList>
+                                <CommandEmpty>No results found</CommandEmpty>
+                                <CommandGroup>
+                                  {uniqueWords
+                                    .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
+                                    .slice(0, 100)
+                                    .map((word) => (
+                                      <CommandItem 
+                                        key={word} 
+                                        value={word}
+                                        onSelect={handleSelectWordForComparison}
+                                      >
+                                        {word}
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <WordComparison
+                      words={wordsForComparison}
+                      onRemoveWord={handleRemoveWordFromComparison}
+                      calculateRelationship={calculateRelationship}
+                      onAddWordClick={handleAddWordToComparison}
+                      sourceDescription={sentimentData?.sourceDescription}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
