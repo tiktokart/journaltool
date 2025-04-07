@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -103,10 +104,10 @@ const Index = () => {
         <div className="container mx-auto max-w-7xl px-4 py-10 md:py-16">
           <div className="flex flex-col items-center">
             <h1 className="text-3xl md:text-5xl font-bold text-center mb-6 text-foreground">
-              Journal Analysis
+              Panic Attack Analysis
             </h1>
             <p className="text-lg text-gray-400 max-w-2xl text-center mb-8">
-              Visualize emotional patterns in your journal through interactive latent emotional analysis
+              Visual analysis of anxiety and emotional patterns in a panic attack journal entry
             </p>
             
             <div className="w-full max-w-md mb-8">
