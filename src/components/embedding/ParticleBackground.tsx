@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
@@ -116,10 +115,12 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
       
       renderer.render(scene, camera);
       
-      return () => cancelAnimationFrame(animationId);
+      // This is the fix - we shouldn't return a function from here
+      // as requestAnimationFrame expects a callback function, not a function that returns a function
     };
     
-    const animationId = animate();
+    // Start the animation and keep track of the ID
+    const animationId = requestAnimationFrame(animate);
     
     // Handle window resize
     const handleResize = () => {
