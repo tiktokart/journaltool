@@ -110,7 +110,7 @@ const Index = () => {
               Visual analysis of anxiety and emotional patterns in a panic attack journal entry
             </p>
             
-            <div className="w-full max-w-md mb-8">
+            <div className="w-full max-w-md mb-6">
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                   <div className="relative w-full">
@@ -163,6 +163,23 @@ const Index = () => {
                   </Command>
                 </PopoverContent>
               </Popover>
+            </div>
+            
+            <div className="w-full max-w-2xl mb-6 text-center">
+              <Card className="bg-muted/30 border-border">
+                <CardContent className="pt-4 pb-4">
+                  <h3 className="text-sm font-semibold mb-2 text-primary">Journal Entry Example</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    This visualization maps the emotional landscape of a personal journal entry about experiencing a panic attack.
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Each word appears as a point in 3D space, with colors representing emotional tones and clusters showing related concepts.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Interact with the visualization</span> by hovering over words, clicking to select, or searching specific terms above.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
             
             <div className="w-full max-w-6xl mb-8 relative">
