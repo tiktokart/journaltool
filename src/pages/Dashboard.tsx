@@ -11,7 +11,7 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
-import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen, Info, Settings, Heart, Brain, Plus } from "lucide-react";
+import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen, Info, Settings, Heart, Brain } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
 import { WordComparison } from "@/components/WordComparison";
@@ -141,21 +141,25 @@ const Dashboard = () => {
   const [points, setPoints] = useState<Point[]>([]);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const [comparisonWord, setComparisonWord] = useState<string | null>(null);
+  const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
   const [visibleClusterCount, setVisibleClusterCount] = useState(5);
   const searchDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
   const [emotionalClusters, setEmotionalClusters] = useState<any[]>([]);
   const [clusterColors, setClusterColors] = useState<Record<string, string>>({});
   const [clusterExpanded, setClusterExpanded] = useState<Record<string, boolean>>({});
   const [clusterPoints, setClusterPoints] = useState<Record<string, Point[]>>({});
   const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
+  const [comparisonSearchTerm, setComparisonSearchTerm] = useState("");
+  const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
+  const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
+  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true);
   const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
-  const [addWordTerm, setAddWordTerm] = useState("");
-  const [addWordOpen, setAddWordOpen] = useState(false);
-  const addWordSearchRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -163,8 +167,8 @@ const Dashboard = () => {
         setOpen(false);
       }
       
-      if (addWordSearchRef.current && !addWordSearchRef.current.contains(event.target as Node)) {
-        setAddWordOpen(false);
+      if (comparisonSearchRef.current && !comparisonSearchRef.current.contains(event.target as Node)) {
+        setComparisonSearchOpen(false);
       }
     };
 
@@ -276,11 +280,6 @@ const Dashboard = () => {
       setSelectedWord(point.word);
       setSelectedPoint(point);
       toast.info(`Selected: ${point.word}`);
-      
-      if (!wordsForComparison.some(p => p.id === point.id) && wordsForComparison.length < 4) {
-        setWordsForComparison(prev => [...prev, point]);
-        toast.info(`Added ${point.word} to comparison`);
-      }
     } else {
       setSelectedWord(null);
       setSelectedPoint(null);
@@ -303,35 +302,6 @@ const Dashboard = () => {
   const handleClearSearch = () => {
     setSearchTerm("");
     setOpen(false);
-  };
-
-  const handleClearAddWordSearch = () => {
-    setAddWordTerm("");
-    setAddWordOpen(false);
-  };
-
-  const handleAddWord = () => {
-    setAddWordTerm("");
-    setAddWordOpen(true);
-  };
-
-  const handleSelectWordToAdd = (word: string) => {
-    const matchingPoint = points.find(p => 
-      p.word.toLowerCase() === word.toLowerCase()
-    );
-    
-    if (matchingPoint) {
-      if (!wordsForComparison.some(p => p.id === matchingPoint.id) && wordsForComparison.length < 4) {
-        setWordsForComparison(prev => [...prev, matchingPoint]);
-        setAddWordTerm("");
-        setAddWordOpen(false);
-        toast.info(`Added ${word} to comparison`);
-      } else if (wordsForComparison.some(p => p.id === matchingPoint.id)) {
-        toast.info(`${word} is already in comparison`);
-      } else {
-        toast.error("Maximum of 4 words can be compared at once");
-      }
-    }
   };
 
   const handleResetVisualization = () => {
@@ -566,51 +536,6 @@ const Dashboard = () => {
                                         key={word} 
                                         value={word}
                                         onSelect={() => handleSelectWord(word)}
-                                        className="cursor-pointer hover:bg-accent"
-                                      >
-                                        {word}
-                                      </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="relative">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={handleAddWord}
-                          className="h-9"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Word
-                        </Button>
-                        
-                        {uniqueWords.length > 0 && addWordOpen && (
-                          <div 
-                            ref={addWordSearchRef}
-                            className="absolute right-0 mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto w-64"
-                          >
-                            <Command>
-                              <CommandInput 
-                                placeholder="Find word to add..." 
-                                value={addWordTerm}
-                                onValueChange={setAddWordTerm}
-                              />
-                              <CommandList>
-                                <CommandEmpty>No results found</CommandEmpty>
-                                <CommandGroup>
-                                  {uniqueWords
-                                    .filter(word => word.toLowerCase().includes(addWordTerm.toLowerCase()))
-                                    .slice(0, 100)
-                                    .map((word) => (
-                                      <CommandItem 
-                                        key={word} 
-                                        value={word}
-                                        onSelect={() => handleSelectWordToAdd(word)}
                                         className="cursor-pointer hover:bg-accent"
                                       >
                                         {word}
