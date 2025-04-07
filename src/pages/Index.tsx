@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -169,14 +168,8 @@ const Index = () => {
               <Card className="bg-muted/30 border-border">
                 <CardContent className="pt-4 pb-4">
                   <h3 className="text-sm font-semibold mb-2 text-primary">Journal Entry Example</h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    This visualization maps the emotional landscape of a personal journal entry about experiencing a panic attack.
-                  </p>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Each word appears as a point in 3D space, with colors representing emotional tones and clusters showing related concepts.
-                  </p>
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">Interact with the visualization</span> by hovering over words, clicking to select, or searching specific terms above.
+                    This visualization maps the emotional landscape of a personal journal entry about experiencing a panic attack.
                   </p>
                 </CardContent>
               </Card>
