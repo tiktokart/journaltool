@@ -221,7 +221,7 @@ const Index = () => {
             
             <div className="w-full max-w-6xl mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="w-full relative">
-                <div className="aspect-[16/9] bg-white border border-border rounded-xl overflow-hidden shadow-lg">
+                <div className="h-full bg-white border border-border rounded-xl overflow-hidden shadow-lg">
                   <DocumentEmbedding 
                     isInteractive={true} 
                     depressedJournalReference={true} 
@@ -291,7 +291,7 @@ const Index = () => {
                 </div>
                 
                 {selectedPoint ? (
-                  <Card className="w-full border border-border shadow-sm bg-card">
+                  <Card className="w-full border border-border shadow-sm bg-card h-full flex-grow">
                     <CardContent className="pt-6">
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
@@ -418,7 +418,7 @@ const Index = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="w-full border border-border shadow-sm bg-muted/50">
+                  <Card className="w-full border border-border shadow-sm bg-muted/50 h-full flex-grow">
                     <CardContent className="py-12 flex flex-col items-center justify-center text-center">
                       <div className="mb-3 p-3 rounded-full bg-muted/50">
                         <InfoIcon className="h-8 w-8 text-muted-foreground" />
