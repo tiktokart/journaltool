@@ -230,6 +230,35 @@ const Index = () => {
     toast.info("Selection cleared");
   };
 
+  const calculateRelationship = (point1: Point, point2: Point) => {
+    if (!point1 || !point2) return null;
+    
+    const distance = Math.sqrt(
+      Math.pow(point1.position[0] - point2.position[0], 2) +
+      Math.pow(point1.position[1] - point2.position[1], 2) +
+      Math.pow(point1.position[2] - point2.position[2], 2)
+    );
+    
+    const normalizedDistance = Math.max(0, 1 - (distance / 40));
+    
+    const sentimentDiff = Math.abs(point1.sentiment - point2.sentiment);
+    const sentimentSimilarity = 1 - sentimentDiff;
+    
+    const sameEmotionalGroup = 
+      (point1.emotionalTone || "Neutral") === (point2.emotionalTone || "Neutral");
+    
+    const point1Keywords = point1.keywords || [];
+    const point2Keywords = point2.keywords || [];
+    const sharedKeywords = point1Keywords.filter(k => point2Keywords.includes(k));
+    
+    return {
+      spatialSimilarity: normalizedDistance,
+      sentimentSimilarity,
+      sameEmotionalGroup,
+      sharedKeywords
+    };
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
