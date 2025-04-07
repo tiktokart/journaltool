@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -509,7 +508,7 @@ const Dashboard = () => {
                         <RotateCcw className="h-4 w-4 mr-2" />
                         Reset View
                       </Button>
-                      
+                    
                       <div className="relative w-full md:w-64">
                         <div className="relative w-full">
                           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -799,85 +798,4 @@ const Dashboard = () => {
                         {uniqueWords.length > 0 && wordSearchOpen && (
                           <div 
                             ref={wordSearchRef}
-                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
-                          >
-                            <Command>
-                              <CommandInput 
-                                placeholder="Find words to compare..." 
-                                value={wordSearchTerm}
-                                onValueChange={(value) => {
-                                  setWordSearchTerm(value);
-                                  if (!wordSearchOpen) {
-                                    setWordSearchOpen(true);
-                                  }
-                                }}
-                              />
-                              <CommandList>
-                                <CommandEmpty>No results found</CommandEmpty>
-                                <CommandGroup>
-                                  {uniqueWords
-                                    .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
-                                    .slice(0, 100)
-                                    .map((word) => (
-                                      <CommandItem 
-                                        key={word} 
-                                        value={word}
-                                        onSelect={handleSelectWordForComparison}
-                                      >
-                                        {word}
-                                      </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {wordsForComparison.length > 0 ? (
-                      <div className="space-y-4">
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {wordsForComparison.map((point) => (
-                            <Badge 
-                              key={point.id}
-                              className="flex items-center gap-1 px-3 py-1"
-                            >
-                              {point.word}
-                              <button 
-                                className="ml-1"
-                                onClick={() => handleRemoveWordFromComparison(point)}
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        
-                        <WordComparison 
-                          words={wordsForComparison} 
-                          onRemoveWord={handleRemoveWordFromComparison}
-                          calculateRelationship={calculateRelationship}
-                          onAddWordClick={handleAddWordToComparison}
-                          sourceDescription={sentimentData?.sourceDescription || ""}
-                        />
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Info className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Select words to compare their emotional relationships</p>
-                        <p className="text-sm mt-2">Use the search bar above to find words</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default Dashboard;
+                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z
