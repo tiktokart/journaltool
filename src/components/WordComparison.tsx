@@ -236,3 +236,4 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
     </div>
   );
 };
+

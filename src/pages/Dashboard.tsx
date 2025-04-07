@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
+// Analyzer function that takes pdfText and filename to generate mock analysis data
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
@@ -159,6 +161,10 @@ const Dashboard = () => {
   const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
   const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
   const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true);
+  const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
+  const [wordSearchTerm, setWordSearchTerm] = useState("");
+  const [wordSearchOpen, setWordSearchOpen] = useState(false);
+  const wordSearchRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -168,6 +174,10 @@ const Dashboard = () => {
       
       if (comparisonSearchRef.current && !comparisonSearchRef.current.contains(event.target as Node)) {
         setComparisonSearchOpen(false);
+      }
+      
+      if (wordSearchRef.current && !wordSearchRef.current.contains(event.target as Node)) {
+        setWordSearchOpen(false);
       }
     };
 
@@ -183,50 +193,58 @@ const Dashboard = () => {
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
+      // Fixed: Better handling of pdfText and word extraction
       const allWords = pdfText
         .split(/\s+/)
         .filter(word => word.length > 2)
         .map(word => word.replace(/[^\w\s]|_/g, "").toLowerCase())
         .filter(Boolean);
       
+      // Use a Set to store unique words then convert back to array
       const uniqueWordsSet = new Set(allWords);
       const uniqueWordsArray = Array.from(uniqueWordsSet);
       setUniqueWords(uniqueWordsArray);
       
       console.log(`Total unique words found: ${uniqueWordsArray.length}`);
       
+      // Handle clusters
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
         return {
           ...cluster,
           id: index,
-          color: `rgb(${color[0] * 255}, ${color[1] * 255}, ${color[2] * 255})`,
+          color: `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`,
         };
       });
       
       setEmotionalClusters(clusters);
       
+      // Set up color map for clusters
       const colorMap: Record<string, string> = {};
       clusters.forEach((cluster: any) => {
         colorMap[cluster.name] = cluster.color;
       });
       setClusterColors(colorMap);
       
+      // Initialize expanded state for clusters
       const expandedMap: Record<string, boolean> = {};
       clusters.forEach((cluster: any) => {
         expandedMap[cluster.name] = false;
       });
       setClusterExpanded(expandedMap);
       
+      // Assign points to clusters
       const clusterPointsMap: Record<string, Point[]> = {};
       clusters.forEach((cluster: any) => {
         const clusterSize = cluster.size;
+        // Filter points that haven't been assigned yet
         const availablePoints = mockPoints.filter(p => 
           !Object.values(clusterPointsMap).some(assignedPoints => 
             assignedPoints.some(ap => ap.id === p.id)
           )
         );
         
+        // Get random subset for this cluster
         const shuffled = availablePoints.sort(() => 0.5 - Math.random());
         const assignedPoints = shuffled.slice(0, Math.min(clusterSize, shuffled.length));
         
@@ -377,6 +395,32 @@ const Dashboard = () => {
       sameEmotionalGroup,
       sharedKeywords
     };
+  };
+
+  const handleAddWordToComparison = () => {
+    setWordSearchOpen(true);
+  };
+
+  const handleSelectWordForComparison = (word: string) => {
+    const point = points.find(p => p.word === word);
+    if (point && wordsForComparison.length < 4) {
+      // Check if word is already in comparison
+      if (!wordsForComparison.some(p => p.id === point.id)) {
+        setWordsForComparison(prev => [...prev, point]);
+        setWordSearchTerm("");
+        setWordSearchOpen(false);
+        toast.info(`Added ${word} to comparison`);
+      } else {
+        toast.info(`${word} is already in comparison`);
+      }
+    } else if (wordsForComparison.length >= 4) {
+      toast.error("Maximum of 4 words can be compared at once");
+    }
+  };
+
+  const handleRemoveWordFromComparison = (point: Point) => {
+    setWordsForComparison(prev => prev.filter(p => p.id !== point.id));
+    toast.info(`Removed ${point.word} from comparison`);
   };
 
   return (
@@ -701,140 +745,99 @@ const Dashboard = () => {
                         <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
                         Word Comparison
                       </CardTitle>
-                      {selectedPoint && !comparisonPoint && (
+                      <div className="flex items-center space-x-2">
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={handleCompareWord}
+                          onClick={handleAddWordToComparison}
                           className="h-8"
                         >
-                          <ArrowLeftRight className="h-4 w-4 mr-2" />
-                          Compare
+                          <Search className="h-4 w-4 mr-2" />
+                          Add Word
                         </Button>
-                      )}
-                      {(selectedPoint || comparisonPoint) && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={handleClearComparison}
-                          className="h-8"
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Clear
-                        </Button>
-                      )}
+                        {wordsForComparison.length > 0 && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setWordsForComparison([])}
+                            className="h-8"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Clear All
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {selectedPoint ? (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="border rounded-md p-3 bg-muted/30">
-                            <div className="flex items-center space-x-2 mb-3">
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ 
-                                  backgroundColor: `rgb(${selectedPoint.color[0] * 255}, ${selectedPoint.color[1] * 255}, ${selectedPoint.color[2] * 255})` 
-                                }} 
-                              />
-                              <span className="font-medium">{selectedPoint.word}</span>
-                            </div>
-                            <div className="space-y-2 text-sm">
-                              <div>
-                                <span className="font-medium">Emotion: </span>
-                                <span>{selectedPoint.emotionalTone || "Neutral"}</span>
-                              </div>
-                              <div>
-                                <span className="font-medium">Sentiment: </span>
-                                <span>
-                                  {selectedPoint.sentiment.toFixed(2)}
-                                  {selectedPoint.sentiment >= 0.7 ? " (Very Positive)" : 
-                                    selectedPoint.sentiment >= 0.5 ? " (Positive)" : 
-                                    selectedPoint.sentiment >= 0.4 ? " (Neutral)" : 
-                                    selectedPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
-                                </span>
-                              </div>
-                              {selectedPoint.keywords && selectedPoint.keywords.length > 0 && (
-                                <div>
-                                  <span className="font-medium">Related concepts: </span>
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {selectedPoint.keywords.map((keyword, idx) => (
-                                      <Badge key={idx} variant="outline" className="text-xs">
-                                        {keyword}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {comparisonPoint ? (
-                            <div className="border rounded-md p-3 bg-muted/30">
-                              <div className="flex items-center space-x-2 mb-3">
-                                <div 
-                                  className="w-3 h-3 rounded-full" 
-                                  style={{ 
-                                    backgroundColor: `rgb(${comparisonPoint.color[0] * 255}, ${comparisonPoint.color[1] * 255}, ${comparisonPoint.color[2] * 255})` 
-                                  }} 
-                                />
-                                <span className="font-medium">{comparisonPoint.word}</span>
-                              </div>
-                              <div className="space-y-2 text-sm">
-                                <div>
-                                  <span className="font-medium">Emotion: </span>
-                                  <span>{comparisonPoint.emotionalTone || "Neutral"}</span>
-                                </div>
-                                <div>
-                                  <span className="font-medium">Sentiment: </span>
-                                  <span>
-                                    {comparisonPoint.sentiment.toFixed(2)}
-                                    {comparisonPoint.sentiment >= 0.7 ? " (Very Positive)" : 
-                                      comparisonPoint.sentiment >= 0.5 ? " (Positive)" : 
-                                      comparisonPoint.sentiment >= 0.4 ? " (Neutral)" : 
-                                      comparisonPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
-                                  </span>
-                                </div>
-                                {comparisonPoint.keywords && comparisonPoint.keywords.length > 0 && (
-                                  <div>
-                                    <span className="font-medium">Related concepts: </span>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {comparisonPoint.keywords.map((keyword, idx) => (
-                                        <Badge key={idx} variant="outline" className="text-xs">
-                                          {keyword}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="border rounded-md p-3 bg-muted/30 flex items-center justify-center">
-                              <div className="text-sm text-muted-foreground text-center">
-                                <div className="mb-2">
-                                  <ArrowLeftRight className="h-10 w-10 mx-auto text-muted-foreground/50" />
-                                </div>
-                                <p>Click "Compare" to select another word and see their relationship</p>
-                              </div>
-                            </div>
+                    <div className="mb-4">
+                      {/* Word Search Dropdown */}
+                      <div className="relative">
+                        <div className="relative w-full">
+                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="Search for words to compare..." 
+                            className="pl-8 w-full pr-8"
+                            value={wordSearchTerm}
+                            onChange={(e) => {
+                              setWordSearchTerm(e.target.value);
+                            }}
+                            onFocus={() => {
+                              if (uniqueWords.length > 0) {
+                                setWordSearchOpen(true);
+                              }
+                            }}
+                          />
+                          {wordSearchTerm && (
+                            <button 
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                              onClick={() => setWordSearchTerm("")}
+                            >
+                              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                            </button>
                           )}
                         </div>
-                        
-                        {comparisonPoint && selectedPoint && (
-                          <WordComparison 
-                            point1={selectedPoint} 
-                            point2={comparisonPoint} 
-                            relationship={calculateRelationship(selectedPoint, comparisonPoint)}
-                          />
+                        {uniqueWords.length > 0 && wordSearchOpen && (
+                          <div 
+                            ref={wordSearchRef}
+                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
+                          >
+                            <Command>
+                              <CommandInput 
+                                placeholder="Find words to compare..." 
+                                value={wordSearchTerm}
+                                onValueChange={setWordSearchTerm}
+                              />
+                              <CommandList>
+                                <CommandEmpty>No results found</CommandEmpty>
+                                <CommandGroup>
+                                  {uniqueWords
+                                    .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
+                                    .slice(0, 100)
+                                    .map((word) => (
+                                      <CommandItem 
+                                        key={word} 
+                                        value={word}
+                                        onSelect={handleSelectWordForComparison}
+                                      >
+                                        {word}
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </div>
                         )}
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground">
-                        <GitCompareArrows className="h-12 w-12 mb-3 text-muted-foreground/50" />
-                        <p>Select a word from the visualization or search to see its emotional properties</p>
-                      </div>
-                    )}
+                    </div>
+
+                    <WordComparison 
+                      words={wordsForComparison}
+                      onRemoveWord={handleRemoveWordFromComparison}
+                      calculateRelationship={calculateRelationship}
+                      onAddWordClick={handleAddWordToComparison}
+                      sourceDescription={sentimentData.sourceDescription}
+                    />
                   </CardContent>
                 </Card>
               </div>
