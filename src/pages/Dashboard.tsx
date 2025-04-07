@@ -163,7 +163,7 @@ const Dashboard = () => {
   const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
   const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
   // Fixed: Changed from string to boolean
-  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState<boolean>(true);
+  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true); // Fixed boolean type
   const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
   const [wordSearchTerm, setWordSearchTerm] = useState("");
   const [wordSearchOpen, setWordSearchOpen] = useState(false);

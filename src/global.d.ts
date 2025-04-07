@@ -5,6 +5,7 @@ interface Window {
     resetEmotionalGroupFilter?: () => void;
     resetView?: () => void;
   };
+  documentEmbeddingPoints?: any[]; // Added declaration for global variable
 }
 
 // Add interface for String prototype extension if we decide to use it

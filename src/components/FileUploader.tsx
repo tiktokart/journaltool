@@ -36,44 +36,72 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
   const extractTextFromPdf = async (file: File): Promise<string> => {
     try {
       console.log("Starting PDF extraction process");
-      const arrayBuffer = await file.arrayBuffer();
-      console.log("PDF loaded as ArrayBuffer, size:", arrayBuffer.byteLength);
       
-      if (arrayBuffer.byteLength === 0) {
+      // Check if file is valid
+      if (!file || file.size === 0) {
+        console.error("Invalid or empty file");
+        return '';
+      }
+      
+      // Read file as ArrayBuffer
+      let arrayBuffer;
+      try {
+        arrayBuffer = await file.arrayBuffer();
+        console.log("PDF loaded as ArrayBuffer, size:", arrayBuffer.byteLength);
+      } catch (error) {
+        console.error("Error reading file as ArrayBuffer:", error);
+        return '';
+      }
+      
+      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
         console.error("Empty PDF file");
         return '';
       }
       
-      // Load the PDF document using PDF.js
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-      const pdf = await loadingTask.promise;
-      
-      console.log("PDF document loaded, pages:", pdf.numPages);
+      // Load the PDF document using PDF.js with error handling
+      let pdf;
+      try {
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        pdf = await loadingTask.promise;
+        console.log("PDF document loaded, pages:", pdf.numPages);
+      } catch (error) {
+        console.error("Error loading PDF document:", error);
+        return '';
+      }
       
       // If the PDF has no pages, return empty string
-      if (pdf.numPages === 0) {
+      if (!pdf || pdf.numPages === 0) {
         console.warn("PDF has no pages");
         return '';
       }
       
       let fullText = '';
 
-      // Extract text from each page
+      // Extract text from each page with proper error handling
       for (let i = 1; i <= pdf.numPages; i++) {
-        console.log(`Processing page ${i} of ${pdf.numPages}`);
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        
-        if (!textContent || !textContent.items || textContent.items.length === 0) {
-          console.warn(`No text content in page ${i}`);
+        try {
+          console.log(`Processing page ${i} of ${pdf.numPages}`);
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          
+          if (!textContent || !textContent.items || textContent.items.length === 0) {
+            console.warn(`No text content in page ${i}`);
+            continue;
+          }
+          
+          const pageText = textContent.items
+            .map((item: any) => (item.str || '').trim())
+            .filter((str: string) => str.length > 0)
+            .join(' ');
+            
+          if (pageText.length > 0) {
+            fullText += pageText + '\n\n';
+          }
+        } catch (pageError) {
+          console.error(`Error extracting text from page ${i}:`, pageError);
+          // Continue with next page rather than failing completely
           continue;
         }
-        
-        const pageText = textContent.items
-          .map((item: any) => item.str || '')
-          .join(' ');
-          
-        fullText += pageText + '\n\n';
       }
 
       console.log(`Text extraction complete. Extracted ${fullText.length} characters`);
@@ -102,7 +130,9 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       const fileArray = Array.from(files);
       
       // Filter for PDF files
-      const pdfFiles = fileArray.filter(file => file.type === 'application/pdf');
+      const pdfFiles = fileArray.filter(file => 
+        file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+      );
       
       if (pdfFiles.length === 0) {
         toast.error('Please upload a PDF file');
@@ -113,8 +143,13 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       const firstPdf = pdfFiles[0];
       console.log("Processing PDF file:", firstPdf.name, "Size:", firstPdf.size);
       
-      // Try to extract text
-      let extractedText = await extractTextFromPdf(firstPdf);
+      // Try to extract text with improved error handling
+      let extractedText = '';
+      try {
+        extractedText = await extractTextFromPdf(firstPdf);
+      } catch (extractionError) {
+        console.error("Extraction failed completely:", extractionError);
+      }
       
       // If extraction failed or returned empty text, use sample text
       if (!extractedText || extractedText.trim().length === 0) {
@@ -143,7 +178,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
     } finally {
       setIsProcessing(false);
     }
-  }, [onFilesAdded]);
+  }, [onFilesAdded, sampleTexts]);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
