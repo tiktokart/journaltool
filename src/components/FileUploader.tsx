@@ -49,7 +49,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
         return "";
       }
       
-      // Log a 200-character sample to help diagnose issues
+      // Enhanced debugging - add more detailed logs
       console.log("PDF text extraction sample (200 chars):", fullText.substring(0, 200));
       console.log("Total characters extracted:", fullText.length);
       console.log("Total words extracted:", fullText.split(/\s+/).filter(w => w.length > 0).length);
@@ -71,12 +71,15 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       
       if (pdfText.trim().length === 0) {
         toast.warning("No readable text found in the PDF");
+        // Even with empty text, we still pass the file for filename-based analysis
+        onFilesAdded([file], "");
       } else {
         const wordCount = pdfText.split(/\s+/).filter(w => w.length > 0).length;
         toast.success(`Extracted ${wordCount} words from PDF`);
         
-        // Log text sample for easier debugging
+        // More detailed logging for better debugging
         console.log("PDF text sample:", pdfText.substring(0, 100));
+        console.log("PDF text length:", pdfText.length);
         
         const uniqueWords = new Set(pdfText.toLowerCase()
           .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
@@ -84,14 +87,15 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
           .filter(word => word.length > 3));
           
         console.log("Unique significant words:", Array.from(uniqueWords).slice(0, 20));
+        
+        // Pass the extracted text to the parent component for analysis
+        onFilesAdded([file], pdfText);
       }
-      
-      // Pass the extracted text to the parent component for analysis
-      onFilesAdded([file], pdfText);
     } catch (error) {
       console.error("Error processing PDF:", error);
       toast.error("Error processing PDF file");
-      onFilesAdded([file]); // Fall back to filename-based analysis
+      // Still pass the file even if text extraction fails
+      onFilesAdded([file], "");
     }
   };
 

@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -21,6 +20,7 @@ interface EmbeddingSceneProps {
   depressedJournalReference?: boolean;
   onFocusEmotionalGroup?: (tone: string) => void;
   selectedEmotionalGroup?: string | null;
+  onResetView?: () => void;
 }
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
@@ -37,7 +37,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   comparisonPoint,
   isCompareMode = false,
   onFocusEmotionalGroup,
-  selectedEmotionalGroup
+  selectedEmotionalGroup,
+  onResetView
 }) => {
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = externalContainerRef || internalContainerRef;
@@ -85,7 +86,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     camera.aspect = containerWidth / containerHeight;
     camera.updateProjectionMatrix();
-    camera.position.z = 20; // Increased default zoom to show all points
+    camera.position.z = 20;
     
     scene.background = new THREE.Color(0xffffff);
 
@@ -178,7 +179,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     };
   }, [cameraRef, containerRef, controlsRef]);
 
-  // Create a memoized version of points that gets filtered by emotional group
   useEffect(() => {
     if (selectedEmotionalGroup) {
       filteredPointsRef.current = points.filter(p => 
@@ -188,7 +188,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       filteredPointsRef.current = points;
     }
     
-    // Now update the emotional groups based on ALL points (not filtered)
     emotionalGroupsRef.current.clear();
     
     const emotionalGroups = new Map<string, Point[]>();
@@ -233,10 +232,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     spheresRef.current = [];
     
-    // Use filtered points instead of all points
     const pointsToRender = filteredPointsRef.current;
     
-    // Increased sphere size significantly (from 0.04 to 0.12)
     const sphereGeometry = new THREE.SphereGeometry(0.12, 16, 16);
     
     pointsToRender.forEach((point, index) => {
@@ -381,6 +378,36 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     });
   }, [cameraRef]);
 
+  const resetView = useCallback(() => {
+    if (!cameraRef.current || !controlsRef.current) return;
+    
+    isZoomingRef.current = true;
+    
+    gsap.to(cameraRef.current.position, {
+      x: 0,
+      y: 0,
+      z: 20,
+      duration: 1.5,
+      ease: "power2.inOut",
+      onUpdate: () => {
+        if (controlsRef.current) {
+          controlsRef.current.target.set(0, 0, 0);
+          controlsRef.current.update();
+        }
+      },
+      onComplete: () => {
+        isZoomingRef.current = false;
+        if (controlsRef.current) {
+          controlsRef.current.autoRotate = true;
+        }
+      }
+    });
+    
+    if (onFocusEmotionalGroup) {
+      onFocusEmotionalGroup("");
+    }
+  }, [cameraRef, controlsRef, onFocusEmotionalGroup]);
+
   const focusOnEmotionalGroup = useCallback((emotionalTone: string) => {
     if (!cameraRef.current || !controlsRef.current) return;
     
@@ -388,6 +415,10 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     if (!groupCenter) return;
     
     isZoomingRef.current = true;
+    
+    if (controlsRef.current) {
+      controlsRef.current.autoRotate = false;
+    }
     
     const point = groupCenter;
     
@@ -417,7 +448,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     if (onFocusEmotionalGroup) {
       onFocusEmotionalGroup(emotionalTone);
     }
-  }, [cameraRef, onFocusEmotionalGroup]);
+  }, [cameraRef, controlsRef, onFocusEmotionalGroup]);
 
   const resetEmotionalGroupFilter = useCallback(() => {
     if (!cameraRef.current || !controlsRef.current) return;
@@ -455,14 +486,16 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     }
     window.documentEmbeddingActions.focusOnEmotionalGroup = focusOnEmotionalGroup;
     window.documentEmbeddingActions.resetEmotionalGroupFilter = resetEmotionalGroupFilter;
+    window.documentEmbeddingActions.resetView = resetView;
     
     return () => {
       if (window.documentEmbeddingActions) {
         window.documentEmbeddingActions.focusOnEmotionalGroup = undefined;
         window.documentEmbeddingActions.resetEmotionalGroupFilter = undefined;
+        window.documentEmbeddingActions.resetView = undefined;
       }
     };
-  }, [focusOnEmotionalGroup, resetEmotionalGroupFilter]);
+  }, [focusOnEmotionalGroup, resetEmotionalGroupFilter, resetView]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -607,7 +640,7 @@ export const resetZoom = (camera: THREE.PerspectiveCamera | null, controls: Orbi
   gsap.to(camera.position, {
     x: 0,
     y: 0,
-    z: 20, // Increased default zoom to show all points
+    z: 20,
     duration: 1,
     ease: "power2.inOut",
     onUpdate: () => {

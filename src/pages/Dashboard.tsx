@@ -606,6 +606,13 @@ const Dashboard = () => {
     };
   };
 
+  const handleResetVisualization = () => {
+    if (window.documentEmbeddingActions && window.documentEmbeddingActions.resetView) {
+      window.documentEmbeddingActions.resetView();
+      toast.info("Visualization reset to default view");
+    }
+  };
+
   useEffect(() => {
     if (!sentimentData) return;
     
@@ -727,65 +734,78 @@ const Dashboard = () => {
                         <CardTitle className="flex items-center">
                           <span>Latent Emotional Analysis</span>
                         </CardTitle>
-                        <div className="relative w-full md:w-64">
-                          <div className="relative w-full">
-                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                              placeholder="Search words or emotions..." 
-                              className="pl-8 w-full pr-8"
-                              value={searchTerm}
-                              onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                              }}
-                              onFocus={() => {
-                                if (uniqueWords.length > 0) {
-                                  setOpen(true);
-                                }
-                              }}
-                            />
-                            {searchTerm && (
-                              <button 
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                                onClick={handleClearSearch}
-                              >
-                                <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                              </button>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={handleResetVisualization}
+                            className="h-9"
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Reset View
+                          </Button>
+                          
+                          <div className="relative w-full md:w-64">
+                            <div className="relative w-full">
+                              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input 
+                                placeholder="Search words or emotions..." 
+                                className="pl-8 w-full pr-8"
+                                value={searchTerm}
+                                onChange={(e) => {
+                                  setSearchTerm(e.target.value);
+                                }}
+                                onFocus={() => {
+                                  if (uniqueWords.length > 0) {
+                                    setOpen(true);
+                                  }
+                                }}
+                              />
+                              {searchTerm && (
+                                <button 
+                                  className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                                  onClick={handleClearSearch}
+                                >
+                                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                </button>
+                              )}
+                            </div>
+                            {uniqueWords.length > 0 && open && (
+                              <div className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto">
+                                <Command>
+                                  <CommandInput 
+                                    placeholder="Search words..." 
+                                    value={searchTerm}
+                                    onValueChange={setSearchTerm}
+                                  />
+                                  <CommandList>
+                                    <CommandEmpty>No results found</CommandEmpty>
+                                    <CommandGroup>
+                                      {uniqueWords
+                                        .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
+                                        .slice(0, 100)
+                                        .map((word) => (
+                                          <CommandItem 
+                                            key={word} 
+                                            value={word}
+                                            onSelect={handleSelectWord}
+                                          >
+                                            {word}
+                                          </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </div>
                             )}
                           </div>
-                          {uniqueWords.length > 0 && open && (
-                            <div className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto">
-                              <Command>
-                                <CommandInput 
-                                  placeholder="Search words..." 
-                                  value={searchTerm}
-                                  onValueChange={setSearchTerm}
-                                />
-                                <CommandList>
-                                  <CommandEmpty>No results found</CommandEmpty>
-                                  <CommandGroup>
-                                    {uniqueWords
-                                      .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
-                                      .slice(0, 100)
-                                      .map((word) => (
-                                        <CommandItem 
-                                          key={word} 
-                                          value={word}
-                                          onSelect={handleSelectWord}
-                                        >
-                                          {word}
-                                        </CommandItem>
-                                      ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </div>
-                          )}
                         </div>
                       </div>
                       <div className="text-sm font-normal flex items-center text-muted-foreground">
                         <CircleDot className="h-4 w-4 mr-2" />
                         <span>
-                          Hover or click on words to see emotional relationships.
+                          Hover or click on words to see emotional relationships. Use the Reset View button when needed.
                         </span>
                       </div>
                     </CardHeader>
@@ -797,6 +817,7 @@ const Dashboard = () => {
                           isInteractive={true}
                           focusOnWord={selectedWord || null}
                           sourceDescription={sentimentData.sourceDescription}
+                          onResetView={handleResetVisualization}
                         />
                       </div>
                     </CardContent>
