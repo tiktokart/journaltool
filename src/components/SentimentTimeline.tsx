@@ -1,13 +1,26 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Info } from "lucide-react";
 
 interface SentimentTimelineProps {
-  data: Array<{ page: number; score: number }>;
-  sourceDescription?: string; // Add this to show where data came from
+  data: Array<{ 
+    page: number; 
+    score: number; 
+    segment?: number;
+    text?: string;
+  }>;
+  sourceDescription?: string;
 }
 
 export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimelineProps) => {
+  // Normalize data to ensure it uses page number consistently
+  const normalizedData = data.map(item => ({
+    page: item.page || item.segment || 0,
+    score: typeof item.score === 'number' ? item.score : 0.5,
+    text: item.text || ""
+  }));
+
   // Determine color for each point based on score
   const getColor = (score: number) => {
     if (score >= 0.6) return "#27AE60";
@@ -16,8 +29,8 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
   };
 
   // Calculate average sentiment
-  const averageSentiment = data.length > 0 
-    ? data.reduce((acc, item) => acc + item.score, 0) / data.length
+  const averageSentiment = normalizedData.length > 0 
+    ? normalizedData.reduce((acc, item) => acc + item.score, 0) / normalizedData.length
     : 0.5;
 
   return (
@@ -26,7 +39,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
         <CardTitle>Sentiment Timeline</CardTitle>
       </CardHeader>
       <CardContent>
-        {data.length === 0 ? (
+        {normalizedData.length === 0 ? (
           <div className="h-80 w-full flex items-center justify-center">
             <p className="text-muted-foreground">No timeline data available</p>
           </div>
@@ -34,7 +47,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={data}
+                data={normalizedData}
                 margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
               >
                 <defs>
@@ -50,6 +63,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                 />
                 <YAxis 
                   domain={[0, 1]} 
+                  ticks={[0, 0.2, 0.4, 0.6, 0.8, 1]}
                   label={{ value: 'Sentiment Score', angle: -90, position: 'insideLeft', offset: -5 }}
                 />
                 <Tooltip 

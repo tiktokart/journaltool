@@ -6,16 +6,25 @@ import { Info } from "lucide-react";
 interface EntitySentimentProps {
   data: Array<{ 
     name: string; 
-    sentiment: number; // Renamed from score for consistency
+    sentiment: number;
+    score?: number; // For backward compatibility
     mentions: number;
     contexts?: Array<string>;
   }>;
-  sourceDescription?: string; // Add this to show where data came from
+  sourceDescription?: string;
 }
 
 export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProps) => {
+  // Normalize data to handle both sentiment and score properties
+  const normalizedData = data.map(item => ({
+    name: item.name,
+    sentiment: typeof item.sentiment === 'number' ? item.sentiment : (item.score || 0.5),
+    mentions: item.mentions,
+    contexts: item.contexts
+  }));
+
   // Sort data by sentiment for better visualization
-  const sortedData = [...data].sort((a, b) => b.sentiment - a.sentiment);
+  const sortedData = [...normalizedData].sort((a, b) => b.sentiment - a.sentiment);
 
   // Determine color for each bar based on sentiment
   const getColor = (sentiment: number) => {
@@ -30,7 +39,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
         <CardTitle>Theme Sentiment Analysis</CardTitle>
       </CardHeader>
       <CardContent>
-        {data.length === 0 ? (
+        {sortedData.length === 0 ? (
           <div className="h-80 w-full flex items-center justify-center">
             <p className="text-muted-foreground">No theme data available from your document</p>
           </div>
