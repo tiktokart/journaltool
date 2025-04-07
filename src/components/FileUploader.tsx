@@ -64,10 +64,10 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
     
       onFilesAdded(pdfFiles, extractedText);
       toast.success('PDF processed successfully');
-      setIsProcessing(false);
     } catch (error) {
       console.error('Error handling files:', error);
       toast.error('Error processing files');
+    } finally {
       setIsProcessing(false);
     }
   }, [onFilesAdded]);

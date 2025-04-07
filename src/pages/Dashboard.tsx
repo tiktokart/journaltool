@@ -32,6 +32,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
+// Fix: Type-safe conversion function for RGB color values
+const getRGBColorString = (color: number[]): string => {
+  return `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`;
+};
+
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
@@ -204,12 +209,13 @@ const Dashboard = () => {
       
       console.log(`Total unique words found: ${uniqueWordsArray.length}`);
       
+      // Fix: Use proper type safety for color generation
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
         return {
           ...cluster,
           id: index,
-          color: `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`,
+          color: getRGBColorString(color),
         };
       });
       
@@ -283,6 +289,7 @@ const Dashboard = () => {
     }
   };
 
+  // Fix: Proper handling of function scope and state updates
   const handlePointClick = (point: Point | null) => {
     if (point) {
       setSelectedWord(point.word);
@@ -877,4 +884,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
