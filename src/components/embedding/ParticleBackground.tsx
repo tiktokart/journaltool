@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
@@ -193,8 +194,8 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
       particlePositions[i * 3 + 1] = minY + Math.random() * (maxY - minY);
       particlePositions[i * 3 + 2] = minZ + Math.random() * (maxZ - minZ);
       
-      // Variable particle sizes for more natural cloud appearance
-      particleSizes[i] = 0.02 + Math.random() * 0.05;
+      // Variable particle sizes for more natural cloud appearance - increased sizes
+      particleSizes[i] = 0.04 + Math.random() * 0.08; // Increased from 0.02-0.07 to 0.04-0.12
       
       // Subtle color variation for cloud-like effect
       particleColors[i * 3] = 0.7 + Math.random() * 0.3; // Red
@@ -208,7 +209,7 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
     
     // Create custom shader material for better-looking particles
     const particleMaterial = new THREE.PointsMaterial({
-      size: 0.15,
+      size: 0.25, // Increased from 0.15 to 0.25
       vertexColors: true,
       transparent: true,
       opacity: 0.7,

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -81,7 +82,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     camera.aspect = containerWidth / containerHeight;
     camera.updateProjectionMatrix();
-    camera.position.z = 15; // Closer default zoom to show all points
+    camera.position.z = 20; // Increased default zoom to show all points
     
     scene.background = new THREE.Color(0xffffff);
 
@@ -219,7 +220,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     spheresRef.current = [];
     
-    const sphereGeometry = new THREE.SphereGeometry(0.04, 16, 16);
+    // Increased sphere size significantly (from 0.04 to 0.12)
+    const sphereGeometry = new THREE.SphereGeometry(0.12, 16, 16);
     
     points.forEach((point, index) => {
       const isSelected = selectedPoint && point.id === selectedPoint.id;
@@ -563,7 +565,7 @@ export const resetZoom = (camera: THREE.PerspectiveCamera | null, controls: Orbi
   gsap.to(camera.position, {
     x: 0,
     y: 0,
-    z: 15,
+    z: 20, // Increased default zoom to show all points
     duration: 1,
     ease: "power2.inOut",
     onUpdate: () => {
