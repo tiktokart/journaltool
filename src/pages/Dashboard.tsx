@@ -805,8 +805,11 @@ const Dashboard = () => {
                 
                 <TabsContent value="overview" className="mt-6">
                   <SentimentOverview 
-                    data={sentimentData.distribution}
-                    sentiment={sentimentData.overallSentiment}
+                    data={{
+                      overallSentiment: sentimentData.overallSentiment,
+                      distribution: sentimentData.distribution,
+                      fileName: sentimentData.fileName
+                    }}
                     sourceDescription={sentimentData.sourceDescription}
                   />
                 </TabsContent>
