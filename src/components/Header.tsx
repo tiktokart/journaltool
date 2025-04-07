@@ -1,5 +1,4 @@
 
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { FileText, Menu, X } from "lucide-react";
 import { useState } from "react";
@@ -24,12 +23,6 @@ export const Header = () => {
             <Link to="/dashboard" className="text-foreground/80 hover:text-foreground transition-colors">
               Dashboard
             </Link>
-            <a href="#features" className="text-foreground/80 hover:text-foreground transition-colors">
-              Features
-            </a>
-            <Button asChild className="rounded-full">
-              <Link to="/dashboard">Get Started</Link>
-            </Button>
           </nav>
           
           {/* Mobile Menu Button */}
@@ -63,18 +56,6 @@ export const Header = () => {
               >
                 Dashboard
               </Link>
-              <a 
-                href="#features" 
-                className="text-foreground/80 hover:text-foreground transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Features
-              </a>
-              <Button asChild className="w-full rounded-full mt-2">
-                <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
-                  Get Started
-                </Link>
-              </Button>
             </nav>
           </div>
         )}

@@ -9,6 +9,7 @@ import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { EntitySentiment } from "@/components/EntitySentiment";
 import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
+import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -121,6 +122,18 @@ const Dashboard = () => {
                     ) : "Analyze Document"}
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 3D Visualization Section */}
+          <Card className="border-0 shadow-md overflow-hidden">
+            <CardHeader>
+              <CardTitle>Document Embedding Visualization</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="w-full aspect-[16/9]">
+                <DocumentEmbedding />
               </div>
             </CardContent>
           </Card>
