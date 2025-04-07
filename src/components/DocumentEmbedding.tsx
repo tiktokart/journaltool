@@ -21,7 +21,8 @@ export const DocumentEmbedding = ({
   focusOnWord = null,
   onComparePoint,
   onSearchSelect,
-  sourceDescription
+  sourceDescription,
+  onResetView
 }: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -204,6 +205,21 @@ export const DocumentEmbedding = ({
     toast.info("Showing all emotional groups");
   };
   
+  const handleResetView = () => {
+    if (window.documentEmbeddingActions && 
+        window.documentEmbeddingActions.resetView) {
+      window.documentEmbeddingActions.resetView();
+    }
+    
+    if (onResetView) {
+      onResetView();
+    }
+    
+    setSelectedEmotionalGroup(null);
+    setFilterApplied(false);
+    toast.info("View reset to default");
+  };
+  
   return (
     <div className="relative w-full h-full">
       <div 
@@ -249,6 +265,7 @@ export const DocumentEmbedding = ({
         isCompareMode={isCompareMode}
         onFocusEmotionalGroup={handleFocusEmotionalGroup}
         selectedEmotionalGroup={selectedEmotionalGroup}
+        onResetView={handleResetView}
       />
       
       {isInteractive && (
@@ -258,6 +275,16 @@ export const DocumentEmbedding = ({
             onZoomOut={handleZoomOut}
             onResetZoom={handleResetZoom}
           />
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1 px-2 py-1 text-xs"
+            onClick={handleResetView}
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset View
+          </Button>
           
           {selectedPoint && (
             <button
@@ -355,6 +382,7 @@ declare global {
     documentEmbeddingActions?: {
       focusOnEmotionalGroup?: (tone: string) => void;
       resetEmotionalGroupFilter?: () => void;
+      resetView?: () => void;
     };
   }
 }
