@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -289,14 +288,12 @@ const Index = () => {
                           <Input 
                             placeholder="Search by emotion or word" 
                             value={searchValue}
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            className="pl-8"
-                            onClick={() => {
+                            onChange={(e) => {
+                              handleSearchChange(e.target.value);
                               setOpen(true);
-                              if (searchValue.trim()) {
-                                handleSearchChange(searchValue);
-                              }
                             }}
+                            className="pl-8"
+                            onFocus={() => setOpen(true)}
                           />
                         </div>
                       </PopoverTrigger>
@@ -369,14 +366,12 @@ const Index = () => {
                                   <Input 
                                     placeholder="Search by emotion..." 
                                     value={firstWordSearchValue}
-                                    onChange={(e) => handleFirstWordSearchChange(e.target.value)}
-                                    className="pl-8 text-sm"
-                                    onClick={() => {
+                                    onChange={(e) => {
+                                      handleFirstWordSearchChange(e.target.value);
                                       setFirstWordSearchOpen(true);
-                                      if (firstWordSearchValue.trim()) {
-                                        handleFirstWordSearchChange(firstWordSearchValue);
-                                      }
                                     }}
+                                    className="pl-8 text-sm"
+                                    onFocus={() => setFirstWordSearchOpen(true)}
                                   />
                                 </div>
                               </PopoverTrigger>
@@ -531,14 +526,12 @@ const Index = () => {
                                       <Input 
                                         placeholder="Search by emotion..." 
                                         value={firstWordSearchValue}
-                                        onChange={(e) => handleFirstWordSearchChange(e.target.value)}
-                                        className="pl-8 text-sm"
-                                        onClick={() => {
+                                        onChange={(e) => {
+                                          handleFirstWordSearchChange(e.target.value);
                                           setFirstWordSearchOpen(true);
-                                          if (firstWordSearchValue.trim()) {
-                                            handleFirstWordSearchChange(firstWordSearchValue);
-                                          }
                                         }}
+                                        className="pl-8 text-sm"
+                                        onFocus={() => setFirstWordSearchOpen(true)}
                                       />
                                     </div>
                                   </PopoverTrigger>
@@ -622,14 +615,12 @@ const Index = () => {
                                     <Input 
                                       placeholder="Search by emotion..." 
                                       value={firstWordSearchValue}
-                                      onChange={(e) => handleFirstWordSearchChange(e.target.value)}
-                                      className="pl-8 text-sm"
-                                      onClick={() => {
+                                      onChange={(e) => {
+                                        handleFirstWordSearchChange(e.target.value);
                                         setFirstWordSearchOpen(true);
-                                        if (firstWordSearchValue.trim()) {
-                                          handleFirstWordSearchChange(firstWordSearchValue);
-                                        }
                                       }}
+                                      className="pl-8 text-sm"
+                                      onFocus={() => setFirstWordSearchOpen(true)}
                                     />
                                   </div>
                                 </PopoverTrigger>
@@ -704,14 +695,12 @@ const Index = () => {
                                       <Input 
                                         placeholder="Search by emotion..." 
                                         value={secondWordSearchValue}
-                                        onChange={(e) => handleSecondWordSearchChange(e.target.value)}
-                                        className="pl-8 text-sm"
-                                        onClick={() => {
+                                        onChange={(e) => {
+                                          handleSecondWordSearchChange(e.target.value);
                                           setSecondWordSearchOpen(true);
-                                          if (secondWordSearchValue.trim()) {
-                                            handleSecondWordSearchChange(secondWordSearchValue);
-                                          }
                                         }}
+                                        className="pl-8 text-sm"
+                                        onFocus={() => setSecondWordSearchOpen(true)}
                                       />
                                     </div>
                                   </PopoverTrigger>
@@ -795,14 +784,12 @@ const Index = () => {
                                     <Input 
                                       placeholder="Search by emotion..." 
                                       value={secondWordSearchValue}
-                                      onChange={(e) => handleSecondWordSearchChange(e.target.value)}
-                                      className="pl-8 text-sm"
-                                      onClick={() => {
+                                      onChange={(e) => {
+                                        handleSecondWordSearchChange(e.target.value);
                                         setSecondWordSearchOpen(true);
-                                        if (secondWordSearchValue.trim()) {
-                                          handleSecondWordSearchChange(secondWordSearchValue);
-                                        }
                                       }}
+                                      className="pl-8 text-sm"
+                                      onFocus={() => setSecondWordSearchOpen(true)}
                                     />
                                   </div>
                                 </PopoverTrigger>

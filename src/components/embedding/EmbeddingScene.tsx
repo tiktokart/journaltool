@@ -81,7 +81,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     camera.aspect = containerWidth / containerHeight;
     camera.updateProjectionMatrix();
-    camera.position.z = 25;
+    camera.position.z = 15; // Closer default zoom to show all points
     
     scene.background = new THREE.Color(0xffffff);
 
@@ -103,23 +103,14 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     const handleMouseDown = () => {
       isDraggingRef.current = true;
-      if (controlsInstance) {
-        controlsInstance.autoRotate = false;
-      }
     };
     
     const handleMouseUp = () => {
       isDraggingRef.current = false;
-      if (controlsInstance) {
-        controlsInstance.autoRotate = true;
-      }
     };
     
     const handleMouseLeave = () => {
       isDraggingRef.current = false;
-      if (controlsInstance) {
-        controlsInstance.autoRotate = true;
-      }
     };
     
     if (containerRef.current) {
@@ -133,7 +124,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     const animate = () => {
       animationFrameIdRef.current = requestAnimationFrame(animate);
       
-      if (!isZoomingRef.current && !isDraggingRef.current && spheresGroupRef.current) {
+      if (spheresGroupRef.current) {
         spheresGroupRef.current.rotation.x += rotationRef.current.x;
         spheresGroupRef.current.rotation.y += rotationRef.current.y;
       }
@@ -572,7 +563,7 @@ export const resetZoom = (camera: THREE.PerspectiveCamera | null, controls: Orbi
   gsap.to(camera.position, {
     x: 0,
     y: 0,
-    z: 25,
+    z: 15,
     duration: 1,
     ease: "power2.inOut",
     onUpdate: () => {
