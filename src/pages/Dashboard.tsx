@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,10 +30,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
+// Function to convert RGB array to string format
 const getRGBColorString = (color: number[]): string => {
   return `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`;
 };
 
+// Mock analysis function
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
@@ -86,6 +87,7 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
   });
 };
 
+// Wellbeing suggestions
 const wellbeingSuggestions = [
   {
     title: "Practice Deep Breathing",
@@ -114,6 +116,7 @@ const wellbeingSuggestions = [
   }
 ];
 
+// Mental health resources
 const mentalHealthResources = [
   {
     name: "Crisis Text Line",
@@ -162,8 +165,8 @@ const Dashboard = () => {
   const [comparisonSearchTerm, setComparisonSearchTerm] = useState("");
   const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
   const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
-  // Fixed: Changed from string to boolean
-  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true); // Fixed boolean type
+  // Fixed boolean type
+  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true); 
   const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
   const [wordSearchTerm, setWordSearchTerm] = useState("");
   const [wordSearchOpen, setWordSearchOpen] = useState(false);
@@ -196,7 +199,7 @@ const Dashboard = () => {
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
-      // Fixed: Split pdfText into words and filter properly
+      // Fixed word processing
       const allWords = pdfText
         .toLowerCase()
         .split(/\s+/)
@@ -209,6 +212,7 @@ const Dashboard = () => {
       
       console.log(`Total unique words found: ${uniqueWordsArray.length}`);
       
+      // Process clusters
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
         return {
@@ -784,148 +788,4 @@ const Dashboard = () => {
                           onClick={handleAddWordToComparison}
                           className="h-8"
                         >
-                          <Search className="h-4 w-4 mr-2" />
-                          Add Word
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {wordsForComparison.length === 0 ? (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">
-                          Add words to compare their emotional relationships
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="flex flex-wrap gap-2">
-                          {wordsForComparison.map((point) => (
-                            <Badge 
-                              key={point.id}
-                              className="pl-2 pr-1 py-1.5 flex items-center gap-1"
-                              style={{
-                                backgroundColor: `rgba(${point.color.join(', ')}, 0.2)`,
-                                color: `rgb(${point.color.map(c => Math.floor(c * 200)).join(', ')})`
-                              }}
-                            >
-                              {point.word}
-                              <X 
-                                className="h-3 w-3 ml-1 cursor-pointer" 
-                                onClick={() => handleRemoveWordFromComparison(point)}
-                              />
-                            </Badge>
-                          ))}
-                        </div>
-                        
-                        <WordComparison words={wordsForComparison} />
-                      </div>
-                    )}
-                    
-                    <Popover 
-                      open={wordSearchOpen} 
-                      onOpenChange={setWordSearchOpen}
-                    >
-                      <PopoverContent 
-                        className="p-0 w-full md:w-64"
-                        ref={wordSearchRef}
-                      >
-                        <Command>
-                          <CommandInput 
-                            placeholder="Search words to compare..." 
-                            value={wordSearchTerm}
-                            onValueChange={setWordSearchTerm}
-                          />
-                          <CommandList>
-                            <CommandEmpty>No results found</CommandEmpty>
-                            <CommandGroup>
-                              {uniqueWords
-                                .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
-                                .slice(0, 100)
-                                .map((word) => (
-                                  <CommandItem 
-                                    key={word} 
-                                    value={word}
-                                    onSelect={handleSelectWordForComparison}
-                                  >
-                                    {word}
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              {showWellbeingSuggestions && (
-                <Card className="mt-8 border border-border shadow-md bg-card">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center">
-                        <Heart className="h-5 w-5 mr-2 text-red-500" />
-                        Wellbeing Suggestions
-                      </CardTitle>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setShowWellbeingSuggestions(false)}
-                      >
-                        Dismiss
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {wellbeingSuggestions.map((suggestion, index) => (
-                        <div 
-                          key={index}
-                          className="border rounded-lg p-4 hover:bg-muted/30 transition-colors"
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div className="mt-1">
-                              {suggestion.icon}
-                            </div>
-                            <div>
-                              <h3 className="font-medium">{suggestion.title}</h3>
-                              <p className="text-sm text-muted-foreground mt-1">{suggestion.description}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-6 pt-4 border-t">
-                      <h3 className="font-medium mb-2 flex items-center">
-                        <Info className="h-4 w-4 mr-2 text-blue-500" />
-                        Mental Health Resources
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                        {mentalHealthResources.map((resource, index) => (
-                          <a 
-                            key={index}
-                            href={resource.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="border rounded-lg p-3 hover:bg-muted/30 transition-colors"
-                          >
-                            <h4 className="font-medium">{resource.name}</h4>
-                            <p className="text-sm text-muted-foreground mt-1">{resource.description}</p>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default Dashboard;
+                          <Search className="h

@@ -5,7 +5,7 @@ interface Window {
     resetEmotionalGroupFilter?: () => void;
     resetView?: () => void;
   };
-  documentEmbeddingPoints?: any[]; // Added declaration for global variable
+  documentEmbeddingPoints?: Point[]; // Updated to use Point[] instead of any[]
 }
 
 // Add interface for String prototype extension if we decide to use it
