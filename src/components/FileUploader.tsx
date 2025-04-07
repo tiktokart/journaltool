@@ -131,7 +131,12 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
                 <AlertCircle className="h-4 w-4" />
                 <span>Supported format: PDF</span>
               </div>
-              <Button className="mt-6" onClick={(e) => e.stopPropagation()}>
+              <Button className="mt-6" onClick={(e) => {
+                e.stopPropagation();
+                if (fileInputRef.current) {
+                  fileInputRef.current.click();
+                }
+              }}>
                 Select File
               </Button>
             </>
