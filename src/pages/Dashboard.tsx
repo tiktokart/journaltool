@@ -676,7 +676,7 @@ const Dashboard = () => {
                       <CardTitle className="text-lg flex items-center">
                         <Settings className="h-5 w-5 mr-2 text-primary" />
                         Emotional Clusters
-                      CardTitle>
+                      </CardTitle>
                       <div className="flex items-center space-x-2">
                         <span className="text-xs text-muted-foreground">Clusters: {visibleClusterCount}</span>
                         <Slider 
