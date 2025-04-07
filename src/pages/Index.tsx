@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, CircleDot, Search, RotateCcw, GitCompareArrows } from "lucide-react";
+import { ArrowRight, CircleDot, Search, RotateCcw, GitCompareArrows, X } from "lucide-react";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
@@ -133,6 +133,14 @@ const Index = () => {
     }
   };
 
+  const handleClearSelection = () => {
+    setSelectedPoint(null);
+    setFocusWord(null);
+    setIsComparing(false);
+    setComparisonPoint(null);
+    toast.info("Selection cleared");
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -237,12 +245,21 @@ const Index = () => {
                   <Card className="w-full border border-border shadow-sm bg-card">
                     <CardContent className="pt-6">
                       <div className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium mb-1">Emotional Grouping</h3>
-                          <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">
-                            {selectedPoint.emotionalTone || "Neutral"}
-                          </p>
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-sm font-medium">Emotional Grouping</h3>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleClearSelection}
+                            className="h-6 w-6"
+                            title="Clear selection"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
+                        <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">
+                          {selectedPoint.emotionalTone || "Neutral"}
+                        </p>
                         <div>
                           <h3 className="text-sm font-medium mb-1">Word</h3>
                           <p className="text-xl bg-muted p-2 rounded flex items-center justify-center">
@@ -446,19 +463,19 @@ const Index = () => {
                         <div>
                           <p className="text-xs font-medium mb-1">Sentiment Difference</p>
                           <div className="flex items-center justify-between gap-2 bg-white dark:bg-black/20 p-2 rounded-md">
-                            <span className="text-sm text-foreground">{selectedPoint.word}: {selectedPoint.sentiment.toFixed(2)}</span>
-                            <span className="text-sm font-bold text-foreground">
+                            <span className="text-sm">{selectedPoint.word}: {selectedPoint.sentiment.toFixed(2)}</span>
+                            <span className="text-sm font-bold">
                               {Math.abs(selectedPoint.sentiment - comparisonPoint.sentiment).toFixed(2)} 
                               <span className="text-xs ml-1 font-normal text-muted-foreground">difference</span>
                             </span>
-                            <span className="text-sm text-foreground">{comparisonPoint.word}: {comparisonPoint.sentiment.toFixed(2)}</span>
+                            <span className="text-sm">{comparisonPoint.word}: {comparisonPoint.sentiment.toFixed(2)}</span>
                           </div>
                         </div>
                         
                         <div>
                           <p className="text-xs font-medium mb-1">Emotional Connection</p>
                           <div className="bg-white dark:bg-black/20 p-2 rounded-md">
-                            <p className="text-sm text-center text-foreground">
+                            <p className="text-sm text-center">
                               {selectedPoint.emotionalTone === comparisonPoint.emotionalTone ? 
                                 `Both words share the same emotional tone: ${selectedPoint.emotionalTone || "Neutral"}` : 
                                 `Different emotional tones: "${selectedPoint.word}" is ${selectedPoint.emotionalTone || "Neutral"} while "${comparisonPoint.word}" is ${comparisonPoint.emotionalTone || "Neutral"}`}
@@ -479,16 +496,16 @@ const Index = () => {
                               if (sharedKeywords && sharedKeywords.length > 0) {
                                 return (
                                   <div>
-                                    <p className="text-sm mb-1 text-foreground">These words share {sharedKeywords.length} concept{sharedKeywords.length > 1 ? 's' : ''}:</p>
+                                    <p className="text-sm mb-1">These words share {sharedKeywords.length} concept{sharedKeywords.length > 1 ? 's' : ''}:</p>
                                     <div className="flex flex-wrap gap-1">
                                       {sharedKeywords.map((keyword, idx) => (
-                                        <span key={idx} className="text-xs bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-full text-foreground">{keyword}</span>
+                                        <span key={idx} className="text-xs bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-full">{keyword}</span>
                                       ))}
                                     </div>
                                   </div>
                                 );
                               } else {
-                                return <p className="text-sm text-foreground">No shared concepts found between these words.</p>;
+                                return <p className="text-sm">No shared concepts found between these words.</p>;
                               }
                             })()}
                           </div>
