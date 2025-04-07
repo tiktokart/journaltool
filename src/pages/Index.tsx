@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -17,7 +18,7 @@ const Index = () => {
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
-  const [containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null); // Fixed: removed brackets and added proper declaration
   const [searchValue, setSearchValue] = useState("");
   const [open, setOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Point[]>([]);
@@ -794,4 +795,65 @@ const Index = () => {
                                     <Input 
                                       placeholder="Search by emotion..." 
                                       value={secondWordSearchValue}
-                                      onChange={(e) => handleSecond
+                                      onChange={(e) => handleSecondWordSearchChange(e.target.value)}
+                                      className="pl-8 text-sm"
+                                      onClick={() => {
+                                        setSecondWordSearchOpen(true);
+                                        if (secondWordSearchValue.trim()) {
+                                          handleSecondWordSearchChange(secondWordSearchValue);
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent className="p-0 w-[300px]" align="start">
+                                  <Command>
+                                    <CommandInput 
+                                      placeholder="Search by emotion..." 
+                                      value={secondWordSearchValue}
+                                      onValueChange={handleSecondWordSearchChange}
+                                    />
+                                    <CommandList>
+                                      <CommandEmpty>No results found</CommandEmpty>
+                                      <CommandGroup>
+                                        {secondWordSearchResults.map((point) => (
+                                          <CommandItem
+                                            key={point.id}
+                                            onSelect={() => handleSecondWordSearchSelect(point)}
+                                            value={point.word}
+                                            className="flex items-center gap-2"
+                                          >
+                                            <div 
+                                              className="w-3 h-3 rounded-full flex-shrink-0" 
+                                              style={{ 
+                                                backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                              }} 
+                                            />
+                                            <span>{point.word}</span>
+                                            <span className="ml-auto text-xs font-medium">
+                                              {point.emotionalTone}
+                                            </span>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Index;
