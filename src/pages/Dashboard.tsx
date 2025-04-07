@@ -183,6 +183,7 @@ const Dashboard = () => {
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
 
   const handleFileUpload = (files: File[]) => {
     if (files && files.length > 0) {
@@ -192,6 +193,7 @@ const Dashboard = () => {
       if (sentimentData) {
         setSentimentData(null);
         setSelectedPoint(null);
+        setAnalysisComplete(false);
       }
     }
   };
@@ -203,12 +205,14 @@ const Dashboard = () => {
     }
 
     setIsAnalyzing(true);
+    setAnalysisComplete(false);
     
     try {
       const results = await analyzePdfContent(file);
       setSentimentData(results);
       setFilteredPoints(results.embeddingPoints);
-      toast.success("Document analysis completed!");
+      setAnalysisComplete(true);
+      toast.success("Document analysis completed! All tabs are now available.");
     } catch (error) {
       toast.error("Error analyzing document");
       console.error("Analysis error:", error);
