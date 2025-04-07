@@ -141,42 +141,16 @@ const Dashboard = () => {
   const [points, setPoints] = useState<Point[]>([]);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
-  const [comparisonWord, setComparisonWord] = useState<string | null>(null);
-  const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [open, setOpen] = useState(false);
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
   const [visibleClusterCount, setVisibleClusterCount] = useState(5);
-  const searchDropdownRef = useRef<HTMLDivElement | null>(null);
-  const [showComparison, setShowComparison] = useState(false);
   const [emotionalClusters, setEmotionalClusters] = useState<any[]>([]);
   const [clusterColors, setClusterColors] = useState<Record<string, string>>({});
   const [clusterExpanded, setClusterExpanded] = useState<Record<string, boolean>>({});
   const [clusterPoints, setClusterPoints] = useState<Record<string, Point[]>>({});
   const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
-  const [comparisonSearchTerm, setComparisonSearchTerm] = useState("");
-  const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
-  const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
   const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true);
   const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-      
-      if (comparisonSearchRef.current && !comparisonSearchRef.current.contains(event.target as Node)) {
-        setComparisonSearchOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   useEffect(() => {
     if (sentimentData) {
@@ -279,63 +253,27 @@ const Dashboard = () => {
     if (point) {
       setSelectedWord(point.word);
       setSelectedPoint(point);
-      toast.info(`Selected: ${point.word}`);
+      
+      if (point && wordsForComparison.length < 4) {
+        if (!wordsForComparison.some(p => p.id === point.id)) {
+          setWordsForComparison(prev => [...prev, point]);
+          toast.info(`Added ${point.word} to comparison`);
+        }
+      } else if (wordsForComparison.length >= 4) {
+        toast.error("Maximum of 4 words can be compared at once");
+      }
     } else {
       setSelectedWord(null);
       setSelectedPoint(null);
     }
   };
 
-  const handleSelectWord = (word: string) => {
-    const matchingPoint = points.find(p => 
-      p.word.toLowerCase() === word.toLowerCase()
-    );
-    
-    if (matchingPoint) {
-      setSelectedWord(word);
-      setSelectedPoint(matchingPoint);
-      setOpen(false);
-      toast.info(`Selected: ${word}`);
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    setOpen(false);
-  };
-
   const handleResetVisualization = () => {
     setSelectedWord(null);
     setSelectedPoint(null);
-    setComparisonWord(null);
-    setComparisonPoint(null);
     setSelectedCluster(null);
     setFilteredPoints(points);
     toast.info("Visualization reset");
-  };
-
-  const handleCompareWord = () => {
-    setShowComparison(true);
-  };
-
-  const handleSelectComparisonWord = (word: string) => {
-    const matchingPoint = points.find(p => 
-      p.word.toLowerCase() === word.toLowerCase()
-    );
-    
-    if (matchingPoint) {
-      setComparisonWord(word);
-      setComparisonPoint(matchingPoint);
-      setComparisonSearchOpen(false);
-      toast.info(`Comparing with: ${word}`);
-    }
-  };
-
-  const handleClearComparison = () => {
-    setComparisonWord(null);
-    setComparisonPoint(null);
-    setComparisonSearchTerm("");
-    setShowComparison(false);
   };
 
   const toggleClusterExpanded = (clusterName: string) => {
@@ -485,68 +423,6 @@ const Dashboard = () => {
                         <RotateCcw className="h-4 w-4 mr-2" />
                         Reset View
                       </Button>
-                      
-                      <div className="relative w-full md:w-64">
-                        <div className="relative w-full">
-                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            placeholder="Search words or emotions..." 
-                            className="pl-8 w-full pr-8"
-                            value={searchTerm}
-                            onChange={(e) => {
-                              setSearchTerm(e.target.value);
-                              if (uniqueWords.length > 0) {
-                                setOpen(true);
-                              }
-                            }}
-                            onClick={() => {
-                              if (uniqueWords.length > 0) {
-                                setOpen(true);
-                              }
-                            }}
-                          />
-                          {searchTerm && (
-                            <button 
-                              className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                              onClick={handleClearSearch}
-                            >
-                              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                            </button>
-                          )}
-                        </div>
-                        {uniqueWords.length > 0 && open && (
-                          <div 
-                            ref={searchDropdownRef}
-                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
-                          >
-                            <Command>
-                              <CommandInput 
-                                placeholder="Search words..." 
-                                value={searchTerm}
-                                onValueChange={setSearchTerm}
-                              />
-                              <CommandList>
-                                <CommandEmpty>No results found</CommandEmpty>
-                                <CommandGroup>
-                                  {uniqueWords
-                                    .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
-                                    .slice(0, 100)
-                                    .map((word) => (
-                                      <CommandItem 
-                                        key={word} 
-                                        value={word}
-                                        onSelect={() => handleSelectWord(word)}
-                                        className="cursor-pointer hover:bg-accent"
-                                      >
-                                        {word}
-                                      </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
                   <div className="text-sm font-normal flex items-center text-muted-foreground">
