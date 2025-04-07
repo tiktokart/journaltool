@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -206,13 +205,7 @@ const Home = () => {
               </Tabs>
             </CardContent>
             <CardFooter>
-              <div className="w-full h-[350px]">
-                <DocumentEmbedding 
-                  points={points}
-                  isInteractive={false}
-                  sourceDescription="Example Journal Visualization"
-                />
-              </div>
+              {/* Bottom 3D visual has been moved to the top */}
             </CardFooter>
           </Card>
         </div>

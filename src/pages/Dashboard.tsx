@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -114,7 +113,7 @@ My therapist suggested trying deep breathing exercises when I feel overwhelmed. 
 By evening, I was exhausted from fighting my anxiety all day. I managed to do some light reading before bed, which was a small accomplishment. Tomorrow, I'll try to incorporate more grounding techniques my therapist suggested. Despite today's difficulties, I'm trying to remember that not every day will be this hard.
 `;
 
-const Home = () => {
+const Dashboard = () => {
   const [points] = useState<Point[]>(() => generateMockPoints(exampleJournalText, exampleJournalData, false));
 
   const handleFilesAdded = (files: File[], extractedText?: string) => {
@@ -129,10 +128,9 @@ const Home = () => {
       <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-12">
           <div className="space-y-6 mb-10">
-            <h1 className="text-4xl font-bold tracking-tight">Emotional Intelligence for Mental Health</h1>
+            <h1 className="text-4xl font-bold tracking-tight">Your Journal Analysis Dashboard</h1>
             <p className="text-lg text-muted-foreground">
-              Analyze your journal entries, therapy notes, and personal narratives 
-              to gain deeper insights into your emotional patterns and mental health journey.
+              Explore detailed insights from your journal entries and track your emotional patterns over time.
             </p>
           </div>
           
@@ -223,4 +221,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Dashboard;
