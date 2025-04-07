@@ -3,13 +3,18 @@ import { ChangeEvent, useState } from "react";
 import { FileUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Set the PDF.js worker source
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface FileUploaderProps {
-  onFilesAdded: (files: File[]) => void;
+  onFilesAdded: (files: File[], pdfText?: string) => void;
 }
 
 export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -19,6 +24,52 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
+  };
+
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    try {
+      setIsExtracting(true);
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+      
+      // Extract text from each page
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(" ");
+        fullText += pageText + " ";
+      }
+      
+      return fullText;
+    } catch (error) {
+      console.error("Error extracting text from PDF:", error);
+      toast.error("Failed to extract text from PDF");
+      return "";
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const processPdfFile = async (file: File) => {
+    try {
+      toast.info("Extracting text from PDF...");
+      const pdfText = await extractTextFromPdf(file);
+      
+      if (pdfText.trim().length === 0) {
+        toast.warning("No readable text found in the PDF");
+      } else {
+        toast.success(`Extracted ${pdfText.split(/\s+/).length} words from PDF`);
+      }
+      
+      onFilesAdded([file], pdfText);
+    } catch (error) {
+      console.error("Error processing PDF:", error);
+      toast.error("Error processing PDF file");
+      onFilesAdded([file]); // Fall back to filename-based analysis
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -34,7 +85,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
         return;
       }
       
-      onFilesAdded(pdfFiles);
+      processPdfFile(pdfFiles[0]);
     }
   };
 
@@ -48,7 +99,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
         return;
       }
       
-      onFilesAdded(pdfFiles);
+      processPdfFile(pdfFiles[0]);
     }
   };
 
@@ -75,8 +126,13 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
           <Button
             variant="outline"
             onClick={() => document.getElementById("file-upload")?.click()}
+            disabled={isExtracting}
           >
-            Choose File
+            {isExtracting ? (
+              <>Extracting text...</>
+            ) : (
+              <>Choose File</>
+            )}
           </Button>
           <input
             id="file-upload"
@@ -84,6 +140,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
             accept=".pdf"
             className="hidden"
             onChange={handleFileChange}
+            disabled={isExtracting}
           />
         </div>
         <p className="text-xs text-muted-foreground mt-2">

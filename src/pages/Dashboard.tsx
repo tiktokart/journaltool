@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +28,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-const analyzePdfContent = (file: File): Promise<any> => {
+const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       // Generate a unique seed based on file name for consistency
@@ -67,6 +66,27 @@ const analyzePdfContent = (file: File): Promise<any> => {
         emotionalDistribution.Trust = 0.05;
       }
       
+      // Extract words from PDF text if available
+      let customWordBank: string[] = [];
+      if (pdfText && pdfText.length > 0) {
+        // Clean and normalize the text
+        const cleanText = pdfText
+          .toLowerCase()
+          .replace(/[^\w\s]/g, ' ')  // Replace punctuation with spaces
+          .replace(/\s+/g, ' ')      // Replace multiple spaces with single space
+          .trim();
+        
+        // Extract words, filter out common stop words and short words
+        const stopWords = new Set(['the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']);
+        customWordBank = cleanText
+          .split(' ')
+          .filter(word => word.length > 2 && !stopWords.has(word))
+          .filter((word, index, self) => self.indexOf(word) === index) // Unique words only
+          .slice(0, 200); // Limit to 200 unique words
+        
+        console.log("Extracted words from PDF:", customWordBank.slice(0, 20));
+      }
+      
       // Calculate overall sentiment based on emotional distribution
       const overallSentiment = 
         (emotionalDistribution.Joy * 0.9) + 
@@ -80,8 +100,12 @@ const analyzePdfContent = (file: File): Promise<any> => {
       
       const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
       
-      // Create embedding points with the custom distribution
-      const embeddingPoints = generateMockPoints(false, emotionalDistribution);
+      // Create embedding points with the custom distribution and word bank if available
+      const embeddingPoints = generateMockPoints(
+        false, 
+        emotionalDistribution, 
+        customWordBank.length > 0 ? customWordBank : undefined
+      );
 
       // Generate sentiment distribution based on overall sentiment
       const positivePercentage = Math.round(normalizedSentiment * 100);
@@ -106,23 +130,44 @@ const analyzePdfContent = (file: File): Promise<any> => {
       }
 
       // Generate theme data (formerly entity)
-      const themeNames = [
+      let themeNames = [
         "Work", "Family", "Health", "Relationships", 
         "Future", "Goals", "Education", "Friends",
         "Hobbies", "Travel", "Home", "Money"
       ];
       
-      const themes = [];
-      const usedThemes = new Set();
-      const themeCount = 4 + Math.floor(Math.random() * 4); // 4-7 themes
+      // If we have custom words, use some frequent ones as themes
+      if (customWordBank.length > 20) {
+        // Use some of the words from the PDF as themes
+        const potentialThemes = customWordBank.slice(0, 20);
+        const selectedThemes = [];
+        // Pick 4-6 random words from potential themes
+        const themeCount = 4 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < themeCount && i < potentialThemes.length; i++) {
+          const randomIndex = Math.floor(Math.random() * potentialThemes.length);
+          selectedThemes.push(potentialThemes[randomIndex]);
+          potentialThemes.splice(randomIndex, 1);
+        }
+        
+        // Capitalize first letter of each theme
+        themeNames = selectedThemes.map(theme => 
+          theme.charAt(0).toUpperCase() + theme.slice(1)
+        );
+      }
       
+      const themes = [];
+      const themeCount = Math.min(themeNames.length, 4 + Math.floor(Math.random() * 4)); // 4-7 themes
+      
+      // Randomly select themes without repeating
+      const usedThemeIndices = new Set();
       for (let i = 0; i < themeCount; i++) {
         let themeIndex;
         do {
           themeIndex = Math.floor(Math.random() * themeNames.length);
-        } while (usedThemes.has(themeIndex));
+        } while (usedThemeIndices.has(themeIndex) && usedThemeIndices.size < themeNames.length);
         
-        usedThemes.add(themeIndex);
+        if (usedThemeIndices.size >= themeNames.length) break;
+        usedThemeIndices.add(themeIndex);
         
         // Calculate theme sentiment as a variation of the overall sentiment
         const variation = Math.random() * 0.4 - 0.2; // -0.2 to 0.2
@@ -199,7 +244,8 @@ const analyzePdfContent = (file: File): Promise<any> => {
         keyPhrases: keyPhrases,
         embeddingPoints: embeddingPoints,
         fileName: file.name, // Add filename to results
-        fileSize: file.size // Add filesize to results
+        fileSize: file.size, // Add filesize to results
+        wordCount: customWordBank.length // Add count of extracted words
       };
 
       resolve(analysisResults);
@@ -218,10 +264,12 @@ const Dashboard = () => {
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [open, setOpen] = useState(false);
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
+  const [pdfText, setPdfText] = useState<string>("");
 
-  const handleFileUpload = (files: File[]) => {
+  const handleFileUpload = (files: File[], pdfText?: string) => {
     if (files && files.length > 0) {
       setFile(files[0]);
+      setPdfText(pdfText || ""); // Store the extracted PDF text
       toast.success(`File "${files[0].name}" uploaded successfully`);
       // Reset sentiment data when a new file is uploaded
       if (sentimentData) {
@@ -242,7 +290,7 @@ const Dashboard = () => {
     setAnalysisComplete(false);
     
     try {
-      const results = await analyzePdfContent(file);
+      const results = await analyzePdfContent(file, pdfText);
       setSentimentData(results);
       setFilteredPoints(results.embeddingPoints);
       setAnalysisComplete(true);
@@ -270,7 +318,6 @@ const Dashboard = () => {
     toast(`Selected: "${point.word}" (${point.emotionalTone})`);
   };
   
-  // Filter points based on search term
   useEffect(() => {
     if (!sentimentData) return;
     
