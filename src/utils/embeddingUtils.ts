@@ -37,7 +37,8 @@ interface EmotionalDistribution {
 
 export const generateMockPoints = (
   depressedJournalReference = false, 
-  customDistribution?: EmotionalDistribution
+  customDistribution?: EmotionalDistribution,
+  customWordBank?: string[]
 ): Point[] => {
   const mockPoints: Point[] = [];
   const particleCount = depressedJournalReference ? 300 : 200;
@@ -192,7 +193,12 @@ export const generateMockPoints = (
     }
     
     let word;
-    if (depressedJournalReference) {
+    
+    // Use custom word bank if available
+    if (customWordBank && customWordBank.length > 0 && Math.random() < 0.7) {
+      // Use words from custom word bank
+      word = customWordBank[Math.floor(Math.random() * customWordBank.length)];
+    } else if (depressedJournalReference) {
       if (Math.random() < 0.7 && emotionalTone !== "Neutral") {
         word = depressedJournalWords[Math.floor(Math.random() * depressedJournalWords.length)];
       } else {
