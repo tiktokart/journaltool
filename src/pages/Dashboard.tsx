@@ -55,29 +55,30 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         
         const cleanText = pdfText
           .toLowerCase()
-          .replace(/[^\\w\\s]/g, ' ')
+          .replace(/[^\w\s]/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
         
-        const stopWords = new Set(['the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']);
+        const stopWords = new Set(['the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'can', 'could', 'may', 'might', 'must', 'shall', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'who', 'whom', 'whose', 'which']);
+        
         customWordBank = cleanText
           .split(' ')
           .filter(word => word.length > 2 && !stopWords.has(word))
           .filter((word, index, self) => self.indexOf(word) === index)
-          .slice(0, 200);
+          .slice(0, 500);
           
         console.log("Extracted unique words:", customWordBank.length);
-        console.log("Sample words:", customWordBank.slice(0, 10));
+        console.log("Sample words:", customWordBank.slice(0, 20));
         
         const emotionWords = {
-          Joy: ['happy', 'joy', 'delight', 'pleased', 'glad', 'content', 'satisfied'],
-          Sadness: ['sad', 'sorrow', 'unhappy', 'depressed', 'gloomy', 'miserable'],
-          Anger: ['angry', 'mad', 'furious', 'outraged', 'annoyed', 'irritated'],
-          Fear: ['afraid', 'scared', 'frightened', 'terrified', 'anxious', 'worried'],
-          Surprise: ['surprised', 'amazed', 'astonished', 'shocked', 'startled'],
-          Disgust: ['disgusted', 'repulsed', 'revolted', 'appalled', 'distaste'],
-          Trust: ['trust', 'believe', 'faith', 'confidence', 'reliable', 'depend'],
-          Anticipation: ['expect', 'anticipate', 'look forward', 'await', 'hope']
+          Joy: ['happy', 'joy', 'delight', 'pleased', 'glad', 'content', 'satisfied', 'success', 'love', 'enjoy', 'smile', 'laugh', 'enthusiastic', 'excited'],
+          Sadness: ['sad', 'sorrow', 'unhappy', 'depressed', 'gloomy', 'miserable', 'grief', 'sorry', 'regret', 'disappointing', 'melancholy', 'heartbreak'],
+          Anger: ['angry', 'mad', 'furious', 'outraged', 'annoyed', 'irritated', 'frustrated', 'hostile', 'rage', 'hate', 'resent', 'enraged'],
+          Fear: ['afraid', 'scared', 'frightened', 'terrified', 'anxious', 'worried', 'panic', 'dread', 'horror', 'terror', 'stress', 'concern'],
+          Surprise: ['surprised', 'amazed', 'astonished', 'shocked', 'startled', 'unexpected', 'wonder', 'stunned', 'astounded', 'speechless'],
+          Disgust: ['disgusted', 'repulsed', 'revolted', 'appalled', 'distaste', 'nauseated', 'dislike', 'abhor', 'hatred', 'offend'],
+          Trust: ['trust', 'believe', 'faith', 'confidence', 'reliable', 'depend', 'honest', 'loyal', 'sincere', 'integrity', 'assurance'],
+          Anticipation: ['expect', 'anticipate', 'look forward', 'await', 'hope', 'predict', 'forecast', 'ambitious', 'eager', 'prepare']
         };
         
         const emotionCounts: Record<string, number> = {
@@ -281,7 +282,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         summary = emotionSummaries[dominantEmotion as keyof typeof emotionSummaries];
       }
 
-      const sourceDescription = pdfText && pdfText.length > 0 
+      const sourceDescription = pdfText && pdfText.length > 0 && customWordBank.length > 0
         ? `Analysis based on ${customWordBank.length} unique words extracted from your PDF`
         : undefined;
 
@@ -406,7 +407,7 @@ const Dashboard = () => {
     if (files && files.length > 0) {
       setFile(files[0]);
       setPdfText(extractedText || "");
-      toast.success(`File "${files[0].name}" uploaded successfully`);
+      toast.success(`File "${files[0].name}" uploaded successfully");
       
       if (extractedText && extractedText.length > 0) {
         const wordCount = extractedText.split(/\s+/).length;

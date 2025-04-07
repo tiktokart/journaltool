@@ -38,10 +38,14 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items
+          .filter((item: any) => item.str && item.str.trim().length > 0)
           .map((item: any) => item.str)
           .join(" ");
         fullText += pageText + " ";
       }
+      
+      // Clean up the text - remove excess whitespace and normalize
+      fullText = fullText.replace(/\s+/g, ' ').trim();
       
       // Validate the extracted text
       if (!fullText || fullText.trim().length === 0) {
@@ -69,7 +73,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       toast.info("Extracting text from PDF...");
       const pdfText = await extractTextFromPdf(file);
       
-      if (pdfText.trim().length === 0) {
+      if (!pdfText || pdfText.trim().length === 0) {
         toast.warning("No readable text found in the PDF");
         // Even with empty text, we still pass the file for filename-based analysis
         onFilesAdded([file], "");
@@ -80,13 +84,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
         // More detailed logging for better debugging
         console.log("PDF text sample:", pdfText.substring(0, 100));
         console.log("PDF text length:", pdfText.length);
-        
-        const uniqueWords = new Set(pdfText.toLowerCase()
-          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
-          .split(/\s+/)
-          .filter(word => word.length > 3));
-          
-        console.log("Unique significant words:", Array.from(uniqueWords).slice(0, 20));
+        console.log("Words in PDF:", wordCount);
         
         // Pass the extracted text to the parent component for analysis
         onFilesAdded([file], pdfText);
