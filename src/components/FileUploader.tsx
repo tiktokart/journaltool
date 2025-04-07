@@ -33,30 +33,32 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       let fullText = "";
       
-      // Extract text from each page
+      // Extract text from each page with improved extraction
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .filter((item: any) => item.str && item.str.trim().length > 0)
-          .map((item: any) => item.str)
-          .join(" ");
+        
+        // More thorough text extraction - get every text item with position information
+        const pageItems = textContent.items.map((item: any) => {
+          if (!item.str || typeof item.str !== 'string') return '';
+          return item.str;
+        }).filter(Boolean);
+        
+        // Join all text items with space
+        const pageText = pageItems.join(' ');
         fullText += pageText + " ";
       }
       
-      // Clean up the text - remove excess whitespace and normalize
-      fullText = fullText.replace(/\s+/g, ' ').trim();
+      // Clean up the text - careful not to lose content
+      fullText = fullText
+        .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+        .replace(/(\r\n|\n|\r)/gm, " ")  // Replace line breaks with spaces
+        .trim();
       
-      // Validate the extracted text
-      if (!fullText || fullText.trim().length === 0) {
-        console.error("No text extracted from PDF");
-        return "";
-      }
-      
-      // Enhanced debugging - add more detailed logs
-      console.log("PDF text extraction sample (200 chars):", fullText.substring(0, 200));
-      console.log("Total characters extracted:", fullText.length);
-      console.log("Total words extracted:", fullText.split(/\s+/).filter(w => w.length > 0).length);
+      // Enhanced logging for debugging
+      console.log("Extracted PDF text length:", fullText.length);
+      console.log("First 100 characters:", fullText.substring(0, 100));
+      console.log("Total words extracted:", fullText.split(/\s+/).length);
       
       return fullText;
     } catch (error) {
@@ -75,14 +77,13 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       
       if (!pdfText || pdfText.trim().length === 0) {
         toast.warning("No readable text found in the PDF");
-        // Even with empty text, we still pass the file for filename-based analysis
         onFilesAdded([file], "");
       } else {
         const wordCount = pdfText.split(/\s+/).filter(w => w.length > 0).length;
         toast.success(`Extracted ${wordCount} words from PDF`);
         
         // More detailed logging for better debugging
-        console.log("PDF text sample:", pdfText.substring(0, 100));
+        console.log("PDF text sample:", pdfText.substring(0, 200));
         console.log("PDF text length:", pdfText.length);
         console.log("Words in PDF:", wordCount);
         
@@ -92,7 +93,6 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
     } catch (error) {
       console.error("Error processing PDF:", error);
       toast.error("Error processing PDF file");
-      // Still pass the file even if text extraction fails
       onFilesAdded([file], "");
     }
   };
