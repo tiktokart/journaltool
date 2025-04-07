@@ -617,7 +617,7 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
-                      focusOnWord={selectedWord}
+                      focusOnWord={Boolean(selectedWord)}
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
                       visibleClusterCount={visibleClusterCount}
