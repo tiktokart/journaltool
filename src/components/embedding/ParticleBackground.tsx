@@ -12,41 +12,71 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const particlesRef = useRef<THREE.Points | null>(null);
   const animationIdRef = useRef<number | null>(null);
+  const mountedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!containerRef.current || points.length === 0) return;
+    
+    // Prevent duplicate initializations
+    if (mountedRef.current && rendererRef.current) {
+      // If already mounted and we have a renderer, just clear old particles
+      if (sceneRef.current && particlesRef.current) {
+        sceneRef.current.remove(particlesRef.current);
+        
+        // Clean up previous particles geometry and material
+        if (particlesRef.current.geometry) {
+          particlesRef.current.geometry.dispose();
+        }
+        if (particlesRef.current.material) {
+          if (Array.isArray(particlesRef.current.material)) {
+            particlesRef.current.material.forEach(m => m.dispose());
+          } else {
+            particlesRef.current.material.dispose();
+          }
+        }
+      }
+    } else {
+      mountedRef.current = true;
+    }
 
     // Initialize scene
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
+    const scene = sceneRef.current || new THREE.Scene();
+    if (!sceneRef.current) {
+      sceneRef.current = scene;
+    }
 
     // Initialize camera
-    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-    camera.position.z = 15;
-    cameraRef.current = camera;
+    const camera = cameraRef.current || new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    if (!cameraRef.current) {
+      camera.position.z = 15;
+      cameraRef.current = camera;
+    }
 
     // Create renderer with transparency and anti-flickering settings
-    const renderer = new THREE.WebGLRenderer({ 
+    const renderer = rendererRef.current || new THREE.WebGLRenderer({ 
       alpha: true,
       antialias: true,
       preserveDrawingBuffer: true // Helps reduce flickering
     });
-    renderer.setClearColor(0x000000, 0);
-    // Set pixel ratio to device pixel ratio to improve quality
-    renderer.setPixelRatio(window.devicePixelRatio);
-    rendererRef.current = renderer;
-
-    // Setup the renderer size
-    const containerWidth = containerRef.current.clientWidth;
-    const containerHeight = containerRef.current.clientHeight;
-    renderer.setSize(containerWidth, containerHeight);
     
-    // Add canvas as background
-    renderer.domElement.style.position = 'absolute';
-    renderer.domElement.style.zIndex = '0';
-    renderer.domElement.style.top = '0';
-    renderer.domElement.style.left = '0';
-    containerRef.current.appendChild(renderer.domElement);
+    if (!rendererRef.current) {
+      renderer.setClearColor(0x000000, 0);
+      // Set pixel ratio to device pixel ratio to improve quality
+      renderer.setPixelRatio(window.devicePixelRatio);
+      rendererRef.current = renderer;
+
+      // Setup the renderer size
+      const containerWidth = containerRef.current.clientWidth;
+      const containerHeight = containerRef.current.clientHeight;
+      renderer.setSize(containerWidth, containerHeight);
+      
+      // Add canvas as background
+      renderer.domElement.style.position = 'absolute';
+      renderer.domElement.style.zIndex = '0';
+      renderer.domElement.style.top = '0';
+      renderer.domElement.style.left = '0';
+      containerRef.current.appendChild(renderer.domElement);
+    }
 
     // Group points by emotional tone
     const emotionalGroupings = new Map<string, { 
@@ -219,13 +249,18 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
       animationIdRef.current = requestAnimationFrame(animate);
       
       if (particlesRef.current) {
-        // Slowed down rotation speed to reduce flickering
-        particlesRef.current.rotation.x += 0.0001;
-        particlesRef.current.rotation.y += 0.00005;
+        // Extremely slowed down rotation speed to reduce flickering
+        particlesRef.current.rotation.x += 0.00005;
+        particlesRef.current.rotation.y += 0.00002;
       }
       
       renderer.render(scene, camera);
     };
+    
+    // Make sure to cancel any previous animation frame before starting a new one
+    if (animationIdRef.current !== null) {
+      cancelAnimationFrame(animationIdRef.current);
+    }
     
     // Start the animation and keep track of the ID
     animationIdRef.current = requestAnimationFrame(animate);
@@ -246,12 +281,17 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
     window.addEventListener('resize', handleResize);
     
     return () => {
+      // Important: This cleanup function needs to handle multiple scenarios
       if (animationIdRef.current !== null) {
         cancelAnimationFrame(animationIdRef.current);
+        animationIdRef.current = null;
       }
+      
       window.removeEventListener('resize', handleResize);
       
-      if (containerRef.current && renderer.domElement) {
+      // Only remove the renderer DOM element when the component is truly unmounting
+      // Not on every re-render or data update
+      if (containerRef.current && renderer.domElement && !mountedRef.current) {
         try {
           containerRef.current.removeChild(renderer.domElement);
         } catch (e) {
@@ -259,14 +299,17 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
         }
       }
       
-      if (particleGeometry) {
-        particleGeometry.dispose();
-      }
-      if (particleMaterial) {
-        particleMaterial.dispose();
-      }
-      if (renderer) {
-        renderer.dispose();
+      // Only dispose of resources when truly unmounting
+      if (!mountedRef.current) {
+        if (particleGeometry) {
+          particleGeometry.dispose();
+        }
+        if (particleMaterial) {
+          particleMaterial.dispose();
+        }
+        if (renderer) {
+          renderer.dispose();
+        }
       }
     };
   }, [containerRef, points]);
