@@ -9,7 +9,8 @@ import { ZoomControls } from './embedding/ZoomControls';
 import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
 import ParticleBackground from './embedding/ParticleBackground';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { CircleDot } from 'lucide-react';
+import { CircleDot, Target } from 'lucide-react';
+import { Button } from './ui/button';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -32,6 +33,8 @@ export const DocumentEmbedding = ({
   const [generatedPoints, setGeneratedPoints] = useState<Point[]>([]);
   const [displayPoints, setDisplayPoints] = useState<Point[]>([]);
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
+  const [emotionalGroups, setEmotionalGroups] = useState<string[]>([]);
+  const [selectedEmotionalGroup, setSelectedEmotionalGroup] = useState<string | null>(null);
   
   useEffect(() => {
     if (focusOnWord !== currentFocusWord) {
@@ -75,6 +78,18 @@ export const DocumentEmbedding = ({
     if (displayPoints.length > 0) {
       (window as any).documentEmbeddingPoints = displayPoints;
       console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
+      
+      // Extract unique emotional groups
+      const uniqueGroups = new Set<string>();
+      displayPoints.forEach(point => {
+        if (point.emotionalTone) {
+          uniqueGroups.add(point.emotionalTone);
+        } else {
+          uniqueGroups.add("Neutral");
+        }
+      });
+      
+      setEmotionalGroups(Array.from(uniqueGroups));
     }
   }, [displayPoints]);
   
@@ -152,6 +167,19 @@ export const DocumentEmbedding = ({
     }
   };
   
+  const handleFocusEmotionalGroup = (tone: string) => {
+    setSelectedEmotionalGroup(tone);
+  };
+  
+  const focusOnEmotionalGroup = (emotionalTone: string) => {
+    setSelectedEmotionalGroup(emotionalTone);
+    
+    if (window.documentEmbeddingActions && 
+        window.documentEmbeddingActions.focusOnEmotionalGroup) {
+      window.documentEmbeddingActions.focusOnEmotionalGroup(emotionalTone);
+    }
+  };
+  
   return (
     <div className="relative w-full h-full">
       <div 
@@ -161,7 +189,7 @@ export const DocumentEmbedding = ({
       
       <ParticleBackground containerRef={containerRef} points={displayPoints} />
       
-      <div className="absolute top-3 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground bg-card/70 backdrop-blur-sm px-2 py-1 rounded-md">
+      <div className="absolute top-3 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md">
         <CircleDot className="h-4 w-4 mr-2" />
         <span>Hover or click on words to see emotional groupings.</span>
       </div>
@@ -180,6 +208,7 @@ export const DocumentEmbedding = ({
         selectedPoint={selectedPoint}
         comparisonPoint={comparisonPoint}
         isCompareMode={isCompareMode}
+        onFocusEmotionalGroup={handleFocusEmotionalGroup}
       />
       
       {isInteractive && (
@@ -205,6 +234,26 @@ export const DocumentEmbedding = ({
         </div>
       )}
       
+      {emotionalGroups.length > 0 && (
+        <div className="absolute top-16 right-4 z-10 flex flex-col gap-1 bg-card/80 backdrop-blur-sm p-2 rounded-md">
+          <div className="text-xs font-semibold mb-1 flex items-center">
+            <Target className="h-3 w-3 mr-1" />
+            Jump to Emotional Group
+          </div>
+          {emotionalGroups.map(group => (
+            <Button
+              key={group}
+              size="sm"
+              variant={selectedEmotionalGroup === group ? "default" : "outline"}
+              className="h-7 text-xs justify-start px-2"
+              onClick={() => focusOnEmotionalGroup(group)}
+            >
+              {group}
+            </Button>
+          ))}
+        </div>
+      )}
+      
       {hoveredPoint && (
         <HoverInfoPanel point={hoveredPoint} />
       )}
@@ -213,3 +262,13 @@ export const DocumentEmbedding = ({
     </div>
   );
 };
+
+// Add global type definitions
+declare global {
+  interface Window {
+    documentEmbeddingPoints?: Point[];
+    documentEmbeddingActions?: {
+      focusOnEmotionalGroup?: (tone: string) => void;
+    };
+  }
+}

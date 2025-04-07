@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -18,6 +19,7 @@ interface EmbeddingSceneProps {
   comparisonPoint?: Point | null;
   isCompareMode?: boolean;
   depressedJournalReference?: boolean;
+  onFocusEmotionalGroup?: (tone: string) => void;
 }
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
@@ -32,7 +34,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   connectedPoints = [],
   selectedPoint,
   comparisonPoint,
-  isCompareMode = false
+  isCompareMode = false,
+  onFocusEmotionalGroup
 }) => {
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = externalContainerRef || internalContainerRef;
@@ -51,6 +54,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const spheresRef = useRef<THREE.Mesh[]>([]);
   const isMiddleMouseDownRef = useRef<boolean>(false);
   const lastMousePositionRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
+  const emotionalGroupsRef = useRef<Map<string, THREE.Vector3>>(new Map());
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -85,6 +89,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     controlsInstance.maxPolarAngle = Math.PI / 2;
     controlsInstance.autoRotateSpeed = 0.5;
     controlsInstance.autoRotate = true;
+    controlsInstance.enableZoom = true; // Make sure zoom is enabled
+    controlsInstance.zoomSpeed = 1.0; // Adjust zoom speed
     controlsInstance.update();
     
     const animate = () => {
@@ -101,6 +107,12 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       renderer.setSize(containerWidth, containerHeight);
       camera.aspect = containerWidth / containerHeight;
       camera.updateProjectionMatrix();
+    };
+    
+    const handleMouseWheel = (event: WheelEvent) => {
+      // We're using the OrbitControls built-in zoom but we need to prevent default
+      // to avoid the page from scrolling
+      event.preventDefault();
     };
     
     const handleMiddleMouseDown = (event: MouseEvent) => {
@@ -163,6 +175,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       document.addEventListener('mousemove', handleMiddleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       containerRef.current.addEventListener('mouseleave', handleMouseLeave);
+      containerRef.current.addEventListener('wheel', handleMouseWheel, { passive: false });
     }
     
     window.addEventListener('resize', handleResize);
@@ -173,6 +186,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       if (containerRef.current) {
         containerRef.current.removeEventListener('mousedown', handleMiddleMouseDown);
         containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
+        containerRef.current.removeEventListener('wheel', handleMouseWheel);
       }
       document.removeEventListener('mousemove', handleMiddleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -184,6 +198,41 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       }
     };
   }, [cameraRef, containerRef, controlsRef]);
+
+  useEffect(() => {
+    // Calculate and store the centers of emotional groups
+    emotionalGroupsRef.current.clear();
+    
+    // Group points by emotional tone
+    const emotionalGroups = new Map<string, Point[]>();
+    
+    points.forEach(point => {
+      const tone = point.emotionalTone || "Neutral";
+      if (!emotionalGroups.has(tone)) {
+        emotionalGroups.set(tone, []);
+      }
+      emotionalGroups.get(tone)!.push(point);
+    });
+    
+    // Calculate center for each group
+    emotionalGroups.forEach((groupPoints, tone) => {
+      if (groupPoints.length === 0) return;
+      
+      let sumX = 0, sumY = 0, sumZ = 0;
+      
+      groupPoints.forEach(point => {
+        sumX += point.position[0];
+        sumY += point.position[1];
+        sumZ += point.position[2];
+      });
+      
+      const centerX = sumX / groupPoints.length;
+      const centerY = sumY / groupPoints.length;
+      const centerZ = sumZ / groupPoints.length;
+      
+      emotionalGroupsRef.current.set(tone, new THREE.Vector3(centerX, centerY, centerZ));
+    });
+  }, [points]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -441,12 +490,60 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     });
   }, [cameraRef]);
 
+  // Add a new function to focus on emotional group centers
+  const focusOnEmotionalGroup = useCallback((emotionalTone: string) => {
+    if (!cameraRef.current || !controlsRef.current) return;
+    
+    const groupCenter = emotionalGroupsRef.current.get(emotionalTone);
+    if (!groupCenter) return;
+    
+    const point = groupCenter;
+    
+    const startPosition = new THREE.Vector3();
+    startPosition.copy(cameraRef.current.position);
+    
+    const endPosition = new THREE.Vector3();
+    endPosition.copy(point).add(new THREE.Vector3(0, 0, 10)); // Zoomed out a bit more for groups
+    
+    gsap.to(cameraRef.current.position, {
+      x: endPosition.x,
+      y: endPosition.y,
+      z: endPosition.z,
+      duration: 1.5,
+      ease: "power2.inOut",
+      onUpdate: () => {
+        if (controlsRef.current) {
+          controlsRef.current.target.set(point.x, point.y, point.z);
+          controlsRef.current.update();
+        }
+      }
+    });
+    
+    if (onFocusEmotionalGroup) {
+      onFocusEmotionalGroup(emotionalTone);
+    }
+  }, [cameraRef, onFocusEmotionalGroup]);
+
   useEffect(() => {
     if (focusOnWord) {
       const targetPoint = points.find(point => point.word === focusOnWord);
       focusOnPoint(targetPoint || null);
     }
   }, [focusOnWord, points, focusOnPoint]);
+
+  // Expose the focusOnEmotionalGroup function to parent components
+  useEffect(() => {
+    if (!window.documentEmbeddingActions) {
+      window.documentEmbeddingActions = {};
+    }
+    window.documentEmbeddingActions.focusOnEmotionalGroup = focusOnEmotionalGroup;
+    
+    return () => {
+      if (window.documentEmbeddingActions) {
+        window.documentEmbeddingActions.focusOnEmotionalGroup = undefined;
+      }
+    };
+  }, [focusOnEmotionalGroup]);
 
   return (
     <div ref={externalContainerRef ? undefined : internalContainerRef} style={{ width: '100%', height: '100%' }} />

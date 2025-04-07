@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 interface ParticleBackgroundProps {
   containerRef: React.RefObject<HTMLDivElement>;
-  points: { position: number[] }[];
+  points: { position: number[], emotionalTone?: string, color?: number[] }[];
 }
 
 const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, points }) => {
@@ -41,6 +41,75 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
     renderer.domElement.style.left = '0';
     containerRef.current.appendChild(renderer.domElement);
 
+    // Group points by emotional tone
+    const emotionalGroupings = new Map<string, { 
+      points: { position: number[] }[],
+      color: number[],
+      center: number[],
+      radius: number
+    }>();
+    
+    // Default colors for emotional groups (you can adjust these)
+    const defaultColors = {
+      "Anxiety": [0.5, 0.9, 0.5],       // Light green
+      "Anger": [0.8, 0.5, 0.5],         // Light red
+      "Fear": [0.5, 0.5, 0.9],          // Light blue
+      "Sadness": [0.6, 0.6, 0.9],       // Light purple
+      "Confusion": [0.9, 0.9, 0.5],     // Light yellow
+      "Shame": [0.9, 0.6, 0.5],         // Light orange
+      "Helplessness": [0.7, 0.5, 0.8],  // Light purple
+      "Neutral": [0.8, 0.8, 0.8],       // Light gray
+      "Unknown": [0.7, 0.9, 0.7]        // Default light green
+    };
+    
+    // Group points by emotional tone
+    points.forEach(point => {
+      const tone = point.emotionalTone || "Unknown";
+      
+      if (!emotionalGroupings.has(tone)) {
+        emotionalGroupings.set(tone, {
+          points: [],
+          color: point.color || defaultColors[tone as keyof typeof defaultColors] || defaultColors.Unknown,
+          center: [0, 0, 0],
+          radius: 0
+        });
+      }
+      
+      emotionalGroupings.get(tone)!.points.push(point);
+    });
+    
+    // Calculate center and radius for each group
+    emotionalGroupings.forEach((group, tone) => {
+      if (group.points.length === 0) return;
+      
+      let sumX = 0, sumY = 0, sumZ = 0;
+      
+      group.points.forEach(point => {
+        sumX += point.position[0];
+        sumY += point.position[1];
+        sumZ += point.position[2];
+      });
+      
+      const centerX = sumX / group.points.length;
+      const centerY = sumY / group.points.length;
+      const centerZ = sumZ / group.points.length;
+      
+      group.center = [centerX, centerY, centerZ];
+      
+      // Calculate radius (max distance from center to any point)
+      let maxDistance = 0;
+      group.points.forEach(point => {
+        const dx = point.position[0] - centerX;
+        const dy = point.position[1] - centerY;
+        const dz = point.position[2] - centerZ;
+        const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        maxDistance = Math.max(maxDistance, distance);
+      });
+      
+      // Add some padding to the radius
+      group.radius = maxDistance * 1.5;
+    });
+
     // Calculate boundaries of the points
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
@@ -64,8 +133,8 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
     minZ -= padding;
     maxZ += padding;
 
-    // Create particles
-    const particleCount = 2000;
+    // Create particles - increase count for more density
+    const particleCount = 3000;
     const particleGeometry = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     const particleSizes = new Float32Array(particleCount);
@@ -77,25 +146,58 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
       particlePositions[i * 3 + 1] = minY + Math.random() * (maxY - minY);
       particlePositions[i * 3 + 2] = minZ + Math.random() * (maxZ - minZ);
       
-      // Random size
-      particleSizes[i] = Math.random() * 0.05 + 0.02;
+      // Determine if this particle is inside any emotional group
+      const x = particlePositions[i * 3];
+      const y = particlePositions[i * 3 + 1];
+      const z = particlePositions[i * 3 + 2];
       
-      // Green color with slight variation
-      const greenIntensity = 0.8 + Math.random() * 0.2;
-      particleColors[i * 3] = 0.8 * Math.random(); // Red (low)
-      particleColors[i * 3 + 1] = 0.7 + 0.3 * greenIntensity; // Green (high)
-      particleColors[i * 3 + 2] = 0.4 * Math.random(); // Blue (low)
+      let insideAnyGroup = false;
+      let groupColor = [0.8, 0.9, 0.8]; // Default light green
+      
+      // Check if particle is within any group's radius
+      emotionalGroupings.forEach(group => {
+        const dx = x - group.center[0];
+        const dy = y - group.center[1];
+        const dz = z - group.center[2];
+        const distanceToCenter = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        
+        if (distanceToCenter <= group.radius) {
+          insideAnyGroup = true;
+          groupColor = group.color;
+          
+          // Adjust particle size based on distance from center (larger near center)
+          const distanceRatio = 1 - (distanceToCenter / group.radius);
+          particleSizes[i] = 0.05 + (distanceRatio * 0.1);
+        }
+      });
+      
+      // If not in any group, assign a smaller size
+      if (!insideAnyGroup) {
+        particleSizes[i] = 0.02 + Math.random() * 0.03;
+        
+        // Sparse green particles for areas outside groups
+        particleColors[i * 3] = 0.7 + Math.random() * 0.2; // Red (low) 
+        particleColors[i * 3 + 1] = 0.8 + Math.random() * 0.2; // Green (high)
+        particleColors[i * 3 + 2] = 0.7 + Math.random() * 0.2; // Blue (low)
+      } else {
+        // Use group color with variation
+        const colorVariation = 0.2; // Amount of variation
+        particleColors[i * 3] = groupColor[0] * (0.8 + Math.random() * colorVariation); 
+        particleColors[i * 3 + 1] = groupColor[1] * (0.8 + Math.random() * colorVariation);
+        particleColors[i * 3 + 2] = groupColor[2] * (0.8 + Math.random() * colorVariation);
+      }
     }
     
     particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
     particleGeometry.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
     particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
     
+    // Create custom shader material for better-looking particles
     const particleMaterial = new THREE.PointsMaterial({
-      size: 0.1,
+      size: 0.15,
       vertexColors: true,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.7,
       blending: THREE.AdditiveBlending,
       sizeAttenuation: true,
     });
@@ -106,7 +208,7 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
 
     // Animation loop
     const animate = () => {
-      const animationId = requestAnimationFrame(animate);
+      requestAnimationFrame(animate);
       
       if (particlesRef.current) {
         particlesRef.current.rotation.x += 0.0002;
@@ -114,9 +216,6 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
       }
       
       renderer.render(scene, camera);
-      
-      // This is the fix - we shouldn't return a function from here
-      // as requestAnimationFrame expects a callback function, not a function that returns a function
     };
     
     // Start the animation and keep track of the ID
