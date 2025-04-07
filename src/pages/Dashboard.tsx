@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,28 +32,27 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
 const analyzePdfContent = async (pdfText: string) => {
-  // Simulate API call to analyze sentiment
   return new Promise((resolve) => {
     setTimeout(() => {
       const mockData = {
         overallSentiment: {
-          score: Math.random() * 0.5 + 0.25, // Random between 0.25 and 0.75
+          score: Math.random() * 0.5 + 0.25,
           label: Math.random() > 0.6 ? "Positive" : Math.random() > 0.3 ? "Neutral" : "Negative"
         },
         distribution: {
-          positive: Math.floor(Math.random() * 40 + 30), // 30-70%
-          neutral: Math.floor(Math.random() * 30 + 10),  // 10-40%
-          negative: Math.floor(Math.random() * 30 + 10), // 10-40%
+          positive: Math.floor(Math.random() * 40 + 30),
+          neutral: Math.floor(Math.random() * 30 + 10),
+          negative: Math.floor(Math.random() * 30 + 10)
         },
         timeline: Array.from({ length: 20 }, (_, i) => ({
           segment: i + 1,
-          sentiment: Math.random() * 0.7 + 0.15, // 0.15-0.85
+          sentiment: Math.random() * 0.7 + 0.15,
           text: pdfText.substring(i * 100, (i + 1) * 100).trim() || "Sample text segment"
         })),
         entities: Array.from({ length: 8 }, (_, i) => ({
           name: ["Anxiety", "Depression", "Therapy", "Medication", "Doctor", "Family", "Work", "Sleep"][i],
-          sentiment: Math.random() * 0.8 + 0.1, // 0.1-0.9
-          mentions: Math.floor(Math.random() * 10) + 1, // 1-10
+          sentiment: Math.random() * 0.8 + 0.1,
+          mentions: Math.floor(Math.random() * 10) + 1,
           contexts: Array.from({ length: Math.floor(Math.random() * 3) + 1 }, () => 
             "Context: " + pdfText.substring(Math.floor(Math.random() * pdfText.length), 
             Math.floor(Math.random() * pdfText.length) + 100).trim()
@@ -64,9 +62,9 @@ const analyzePdfContent = async (pdfText: string) => {
           phrase: ["panic attack", "heart racing", "shortness of breath", "feeling overwhelmed", 
                   "therapy session", "coping mechanisms", "deep breathing", "medication adjustment",
                   "sleep disturbance", "support system", "trigger identification", "mindfulness practice"][i],
-          relevance: Math.random() * 0.5 + 0.5, // 0.5-1.0
-          sentiment: Math.random() * 0.8 + 0.1, // 0.1-0.9
-          occurrences: Math.floor(Math.random() * 5) + 1 // 1-5
+          relevance: Math.random() * 0.5 + 0.5,
+          sentiment: Math.random() * 0.8 + 0.1,
+          occurrences: Math.floor(Math.random() * 5) + 1
         })),
         clusters: [
           { name: "Anxiety Symptoms", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.4 + 0.1 },
@@ -163,7 +161,6 @@ const Dashboard = () => {
   const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true);
 
   useEffect(() => {
-    // Close search dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
         setOpen(false);
@@ -182,16 +179,13 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (sentimentData) {
-      // Generate mock points for visualization
       const mockPoints = generateMockPoints(pdfText, sentimentData);
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
-      // Extract unique words for search
       const words = mockPoints.map(p => p.word);
       setUniqueWords([...new Set(words)]);
       
-      // Generate emotional clusters
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
         return {
@@ -203,24 +197,20 @@ const Dashboard = () => {
       
       setEmotionalClusters(clusters);
       
-      // Initialize cluster colors
       const colorMap: Record<string, string> = {};
       clusters.forEach((cluster: any) => {
         colorMap[cluster.name] = cluster.color;
       });
       setClusterColors(colorMap);
       
-      // Initialize cluster expanded state
       const expandedMap: Record<string, boolean> = {};
       clusters.forEach((cluster: any) => {
         expandedMap[cluster.name] = false;
       });
       setClusterExpanded(expandedMap);
       
-      // Assign points to clusters
       const clusterPointsMap: Record<string, Point[]> = {};
       clusters.forEach((cluster: any) => {
-        // Randomly assign points to clusters for demo
         const clusterSize = cluster.size;
         const assignedPoints = mockPoints
           .filter(p => !Object.values(clusterPointsMap).flat().some(cp => cp.id === p.id))
@@ -238,10 +228,8 @@ const Dashboard = () => {
       const file = files[0];
       setFile(file);
       
-      // Simulate extracting text from PDF
       const reader = new FileReader();
       reader.onload = (e) => {
-        // For demo purposes, we'll just use the file name as mock text
         const mockText = `This is a simulated text extraction from ${file.name}. In a real application, we would extract the actual content of the PDF file. For now, we're generating mock data to demonstrate the functionality of the sentiment analysis dashboard. This text would contain information about mental health experiences, emotions, and personal reflections that would be analyzed for sentiment and emotional patterns.`;
         setPdfText(mockText);
       };
@@ -342,7 +330,6 @@ const Dashboard = () => {
 
   const handleSelectCluster = (cluster: any) => {
     if (selectedCluster === cluster.name) {
-      // Deselect if already selected
       setSelectedCluster(null);
       setFilteredPoints(points);
       toast.info(`Showing all words`);
@@ -357,24 +344,19 @@ const Dashboard = () => {
   const calculateRelationship = (point1: Point, point2: Point) => {
     if (!point1 || !point2) return null;
     
-    // Calculate Euclidean distance between points in 3D space
     const distance = Math.sqrt(
       Math.pow(point1.position[0] - point2.position[0], 2) +
       Math.pow(point1.position[1] - point2.position[1], 2) +
       Math.pow(point1.position[2] - point2.position[2], 2)
     );
     
-    // Normalize distance to a similarity score (closer = more similar)
     const spatialSimilarity = Math.max(0, 1 - (distance / 2));
     
-    // Calculate sentiment similarity
     const sentimentDiff = Math.abs(point1.sentiment - point2.sentiment);
     const sentimentSimilarity = 1 - sentimentDiff;
     
-    // Check if they belong to the same emotional group
     const sameEmotionalGroup = point1.emotionalTone === point2.emotionalTone;
     
-    // Check for shared keywords
     const point1Keywords = point1.keywords || [];
     const point2Keywords = point2.keywords || [];
     const sharedKeywords = point1Keywords.filter(k => point2Keywords.includes(k));
@@ -462,7 +444,6 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
-              {/* Latent Emotional Analysis - Now outside of tabs as a standalone section */}
               <Card className="border border-border shadow-md overflow-hidden bg-card mb-8">
                 <CardHeader className="z-10">
                   <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
@@ -562,7 +543,6 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
-              {/* Other analysis tabs */}
               <Tabs defaultValue="overview" className="space-y-4">
                 <div className="overflow-x-auto">
                   <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto">
