@@ -268,13 +268,14 @@ const Dashboard = () => {
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [open, setOpen] = useState(false);
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
-  const [pdfText, setPdfText] = useState<string>("");
+  const [pdfText, setPdfText] = useState<string>(""); 
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
 
   const handleFileUpload = (files: File[], pdfText?: string) => {
     if (files && files.length > 0) {
       setFile(files[0]);
       setPdfText(pdfText || "");
-      toast.success(`File "${files[0].name}" uploaded successfully`);
+      toast.success(`File "${files[0].name}" uploaded successfully");
       if (sentimentData) {
         setSentimentData(null);
         setSelectedPoint(null);
@@ -317,6 +318,7 @@ const Dashboard = () => {
 
   const handlePointClick = (point: Point) => {
     setSelectedPoint(point);
+    setSelectedWord(point.word);
     toast(`Selected: "${point.word}" (${point.emotionalTone})`);
   };
   
@@ -339,11 +341,13 @@ const Dashboard = () => {
 
   const handleSelectWord = (word: string) => {
     setSearchTerm(word);
+    setSelectedWord(word);
     setOpen(false);
   };
 
   const handleClearSearch = () => {
     setSearchTerm("");
+    setSelectedWord(null);
   };
 
   return (
@@ -484,6 +488,7 @@ const Dashboard = () => {
                           points={filteredPoints}
                           onPointClick={handlePointClick}
                           isInteractive={true}
+                          focusOnWord={selectedWord}
                         />
                       </div>
                     </CardContent>

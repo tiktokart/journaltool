@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -11,6 +10,7 @@ interface EmbeddingSceneProps {
   onPointSelect: (point: Point | null) => void;
   isInteractive: boolean;
   depressedJournalReference?: boolean;
+  focusOnWord?: string | null;
 }
 
 export const EmbeddingScene = ({ 
@@ -19,7 +19,8 @@ export const EmbeddingScene = ({
   onPointHover, 
   onPointSelect, 
   isInteractive,
-  depressedJournalReference = false
+  depressedJournalReference = false,
+  focusOnWord = null
 }: EmbeddingSceneProps) => {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -34,7 +35,6 @@ export const EmbeddingScene = ({
   const createPointCloud = (pointsData: Point[]) => {
     if (!sceneRef.current) return;
     
-    // Remove old points and lines
     if (pointsRef.current) {
       sceneRef.current.remove(pointsRef.current);
       if (pointsRef.current.geometry) {
@@ -61,23 +61,19 @@ export const EmbeddingScene = ({
     const colors = new Float32Array(pointsData.length * 3);
     const sizes = new Float32Array(pointsData.length);
     
-    // Determine frequency of words for size calculation
     const wordFrequency: Record<string, number> = {};
     pointsData.forEach(point => {
       wordFrequency[point.word] = (wordFrequency[point.word] || 0) + 1;
     });
     
-    // Calculate min and max frequency for normalization
     const frequencies = Object.values(wordFrequency);
     const minFreq = Math.min(...frequencies);
     const maxFreq = Math.max(...frequencies);
     const freqRange = maxFreq - minFreq;
     
-    // Size range
     const minSize = 0.03;
     const maxSize = 0.12;
     
-    // Fill the arrays
     pointsData.forEach((point, i) => {
       positions[i * 3] = point.position[0];
       positions[i * 3 + 1] = point.position[1];
@@ -87,7 +83,6 @@ export const EmbeddingScene = ({
       colors[i * 3 + 1] = point.color[1];
       colors[i * 3 + 2] = point.color[2];
       
-      // Calculate size based on frequency
       const frequency = wordFrequency[point.word] || 1;
       const normalizedFreq = freqRange > 0 
         ? (frequency - minFreq) / freqRange 
@@ -108,22 +103,18 @@ export const EmbeddingScene = ({
       sizeAttenuation: true
     });
     
-    // Create points
     const points = new THREE.Points(particlesGeometry, particlesMaterial);
     sceneRef.current.add(points);
     pointsRef.current = points;
     
-    // Store point data for raycasting
     points.userData = { pointsData };
     
-    // Create lines between related points
     createRelationshipLines(pointsData);
   };
   
   const createRelationshipLines = (pointsData: Point[]) => {
     if (!sceneRef.current) return;
     
-    // Collect line positions from relationships
     const linePositions: number[] = [];
     const lineColors: number[] = [];
     
@@ -136,10 +127,8 @@ export const EmbeddingScene = ({
         );
         
         point.relationships.forEach((rel) => {
-          // Find the target point
           const targetPoint = pointsData.find((p) => p.id === rel.id);
           if (targetPoint) {
-            // Only draw lines where the relationships are strong enough
             if (rel.strength > 0.4) {
               const targetPos = new THREE.Vector3(
                 targetPoint.position[0],
@@ -147,13 +136,11 @@ export const EmbeddingScene = ({
                 targetPoint.position[2]
               );
               
-              // Add line vertices
               linePositions.push(
                 pointPos.x, pointPos.y, pointPos.z,
                 targetPos.x, targetPos.y, targetPos.z
               );
               
-              // Add line colors - use a blend of both point colors
               lineColors.push(
                 point.color[0], point.color[1], point.color[2], 
                 targetPoint.color[0], targetPoint.color[1], targetPoint.color[2]
@@ -194,20 +181,16 @@ export const EmbeddingScene = ({
         const point = pointsRef.current.userData.pointsData[index];
         onPointHover(point);
         
-        // Highlight the point
         if (pointsRef.current.geometry.attributes.size) {
           const sizesAttribute = pointsRef.current.geometry.attributes.size;
           const sizesArray = sizesAttribute.array as Float32Array;
           
-          // Reset all sizes to base
           for (let i = 0; i < sizesArray.length; i++) {
             sizesArray[i] = 0.05;
           }
           
-          // Highlight the hovered point
           sizesArray[index] = 0.15;
           
-          // Highlight related points if any
           if (point.relationships) {
             point.relationships.forEach(rel => {
               const relatedIndex = pointsRef.current!.userData.pointsData.findIndex((p: Point) => p.id === rel.id);
@@ -223,7 +206,6 @@ export const EmbeddingScene = ({
     } else {
       onPointHover(null);
       
-      // Reset all point sizes
       if (pointsRef.current.geometry.attributes.size) {
         const sizesAttribute = pointsRef.current.geometry.attributes.size;
         const sizesArray = sizesAttribute.array as Float32Array;
@@ -235,16 +217,58 @@ export const EmbeddingScene = ({
     }
   };
   
-  // Initialize Three.js scene
+  const focusOnPoint = (wordToFocus: string) => {
+    if (!pointsRef.current || !cameraRef.current || !controlsRef.current) return;
+    
+    const pointsData = pointsRef.current.userData?.pointsData as Point[];
+    if (!pointsData) return;
+    
+    const targetPoint = pointsData.find(p => p.word === wordToFocus);
+    if (!targetPoint) return;
+    
+    const targetPosition = new THREE.Vector3(
+      targetPoint.position[0],
+      targetPoint.position[1],
+      targetPoint.position[2]
+    );
+    
+    const distance = 5;
+    const offsetPosition = targetPosition.clone().add(new THREE.Vector3(0, 0, distance));
+    
+    const startPosition = cameraRef.current.position.clone();
+    const startTarget = controlsRef.current.target.clone();
+    const endTarget = targetPosition.clone();
+    
+    const duration = 1000;
+    const startTime = Date.now();
+    
+    const animateCamera = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      
+      cameraRef.current!.position.lerpVectors(startPosition, offsetPosition, easeProgress);
+      
+      const newTarget = new THREE.Vector3();
+      newTarget.lerpVectors(startTarget, endTarget, easeProgress);
+      controlsRef.current!.target.copy(newTarget);
+      controlsRef.current!.update();
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateCamera);
+      }
+    };
+    
+    animateCamera();
+  };
+  
   useEffect(() => {
     if (!containerRef.current) return;
     
-    // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xFFFFFF); // White background
+    scene.background = new THREE.Color(0xFFFFFF);
     sceneRef.current = scene;
     
-    // Camera setup
     const camera = new THREE.PerspectiveCamera(
       60,
       containerRef.current.clientWidth / containerRef.current.clientHeight,
@@ -254,26 +278,22 @@ export const EmbeddingScene = ({
     camera.position.z = 20;
     cameraRef.current = camera;
     
-    // Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
     
-    // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.08; // Increased damping for smoother rotation
-    controls.rotateSpeed = 0.5; // Slower rotation speed
+    controls.dampingFactor = 0.08;
+    controls.rotateSpeed = 0.5;
     controls.screenSpacePanning = false;
     controls.maxDistance = 30;
     controls.minDistance = 5;
     controlsRef.current = controls;
     
-    // Create particles
     createPointCloud(points);
     
-    // Animation function
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
       
@@ -286,10 +306,8 @@ export const EmbeddingScene = ({
       }
     };
     
-    // Start animation
     animate();
     
-    // Cleanup
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -319,7 +337,6 @@ export const EmbeddingScene = ({
     };
   }, [points]);
   
-  // Handle window resize
   useEffect(() => {
     if (!containerRef.current) return;
     
@@ -338,7 +355,6 @@ export const EmbeddingScene = ({
     };
   }, []);
   
-  // Setup mouse events for interactivity
   useEffect(() => {
     if (!containerRef.current || !isInteractive) return;
     
@@ -347,7 +363,6 @@ export const EmbeddingScene = ({
       
       const rect = containerRef.current.getBoundingClientRect();
       
-      // Calculate mouse position in normalized device coordinates (-1 to +1)
       mouseRef.current.x = ((event.clientX - rect.left) / containerRef.current.clientWidth) * 2 - 1;
       mouseRef.current.y = -((event.clientY - rect.top) / containerRef.current.clientHeight) * 2 + 1;
       
@@ -357,7 +372,6 @@ export const EmbeddingScene = ({
     const handleClick = () => {
       if (!isInteractive || !raycasterRef.current || !cameraRef.current || !pointsRef.current) return;
       
-      // This will be called after mousemove has already set the hover state
       raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
       const intersects = raycasterRef.current.intersectObject(pointsRef.current);
       
@@ -380,29 +394,30 @@ export const EmbeddingScene = ({
       }
     };
   }, [isInteractive, onPointHover, onPointSelect]);
-
-  // Make camera reference accessible to parent component
+  
+  useEffect(() => {
+    if (focusOnWord && pointsRef.current) {
+      focusOnPoint(focusOnWord);
+    }
+  }, [focusOnWord]);
+  
   useEffect(() => {
     if (cameraRef.current) {
       // Assignment to make the ref accessible to zoom controls
     }
   }, [cameraRef.current]);
-
-  return null; // This is a non-rendering component that manages the Three.js scene
+  
+  return null;
 };
 
-// Export a function to zoom in with smoother transition
 export const zoomIn = (camera: THREE.PerspectiveCamera | null) => {
   if (camera) {
-    // More gradual zoom for smoother effect
     camera.position.z *= 0.95;
   }
 };
 
-// Export a function to zoom out with smoother transition
 export const zoomOut = (camera: THREE.PerspectiveCamera | null) => {
   if (camera) {
-    // More gradual zoom for smoother effect
     camera.position.z *= 1.05;
     if (camera.position.z > 30) {
       camera.position.z = 30;

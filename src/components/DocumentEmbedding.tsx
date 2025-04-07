@@ -1,5 +1,5 @@
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
 import { generateMockPoints } from '../utils/embeddingUtils';
@@ -12,13 +12,22 @@ export const DocumentEmbedding = ({
   points = [], 
   onPointClick, 
   isInteractive = true,
-  depressedJournalReference = false
+  depressedJournalReference = false,
+  focusOnWord = null
 }: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const [currentFocusWord, setCurrentFocusWord] = useState<string | null>(null);
+  
+  // Update currentFocusWord when focusOnWord changes
+  useEffect(() => {
+    if (focusOnWord !== currentFocusWord) {
+      setCurrentFocusWord(focusOnWord);
+    }
+  }, [focusOnWord]);
   
   // Generate mock points if none are provided
   const getPoints = () => {
@@ -61,6 +70,7 @@ export const DocumentEmbedding = ({
         onPointSelect={handlePointSelect}
         isInteractive={isInteractive}
         depressedJournalReference={depressedJournalReference}
+        focusOnWord={currentFocusWord}
       />
       
       {isInteractive && (
