@@ -101,8 +101,7 @@ export const SentimentOverview = ({ data }: SentimentOverviewProps) => {
                 <Progress 
                   value={item.value} 
                   className="h-2"
-                  style={{ backgroundColor: `${item.color}40` }} // Light version of the color
-                  indicatorClassName={`bg-[${item.color}]`}
+                  style={{ backgroundColor: `${item.color}40` }} 
                 />
               </div>
             ))}
