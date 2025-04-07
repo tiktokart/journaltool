@@ -12,9 +12,22 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
-import { Loader2, CircleDot, Search, FileText } from "lucide-react";
+import { Loader2, CircleDot, Search, FileText, X } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
+import { 
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const analyzePdfContent = (file: File): Promise<any> => {
   return new Promise((resolve) => {
@@ -184,6 +197,8 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
   const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [uniqueWords, setUniqueWords] = useState<string[]>([]);
 
   const handleFileUpload = (files: File[]) => {
     if (files && files.length > 0) {
@@ -212,6 +227,16 @@ const Dashboard = () => {
       setSentimentData(results);
       setFilteredPoints(results.embeddingPoints);
       setAnalysisComplete(true);
+      
+      // Extract unique words from the embedding points
+      const words = results.embeddingPoints
+        .map((point: Point) => point.word)
+        .filter((word: string, index: number, self: string[]) => 
+          word && self.indexOf(word) === index
+        )
+        .sort();
+      
+      setUniqueWords(words);
       toast.success("Document analysis completed! All tabs are now available.");
     } catch (error) {
       toast.error("Error analyzing document");
@@ -243,6 +268,15 @@ const Dashboard = () => {
     
     setFilteredPoints(filtered);
   }, [searchTerm, sentimentData]);
+
+  const handleSelectWord = (word: string) => {
+    setSearchTerm(word);
+    setOpen(false);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -315,13 +349,63 @@ const Dashboard = () => {
                           <span>Latent Emotional Analysis</span>
                         </CardTitle>
                         <div className="relative w-full md:w-64">
-                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            placeholder="Search words or emotions..." 
-                            className="pl-8 w-full"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                          />
+                          <Popover open={open} onOpenChange={setOpen}>
+                            <PopoverTrigger asChild>
+                              <div className="relative w-full">
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                  placeholder="Search words or emotions..." 
+                                  className="pl-8 w-full pr-8"
+                                  value={searchTerm}
+                                  onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    if (e.target.value.trim() !== "") {
+                                      setOpen(true);
+                                    }
+                                  }}
+                                  onFocus={() => {
+                                    if (uniqueWords.length > 0) {
+                                      setOpen(true);
+                                    }
+                                  }}
+                                />
+                                {searchTerm && (
+                                  <button 
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                                    onClick={handleClearSearch}
+                                  >
+                                    <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                  </button>
+                                )}
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent 
+                              className="p-0 w-[var(--radix-popover-trigger-width)] max-h-[300px] overflow-y-auto"
+                              side="bottom"
+                              align="start"
+                            >
+                              <Command>
+                                <CommandInput placeholder="Search words..." />
+                                <CommandList>
+                                  <CommandEmpty>No results found</CommandEmpty>
+                                  <CommandGroup>
+                                    {uniqueWords
+                                      .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
+                                      .slice(0, 100) // Limit to 100 suggestions
+                                      .map((word) => (
+                                        <CommandItem 
+                                          key={word} 
+                                          value={word}
+                                          onSelect={handleSelectWord}
+                                        >
+                                          {word}
+                                        </CommandItem>
+                                      ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
                       <div className="text-sm font-normal flex items-center text-muted-foreground">
