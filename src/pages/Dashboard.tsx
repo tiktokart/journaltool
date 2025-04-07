@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -651,7 +652,7 @@ const Dashboard = () => {
                       isInteractive={true}
                       depressedJournalReference={false}
                       focusOnWord={selectedWord}
-                      sourceDescription={sentimentData.sourceDescription}
+                      sourceDescription={sentimentData?.sourceDescription}
                       onResetView={handleResetVisualization}
                       visibleClusterCount={visibleClusterCount}
                     />
@@ -672,32 +673,32 @@ const Dashboard = () => {
                 <TabsContent value="overview" className="mt-6">
                   <SentimentOverview 
                     data={{
-                      overallSentiment: sentimentData.overallSentiment,
-                      distribution: sentimentData.distribution,
-                      fileName: sentimentData.fileName
+                      overallSentiment: sentimentData?.overallSentiment || { score: 0.5, label: "Neutral" },
+                      distribution: sentimentData?.distribution || { positive: 33, neutral: 33, negative: 34 },
+                      fileName: sentimentData?.fileName || "No file"
                     }}
-                    sourceDescription={sentimentData.sourceDescription}
+                    sourceDescription={sentimentData?.sourceDescription || ""}
                   />
                 </TabsContent>
                 
                 <TabsContent value="timeline" className="mt-6">
                   <SentimentTimeline 
-                    data={sentimentData.timeline}
-                    sourceDescription={sentimentData.sourceDescription}
+                    data={sentimentData?.timeline || []}
+                    sourceDescription={sentimentData?.sourceDescription || ""}
                   />
                 </TabsContent>
                 
                 <TabsContent value="themes" className="mt-6">
                   <EntitySentiment 
-                    data={sentimentData.entities}
-                    sourceDescription={sentimentData.sourceDescription}
+                    data={sentimentData?.entities || []}
+                    sourceDescription={sentimentData?.sourceDescription || ""}
                   />
                 </TabsContent>
                 
                 <TabsContent value="keyphrases" className="mt-6">
                   <KeyPhrases 
-                    data={sentimentData.keyPhrases}
-                    sourceDescription={sentimentData.sourceDescription}
+                    data={sentimentData?.keyPhrases || []}
+                    sourceDescription={sentimentData?.sourceDescription || ""}
                   />
                 </TabsContent>
               </Tabs>
@@ -875,7 +876,7 @@ const Dashboard = () => {
                           onRemoveWord={handleRemoveWordFromComparison}
                           calculateRelationship={calculateRelationship}
                           onAddWordClick={handleAddWordToComparison}
-                          sourceDescription={sentimentData.sourceDescription}
+                          sourceDescription={sentimentData?.sourceDescription || ""}
                         />
                       </div>
                     )}
@@ -985,3 +986,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
