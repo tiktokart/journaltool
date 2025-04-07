@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,7 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
-import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw } from "lucide-react";
+import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
 import { WordComparison } from "@/components/WordComparison";
@@ -236,6 +235,39 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         };
       });
 
+      let summary = "";
+      if (pdfText && pdfText.length > 0) {
+        const sentences = pdfText
+          .replace(/([.?!])\s*(?=[A-Z])/g, "$1|")
+          .split("|")
+          .filter(s => s.trim().length > 10)
+          .slice(0, 20);
+          
+        const summaryLength = Math.min(5, Math.max(3, Math.floor(sentences.length / 4)));
+        summary = sentences.slice(0, summaryLength).join(" ");
+        
+        if (summary.length > 500) {
+          summary = summary.substring(0, 497) + "...";
+        }
+      } else {
+        const dominantEmotion = Object.entries(emotionalDistribution)
+          .sort((a, b) => b[1] - a[1])[0][0];
+        
+        const emotionSummaries = {
+          Joy: "This document contains predominantly positive content, expressing optimism and satisfaction. The author appears to convey enthusiasm and positive outlook throughout.",
+          Sadness: "The document expresses significant melancholy and disappointment. Several passages indicate feelings of loss or regret, with an overall somber tone.",
+          Anger: "There are strong expressions of frustration and discontent throughout this document. The author appears to be addressing perceived injustices or grievances.",
+          Fear: "Concerns and anxieties are prominent throughout this text. The author expresses worry about future outcomes and potential threats.",
+          Surprise: "The document contains unexpected revelations and sudden shifts in perspective. The author seems to be processing unexpected information.",
+          Disgust: "There are strong expressions of aversion and disapproval throughout. The author takes a critical stance toward the subject matter.",
+          Trust: "Expressions of confidence and reliability dominate this document. The author establishes credibility and trustworthiness throughout.",
+          Anticipation: "The document focuses on future possibilities and expectations. There's a forward-looking perspective throughout the content.",
+          Neutral: "This document presents information in a balanced, objective manner. The content is primarily factual with minimal emotional expression."
+        };
+        
+        summary = emotionSummaries[dominantEmotion as keyof typeof emotionSummaries];
+      }
+
       const analysisResults = {
         overallSentiment: {
           score: normalizedSentiment,
@@ -253,7 +285,8 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         fileName: file.name,
         fileSize: file.size,
         wordCount: customWordBank.length,
-        pdfTextLength: pdfText ? pdfText.length : 0
+        pdfTextLength: pdfText ? pdfText.length : 0,
+        summary: summary
       };
 
       resolve(analysisResults);
@@ -284,7 +317,7 @@ const Dashboard = () => {
     if (files && files.length > 0) {
       setFile(files[0]);
       setPdfText(extractedText || "");
-      toast.success(`File "${files[0].name}" uploaded successfully`);
+      toast.success(`File "${files[0].name}" uploaded successfully");
       
       if (extractedText && extractedText.length > 0) {
         const wordCount = extractedText.split(/\s+/).length;
@@ -553,6 +586,20 @@ const Dashboard = () => {
                   )}
                 </span>
               </div>
+              
+              <Card className="mb-6 border border-border shadow-md bg-card">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center">
+                    <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                    <CardTitle className="text-xl">Document Summary</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {sentimentData.summary || "No summary available for this document."}
+                  </p>
+                </CardContent>
+              </Card>
               
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList className="grid grid-cols-6 md:w-[900px]">
