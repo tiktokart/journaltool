@@ -10,7 +10,7 @@ interface KeyPhrasesProps {
     relevance: number;
     occurrences: number;
   }>;
-  sourceDescription?: string;
+  sourceDescription?: string; // Add this to show where words came from
 }
 
 export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
@@ -77,7 +77,7 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
   return (
     <Card className="border-0 shadow-md w-full">
       <CardHeader>
-        <CardTitle>Key Words from Document</CardTitle>
+        <CardTitle>Most Common Words</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -92,7 +92,7 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
               {sourceDescription}
             </div>
           ) : (
-            "Words extracted from your document, grouped by sentiment and sorted by frequency."
+            "All commonly used words in your document, grouped by sentiment and sized by frequency."
           )}
         </div>
       </CardContent>

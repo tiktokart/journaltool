@@ -36,7 +36,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
   return (
     <Card className="border-0 shadow-md w-full">
       <CardHeader>
-        <CardTitle>Key Themes Analysis</CardTitle>
+        <CardTitle>Theme Sentiment Analysis</CardTitle>
       </CardHeader>
       <CardContent>
         {sortedData.length === 0 ? (
@@ -94,7 +94,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
               {sourceDescription}
             </div>
           ) : (
-            "This chart shows sentiment scores for key themes identified in your document."
+            "The chart shows sentiment scores for key themes identified in your document."
           )}
         </div>
       </CardContent>

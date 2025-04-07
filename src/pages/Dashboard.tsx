@@ -1,9 +1,7 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { FileUploader } from "@/components/FileUploader";
 import { SentimentOverview } from "@/components/SentimentOverview";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
@@ -32,86 +30,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
-// This function now processes the actual text from the PDF to generate relevant data
+const getRGBColorString = (color: number[]): string => {
+  return `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`;
+};
+
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
-      // Extract words from the PDF text
-      const words = pdfText
-        .split(/\s+/)
-        .filter(word => word.length > 2)
-        .map(word => word.replace(/[^\w\s]|_/g, "").toLowerCase())
-        .filter(Boolean);
-      
-      const wordFrequency: Record<string, number> = {};
-      words.forEach(word => {
-        wordFrequency[word] = (wordFrequency[word] || 0) + 1;
-      });
-      
-      // Sort words by frequency
-      const sortedWords = Object.entries(wordFrequency)
-        .sort(([, countA], [, countB]) => countB - countA)
-        .slice(0, 50);
-      
-      // Generate a sentiment score for each word (in a real app, this would use NLP)
-      const keyPhrases = sortedWords.map(([word, count], index) => {
-        // Generate varied sentiment scores based on word position
-        let sentiment = 0;
-        if (index % 3 === 0) sentiment = Math.random() * 0.4 + 0.1; // negative
-        else if (index % 3 === 1) sentiment = Math.random() * 0.2 + 0.4; // neutral
-        else sentiment = Math.random() * 0.4 + 0.6; // positive
-        
-        return {
-          phrase: word,
-          relevance: Math.random() * 0.5 + 0.5,
-          sentiment,
-          occurrences: count
-        };
-      });
-      
-      // Extract potential entities/themes from the text
-      const commonThemes = [
-        "anxiety", "stress", "therapy", "health", "work", 
-        "family", "sleep", "recovery", "doctor", "treatment", 
-        "medication", "exercise", "symptoms", "panic", "breathing"
-      ];
-      
-      // Find themes present in the text
-      const foundThemes = commonThemes.filter(theme => 
-        pdfText.toLowerCase().includes(theme)
-      );
-      
-      // Create entity data based on found themes
-      const entities = foundThemes.map(theme => {
-        // Count occurrences (simple approach)
-        const regex = new RegExp(`\\b${theme}\\b`, 'gi');
-        const matches = pdfText.match(regex);
-        const mentions = matches ? matches.length : 1;
-        
-        // Extract context around the theme (first occurrence)
-        const themeIndex = pdfText.toLowerCase().indexOf(theme);
-        const startContext = Math.max(0, themeIndex - 50);
-        const endContext = Math.min(pdfText.length, themeIndex + theme.length + 50);
-        const context = pdfText.substring(startContext, endContext);
-        
-        return {
-          name: theme.charAt(0).toUpperCase() + theme.slice(1),
-          sentiment: Math.random() * 0.8 + 0.1,
-          mentions,
-          contexts: [context]
-        };
-      });
-      
-      // If no themes found, provide generic ones
-      const finalEntities = entities.length > 0 ? entities : [
-        { name: "General Tone", sentiment: 0.6, mentions: 1, contexts: ["No specific themes detected in document"] }
-      ];
-      
-      // Generate a brief summary based on PDF content
-      const briefSummary = pdfText.length > 200 
-        ? `Document analysis of ${fileName}: ${pdfText.substring(0, 150)}...` 
-        : `Document analysis of ${fileName}: This appears to be a short document about ${finalEntities[0]?.name || "general topics"}.`;
-      
       const mockData = {
         overallSentiment: {
           score: Math.random() * 0.5 + 0.25,
@@ -125,10 +50,25 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
         timeline: Array.from({ length: 20 }, (_, i) => ({
           page: i + 1,
           score: Math.random() * 0.7 + 0.15,
-          text: pdfText.substring(i * Math.min(100, Math.floor(pdfText.length/20)), (i + 1) * Math.min(100, Math.floor(pdfText.length/20))).trim() || "Sample text segment"
+          text: pdfText.substring(i * 100, (i + 1) * 100).trim() || "Sample text segment"
         })),
-        entities: finalEntities,
-        keyPhrases,
+        entities: Array.from({ length: 8 }, (_, i) => ({
+          name: ["Anxiety", "Depression", "Therapy", "Medication", "Doctor", "Family", "Work", "Sleep"][i],
+          sentiment: Math.random() * 0.8 + 0.1,
+          mentions: Math.floor(Math.random() * 10) + 1,
+          contexts: Array.from({ length: Math.floor(Math.random() * 3) + 1 }, () => 
+            "Context: " + pdfText.substring(Math.floor(Math.random() * Math.max(pdfText.length, 1)), 
+            Math.floor(Math.random() * Math.max(pdfText.length, 1)) + 100).trim()
+          )
+        })),
+        keyPhrases: Array.from({ length: 12 }, (_, i) => ({
+          phrase: ["panic attack", "heart racing", "shortness of breath", "feeling overwhelmed", 
+                  "therapy session", "coping mechanisms", "deep breathing", "medication adjustment",
+                  "sleep disturbance", "support system", "trigger identification", "mindfulness practice"][i],
+          relevance: Math.random() * 0.5 + 0.5,
+          sentiment: Math.random() * 0.8 + 0.1,
+          occurrences: Math.floor(Math.random() * 5) + 1
+        })),
         clusters: [
           { name: "Anxiety Symptoms", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.4 + 0.1 },
           { name: "Treatment", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.4 },
@@ -136,7 +76,7 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
           { name: "Support System", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.5 },
           { name: "Coping Strategies", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.5 },
         ],
-        summary: briefSummary,
+        summary: "This document contains various topics and themes that have been analyzed for sentiment and emotional patterns. The analysis identifies key themes, sentiment distribution, and important phrases throughout the text.",
         sourceDescription: `PDF Document Analysis - ${fileName}`
       };
       
@@ -204,16 +144,49 @@ const Dashboard = () => {
   const [points, setPoints] = useState<Point[]>([]);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const [comparisonWord, setComparisonWord] = useState<string | null>(null);
+  const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [open, setOpen] = useState(false);
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
   const [visibleClusterCount, setVisibleClusterCount] = useState(5);
+  const searchDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
   const [emotionalClusters, setEmotionalClusters] = useState<any[]>([]);
   const [clusterColors, setClusterColors] = useState<Record<string, string>>({});
   const [clusterExpanded, setClusterExpanded] = useState<Record<string, boolean>>({});
   const [clusterPoints, setClusterPoints] = useState<Record<string, Point[]>>({});
   const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
-  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true);
+  const [comparisonSearchTerm, setComparisonSearchTerm] = useState("");
+  const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
+  const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
+  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState<boolean>(true);
   const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
+  const [wordSearchTerm, setWordSearchTerm] = useState("");
+  const [wordSearchOpen, setWordSearchOpen] = useState(false);
+  const wordSearchRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+      
+      if (comparisonSearchRef.current && !comparisonSearchRef.current.contains(event.target as Node)) {
+        setComparisonSearchOpen(false);
+      }
+      
+      if (wordSearchRef.current && !wordSearchRef.current.contains(event.target as Node)) {
+        setWordSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (sentimentData) {
@@ -222,10 +195,10 @@ const Dashboard = () => {
       setFilteredPoints(mockPoints);
       
       const allWords = pdfText
+        .toLowerCase()
         .split(/\s+/)
-        .filter(word => word.length > 2)
-        .map(word => word.replace(/[^\w\s]|_/g, "").toLowerCase())
-        .filter(Boolean);
+        .map(word => word.replace(/[^\w\s]|_/g, ""))
+        .filter(word => word.length > 2);
       
       const uniqueWordsSet = new Set(allWords);
       const uniqueWordsArray = Array.from(uniqueWordsSet);
@@ -238,7 +211,7 @@ const Dashboard = () => {
         return {
           ...cluster,
           id: index,
-          color: `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`,
+          color: getRGBColorString(color),
         };
       });
       
@@ -265,7 +238,7 @@ const Dashboard = () => {
           )
         );
         
-        const shuffled = [...availablePoints].sort(() => 0.5 - Math.random());
+        const shuffled = availablePoints.sort(() => 0.5 - Math.random());
         const assignedPoints = shuffled.slice(0, Math.min(clusterSize, shuffled.length));
         
         clusterPointsMap[cluster.name] = assignedPoints;
@@ -284,8 +257,13 @@ const Dashboard = () => {
         const wordCount = extractedText.split(/\s+/).length;
         toast.info(`Extracted ${wordCount} words from PDF for analysis`);
       } else {
-        const mockText = `This is a simulated text extraction from ${file.name}. In a real application, we would extract the actual content of the PDF file.`;
-        setPdfText(mockText);
+        const fallbackTexts = [
+          `This is a simulated text extraction from ${file.name}. In a real application, we would extract the actual content of the PDF file.`,
+          `Sample content from ${file.name}: Today I felt anxious at work. My heart was racing during the morning meeting. I used deep breathing to calm down.`
+        ];
+        
+        const randomIndex = Math.floor(Math.random() * fallbackTexts.length);
+        setPdfText(fallbackTexts[randomIndex]);
         toast.warning("Could not extract text properly, using sample text instead");
       }
     }
@@ -307,6 +285,42 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error analyzing sentiment:", error);
       toast.error("Failed to analyze document");
+      
+      const mockData = {
+        overallSentiment: {
+          score: 0.3,
+          label: "Negative"
+        },
+        distribution: {
+          positive: 20,
+          neutral: 30,
+          negative: 50
+        },
+        timeline: Array.from({ length: 10 }, (_, i) => ({
+          page: i + 1,
+          score: 0.3 + (Math.random() * 0.3),
+          text: pdfText.substring(i * 100, (i + 1) * 100).trim() || "Sample text segment"
+        })),
+        entities: [
+          { name: "Anxiety", sentiment: 0.2, mentions: 5, contexts: ["Context: Feeling anxious in meetings"] },
+          { name: "Sleep", sentiment: 0.4, mentions: 3, contexts: ["Context: Trouble sleeping at night"] },
+        ],
+        keyPhrases: [
+          { phrase: "panic attack", relevance: 0.8, sentiment: 0.2, occurrences: 3 },
+          { phrase: "deep breathing", relevance: 0.7, sentiment: 0.6, occurrences: 2 },
+        ],
+        clusters: [
+          { name: "Anxiety Symptoms", size: 8, sentiment: 0.2 },
+          { name: "Coping Strategies", size: 6, sentiment: 0.6 },
+        ],
+        summary: "This is a sample analysis of the document. The analysis shows patterns of anxiety and stress with some coping mechanisms mentioned.",
+        fileName: file.name,
+        fileSize: file.size,
+        wordCount: pdfText.split(/\s+/).length,
+        sourceDescription: `PDF Document Analysis - ${file.name}`
+      };
+      
+      setSentimentData(mockData);
     } finally {
       setIsAnalyzing(false);
     }
@@ -316,27 +330,57 @@ const Dashboard = () => {
     if (point) {
       setSelectedWord(point.word);
       setSelectedPoint(point);
-      
-      if (point && wordsForComparison.length < 4) {
-        if (!wordsForComparison.some(p => p.id === point.id)) {
-          setWordsForComparison(prev => [...prev, point]);
-          toast.info(`Added ${point.word} to comparison`);
-        }
-      } else if (wordsForComparison.length >= 4) {
-        toast.error("Maximum of 4 words can be compared at once");
-      }
+      toast.info(`Selected: ${point.word}`);
     } else {
       setSelectedWord(null);
       setSelectedPoint(null);
     }
   };
 
+  const handleSelectWord = (word: string) => {
+    const point = points.find(p => p.word === word);
+    if (point) {
+      setSelectedWord(word);
+      setSelectedPoint(point);
+      setOpen(false);
+      toast.info(`Selected: ${word}`);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setOpen(false);
+  };
+
   const handleResetVisualization = () => {
     setSelectedWord(null);
     setSelectedPoint(null);
+    setComparisonWord(null);
+    setComparisonPoint(null);
     setSelectedCluster(null);
     setFilteredPoints(points);
     toast.info("Visualization reset");
+  };
+
+  const handleCompareWord = () => {
+    setShowComparison(true);
+  };
+
+  const handleSelectComparisonWord = (word: string) => {
+    const point = points.find(p => p.word === word);
+    if (point) {
+      setComparisonWord(word);
+      setComparisonPoint(point);
+      setComparisonSearchOpen(false);
+      toast.info(`Comparing with: ${word}`);
+    }
+  };
+
+  const handleClearComparison = () => {
+    setComparisonWord(null);
+    setComparisonPoint(null);
+    setComparisonSearchTerm("");
+    setShowComparison(false);
   };
 
   const toggleClusterExpanded = (clusterName: string) => {
@@ -363,9 +407,9 @@ const Dashboard = () => {
     if (!point1 || !point2) return null;
     
     const distance = Math.sqrt(
-      Math.pow(Number(point1.position[0]) - Number(point2.position[0]), 2) +
-      Math.pow(Number(point1.position[1]) - Number(point2.position[1]), 2) +
-      Math.pow(Number(point1.position[2]) - Number(point2.position[2]), 2)
+      Math.pow(point1.position[0] - point2.position[0], 2) +
+      Math.pow(point1.position[1] - point2.position[1], 2) +
+      Math.pow(point1.position[2] - point2.position[2], 2)
     );
     
     const spatialSimilarity = Math.max(0, 1 - (distance / 2));
@@ -385,6 +429,26 @@ const Dashboard = () => {
       sameEmotionalGroup,
       sharedKeywords
     };
+  };
+
+  const handleAddWordToComparison = () => {
+    setWordSearchOpen(true);
+  };
+
+  const handleSelectWordForComparison = (word: string) => {
+    const point = points.find(p => p.word === word);
+    if (point && wordsForComparison.length < 4) {
+      if (!wordsForComparison.some(p => p.id === point.id)) {
+        setWordsForComparison(prev => [...prev, point]);
+        setWordSearchTerm("");
+        setWordSearchOpen(false);
+        toast.info(`Added ${word} to comparison`);
+      } else {
+        toast.info(`${word} is already in comparison`);
+      }
+    } else if (wordsForComparison.length >= 4) {
+      toast.error("Maximum of 4 words can be compared at once");
+    }
   };
 
   const handleRemoveWordFromComparison = (point: Point) => {
@@ -441,7 +505,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {sentimentData ? (
+          {sentimentData && (
             <div className="animate-fade-in">
               <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center">
                 <FileText className="h-5 w-5 mr-2 text-primary" />
@@ -456,10 +520,8 @@ const Dashboard = () => {
               <Card className="mb-6 border border-border shadow-md bg-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <BookOpen className="h-5 w-5 mr-2 text-primary" />
-                      <CardTitle className="text-xl">Document Summary</CardTitle>
-                    </div>
+                    <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                    <CardTitle className="text-xl">Document Summary</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -472,9 +534,14 @@ const Dashboard = () => {
               <Card className="border border-border shadow-md overflow-hidden bg-card mb-8">
                 <CardHeader className="z-10">
                   <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-                    <CardTitle className="flex items-center">
-                      <span>Latent Emotional Analysis</span>
-                    </CardTitle>
+                    <div>
+                      <CardTitle className="flex items-center">
+                        <span>Latent Emotional Analysis</span>
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        This is data analyzed from a made up experience of a Panic Attack
+                      </p>
+                    </div>
                     
                     <div className="flex items-center space-x-2">
                       <Button 
@@ -486,6 +553,55 @@ const Dashboard = () => {
                         <RotateCcw className="h-4 w-4 mr-2" />
                         Reset View
                       </Button>
+                    
+                      <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-9 w-full md:w-64">
+                            <Search className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              {searchTerm || "Search words or emotions..."}
+                            </span>
+                            {searchTerm && (
+                              <X 
+                                className="h-4 w-4 ml-2 text-muted-foreground hover:text-foreground"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleClearSearch();
+                                }}
+                              />
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent 
+                          className="p-0 w-full md:w-64 max-h-[300px] overflow-y-auto"
+                          ref={searchDropdownRef}
+                        >
+                          <Command>
+                            <CommandInput 
+                              placeholder="Search words..." 
+                              value={searchTerm}
+                              onValueChange={setSearchTerm}
+                            />
+                            <CommandList>
+                              <CommandEmpty>No results found</CommandEmpty>
+                              <CommandGroup>
+                                {uniqueWords
+                                  .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
+                                  .slice(0, 100)
+                                  .map((word) => (
+                                    <CommandItem 
+                                      key={word} 
+                                      value={word}
+                                      onSelect={handleSelectWord}
+                                    >
+                                      {word}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                   <div className="text-sm font-normal flex items-center text-muted-foreground">
@@ -516,7 +632,7 @@ const Dashboard = () => {
                     <TabsTrigger value="overview" className="min-w-max">Overview</TabsTrigger>
                     <TabsTrigger value="timeline" className="min-w-max">Timeline</TabsTrigger>
                     <TabsTrigger value="themes" className="min-w-max">Themes</TabsTrigger>
-                    <TabsTrigger value="keyphrases" className="min-w-max">Key Phrases</TabsTrigger>
+                    <TabsTrigger value="keyphrases" className="min-w-max">Key Words</TabsTrigger>
                   </TabsList>
                 </div>
                 
@@ -658,39 +774,155 @@ const Dashboard = () => {
                         <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
                         Word Comparison
                       </CardTitle>
-                      {wordsForComparison.length > 0 && (
+                      <div className="flex items-center space-x-2">
                         <Button 
-                          variant="ghost" 
+                          variant="outline" 
                           size="sm"
-                          onClick={() => setWordsForComparison([])}
+                          onClick={handleAddWordToComparison}
                           className="h-8"
                         >
-                          <X className="h-4 w-4 mr-2" />
-                          Clear All
+                          <Search className="h-4 w-4 mr-2" />
+                          Add Word
                         </Button>
-                      )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <WordComparison 
-                      words={wordsForComparison}
-                      onRemoveWord={handleRemoveWordFromComparison}
-                      calculateRelationship={calculateRelationship}
-                      sourceDescription={sentimentData?.sourceDescription}
-                    />
+                    {wordsForComparison.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">
+                          Add words to compare their emotional relationships
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                          {wordsForComparison.map((point) => (
+                            <Badge 
+                              key={point.id}
+                              className="pl-2 pr-1 py-1.5 flex items-center gap-1"
+                              style={{
+                                backgroundColor: `rgba(${point.color.join(', ')}, 0.2)`,
+                                color: `rgb(${point.color.map(c => Math.floor(c * 200)).join(', ')})`
+                              }}
+                            >
+                              {point.word}
+                              <X 
+                                className="h-3 w-3 ml-1 cursor-pointer" 
+                                onClick={() => handleRemoveWordFromComparison(point)}
+                              />
+                            </Badge>
+                          ))}
+                        </div>
+                        
+                        <WordComparison 
+                          words={wordsForComparison}
+                          onRemoveWord={handleRemoveWordFromComparison}
+                          calculateRelationship={calculateRelationship}
+                          onAddWordClick={handleAddWordToComparison}
+                          sourceDescription={sentimentData.sourceDescription}
+                        />
+                      </div>
+                    )}
+                    
+                    <Popover 
+                      open={wordSearchOpen} 
+                      onOpenChange={setWordSearchOpen}
+                    >
+                      <PopoverContent 
+                        className="p-0 w-full md:w-64"
+                        ref={wordSearchRef}
+                      >
+                        <Command>
+                          <CommandInput 
+                            placeholder="Search words to compare..." 
+                            value={wordSearchTerm}
+                            onValueChange={setWordSearchTerm}
+                          />
+                          <CommandList>
+                            <CommandEmpty>No results found</CommandEmpty>
+                            <CommandGroup>
+                              {uniqueWords
+                                .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
+                                .slice(0, 100)
+                                .map((word) => (
+                                  <CommandItem 
+                                    key={word} 
+                                    value={word}
+                                    onSelect={handleSelectWordForComparison}
+                                  >
+                                    {word}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </CardContent>
                 </Card>
               </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="bg-muted/50 p-6 rounded-lg">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4 mx-auto" />
-                <h2 className="text-xl font-medium mb-2">No Document Analyzed Yet</h2>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  Please upload a PDF document and click "Analyze Document" to see sentiment analysis, emotional patterns, and linguistic insights.
-                </p>
-              </div>
+              
+              {showWellbeingSuggestions && (
+                <Card className="mt-8 border border-border shadow-md bg-card">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg flex items-center">
+                        <Heart className="h-5 w-5 mr-2 text-red-500" />
+                        Wellbeing Suggestions
+                      </CardTitle>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setShowWellbeingSuggestions(false)}
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {wellbeingSuggestions.map((suggestion, index) => (
+                        <div 
+                          key={index}
+                          className="border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className="mt-1">
+                              {suggestion.icon}
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{suggestion.title}</h3>
+                              <p className="text-sm text-muted-foreground mt-1">{suggestion.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-6 pt-4 border-t">
+                      <h3 className="font-medium mb-2 flex items-center">
+                        <Info className="h-4 w-4 mr-2 text-blue-500" />
+                        Mental Health Resources
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                        {mentalHealthResources.map((resource, index) => (
+                          <a 
+                            key={index}
+                            href={resource.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="border rounded-lg p-3 hover:bg-muted/30 transition-colors"
+                          >
+                            <h4 className="font-medium">{resource.name}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{resource.description}</p>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </div>

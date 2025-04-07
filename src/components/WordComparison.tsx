@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight, X, GitCompareArrows, Info } from 'lucide-react';
+import { ArrowLeftRight, X, Search, GitCompareArrows, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface WordComparisonProps {
@@ -15,13 +15,15 @@ interface WordComparisonProps {
     sameEmotionalGroup: boolean;
     sharedKeywords: string[];
   } | null;
-  sourceDescription?: string;
+  onAddWordClick: () => void;
+  sourceDescription?: string; // Add this to show where words came from
 }
 
 export const WordComparison: React.FC<WordComparisonProps> = ({ 
   words, 
   onRemoveWord, 
   calculateRelationship,
+  onAddWordClick,
   sourceDescription
 }) => {
   // Handle document clicks to close any open dropdowns
@@ -49,14 +51,22 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
         <p className="text-sm text-muted-foreground mt-1 max-w-md">
           {sourceDescription ? (
             <>
-              No words available for comparison. Words can be added by clicking on them in the document visualization.
+              Add words from your document to see how they relate to each other. You can add up to 4 words to compare.
             </>
           ) : (
             <>
-              No words available for comparison. Select words from the visualization to compare them.
+              Add words to see how they relate to each other. You can add up to 4 words to compare.
             </>
           )}
         </p>
+        <Button 
+          variant="outline" 
+          className="mt-4"
+          onClick={onAddWordClick}
+        >
+          <Search className="h-4 w-4 mr-2" />
+          Search Words
+        </Button>
         
         {sourceDescription && (
           <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
@@ -85,7 +95,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
               <div 
                 className="w-4 h-4 rounded-full" 
                 style={{ 
-                  backgroundColor: `rgb(${Math.floor(word.color[0] * 255)}, ${Math.floor(word.color[1] * 255)}, ${Math.floor(word.color[2] * 255)})` 
+                  backgroundColor: `rgb(${word.color[0] * 255}, ${word.color[1] * 255}, ${word.color[2] * 255})` 
                 }} 
               />
               <h3 className="font-bold truncate">{word.word}</h3>
@@ -140,7 +150,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                         <div 
                           className="w-3 h-3 rounded-full" 
                           style={{ 
-                            backgroundColor: `rgb(${Math.floor(word1.color[0] * 255)}, ${Math.floor(word1.color[1] * 255)}, ${Math.floor(word1.color[2] * 255)})` 
+                            backgroundColor: `rgb(${word1.color[0] * 255}, ${word1.color[1] * 255}, ${word1.color[2] * 255})` 
                           }} 
                         />
                         <span className="font-bold">{word1.word}</span>
@@ -150,7 +160,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                         <div 
                           className="w-3 h-3 rounded-full" 
                           style={{ 
-                            backgroundColor: `rgb(${Math.floor(word2.color[0] * 255)}, ${Math.floor(word2.color[1] * 255)}, ${Math.floor(word2.color[2] * 255)})` 
+                            backgroundColor: `rgb(${word2.color[0] * 255}, ${word2.color[1] * 255}, ${word2.color[2] * 255})` 
                           }} 
                         />
                         <span className="font-bold">{word2.word}</span>
