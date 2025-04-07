@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -115,7 +114,7 @@ By evening, I was exhausted from fighting my anxiety all day. I managed to do so
 `;
 
 const Home = () => {
-  const [points] = useState<Point[]>(() => generateMockPoints(exampleJournalText, exampleJournalData));
+  const [points] = useState<Point[]>(() => generateMockPoints(exampleJournalText, exampleJournalData, false));
 
   const handleFilesAdded = (files: File[], extractedText?: string) => {
     console.log('Files added:', files);
@@ -127,8 +126,8 @@ const Home = () => {
       <Header />
       
       <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 mb-12">
-          <div className="space-y-6">
+        <div className="mb-12">
+          <div className="space-y-6 mb-10">
             <h1 className="text-4xl font-bold tracking-tight">Emotional Intelligence for Mental Health</h1>
             <p className="text-lg text-muted-foreground">
               Analyze your journal entries, therapy notes, and personal narratives 
