@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -378,7 +379,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {sentimentData && (
+          {sentimentData ? (
             <div className="animate-fade-in">
               <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center">
                 <FileText className="h-5 w-5 mr-2 text-primary" />
@@ -617,6 +618,16 @@ const Dashboard = () => {
                     />
                   </CardContent>
                 </Card>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="bg-muted/50 p-6 rounded-lg">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4 mx-auto" />
+                <h2 className="text-xl font-medium mb-2">No Document Analyzed Yet</h2>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  Please upload a PDF document and click "Analyze Document" to see sentiment analysis, emotional patterns, and linguistic insights.
+                </p>
               </div>
             </div>
           )}
