@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,7 +15,7 @@ interface WordComparisonProps {
     sharedKeywords: string[];
   } | null;
   onAddWordClick: () => void;
-  sourceDescription?: string; // Add this to show where words came from
+  sourceDescription?: string;
 }
 
 export const WordComparison: React.FC<WordComparisonProps> = ({ 
