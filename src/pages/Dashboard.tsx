@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +49,10 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         Neutral: 0.0
       };
       
+      // Enhanced PDF text processing
       if (pdfText && pdfText.length > 0) {
+        console.log("Processing PDF text of length:", pdfText.length);
+        
         const cleanText = pdfText
           .toLowerCase()
           .replace(/[^\\w\\s]/g, ' ')
@@ -64,6 +66,9 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
           .filter((word, index, self) => self.indexOf(word) === index)
           .slice(0, 200);
           
+        console.log("Extracted unique words:", customWordBank.length);
+        console.log("Sample words:", customWordBank.slice(0, 10));
+        
         const emotionWords = {
           Joy: ['happy', 'joy', 'delight', 'pleased', 'glad', 'content', 'satisfied'],
           Sadness: ['sad', 'sorrow', 'unhappy', 'depressed', 'gloomy', 'miserable'],
@@ -124,11 +129,15 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
       
       const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
       
+      // Generate embedding points using the actual words from the PDF
       const embeddingPoints = generateMockPoints(
         false, 
         emotionalDistribution, 
         customWordBank.length > 0 ? customWordBank : undefined
       );
+
+      console.log("Generated embedding points:", embeddingPoints.length);
+      console.log("Sample embedding words:", embeddingPoints.slice(0, 5).map(p => p.word));
 
       const positivePercentage = Math.round(normalizedSentiment * 100);
       const negativePercentage = Math.round((1 - normalizedSentiment) * 0.5 * 100);
@@ -155,6 +164,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         "Hobbies", "Travel", "Home", "Money"
       ];
 
+      // Use actual words from PDF for themes when available
       if (customWordBank.length > 20) {
         const potentialThemes = customWordBank.slice(0, 20);
         const selectedThemes = [];
@@ -168,6 +178,8 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         themeNames = selectedThemes.map(theme => 
           theme.charAt(0).toUpperCase() + theme.slice(1)
         );
+        
+        console.log("Using custom themes from PDF:", themeNames);
       }
 
       const themes = [];
@@ -193,6 +205,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         });
       }
 
+      // Improved key phrases calculation using actual words from the PDF
       const wordFrequency: Record<string, { count: number, sentiment: number, emotionalTone: string }> = {};
       embeddingPoints.forEach(point => {
         if (point.word) {
@@ -216,6 +229,8 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
       const sortedWords = Object.entries(wordFrequency)
         .sort((a, b) => b[1].count - a[1].count)
         .slice(0, 30);
+
+      console.log("Top words with frequency:", sortedWords.slice(0, 5).map(([word, data]) => `${word}: ${data.count}`));
 
       const keyPhrases = sortedWords.map(([word, data]) => {
         let sentimentCategory: "positive" | "neutral" | "negative" = "neutral";
@@ -269,6 +284,10 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         summary = emotionSummaries[dominantEmotion as keyof typeof emotionSummaries];
       }
 
+      const sourceDescription = pdfText && pdfText.length > 0 
+        ? `Analysis based on ${customWordBank.length} unique words extracted from your PDF`
+        : undefined;
+
       const analysisResults = {
         overallSentiment: {
           score: normalizedSentiment,
@@ -287,7 +306,8 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         fileSize: file.size,
         wordCount: customWordBank.length,
         pdfTextLength: pdfText ? pdfText.length : 0,
-        summary: summary
+        summary: summary,
+        sourceDescription: sourceDescription
       };
 
       resolve(analysisResults);
@@ -625,11 +645,11 @@ const Dashboard = () => {
                 <div className="overflow-x-auto">
                   <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto">
                     <TabsTrigger value="embedding" className="min-w-max">Latent Emotional Analysis</TabsTrigger>
-                    <TabsTrigger value="comparison" className="min-w-max">Word Comparison</TabsTrigger>
                     <TabsTrigger value="overview" className="min-w-max">Overview</TabsTrigger>
                     <TabsTrigger value="timeline" className="min-w-max">Timeline</TabsTrigger>
                     <TabsTrigger value="themes" className="min-w-max">Themes</TabsTrigger>
                     <TabsTrigger value="keyphrases" className="min-w-max">Key Words</TabsTrigger>
+                    <TabsTrigger value="comparison" className="min-w-max">Word Comparison</TabsTrigger>
                   </TabsList>
                 </div>
                 
@@ -702,125 +722,57 @@ const Dashboard = () => {
                     </CardHeader>
 
                     <div className="px-6 mb-2">
-                      <Tabs value={embeddingSubTab} onValueChange={setEmbeddingSubTab}>
-                        <TabsList className="w-full md:w-auto">
-                          <TabsTrigger value="visualization">3D Visualization</TabsTrigger>
-                          <TabsTrigger value="details">Word Details</TabsTrigger>
-                          <TabsTrigger value="clusters">Emotional Clusters</TabsTrigger>
-                        </TabsList>
-                        
-                        <TabsContent value="visualization" className="mt-2">
-                          <div className="w-full aspect-[16/9]">
-                            <DocumentEmbedding 
-                              points={filteredPoints}
-                              onPointClick={handlePointClick}
-                              isInteractive={true}
-                              focusOnWord={selectedWord}
-                            />
-                          </div>
-                        </TabsContent>
-                        
-                        <TabsContent value="details" className="mt-2">
-                          <div className="bg-muted/30 rounded-lg p-4 min-h-[400px]">
-                            {selectedPoint ? (
-                              <div className="grid md:grid-cols-2 gap-4">
-                                <div>
-                                  <h3 className="text-sm font-medium mb-1">Emotional Grouping</h3>
-                                  <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">
-                                    {selectedPoint.emotionalTone || "Neutral"}
-                                  </p>
-                                  <h3 className="text-sm font-medium mt-3 mb-1">Word</h3>
-                                  <p className="text-xl bg-muted p-2 rounded flex items-center justify-center">
-                                    {selectedPoint.word}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h3 className="text-sm font-medium mb-1">Sentiment Analysis</h3>
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div 
-                                      className="w-3 h-3 rounded-full" 
-                                      style={{ 
-                                        backgroundColor: `rgb(${selectedPoint.color[0] * 255}, ${selectedPoint.color[1] * 255}, ${selectedPoint.color[2] * 255})` 
-                                      }} 
-                                    />
-                                    <span className="text-sm">
-                                      Score: {selectedPoint.sentiment.toFixed(2)}
-                                      {selectedPoint.sentiment >= 0.7 ? " (Very Positive)" : 
-                                        selectedPoint.sentiment >= 0.5 ? " (Positive)" : 
-                                        selectedPoint.sentiment >= 0.4 ? " (Neutral)" : 
-                                        selectedPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
-                                    </span>
-                                  </div>
-                                  
-                                  <div>
-                                    <h3 className="text-sm font-medium mt-3 mb-1">Top Connected Words</h3>
-                                    <div className="flex flex-wrap gap-2 mb-2">
-                                      {connectedPoints.length > 0 ? (
-                                        connectedPoints.map((point, index) => (
-                                          <Badge 
-                                            key={point.id}
-                                            variant="outline" 
-                                            className="px-3 py-1 text-sm"
-                                            style={{
-                                              borderColor: `rgba(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255}, 0.5)`,
-                                              backgroundColor: `rgba(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255}, 0.1)`
-                                            }}
-                                          >
-                                            {point.word}
-                                          </Badge>
-                                        ))
-                                      ) : (
-                                        <span className="text-sm text-muted-foreground">No connected words found</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-                                <p>Select a word from the visualization to see details</p>
-                              </div>
-                            )}
-                          </div>
-                        </TabsContent>
-                        
-                        <TabsContent value="clusters" className="mt-2">
-                          <div className="bg-muted/30 rounded-lg p-4 min-h-[400px]">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              {Object.entries(getEmotionColor("default")).map(([emotion, colorInfo]) => {
-                                const colorData = colorInfo as any;
-                                const rgb = colorData.rgb || [128, 128, 128]; // Default to gray if rgb is missing
-                                
-                                return (
-                                  <div 
-                                    key={emotion} 
-                                    className="p-3 rounded-lg border" 
-                                    style={{
-                                      backgroundColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.1)`,
-                                      borderColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.5)`
-                                    }}
-                                  >
-                                    <h3 className="font-medium text-center mb-2">{emotion}</h3>
-                                    <div className="text-xs text-muted-foreground">
-                                      {filteredPoints
-                                        .filter(p => p.emotionalTone === emotion)
-                                        .slice(0, 5)
-                                        .map(p => p.word)
-                                        .join(", ")}
-                                      {filteredPoints.filter(p => p.emotionalTone === emotion).length > 5 && 
-                                        ` and ${filteredPoints.filter(p => p.emotionalTone === emotion).length - 5} more...`}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </TabsContent>
-                      </Tabs>
+                      {/* Remove tabs and show visualization directly */}
+                      <div className="w-full aspect-[16/9]">
+                        <DocumentEmbedding 
+                          points={filteredPoints}
+                          onPointClick={handlePointClick}
+                          isInteractive={true}
+                          focusOnWord={selectedWord}
+                          sourceDescription={sentimentData.sourceDescription}
+                        />
+                      </div>
                     </div>
                   </Card>
                   
-                  {selectedPoint && embeddingSubTab === "visualization" && (
+                  {/* Show Emotional Clusters directly below visualization */}
+                  <Card className="mt-4 border border-border shadow-sm bg-card">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Emotional Clusters</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {Object.entries(getEmotionColor("default")).map(([emotion, colorInfo]) => {
+                          const colorData = colorInfo as any;
+                          const rgb = colorData.rgb || [128, 128, 128]; // Default to gray if rgb is missing
+                          
+                          return (
+                            <div 
+                              key={emotion} 
+                              className="p-3 rounded-lg border" 
+                              style={{
+                                backgroundColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.1)`,
+                                borderColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.5)`
+                              }}
+                            >
+                              <h3 className="font-medium text-center mb-2">{emotion}</h3>
+                              <div className="text-xs text-muted-foreground">
+                                {filteredPoints
+                                  .filter(p => p.emotionalTone === emotion)
+                                  .slice(0, 5)
+                                  .map(p => p.word)
+                                  .join(", ")}
+                                {filteredPoints.filter(p => p.emotionalTone === emotion).length > 5 && 
+                                  ` and ${filteredPoints.filter(p => p.emotionalTone === emotion).length - 5} more...`}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  {selectedPoint && (
                     <Card className="mt-4 border border-border shadow-sm bg-card">
                       <CardContent className="pt-6">
                         <div className="grid md:grid-cols-2 gap-4">
@@ -897,6 +849,35 @@ const Dashboard = () => {
                   )}
                 </TabsContent>
                 
+                <TabsContent value="overview" className="mt-6">
+                  <SentimentOverview 
+                    data={sentimentData}
+                    sourceDescription={sentimentData.sourceDescription} 
+                  />
+                </TabsContent>
+                
+                <TabsContent value="timeline" className="mt-6">
+                  <SentimentTimeline 
+                    data={sentimentData.timeline}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="themes" className="mt-6">
+                  <EntitySentiment 
+                    data={sentimentData.entities}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="keyphrases" className="mt-6">
+                  <KeyPhrases 
+                    data={sentimentData.keyPhrases}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+                
+                {/* Move Word Comparison tab to the end */}
                 <TabsContent value="comparison" className="mt-6">
                   <Card className="border border-border shadow-md overflow-hidden bg-card">
                     <CardHeader className="z-10">
@@ -983,25 +964,10 @@ const Dashboard = () => {
                             toast.error("Please analyze a document first");
                           }
                         }}
+                        sourceDescription={sentimentData.sourceDescription}
                       />
                     </CardContent>
                   </Card>
-                </TabsContent>
-                
-                <TabsContent value="overview" className="mt-6">
-                  <SentimentOverview data={sentimentData} />
-                </TabsContent>
-                
-                <TabsContent value="timeline" className="mt-6">
-                  <SentimentTimeline data={sentimentData.timeline} />
-                </TabsContent>
-                
-                <TabsContent value="themes" className="mt-6">
-                  <EntitySentiment data={sentimentData.entities} />
-                </TabsContent>
-                
-                <TabsContent value="keyphrases" className="mt-6">
-                  <KeyPhrases data={sentimentData.keyPhrases} />
                 </TabsContent>
               </Tabs>
             </div>
