@@ -1,39 +1,51 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ZoomIn, ZoomOut, CircleDot } from "lucide-react";
 
-export const DocumentEmbedding = () => {
+interface Point {
+  id: string;
+  text: string;
+  sentiment: number;
+  position: [number, number, number];
+  color: [number, number, number];
+  relationships?: Array<{ id: string; strength: number }>;
+}
+
+interface DocumentEmbeddingProps {
+  points?: Point[];
+  onPointClick?: (point: Point) => void;
+  isInteractive?: boolean;
+}
+
+export const DocumentEmbedding = ({ 
+  points = [], 
+  onPointClick, 
+  isInteractive = true 
+}: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const pointsRef = useRef<THREE.Points | null>(null);
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   
-  useEffect(() => {
-    if (!containerRef.current) return;
+  const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  
+  // Generate mock points if none are provided
+  const getPoints = () => {
+    if (points.length > 0) return points;
     
-    // Scene setup
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff);
+    // Generate mock points
+    const mockPoints: Point[] = [];
+    const particleCount = 5000;
     
-    // Camera setup
-    const camera = new THREE.PerspectiveCamera(
-      60,
-      containerRef.current.clientWidth / containerRef.current.clientHeight,
-      0.1,
-      1000
-    );
-    camera.position.z = 20;
-    
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-    containerRef.current.appendChild(renderer.domElement);
-    
-    // Create particles
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particleCount = 10000;
-    
-    const positions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-    
-    // Generate points in a spherical cloud
     for (let i = 0; i < particleCount; i++) {
       // Generate points in a 3D gaussian distribution
       const radius = 10 * Math.pow(Math.random(), 1/3);
@@ -44,51 +56,134 @@ export const DocumentEmbedding = () => {
       const y = radius * Math.sin(phi) * Math.sin(theta);
       const z = radius * Math.cos(phi);
       
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-      
-      // Color based on position (purplish gradient)
+      // Color based on position (sentiment score)
       const distanceFromCenter = Math.sqrt(x*x + y*y + z*z) / 10;
-      colors[i * 3] = 0.5 - distanceFromCenter * 0.1;     // R
-      colors[i * 3 + 1] = 0.3 - distanceFromCenter * 0.1; // G
-      colors[i * 3 + 2] = 1 - distanceFromCenter * 0.3;   // B
+      const sentiment = 1 - distanceFromCenter;
+      
+      // Generate color based on sentiment (red to blue gradient)
+      const r = sentiment < 0.5 ? 1 : 2 * (1 - sentiment);
+      const b = sentiment > 0.5 ? 1 : 2 * sentiment;
+      const g = 0.3;
+      
+      mockPoints.push({
+        id: `point-${i}`,
+        text: `Sample text ${i}`,
+        sentiment: sentiment,
+        position: [x, y, z],
+        color: [r, g, b],
+        relationships: []
+      });
     }
     
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    // Add some relationships
+    for (let i = 0; i < 20; i++) {
+      const pointIndex = Math.floor(Math.random() * mockPoints.length);
+      const relatedPoints = 2 + Math.floor(Math.random() * 3);
+      
+      const relationships = [];
+      for (let j = 0; j < relatedPoints; j++) {
+        let relatedIndex;
+        do {
+          relatedIndex = Math.floor(Math.random() * mockPoints.length);
+        } while (relatedIndex === pointIndex);
+        
+        relationships.push({
+          id: mockPoints[relatedIndex].id,
+          strength: 0.3 + Math.random() * 0.7
+        });
+      }
+      
+      mockPoints[pointIndex].relationships = relationships;
+    }
     
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.05,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.8
-    });
+    return mockPoints;
+  };
+  
+  useEffect(() => {
+    if (!containerRef.current) return;
     
-    const pointCloud = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(pointCloud);
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
+    sceneRef.current = scene;
+    
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(
+      60,
+      containerRef.current.clientWidth / containerRef.current.clientHeight,
+      0.1,
+      1000
+    );
+    camera.position.z = 20;
+    cameraRef.current = camera;
+    
+    // Renderer setup
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+    containerRef.current.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+    
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+    controls.maxDistance = 30;
+    controls.minDistance = 5;
+    controlsRef.current = controls;
+    
+    // Create particles
+    createPointCloud(getPoints());
     
     // Animation function
     const animate = () => {
       requestAnimationFrame(animate);
       
-      // Rotate point cloud slowly
-      pointCloud.rotation.y += 0.001;
-      pointCloud.rotation.x += 0.0005;
+      if (controlsRef.current) {
+        controlsRef.current.update();
+      }
       
-      renderer.render(scene, camera);
+      if (rendererRef.current && sceneRef.current && cameraRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
     };
     
     // Handle window resize
     const handleResize = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !cameraRef.current || !rendererRef.current) return;
       
-      camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+      cameraRef.current.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
+      cameraRef.current.updateProjectionMatrix();
+      rendererRef.current.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+    };
+    
+    // Setup mouse events for interactivity
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!containerRef.current || !isInteractive) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      
+      // Calculate mouse position in normalized device coordinates (-1 to +1)
+      mouseRef.current.x = ((event.clientX - rect.left) / containerRef.current.clientWidth) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / containerRef.current.clientHeight) * 2 + 1;
+      
+      checkIntersection();
+    };
+    
+    const handleClick = () => {
+      if (!isInteractive || !hoveredPoint) return;
+      
+      setSelectedPoint(hoveredPoint);
+      if (onPointClick) {
+        onPointClick(hoveredPoint);
+      }
     };
     
     window.addEventListener('resize', handleResize);
+    if (isInteractive) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('click', handleClick);
+    }
     
     // Start animation
     animate();
@@ -96,20 +191,208 @@ export const DocumentEmbedding = () => {
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (containerRef.current) {
-        containerRef.current.removeChild(renderer.domElement);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('click', handleClick);
+      
+      if (containerRef.current && rendererRef.current) {
+        containerRef.current.removeChild(rendererRef.current.domElement);
       }
-      scene.remove(pointCloud);
-      particlesGeometry.dispose();
-      particlesMaterial.dispose();
-      renderer.dispose();
+      
+      if (sceneRef.current && pointsRef.current) {
+        sceneRef.current.remove(pointsRef.current);
+      }
+      
+      if (pointsRef.current && pointsRef.current.geometry) {
+        pointsRef.current.geometry.dispose();
+      }
+      
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
     };
-  }, []);
+  }, [points, onPointClick, isInteractive]);
+  
+  const createPointCloud = (pointsData: Point[]) => {
+    if (!sceneRef.current) return;
+    
+    // Remove old points
+    if (pointsRef.current) {
+      sceneRef.current.remove(pointsRef.current);
+      if (pointsRef.current.geometry) {
+        pointsRef.current.geometry.dispose();
+      }
+      if (pointsRef.current.material) {
+        (pointsRef.current.material as THREE.Material).dispose();
+      }
+    }
+    
+    const particlesGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(pointsData.length * 3);
+    const colors = new Float32Array(pointsData.length * 3);
+    const sizes = new Float32Array(pointsData.length);
+    
+    const defaultSize = 0.05;
+    const highlightedSize = 0.15;
+    
+    // Fill the arrays
+    pointsData.forEach((point, i) => {
+      positions[i * 3] = point.position[0];
+      positions[i * 3 + 1] = point.position[1];
+      positions[i * 3 + 2] = point.position[2];
+      
+      colors[i * 3] = point.color[0];
+      colors[i * 3 + 1] = point.color[1];
+      colors[i * 3 + 2] = point.color[2];
+      
+      sizes[i] = defaultSize;
+    });
+    
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    particlesGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    
+    const particlesMaterial = new THREE.PointsMaterial({
+      size: defaultSize,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+      sizeAttenuation: true
+    });
+    
+    // Create points
+    const points = new THREE.Points(particlesGeometry, particlesMaterial);
+    sceneRef.current.add(points);
+    pointsRef.current = points;
+    
+    // Store point data for raycasting
+    points.userData = { pointsData };
+  };
+  
+  const checkIntersection = () => {
+    if (!raycasterRef.current || !mouseRef.current || !cameraRef.current || !pointsRef.current || !sceneRef.current) return;
+    
+    raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+    const intersects = raycasterRef.current.intersectObject(pointsRef.current);
+    
+    if (intersects.length > 0 && pointsRef.current.userData?.pointsData) {
+      const index = intersects[0].index;
+      if (index !== undefined) {
+        const point = pointsRef.current.userData.pointsData[index];
+        setHoveredPoint(point);
+        
+        // Highlight the point
+        if (pointsRef.current.geometry.attributes.size) {
+          const sizes = pointsRef.current.geometry.attributes.size.array;
+          
+          // Reset all sizes
+          for (let i = 0; i < sizes.length; i++) {
+            sizes[i] = 0.05;
+          }
+          
+          // Highlight the hovered point
+          sizes[index] = 0.15;
+          
+          // Highlight related points if any
+          if (point.relationships) {
+            point.relationships.forEach(rel => {
+              const relatedIndex = pointsRef.current!.userData.pointsData.findIndex((p: Point) => p.id === rel.id);
+              if (relatedIndex !== -1) {
+                sizes[relatedIndex] = 0.1;
+              }
+            });
+          }
+          
+          pointsRef.current.geometry.attributes.size.needsUpdate = true;
+        }
+      }
+    } else {
+      setHoveredPoint(null);
+      
+      // Reset all point sizes
+      if (pointsRef.current.geometry.attributes.size) {
+        const sizes = pointsRef.current.geometry.attributes.size.array;
+        for (let i = 0; i < sizes.length; i++) {
+          sizes[i] = 0.05;
+        }
+        pointsRef.current.geometry.attributes.size.needsUpdate = true;
+      }
+    }
+  };
+  
+  const handleZoomIn = () => {
+    if (cameraRef.current) {
+      cameraRef.current.position.z *= 0.9;
+    }
+  };
+  
+  const handleZoomOut = () => {
+    if (cameraRef.current) {
+      cameraRef.current.position.z *= 1.1;
+      if (cameraRef.current.position.z > 30) {
+        cameraRef.current.position.z = 30;
+      }
+    }
+  };
+  
+  const getSentimentLabel = (score: number) => {
+    if (score >= 0.7) return "Very Positive";
+    if (score >= 0.5) return "Positive";
+    if (score >= 0.4) return "Neutral";
+    if (score >= 0.25) return "Negative";
+    return "Very Negative";
+  };
   
   return (
-    <div 
-      ref={containerRef} 
-      className="w-full h-full min-h-[600px] rounded-lg overflow-hidden"
-    />
+    <div className="relative w-full h-full">
+      <div 
+        ref={containerRef} 
+        className="w-full h-full rounded-lg overflow-hidden"
+      />
+      
+      {isInteractive && (
+        <div className="absolute top-4 right-4 flex flex-col space-y-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={handleZoomIn}>
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom In</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={handleZoomOut}>
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom Out</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+      
+      {hoveredPoint && (
+        <div className="absolute bottom-4 left-4 bg-white p-3 rounded-lg shadow-md max-w-xs">
+          <div className="flex items-center mb-2">
+            <div 
+              className="w-3 h-3 rounded-full mr-2" 
+              style={{ 
+                backgroundColor: `rgb(${hoveredPoint.color[0] * 255}, ${hoveredPoint.color[1] * 255}, ${hoveredPoint.color[2] * 255})` 
+              }} 
+            />
+            <span className="font-medium">Text Excerpt</span>
+          </div>
+          <p className="text-sm mb-2 truncate">{hoveredPoint.text}</p>
+          <div className="text-xs flex justify-between">
+            <span>Sentiment: {getSentimentLabel(hoveredPoint.sentiment)}</span>
+            <span>{hoveredPoint.relationships?.length || 0} connections</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

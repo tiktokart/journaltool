@@ -23,7 +23,7 @@ const Index = () => {
             
             {/* 3D Visualization Container */}
             <div className="w-full max-w-6xl aspect-[16/9] mb-8 bg-gray-50 border border-gray-100 rounded-xl overflow-hidden shadow-lg">
-              <DocumentEmbedding />
+              <DocumentEmbedding isInteractive={true} />
             </div>
             
             <Button asChild size="lg" className="rounded-md mt-4">
