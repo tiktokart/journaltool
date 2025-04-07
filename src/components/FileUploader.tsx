@@ -27,7 +27,6 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
 
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        // Remove the problematic parameter that's causing TypeScript errors
         const textContent = await page.getTextContent();
         const pageText = textContent.items
           .map((item: any) => item.str)
@@ -44,6 +43,11 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
   };
 
   const handleFiles = useCallback(async (files: FileList) => {
+    if (!files || files.length === 0) {
+      toast.error('No files selected');
+      return;
+    }
+
     try {
       setIsProcessing(true);
       const fileArray = Array.from(files);
@@ -59,6 +63,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       const extractedText = await extractTextFromPdf(firstPdf);
     
       onFilesAdded(pdfFiles, extractedText);
+      toast.success('PDF processed successfully');
       setIsProcessing(false);
     } catch (error) {
       console.error('Error handling files:', error);

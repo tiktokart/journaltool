@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -770,6 +769,9 @@ const Dashboard = () => {
                             value={wordSearchTerm}
                             onChange={(e) => {
                               setWordSearchTerm(e.target.value);
+                              if (uniqueWords.length > 0 && !wordSearchOpen) {
+                                setWordSearchOpen(true);
+                              }
                             }}
                             onFocus={() => {
                               if (uniqueWords.length > 0) {
@@ -795,7 +797,12 @@ const Dashboard = () => {
                               <CommandInput 
                                 placeholder="Find words to compare..." 
                                 value={wordSearchTerm}
-                                onValueChange={setWordSearchTerm}
+                                onValueChange={(value) => {
+                                  setWordSearchTerm(value);
+                                  if (!wordSearchOpen) {
+                                    setWordSearchOpen(true);
+                                  }
+                                }}
                               />
                               <CommandList>
                                 <CommandEmpty>No results found</CommandEmpty>
@@ -839,7 +846,13 @@ const Dashboard = () => {
                           ))}
                         </div>
                         
-                        <WordComparison words={wordsForComparison} />
+                        <WordComparison 
+                          words={wordsForComparison} 
+                          onRemoveWord={handleRemoveWordFromComparison}
+                          calculateRelationship={calculateRelationship}
+                          onAddWordClick={handleAddWordToComparison}
+                          sourceDescription={sentimentData?.sourceDescription}
+                        />
                       </div>
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
