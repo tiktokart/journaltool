@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -6,23 +7,45 @@ import gsap from 'gsap';
 
 interface EmbeddingSceneProps {
   points: Point[];
+  containerRef?: React.RefObject<HTMLDivElement>;
+  cameraRef?: React.MutableRefObject<THREE.PerspectiveCamera | null>;
   isInteractive?: boolean;
-  onPointClick?: (point: Point) => void;
+  onPointHover?: (point: Point | null) => void;
+  onPointSelect?: (point: Point | null) => void;
   focusOnWord?: string | null;
+  depressedJournalReference?: boolean;
+  connectedPoints?: Point[];
 }
 
-const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ points, isInteractive = false, onPointClick, focusOnWord }) => {
+const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
+  points, 
+  containerRef: externalContainerRef,
+  cameraRef: externalCameraRef,
+  isInteractive = true, 
+  onPointHover,
+  onPointSelect,
+  focusOnWord,
+  connectedPoints = []
+}) => {
+  // Use internal refs if external ones aren't provided
+  const internalContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = externalContainerRef || internalContainerRef;
+  
+  const internalCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const cameraRef = externalCameraRef || internalCameraRef;
+  
   const sceneRef = useRef<THREE.Scene>(new THREE.Scene());
-  const cameraRef = useRef<THREE.PerspectiveCamera>(new THREE.PerspectiveCamera(75, 1, 0.1, 1000));
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const pointsRef = useRef<THREE.Points | null>(null);
-  const camera = useRef<THREE.PerspectiveCamera>(new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000));
-  const controls = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
     const scene = sceneRef.current;
+    
+    // Initialize camera if it doesn't exist
+    if (!cameraRef.current) {
+      cameraRef.current = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    }
     const camera = cameraRef.current;
 
     rendererRef.current = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -79,7 +102,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ points, isInteractive =
         containerRef.current.removeChild(renderer.domElement);
       }
     };
-  }, []);
+  }, [cameraRef, containerRef]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -112,6 +135,27 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ points, isInteractive =
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isInteractive || !containerRef.current || !pointsRef.current) return;
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      mouse.x = ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1;
+      mouse.y = -((event.clientY - containerRect.top) / containerRect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, cameraRef.current!);
+
+      const intersects = raycaster.intersectObject(pointsRef.current);
+
+      if (intersects.length > 0) {
+        const pointIndex = intersects[0].index;
+        if (onPointHover) {
+          onPointHover(points[pointIndex]);
+        }
+      } else if (onPointHover) {
+        onPointHover(null);
+      }
+    };
+
     const handlePointClick = (event: MouseEvent) => {
       if (!isInteractive || !containerRef.current || !pointsRef.current) return;
 
@@ -119,57 +163,59 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ points, isInteractive =
       mouse.x = ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1;
       mouse.y = -((event.clientY - containerRect.top) / containerRect.height) * 2 + 1;
 
-      raycaster.setFromCamera(mouse, cameraRef.current);
+      raycaster.setFromCamera(mouse, cameraRef.current!);
 
       const intersects = raycaster.intersectObject(pointsRef.current);
 
       if (intersects.length > 0) {
         const pointIndex = intersects[0].index;
-        if (onPointClick) {
-          onPointClick(points[pointIndex]);
+        if (onPointSelect) {
+          onPointSelect(points[pointIndex]);
         }
       }
     };
 
     if (isInteractive && containerRef.current) {
       containerRef.current.addEventListener('click', handlePointClick);
+      containerRef.current.addEventListener('mousemove', handleMouseMove);
     }
 
     return () => {
       if (isInteractive && containerRef.current) {
         containerRef.current.removeEventListener('click', handlePointClick);
+        containerRef.current.removeEventListener('mousemove', handleMouseMove);
       }
     };
-  }, [points, isInteractive, onPointClick]);
+  }, [points, isInteractive, onPointSelect, onPointHover, containerRef]);
 
   const focusOnPoint = useCallback((targetPoint: Point | null) => {
-    if (!targetPoint || !camera.current || !controls.current) return;
+    if (!targetPoint || !cameraRef.current || !controlsRef.current) return;
     
     const point = new THREE.Vector3(targetPoint.position[0], targetPoint.position[1], targetPoint.position[2]);
     
     // Create temporary vectors for the interpolation
     const startPosition = new THREE.Vector3();
-    startPosition.copy(camera.current.position);
+    startPosition.copy(cameraRef.current.position);
     
     const endPosition = new THREE.Vector3();
-    endPosition.copy(point).add(new THREE.Vector3(0, 0, 5));
+    endPosition.copy(point).add(new THREE.Vector3(0, 0, 2));
     
     // Animate the camera position
-    gsap.to(camera.current.position, {
+    gsap.to(cameraRef.current.position, {
       x: endPosition.x,
       y: endPosition.y,
       z: endPosition.z,
       duration: 1.5,
       ease: "power2.inOut",
       onUpdate: () => {
-        if (controls.current) {
+        if (controlsRef.current) {
           // Update the target to look at the point
-          controls.current.target.set(point.x, point.y, point.z);
-          controls.current.update();
+          controlsRef.current.target.set(point.x, point.y, point.z);
+          controlsRef.current.update();
         }
       }
     });
-  }, []);
+  }, [cameraRef]);
 
   useEffect(() => {
     if (focusOnWord) {
@@ -179,7 +225,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ points, isInteractive =
   }, [focusOnWord, points, focusOnPoint]);
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+    <div ref={externalContainerRef ? undefined : internalContainerRef} style={{ width: '100%', height: '100%' }} />
   );
 };
 
