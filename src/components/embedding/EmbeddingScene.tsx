@@ -17,7 +17,7 @@ interface EmbeddingSceneProps {
   selectedPoint?: Point | null;
   comparisonPoint?: Point | null;
   isCompareMode?: boolean;
-  depressedJournalReference?: boolean;  // Added this property to fix the type error
+  depressedJournalReference?: boolean;
 }
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
@@ -42,9 +42,10 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const sceneRef = useRef<THREE.Scene>(new THREE.Scene());
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
-  const pointsRef = useRef<THREE.Points | null>(null);
+  const spheresGroupRef = useRef<THREE.Group | null>(null);
   const linesRef = useRef<THREE.LineSegments | null>(null);
   const comparisonLinesRef = useRef<THREE.LineSegments | null>(null);
+  const spheresRef = useRef<THREE.Mesh[]>([]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -112,69 +113,70 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
   useEffect(() => {
     const scene = sceneRef.current;
-    if (pointsRef.current) {
-      scene.remove(pointsRef.current);
+    // Remove previous spheres group if it exists
+    if (spheresGroupRef.current) {
+      scene.remove(spheresGroupRef.current);
+      spheresGroupRef.current = null;
     }
-
-    const vertices: number[] = [];
-    const colors: number[] = [];
-    const pointSizes: number[] = [];
-
-    points.forEach(point => {
-      vertices.push(point.position[0], point.position[1], point.position[2]);
-      
+    
+    // Create a new group to hold all spheres
+    const spheresGroup = new THREE.Group();
+    spheresGroupRef.current = spheresGroup;
+    
+    // Clear previous spheres reference array
+    spheresRef.current = [];
+    
+    // Create spheres for each point
+    const sphereGeometry = new THREE.SphereGeometry(0.04, 16, 16); // Small sphere with moderate detail
+    
+    points.forEach((point, index) => {
       const isSelected = selectedPoint && point.id === selectedPoint.id;
       const isComparison = comparisonPoint && point.id === comparisonPoint.id;
-      const isInCompareMode = isCompareMode && selectedPoint && point.id === selectedPoint.id;
       
+      // Create material with point color
+      const material = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(point.color[0], point.color[1], point.color[2]),
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      // If point is selected or comparison, make it larger and brighter
       if (isSelected || isComparison) {
-        colors.push(
-          Math.min(1, point.color[0] * 1.5), 
-          Math.min(1, point.color[1] * 1.5), 
-          Math.min(1, point.color[2] * 1.5)
-        );
-        pointSizes.push(0.15);
-      } else {
-        colors.push(point.color[0], point.color[1], point.color[2]);
-        pointSizes.push(0.1);
+        sphereGeometry.scale(1.5, 1.5, 1.5);
+        material.color.multiplyScalar(1.5);
+        material.opacity = 1.0;
+      }
+      
+      // Create sphere mesh
+      const sphere = new THREE.Mesh(sphereGeometry, material);
+      
+      // Position the sphere at the point's position
+      sphere.position.set(point.position[0], point.position[1], point.position[2]);
+      
+      // Add user data to identify the point later
+      sphere.userData.pointIndex = index;
+      
+      // Add sphere to group
+      spheresGroup.add(sphere);
+      
+      // Store reference to sphere
+      spheresRef.current.push(sphere);
+      
+      // Reset sphere geometry scale if it was changed
+      if (isSelected || isComparison) {
+        sphereGeometry.scale(1/1.5, 1/1.5, 1/1.5);
       }
     });
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     
-    geometry.setAttribute('pointSize', new THREE.Float32BufferAttribute(pointSizes, 1));
-
-    const material = new THREE.PointsMaterial({
-      size: 0.1,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.8,
-      sizeAttenuation: true
-    });
-
-    material.onBeforeCompile = (shader) => {
-      shader.vertexShader = shader.vertexShader
-        .replace(
-          'void main() {',
-          `attribute float pointSize;
-           void main() {`
-        )
-        .replace(
-          'gl_PointSize = size;',
-          'gl_PointSize = pointSize * 20.0;'
-        );
-    };
-
-    pointsRef.current = new THREE.Points(geometry, material);
-    scene.add(pointsRef.current);
-
+    // Add the spheres group to the scene
+    scene.add(spheresGroup);
+    
+    // Set up raycaster for interactions
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
     const handleMouseMove = (event: MouseEvent) => {
-      if (!isInteractive || !containerRef.current || !pointsRef.current) return;
+      if (!isInteractive || !containerRef.current || !spheresGroupRef.current) return;
 
       const containerRect = containerRef.current.getBoundingClientRect();
       mouse.x = ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1;
@@ -182,11 +184,13 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
       raycaster.setFromCamera(mouse, cameraRef.current!);
 
-      const intersects = raycaster.intersectObject(pointsRef.current);
+      const intersects = raycaster.intersectObjects(spheresGroupRef.current.children);
 
       if (intersects.length > 0) {
-        const pointIndex = intersects[0].index;
-        if (onPointHover) {
+        const object = intersects[0].object as THREE.Mesh;
+        const pointIndex = object.userData.pointIndex;
+        
+        if (pointIndex !== undefined && onPointHover) {
           onPointHover(points[pointIndex]);
         }
       } else if (onPointHover) {
@@ -195,7 +199,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     };
 
     const handlePointClick = (event: MouseEvent) => {
-      if (!isInteractive || !containerRef.current || !pointsRef.current) return;
+      if (!isInteractive || !containerRef.current || !spheresGroupRef.current) return;
 
       const containerRect = containerRef.current.getBoundingClientRect();
       mouse.x = ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1;
@@ -203,19 +207,23 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
       raycaster.setFromCamera(mouse, cameraRef.current!);
 
-      const intersects = raycaster.intersectObject(pointsRef.current);
+      const intersects = raycaster.intersectObjects(spheresGroupRef.current.children);
 
       if (intersects.length > 0) {
-        const pointIndex = intersects[0].index;
-        const clickedPoint = points[pointIndex];
+        const object = intersects[0].object as THREE.Mesh;
+        const pointIndex = object.userData.pointIndex;
         
-        if (!isCompareMode && selectedPoint && clickedPoint.id === selectedPoint.id) {
-          if (onPointSelect) {
-            onPointSelect(null);
-          }
-        } else {
-          if (onPointSelect) {
-            onPointSelect(clickedPoint);
+        if (pointIndex !== undefined) {
+          const clickedPoint = points[pointIndex];
+          
+          if (!isCompareMode && selectedPoint && clickedPoint.id === selectedPoint.id) {
+            if (onPointSelect) {
+              onPointSelect(null);
+            }
+          } else {
+            if (onPointSelect) {
+              onPointSelect(clickedPoint);
+            }
           }
         }
       }
