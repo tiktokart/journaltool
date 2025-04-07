@@ -5,4 +5,5 @@ interface Window {
     resetEmotionalGroupFilter?: () => void;
     resetView?: () => void;
   };
+  documentEmbeddingPoints?: any[];
 }

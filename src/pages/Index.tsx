@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -135,7 +136,7 @@ const Home = () => {
             </p>
           </div>
           
-          <div className="rounded-lg overflow-hidden shadow-xl border min-h-[350px] border-border relative">
+          <div className="rounded-lg overflow-hidden shadow-xl border min-h-[450px] border-border relative">
             <DocumentEmbedding 
               points={points}
               isInteractive={false}
@@ -205,11 +206,13 @@ const Home = () => {
               </Tabs>
             </CardContent>
             <CardFooter>
-              <DocumentEmbedding 
-                points={points}
-                isInteractive={false}
-                sourceDescription="Example Journal Visualization"
-              />
+              <div className="w-full h-[350px]">
+                <DocumentEmbedding 
+                  points={points}
+                  isInteractive={false}
+                  sourceDescription="Example Journal Visualization"
+                />
+              </div>
             </CardFooter>
           </Card>
         </div>
