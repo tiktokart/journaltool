@@ -244,6 +244,9 @@ const Dashboard = () => {
         clusterPointsMap[cluster.name] = assignedPoints;
       });
       setClusterPoints(clusterPointsMap);
+      
+      // Fix 1: Making window.documentEmbeddingPoints a reference to mockPoints
+      window.documentEmbeddingPoints = mockPoints;
     }
   }, [sentimentData, pdfText]);
 
@@ -617,6 +620,7 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
+                      depressedJournalReference={false}
                       focusOnWord={selectedWord}
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
