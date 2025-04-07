@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -118,6 +117,12 @@ const Index = () => {
     toast.info("Comparison cleared");
   };
 
+  const handleVisualSearchSelect = (point: Point) => {
+    setSelectedPoint(point);
+    setFocusWord(point.word);
+    toast(`Zooming to: "${point.word}"`);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -210,6 +215,8 @@ const Index = () => {
                   onPointClick={handlePointClick}
                   focusOnWord={focusWord}
                   onComparePoint={handlePointCompare}
+                  onSearchSelect={handleVisualSearchSelect}
+                  points={points}
                 />
               </div>
             </div>
@@ -234,7 +241,6 @@ const Index = () => {
                   </div>
                   
                   <div className="grid md:grid-cols-2 gap-6">
-                    {/* First Point */}
                     <div className="border rounded-md p-4 bg-background/50">
                       <div className="flex items-center gap-2 mb-3">
                         <div 
@@ -278,7 +284,6 @@ const Index = () => {
                       </div>
                     </div>
                     
-                    {/* Second Point */}
                     <div className="border rounded-md p-4 bg-background/50">
                       <div className="flex items-center gap-2 mb-3">
                         <div 
@@ -322,7 +327,6 @@ const Index = () => {
                       </div>
                     </div>
                     
-                    {/* Comparison Analysis */}
                     <div className="md:col-span-2 border border-dashed border-orange-300 rounded-md p-4 bg-orange-50 dark:bg-orange-950/20">
                       <h4 className="text-sm font-medium mb-2 text-orange-700 dark:text-orange-400">Relationship Analysis</h4>
                       
@@ -351,7 +355,6 @@ const Index = () => {
                         </div>
                       </div>
                       
-                      {/* Check for shared keywords */}
                       {selectedPoint.keywords && comparisonPoint.keywords && (
                         <div className="mt-3">
                           <p className="text-xs font-medium mb-1">Concept Overlap</p>
