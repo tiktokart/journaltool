@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -274,7 +273,6 @@ const Dashboard = () => {
     }
   }, [sentimentData, pdfText]);
 
-  // Fix for Line 220 - converting string to boolean
   const handleFileUpload = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
       const file = files[0];
@@ -292,7 +290,6 @@ const Dashboard = () => {
     }
   };
 
-  // Fix for Line 241 - ensuring numeric types for arithmetic operations
   const analyzeSentiment = async () => {
     if (!file) return;
     
