@@ -31,14 +31,11 @@ import {
 const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      // Generate a unique seed based on file name for consistency
       const fileName = file.name.toLowerCase();
       const seed = fileName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       
-      // Use the seed to influence the generated data
-      const randomMultiplier = ((seed % 100) / 100) * 0.4 + 0.8; // Between 0.8 and 1.2
+      const randomMultiplier = ((seed % 100) / 100) * 0.4 + 0.8;
       
-      // Generate emotional tone distribution based on filename
       let emotionalDistribution = {
         Joy: 0.15,
         Sadness: 0.25,
@@ -48,10 +45,9 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         Disgust: 0.05,
         Trust: 0.1,
         Anticipation: 0.1,
-        Neutral: 0.0  // Add the Neutral property that was missing
+        Neutral: 0.0
       };
       
-      // Adjust based on keywords in filename
       if (fileName.includes('happy') || fileName.includes('joy')) {
         emotionalDistribution.Joy = 0.4;
         emotionalDistribution.Sadness = 0.05;
@@ -66,28 +62,22 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         emotionalDistribution.Trust = 0.05;
       }
       
-      // Extract words from PDF text if available
       let customWordBank: string[] = [];
       if (pdfText && pdfText.length > 0) {
-        // Clean and normalize the text
         const cleanText = pdfText
           .toLowerCase()
-          .replace(/[^\w\s]/g, ' ')  // Replace punctuation with spaces
-          .replace(/\s+/g, ' ')      // Replace multiple spaces with single space
+          .replace(/[^\w\s]/g, ' ')
+          .replace(/\s+/g, ' ')
           .trim();
         
-        // Extract words, filter out common stop words and short words
         const stopWords = new Set(['the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']);
         customWordBank = cleanText
           .split(' ')
           .filter(word => word.length > 2 && !stopWords.has(word))
-          .filter((word, index, self) => self.indexOf(word) === index) // Unique words only
-          .slice(0, 200); // Limit to 200 unique words
-        
-        console.log("Extracted words from PDF:", customWordBank.slice(0, 20));
+          .filter((word, index, self) => self.indexOf(word) === index)
+          .slice(0, 200);
       }
       
-      // Calculate overall sentiment based on emotional distribution
       const overallSentiment = 
         (emotionalDistribution.Joy * 0.9) + 
         (emotionalDistribution.Trust * 0.8) + 
@@ -100,79 +90,68 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
       
       const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
       
-      // Create embedding points with the custom distribution and word bank if available
       const embeddingPoints = generateMockPoints(
         false, 
         emotionalDistribution, 
         customWordBank.length > 0 ? customWordBank : undefined
       );
 
-      // Generate sentiment distribution based on overall sentiment
       const positivePercentage = Math.round(normalizedSentiment * 100);
       const negativePercentage = Math.round((1 - normalizedSentiment) * 0.5 * 100);
       const neutralPercentage = 100 - positivePercentage - negativePercentage;
 
-      // Generate timeline data
-      const pageCount = 5 + Math.floor((seed % 10)); // Between 5 and 14 pages
+      const pageCount = 5 + Math.floor((seed % 10));
       const timeline = [];
-      let prevScore = normalizedSentiment * 0.8; // Start close to the overall sentiment
-      
+      let prevScore = normalizedSentiment * 0.8;
+
       for (let i = 1; i <= pageCount; i++) {
-        // Random walk with trend toward overall sentiment
-        const volatility = 0.15; // How much it can change per step
-        const trend = (normalizedSentiment - prevScore) * 0.3; // Pull toward overall sentiment
+        const volatility = 0.15;
+        const trend = (normalizedSentiment - prevScore) * 0.3;
         const randomChange = (Math.random() * 2 - 1) * volatility;
         let newScore = prevScore + randomChange + trend;
-        newScore = Math.min(1, Math.max(0, newScore)); // Keep within 0-1
-        
+        newScore = Math.min(1, Math.max(0, newScore));
+
         timeline.push({ page: i, score: newScore });
         prevScore = newScore;
       }
 
-      // Generate theme data (formerly entity)
       let themeNames = [
         "Work", "Family", "Health", "Relationships", 
         "Future", "Goals", "Education", "Friends",
         "Hobbies", "Travel", "Home", "Money"
       ];
-      
-      // If we have custom words, use some frequent ones as themes
+
       if (customWordBank.length > 20) {
-        // Use some of the words from the PDF as themes
         const potentialThemes = customWordBank.slice(0, 20);
         const selectedThemes = [];
-        // Pick 4-6 random words from potential themes
         const themeCount = 4 + Math.floor(Math.random() * 3);
         for (let i = 0; i < themeCount && i < potentialThemes.length; i++) {
           const randomIndex = Math.floor(Math.random() * potentialThemes.length);
           selectedThemes.push(potentialThemes[randomIndex]);
           potentialThemes.splice(randomIndex, 1);
         }
-        
-        // Capitalize first letter of each theme
+
         themeNames = selectedThemes.map(theme => 
           theme.charAt(0).toUpperCase() + theme.slice(1)
         );
       }
-      
+
       const themes = [];
-      const themeCount = Math.min(themeNames.length, 4 + Math.floor(Math.random() * 4)); // 4-7 themes
-      
-      // Randomly select themes without repeating
+      const themeCount = Math.min(themeNames.length, 4 + Math.floor(Math.random() * 4));
+
       const usedThemeIndices = new Set();
       for (let i = 0; i < themeCount; i++) {
         let themeIndex;
         do {
           themeIndex = Math.floor(Math.random() * themeNames.length);
         } while (usedThemeIndices.has(themeIndex) && usedThemeIndices.size < themeNames.length);
-        
+
         if (usedThemeIndices.size >= themeNames.length) break;
         usedThemeIndices.add(themeIndex);
-        
-        // Calculate theme sentiment as a variation of the overall sentiment
-        const variation = Math.random() * 0.4 - 0.2; // -0.2 to 0.2
+
+        const variation = Math.random() * 0.4 - 0.2;
         const themeSentiment = Math.min(1, Math.max(0, normalizedSentiment + variation));
-        
+
         themes.push({
           name: themeNames[themeIndex],
           score: themeSentiment,
@@ -180,7 +159,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         });
       }
 
-      // Extract most common words from embeddingPoints
       const wordFrequency: Record<string, { count: number, sentiment: number, emotionalTone: string }> = {};
       embeddingPoints.forEach(point => {
         if (point.word) {
@@ -195,33 +173,28 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
           wordFrequency[point.word].sentiment += point.sentiment;
         }
       });
-      
-      // Average the sentiment for each word
+
       Object.keys(wordFrequency).forEach(word => {
         const entry = wordFrequency[word];
         entry.sentiment = entry.sentiment / entry.count;
       });
-      
-      // Sort words by frequency
+
       const sortedWords = Object.entries(wordFrequency)
         .sort((a, b) => b[1].count - a[1].count)
-        .slice(0, 30); // Get top 30 words for more comprehensive display
-      
-      // Create key phrases with proper sentiment categorization
+        .slice(0, 30);
+
       const keyPhrases = sortedWords.map(([word, data]) => {
-        // Determine sentiment category
         let sentimentCategory: "positive" | "neutral" | "negative" = "neutral";
         if (data.sentiment >= 0.6) {
           sentimentCategory = "positive";
         } else if (data.sentiment <= 0.4) {
           sentimentCategory = "negative";
         }
-        
-        // For words with emotional tone "Neutral", ensure they're categorized as neutral
+
         if (data.emotionalTone === "Neutral") {
           sentimentCategory = "neutral";
         }
-        
+
         return {
           text: word,
           sentiment: sentimentCategory,
@@ -240,12 +213,12 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
           negative: negativePercentage
         },
         timeline: timeline,
-        entities: themes, // Renamed to themes but keeping the key as entities for compatibility
+        entities: themes,
         keyPhrases: keyPhrases,
         embeddingPoints: embeddingPoints,
-        fileName: file.name, // Add filename to results
-        fileSize: file.size, // Add filesize to results
-        wordCount: customWordBank.length // Add count of extracted words
+        fileName: file.name,
+        fileSize: file.size,
+        wordCount: customWordBank.length
       };
 
       resolve(analysisResults);
@@ -269,9 +242,8 @@ const Dashboard = () => {
   const handleFileUpload = (files: File[], pdfText?: string) => {
     if (files && files.length > 0) {
       setFile(files[0]);
-      setPdfText(pdfText || ""); // Store the extracted PDF text
-      toast.success(`File "${files[0].name}" uploaded successfully`);
-      // Reset sentiment data when a new file is uploaded
+      setPdfText(pdfText || "");
+      toast.success(`File "${files[0].name}" uploaded successfully");
       if (sentimentData) {
         setSentimentData(null);
         setSelectedPoint(null);
@@ -295,7 +267,6 @@ const Dashboard = () => {
       setFilteredPoints(results.embeddingPoints);
       setAnalysisComplete(true);
       
-      // Extract unique words from the embedding points
       const words = results.embeddingPoints
         .map((point: Point) => point.word)
         .filter((word: string, index: number, self: string[]) => 
@@ -390,7 +361,6 @@ const Dashboard = () => {
 
           {sentimentData && (
             <div className="animate-fade-in">
-              {/* Document Information Banner */}
               <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center">
                 <FileText className="h-5 w-5 mr-2 text-primary" />
                 <span className="text-sm">
@@ -415,49 +385,44 @@ const Dashboard = () => {
                           <span>Latent Emotional Analysis</span>
                         </CardTitle>
                         <div className="relative w-full md:w-64">
-                          <Popover open={open} onOpenChange={setOpen}>
-                            <PopoverTrigger asChild>
-                              <div className="relative w-full">
-                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input 
-                                  placeholder="Search words or emotions..." 
-                                  className="pl-8 w-full pr-8"
-                                  value={searchTerm}
-                                  onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    if (e.target.value.trim() !== "") {
-                                      setOpen(true);
-                                    }
-                                  }}
-                                  onFocus={() => {
-                                    if (uniqueWords.length > 0) {
-                                      setOpen(true);
-                                    }
-                                  }}
-                                />
-                                {searchTerm && (
-                                  <button 
-                                    className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                                    onClick={handleClearSearch}
-                                  >
-                                    <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                                  </button>
-                                )}
-                              </div>
-                            </PopoverTrigger>
-                            <PopoverContent 
-                              className="p-0 w-[var(--radix-popover-trigger-width)] max-h-[300px] overflow-y-auto"
-                              side="bottom"
-                              align="start"
-                            >
+                          <div className="relative w-full">
+                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                              placeholder="Search words or emotions..." 
+                              className="pl-8 w-full pr-8"
+                              value={searchTerm}
+                              onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                              }}
+                              onFocus={() => {
+                                if (uniqueWords.length > 0) {
+                                  setOpen(true);
+                                }
+                              }}
+                            />
+                            {searchTerm && (
+                              <button 
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                                onClick={handleClearSearch}
+                              >
+                                <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </button>
+                            )}
+                          </div>
+                          {uniqueWords.length > 0 && open && (
+                            <div className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto">
                               <Command>
-                                <CommandInput placeholder="Search words..." />
+                                <CommandInput 
+                                  placeholder="Search words..." 
+                                  value={searchTerm}
+                                  onValueChange={setSearchTerm}
+                                />
                                 <CommandList>
                                   <CommandEmpty>No results found</CommandEmpty>
                                   <CommandGroup>
                                     {uniqueWords
                                       .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
-                                      .slice(0, 100) // Limit to 100 suggestions
+                                      .slice(0, 100)
                                       .map((word) => (
                                         <CommandItem 
                                           key={word} 
@@ -470,8 +435,8 @@ const Dashboard = () => {
                                   </CommandGroup>
                                 </CommandList>
                               </Command>
-                            </PopoverContent>
-                          </Popover>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="text-sm font-normal flex items-center text-muted-foreground">
