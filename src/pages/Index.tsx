@@ -43,10 +43,17 @@ const Index = () => {
     return () => clearInterval(intervalId);
   }, [points.length]);
 
-  const handlePointClick = (point: Point) => {
+  const handlePointClick = (point: Point | null) => {
+    if (!point) {
+      setSelectedPoint(null);
+      setFocusWord(null);
+      toast.info("Point deselected");
+      return;
+    }
+    
     setSelectedPoint(point);
     setFocusWord(point.word);
-    toast(`Selected: "${point.word}" (${point.emotionalTone})`);
+    toast(`Selected: "${point.word}" (${point.emotionalTone || 'Neutral'})`);
   };
 
   const handleSearchChange = (value: string) => {
@@ -177,7 +184,7 @@ const Index = () => {
             <div className="w-full max-w-6xl mb-8 relative">
               <div className="absolute top-2 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground">
                 <CircleDot className="h-4 w-4 mr-2" />
-                <span>Hover or click on words to see emotional groupings</span>
+                <span>Hover or click on words to see emotional groupings. Click again to deselect.</span>
               </div>
               <div className="aspect-[16/9] bg-white border border-border rounded-xl overflow-hidden shadow-lg">
                 <DocumentEmbedding 

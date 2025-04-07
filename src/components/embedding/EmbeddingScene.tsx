@@ -14,6 +14,7 @@ interface EmbeddingSceneProps {
   focusOnWord?: string | null;
   depressedJournalReference?: boolean;
   connectedPoints?: Point[];
+  selectedPoint?: Point | null;
 }
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
@@ -24,7 +25,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   onPointHover,
   onPointSelect,
   focusOnWord,
-  connectedPoints = []
+  connectedPoints = [],
+  selectedPoint
 }) => {
   // Use internal refs if external ones aren't provided
   const internalContainerRef = useRef<HTMLDivElement>(null);
@@ -169,8 +171,19 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
       if (intersects.length > 0) {
         const pointIndex = intersects[0].index;
-        if (onPointSelect) {
-          onPointSelect(points[pointIndex]);
+        const clickedPoint = points[pointIndex];
+        
+        // Check if we're clicking on the already selected point
+        if (selectedPoint && clickedPoint.id === selectedPoint.id) {
+          // Deselect the point
+          if (onPointSelect) {
+            onPointSelect(null);
+          }
+        } else {
+          // Select the new point
+          if (onPointSelect) {
+            onPointSelect(clickedPoint);
+          }
         }
       }
     };
@@ -186,7 +199,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         containerRef.current.removeEventListener('mousemove', handleMouseMove);
       }
     };
-  }, [points, isInteractive, onPointSelect, onPointHover, containerRef]);
+  }, [points, isInteractive, onPointSelect, onPointHover, containerRef, selectedPoint]);
 
   useEffect(() => {
     const scene = sceneRef.current;

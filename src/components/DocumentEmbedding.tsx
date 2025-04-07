@@ -91,9 +91,17 @@ export const DocumentEmbedding = ({
   };
   
   const handlePointSelect = (point: Point | null) => {
-    if (!point) return;
-    
     setSelectedPoint(point);
+    
+    if (!point) {
+      // Point was deselected
+      setConnectedPoints([]);
+      if (onPointClick) {
+        // Pass null to parent to indicate deselection
+        onPointClick(null);
+      }
+      return;
+    }
     
     // Find the top 3 connected points
     if (point.relationships && point.relationships.length > 0) {
@@ -132,6 +140,7 @@ export const DocumentEmbedding = ({
         depressedJournalReference={depressedJournalReference}
         focusOnWord={currentFocusWord}
         connectedPoints={connectedPoints}
+        selectedPoint={selectedPoint}
       />
       
       {isInteractive && (
