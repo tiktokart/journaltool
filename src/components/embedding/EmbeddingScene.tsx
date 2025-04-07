@@ -80,23 +80,25 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     camera.aspect = containerWidth / containerHeight;
     camera.updateProjectionMatrix();
-    camera.position.z = 15;
-
-    scene.background = null;
+    camera.position.z = 25;
+    
+    scene.background = new THREE.Color(0xffffff);
 
     const controlsInstance = new OrbitControls(camera, renderer.domElement);
     controlsRef.current = controlsInstance;
     controlsInstance.enableDamping = true;
     controlsInstance.dampingFactor = 0.1;
-    controlsInstance.screenSpacePanning = false;
+    controlsInstance.screenSpacePanning = true;
     controlsInstance.minDistance = 1;
-    controlsInstance.maxDistance = 30;
-    controlsInstance.maxPolarAngle = Math.PI / 2;
+    controlsInstance.maxDistance = 50;
+    controlsInstance.maxPolarAngle = Math.PI;
     controlsInstance.autoRotateSpeed = 0.5;
     controlsInstance.autoRotate = true;
-    controlsInstance.enableZoom = false;
+    controlsInstance.enableZoom = true;
     controlsInstance.enableRotate = true;
     controlsInstance.rotateSpeed = 0.5;
+    controlsInstance.zoomSpeed = 1.2;
+    controlsInstance.panSpeed = 0.8;
     
     const handleMouseDown = () => {
       isDraggingRef.current = true;
@@ -138,49 +140,11 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       camera.updateProjectionMatrix();
     };
     
-    const handleWheel = (event: WheelEvent) => {
-      event.preventDefault();
-      
-      isZoomingRef.current = true;
-      
-      if (zoomTimeoutRef.current !== null) {
-        window.clearTimeout(zoomTimeoutRef.current);
-      }
-      
-      const zoomDirection = event.deltaY > 0 ? 1 : -1;
-      const zoomAmount = 0.8;
-      
-      if (zoomDirection > 0) {
-        const targetZ = Math.min(camera.position.z + zoomAmount, 30);
-        gsap.to(camera.position, {
-          z: targetZ,
-          duration: 0.4,
-          ease: "power2.out"
-        });
-      } else {
-        const targetZ = Math.max(camera.position.z - zoomAmount, 1);
-        gsap.to(camera.position, {
-          z: targetZ,
-          duration: 0.4,
-          ease: "power2.out"
-        });
-      }
-      
-      zoomTimeoutRef.current = window.setTimeout(() => {
-        isZoomingRef.current = false;
-      }, 800);
-    };
-    
     window.addEventListener('resize', handleResize);
     
-    if (containerRef.current) {
-      containerRef.current.addEventListener('wheel', handleWheel, { passive: false });
-    }
-
     return () => {
       window.removeEventListener('resize', handleResize);
       if (containerRef.current) {
-        containerRef.current.removeEventListener('wheel', handleWheel);
         containerRef.current.removeEventListener('mousedown', handleMouseDown);
         containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
       }
@@ -574,7 +538,7 @@ export const zoomOut = (camera: THREE.PerspectiveCamera | null) => {
   if (!camera) return;
   
   gsap.to(camera.position, {
-    z: Math.min(camera.position.z + 3, 30),
+    z: Math.min(camera.position.z + 3, 50),
     duration: 0.5,
     ease: "power2.out"
   });
@@ -586,7 +550,7 @@ export const resetZoom = (camera: THREE.PerspectiveCamera | null, controls: Orbi
   gsap.to(camera.position, {
     x: 0,
     y: 0,
-    z: 15,
+    z: 25,
     duration: 1,
     ease: "power2.inOut",
     onUpdate: () => {
