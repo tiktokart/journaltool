@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +13,6 @@ import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
 import { useNavigate } from "react-router-dom";
 
-// Example journal entry data for demonstration
 const exampleJournalData = {
   overallSentiment: {
     score: 0.35,
@@ -108,7 +106,6 @@ const exampleJournalData = {
   sourceDescription: "Example Journal Entry"
 };
 
-// Journal entry text for generating embedding points
 const exampleJournalText = `
 Today was particularly challenging. My anxiety felt overwhelming from the moment I woke up. I struggled to get out of bed, feeling like a heavy weight was pressing down on my chest. During breakfast, I had trouble focusing on simple tasks. My mind kept racing with worries.
 
@@ -154,8 +151,9 @@ const Home = () => {
           <div className="rounded-lg overflow-hidden shadow-xl border min-h-[350px] border-border relative">
             <DocumentEmbedding 
               points={points}
+              onPointClick={() => {}}
               isInteractive={false}
-              sourceDescription="Example Journal Visualization"
+              focusOnWord={null}
             />
           </div>
         </div>
