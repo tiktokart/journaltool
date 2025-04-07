@@ -18,7 +18,7 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
             backgroundColor: getEmotionColor(point.emotionalTone || "")
           }} 
         />
-        <span className="font-medium">Emotional Grouping: {point.emotionalTone || "Neutral"}</span>
+        <span className="font-medium">{point.emotionalTone || "Neutral"}</span>
       </div>
       <p className="text-lg font-bold mb-2">{point.word}</p>
       
@@ -45,10 +45,10 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
           <span className="text-xs font-medium block mb-1">Connected words:</span>
           <div className="grid grid-cols-2 gap-1">
             {point.relationships.map((rel, idx) => (
-              <div key={idx} className="text-xs flex items-center">
+              <li key={idx} className="text-xs flex items-center">
                 <div className="w-1 h-1 rounded-full bg-primary mr-1"></div>
                 <span>{rel.word || `Connection ${idx + 1}`}</span>
-              </div>
+              </li>
             ))}
           </div>
         </div>

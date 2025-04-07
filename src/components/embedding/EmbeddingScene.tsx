@@ -29,6 +29,7 @@ export const EmbeddingScene = ({
   const linesRef = useRef<THREE.LineSegments | null>(null);
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  const animationFrameRef = useRef<number | null>(null);
   
   const createPointCloud = (pointsData: Point[]) => {
     if (!sceneRef.current) return;
@@ -203,10 +204,10 @@ export const EmbeddingScene = ({
             sizesArray[i] = 0.05;
           }
           
-          // Highlight the hovered point
+          // Highlight the hovered point - more gradual transition
           sizesArray[index] = 0.15;
           
-          // Highlight related points if any
+          // Highlight related points if any - more gradual transition
           if (point.relationships) {
             point.relationships.forEach(rel => {
               const relatedIndex = pointsRef.current!.userData.pointsData.findIndex((p: Point) => p.id === rel.id);
@@ -222,12 +223,13 @@ export const EmbeddingScene = ({
     } else {
       onPointHover(null);
       
-      // Reset all point sizes
+      // Reset all point sizes more gradually
       if (pointsRef.current.geometry.attributes.size) {
         const sizesAttribute = pointsRef.current.geometry.attributes.size;
         const sizesArray = sizesAttribute.array as Float32Array;
         for (let i = 0; i < sizesArray.length; i++) {
-          sizesArray[i] = 0.05;
+          // Gradually reduce size rather than immediately setting to 0.05
+          sizesArray[i] = Math.max(0.05, sizesArray[i] * 0.95);
         }
         sizesAttribute.needsUpdate = true;
       }
@@ -262,7 +264,8 @@ export const EmbeddingScene = ({
     // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    controls.dampingFactor = 0.08; // Increased damping for smoother rotation
+    controls.rotateSpeed = 0.5; // Slower rotation speed
     controls.screenSpacePanning = false;
     controls.maxDistance = 30;
     controls.minDistance = 5;
@@ -273,7 +276,7 @@ export const EmbeddingScene = ({
     
     // Animation function
     const animate = () => {
-      requestAnimationFrame(animate);
+      animationFrameRef.current = requestAnimationFrame(animate);
       
       if (controlsRef.current) {
         controlsRef.current.update();
@@ -289,6 +292,10 @@ export const EmbeddingScene = ({
     
     // Cleanup
     return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      
       if (containerRef.current && rendererRef.current) {
         containerRef.current.removeChild(rendererRef.current.domElement);
       }
@@ -381,17 +388,19 @@ export const EmbeddingScene = ({
   return null; // This is a non-rendering component that manages the Three.js scene
 };
 
-// Export a function to zoom in
+// Export a function to zoom in with smoother transition
 export const zoomIn = (camera: THREE.PerspectiveCamera | null) => {
   if (camera) {
-    camera.position.z *= 0.9;
+    // More gradual zoom for smoother effect
+    camera.position.z *= 0.95;
   }
 };
 
-// Export a function to zoom out
+// Export a function to zoom out with smoother transition
 export const zoomOut = (camera: THREE.PerspectiveCamera | null) => {
   if (camera) {
-    camera.position.z *= 1.1;
+    // More gradual zoom for smoother effect
+    camera.position.z *= 1.05;
     if (camera.position.z > 30) {
       camera.position.z = 30;
     }

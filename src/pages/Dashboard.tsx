@@ -1,8 +1,9 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { FileUploader } from "@/components/FileUploader";
 import { SentimentOverview } from "@/components/SentimentOverview";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
@@ -11,7 +12,7 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
-import { Loader2, CircleDot } from "lucide-react";
+import { Loader2, CircleDot, Search } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
 
@@ -90,78 +91,64 @@ const analyzePdfContent = (file: File): Promise<any> => {
         prevScore = newScore;
       }
 
-      // Generate entity data
-      const entityNames = [
+      // Generate theme data (formerly entity)
+      const themeNames = [
         "Work", "Family", "Health", "Relationships", 
         "Future", "Goals", "Education", "Friends",
         "Hobbies", "Travel", "Home", "Money"
       ];
       
-      const entities = [];
-      const usedEntities = new Set();
-      const entityCount = 4 + Math.floor(Math.random() * 4); // 4-7 entities
+      const themes = [];
+      const usedThemes = new Set();
+      const themeCount = 4 + Math.floor(Math.random() * 4); // 4-7 themes
       
-      for (let i = 0; i < entityCount; i++) {
-        let entityIndex;
+      for (let i = 0; i < themeCount; i++) {
+        let themeIndex;
         do {
-          entityIndex = Math.floor(Math.random() * entityNames.length);
-        } while (usedEntities.has(entityIndex));
+          themeIndex = Math.floor(Math.random() * themeNames.length);
+        } while (usedThemes.has(themeIndex));
         
-        usedEntities.add(entityIndex);
+        usedThemes.add(themeIndex);
         
-        // Calculate entity sentiment as a variation of the overall sentiment
+        // Calculate theme sentiment as a variation of the overall sentiment
         const variation = Math.random() * 0.4 - 0.2; // -0.2 to 0.2
-        const entitySentiment = Math.min(1, Math.max(0, normalizedSentiment + variation));
+        const themeSentiment = Math.min(1, Math.max(0, normalizedSentiment + variation));
         
-        entities.push({
-          name: entityNames[entityIndex],
-          score: entitySentiment,
+        themes.push({
+          name: themeNames[themeIndex],
+          score: themeSentiment,
           mentions: 5 + Math.floor(Math.random() * 20)
         });
       }
 
-      // Generate key phrases
-      const positiveWords = ["growth", "healing", "success", "happiness", "love", "accomplishment", "strength", "peace", "joy", "progress"];
-      const neutralWords = ["change", "balance", "reflection", "awareness", "routine", "planning", "thoughts", "consideration", "evaluation", "observation"];
-      const negativeWords = ["struggle", "difficulty", "challenge", "pain", "fear", "stress", "anxiety", "exhaustion", "disappointment", "conflict"];
+      // Extract most common words based on frequency for KeyPhrases
+      // Create a map of words by frequency from embeddingPoints
+      const wordFrequency = {};
+      embeddingPoints.forEach(point => {
+        wordFrequency[point.word] = (wordFrequency[point.word] || 0) + 1;
+      });
       
-      const keyPhrases = [];
+      // Sort words by frequency
+      const sortedWords = Object.entries(wordFrequency)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15); // Get top 15 words
       
-      // Add positive phrases proportional to positive sentiment
-      const positiveCount = Math.round(1 + (positivePercentage / 100) * 4);
-      for (let i = 0; i < positiveCount; i++) {
-        const wordIndex = Math.floor(Math.random() * positiveWords.length);
-        const secondWordIndex = (wordIndex + 1 + Math.floor(Math.random() * (positiveWords.length - 1))) % positiveWords.length;
-        keyPhrases.push({
-          text: `${positiveWords[wordIndex]} ${positiveWords[secondWordIndex]}`,
-          sentiment: "positive",
-          count: 1 + Math.floor(Math.random() * 7)
-        });
-      }
-      
-      // Add neutral phrases
-      const neutralCount = Math.round(1 + (neutralPercentage / 100) * 4);
-      for (let i = 0; i < neutralCount; i++) {
-        const wordIndex = Math.floor(Math.random() * neutralWords.length);
-        const secondWordIndex = (wordIndex + 1 + Math.floor(Math.random() * (neutralWords.length - 1))) % neutralWords.length;
-        keyPhrases.push({
-          text: `${neutralWords[wordIndex]} ${neutralWords[secondWordIndex]}`,
-          sentiment: "neutral",
-          count: 1 + Math.floor(Math.random() * 7)
-        });
-      }
-      
-      // Add negative phrases
-      const negativeCount = Math.round(1 + (negativePercentage / 100) * 4);
-      for (let i = 0; i < negativeCount; i++) {
-        const wordIndex = Math.floor(Math.random() * negativeWords.length);
-        const secondWordIndex = (wordIndex + 1 + Math.floor(Math.random() * (negativeWords.length - 1))) % negativeWords.length;
-        keyPhrases.push({
-          text: `${negativeWords[wordIndex]} ${negativeWords[secondWordIndex]}`,
-          sentiment: "negative",
-          count: 1 + Math.floor(Math.random() * 7)
-        });
-      }
+      // Create key phrases from sorted words
+      const keyPhrases = sortedWords.map(([word, count]) => {
+        // Determine sentiment for the word
+        const pointWithWord = embeddingPoints.find(p => p.word === word);
+        let sentiment = "neutral";
+        if (pointWithWord) {
+          if (pointWithWord.sentiment >= 0.6) sentiment = "positive";
+          else if (pointWithWord.sentiment <= 0.4) sentiment = "negative";
+        }
+        
+        return {
+          text: word,
+          sentiment: sentiment,
+          count: count
+        };
+      });
 
       const analysisResults = {
         overallSentiment: {
@@ -174,7 +161,7 @@ const analyzePdfContent = (file: File): Promise<any> => {
           negative: negativePercentage
         },
         timeline: timeline,
-        entities: entities,
+        entities: themes, // Renamed to themes but keeping the key as entities for compatibility
         keyPhrases: keyPhrases,
         embeddingPoints: embeddingPoints
       };
@@ -190,6 +177,8 @@ const Dashboard = () => {
   const [sentimentData, setSentimentData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("embedding");
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
 
   const handleFileUpload = (files: File[]) => {
     if (files && files.length > 0) {
@@ -214,6 +203,7 @@ const Dashboard = () => {
     try {
       const results = await analyzePdfContent(file);
       setSentimentData(results);
+      setFilteredPoints(results.embeddingPoints);
       toast.success("Document analysis completed!");
     } catch (error) {
       toast.error("Error analyzing document");
@@ -227,6 +217,24 @@ const Dashboard = () => {
     setSelectedPoint(point);
     toast(`Selected: "${point.word}" (${point.emotionalTone})`);
   };
+  
+  // Filter points based on search term
+  useEffect(() => {
+    if (!sentimentData) return;
+    
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) {
+      setFilteredPoints(sentimentData.embeddingPoints);
+      return;
+    }
+    
+    const filtered = sentimentData.embeddingPoints.filter((point: Point) => {
+      return point.word.toLowerCase().includes(term) || 
+             (point.emotionalTone && point.emotionalTone.toLowerCase().includes(term));
+    });
+    
+    setFilteredPoints(filtered);
+  }, [searchTerm, sentimentData]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -279,25 +287,36 @@ const Dashboard = () => {
                   <TabsTrigger value="embedding">Latent Emotional Analysis</TabsTrigger>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                  <TabsTrigger value="entities">Entities</TabsTrigger>
-                  <TabsTrigger value="keyphrases">Key Phrases</TabsTrigger>
+                  <TabsTrigger value="themes">Themes</TabsTrigger>
+                  <TabsTrigger value="keyphrases">Key Words</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="embedding" className="mt-6">
                   <Card className="border border-border shadow-md overflow-hidden bg-card">
                     <CardHeader className="z-10">
-                      <CardTitle className="flex justify-between items-center">
-                        <span>Latent Emotional Analysis</span>
-                        <div className="text-sm font-normal flex items-center text-muted-foreground">
-                          <CircleDot className="h-4 w-4 mr-2" />
-                          <span>Hover or click on words to see emotional groupings</span>
+                      <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
+                        <CardTitle className="flex items-center">
+                          <span>Latent Emotional Analysis</span>
+                        </CardTitle>
+                        <div className="relative w-full md:w-64">
+                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="Search words or emotions..." 
+                            className="pl-8 w-full"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
                         </div>
-                      </CardTitle>
+                      </div>
+                      <div className="text-sm font-normal flex items-center text-muted-foreground">
+                        <CircleDot className="h-4 w-4 mr-2" />
+                        <span>Hover or click on words to see emotional groupings</span>
+                      </div>
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="w-full aspect-[16/9]">
                         <DocumentEmbedding 
-                          points={sentimentData.embeddingPoints}
+                          points={filteredPoints}
                           onPointClick={handlePointClick}
                           isInteractive={true}
                         />
@@ -337,7 +356,8 @@ const Dashboard = () => {
                               </span>
                             </div>
                             
-                            {selectedPoint.relationships && selectedPoint.relationships.length > 0 && (
+                            {selectedPoint.relationships && selectedPoint.relationships.length >
+                             0 && (
                               <div>
                                 <h3 className="text-sm font-medium mt-3 mb-1">Related Words</h3>
                                 <ul className="text-sm">
@@ -367,7 +387,7 @@ const Dashboard = () => {
                   <SentimentTimeline data={sentimentData.timeline} />
                 </TabsContent>
                 
-                <TabsContent value="entities" className="mt-6">
+                <TabsContent value="themes" className="mt-6">
                   <EntitySentiment data={sentimentData.entities} />
                 </TabsContent>
                 
