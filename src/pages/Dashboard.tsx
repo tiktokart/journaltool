@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { FileUploader } from "@/components/FileUploader";
 import { SentimentOverview } from "@/components/SentimentOverview";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
@@ -29,10 +30,6 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-
-const getRGBColorString = (color: number[]): string => {
-  return `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`;
-};
 
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
@@ -161,7 +158,7 @@ const Dashboard = () => {
   const [comparisonSearchTerm, setComparisonSearchTerm] = useState("");
   const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
   const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
-  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState<boolean>(true);
+  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true);
   const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
   const [wordSearchTerm, setWordSearchTerm] = useState("");
   const [wordSearchOpen, setWordSearchOpen] = useState(false);
@@ -195,10 +192,10 @@ const Dashboard = () => {
       setFilteredPoints(mockPoints);
       
       const allWords = pdfText
-        .toLowerCase()
         .split(/\s+/)
-        .map(word => word.replace(/[^\w\s]|_/g, ""))
-        .filter(word => word.length > 2);
+        .filter(word => word.length > 2)
+        .map(word => word.replace(/[^\w\s]|_/g, "").toLowerCase())
+        .filter(Boolean);
       
       const uniqueWordsSet = new Set(allWords);
       const uniqueWordsArray = Array.from(uniqueWordsSet);
@@ -211,7 +208,7 @@ const Dashboard = () => {
         return {
           ...cluster,
           id: index,
-          color: getRGBColorString(color),
+          color: `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`,
         };
       });
       
@@ -257,13 +254,8 @@ const Dashboard = () => {
         const wordCount = extractedText.split(/\s+/).length;
         toast.info(`Extracted ${wordCount} words from PDF for analysis`);
       } else {
-        const fallbackTexts = [
-          `This is a simulated text extraction from ${file.name}. In a real application, we would extract the actual content of the PDF file.`,
-          `Sample content from ${file.name}: Today I felt anxious at work. My heart was racing during the morning meeting. I used deep breathing to calm down.`
-        ];
-        
-        const randomIndex = Math.floor(Math.random() * fallbackTexts.length);
-        setPdfText(fallbackTexts[randomIndex]);
+        const mockText = `This is a simulated text extraction from ${file.name}. In a real application, we would extract the actual content of the PDF file.`;
+        setPdfText(mockText);
         toast.warning("Could not extract text properly, using sample text instead");
       }
     }
@@ -285,42 +277,6 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error analyzing sentiment:", error);
       toast.error("Failed to analyze document");
-      
-      const mockData = {
-        overallSentiment: {
-          score: 0.3,
-          label: "Negative"
-        },
-        distribution: {
-          positive: 20,
-          neutral: 30,
-          negative: 50
-        },
-        timeline: Array.from({ length: 10 }, (_, i) => ({
-          page: i + 1,
-          score: 0.3 + (Math.random() * 0.3),
-          text: pdfText.substring(i * 100, (i + 1) * 100).trim() || "Sample text segment"
-        })),
-        entities: [
-          { name: "Anxiety", sentiment: 0.2, mentions: 5, contexts: ["Context: Feeling anxious in meetings"] },
-          { name: "Sleep", sentiment: 0.4, mentions: 3, contexts: ["Context: Trouble sleeping at night"] },
-        ],
-        keyPhrases: [
-          { phrase: "panic attack", relevance: 0.8, sentiment: 0.2, occurrences: 3 },
-          { phrase: "deep breathing", relevance: 0.7, sentiment: 0.6, occurrences: 2 },
-        ],
-        clusters: [
-          { name: "Anxiety Symptoms", size: 8, sentiment: 0.2 },
-          { name: "Coping Strategies", size: 6, sentiment: 0.6 },
-        ],
-        summary: "This is a sample analysis of the document. The analysis shows patterns of anxiety and stress with some coping mechanisms mentioned.",
-        fileName: file.name,
-        fileSize: file.size,
-        wordCount: pdfText.split(/\s+/).length,
-        sourceDescription: `PDF Document Analysis - ${file.name}`
-      };
-      
-      setSentimentData(mockData);
     } finally {
       setIsAnalyzing(false);
     }
@@ -407,9 +363,9 @@ const Dashboard = () => {
     if (!point1 || !point2) return null;
     
     const distance = Math.sqrt(
-      Math.pow(point1.position[0] - point2.position[0], 2) +
-      Math.pow(point1.position[1] - point2.position[1], 2) +
-      Math.pow(point1.position[2] - point2.position[2], 2)
+      Math.pow(Number(point1.position[0]) - Number(point2.position[0]), 2) +
+      Math.pow(Number(point1.position[1]) - Number(point2.position[1]), 2) +
+      Math.pow(Number(point1.position[2]) - Number(point2.position[2]), 2)
     );
     
     const spatialSimilarity = Math.max(0, 1 - (distance / 2));
@@ -520,8 +476,10 @@ const Dashboard = () => {
               <Card className="mb-6 border border-border shadow-md bg-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <BookOpen className="h-5 w-5 mr-2 text-primary" />
-                    <CardTitle className="text-xl">Document Summary</CardTitle>
+                    <div className="flex items-center">
+                      <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                      <CardTitle className="text-xl">Document Summary</CardTitle>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -534,14 +492,9 @@ const Dashboard = () => {
               <Card className="border border-border shadow-md overflow-hidden bg-card mb-8">
                 <CardHeader className="z-10">
                   <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-                    <div>
-                      <CardTitle className="flex items-center">
-                        <span>Latent Emotional Analysis</span>
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        This is data analyzed from a made up experience of a Panic Attack
-                      </p>
-                    </div>
+                    <CardTitle className="flex items-center">
+                      <span>Latent Emotional Analysis</span>
+                    </CardTitle>
                     
                     <div className="flex items-center space-x-2">
                       <Button 
@@ -553,55 +506,69 @@ const Dashboard = () => {
                         <RotateCcw className="h-4 w-4 mr-2" />
                         Reset View
                       </Button>
-                    
-                      <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-9 w-full md:w-64">
-                            <Search className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span className="text-muted-foreground">
-                              {searchTerm || "Search words or emotions..."}
-                            </span>
-                            {searchTerm && (
-                              <X 
-                                className="h-4 w-4 ml-2 text-muted-foreground hover:text-foreground"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleClearSearch();
-                                }}
+                      
+                      <div className="relative w-full md:w-64">
+                        <div className="relative w-full">
+                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="Search words or emotions..." 
+                            className="pl-8 w-full pr-8"
+                            value={searchTerm}
+                            onChange={(e) => {
+                              setSearchTerm(e.target.value);
+                              // Fix for search click issue - always open dropdown on input
+                              if (uniqueWords.length > 0) {
+                                setOpen(true);
+                              }
+                            }}
+                            onClick={() => {
+                              // Fix for search click issue - open dropdown on click
+                              if (uniqueWords.length > 0) {
+                                setOpen(true);
+                              }
+                            }}
+                          />
+                          {searchTerm && (
+                            <button 
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                              onClick={handleClearSearch}
+                            >
+                              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                            </button>
+                          )}
+                        </div>
+                        {uniqueWords.length > 0 && open && (
+                          <div 
+                            ref={searchDropdownRef}
+                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
+                          >
+                            <Command>
+                              <CommandInput 
+                                placeholder="Search words..." 
+                                value={searchTerm}
+                                onValueChange={setSearchTerm}
                               />
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent 
-                          className="p-0 w-full md:w-64 max-h-[300px] overflow-y-auto"
-                          ref={searchDropdownRef}
-                        >
-                          <Command>
-                            <CommandInput 
-                              placeholder="Search words..." 
-                              value={searchTerm}
-                              onValueChange={setSearchTerm}
-                            />
-                            <CommandList>
-                              <CommandEmpty>No results found</CommandEmpty>
-                              <CommandGroup>
-                                {uniqueWords
-                                  .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
-                                  .slice(0, 100)
-                                  .map((word) => (
-                                    <CommandItem 
-                                      key={word} 
-                                      value={word}
-                                      onSelect={handleSelectWord}
-                                    >
-                                      {word}
-                                    </CommandItem>
-                                  ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                              <CommandList>
+                                <CommandEmpty>No results found</CommandEmpty>
+                                <CommandGroup>
+                                  {uniqueWords
+                                    .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
+                                    .slice(0, 100)
+                                    .map((word) => (
+                                      <CommandItem 
+                                        key={word} 
+                                        value={word}
+                                        onSelect={handleSelectWord}
+                                      >
+                                        {word}
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="text-sm font-normal flex items-center text-muted-foreground">
@@ -617,7 +584,7 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
-                      focusOnWord={selectedWord}
+                      focusOnWord={selectedWord || null}
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
                       visibleClusterCount={visibleClusterCount}
@@ -784,145 +751,127 @@ const Dashboard = () => {
                           <Search className="h-4 w-4 mr-2" />
                           Add Word
                         </Button>
+                        {wordsForComparison.length > 0 && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setWordsForComparison([])}
+                            className="h-8"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Clear All
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {wordsForComparison.length === 0 ? (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">
-                          Add words to compare their emotional relationships
-                        </p>
+                    <div className="mb-4">
+                      <div className="relative">
+                        <div className="relative w-full">
+                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="Search for words to compare..." 
+                            className="pl-8 w-full pr-8"
+                            value={wordSearchTerm}
+                            onChange={(e) => {
+                              setWordSearchTerm(e.target.value);
+                              // Fix for search click issue
+                              if (uniqueWords.length > 0) {
+                                setWordSearchOpen(true);
+                              }
+                            }}
+                            onClick={() => {
+                              // Fix for search click issue - open dropdown on click
+                              if (uniqueWords.length > 0) {
+                                setWordSearchOpen(true);
+                              }
+                            }}
+                          />
+                          {wordSearchTerm && (
+                            <button 
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                              onClick={() => setWordSearchTerm("")}
+                            >
+                              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                            </button>
+                          )}
+                        </div>
+                        {uniqueWords.length > 0 && wordSearchOpen && (
+                          <div 
+                            ref={wordSearchRef}
+                            className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
+                          >
+                            <Command>
+                              <CommandInput 
+                                placeholder="Find words to compare..." 
+                                value={wordSearchTerm}
+                                onValueChange={(value) => {
+                                  setWordSearchTerm(value);
+                                  // Always show dropdown while typing
+                                  setWordSearchOpen(true);
+                                }}
+                              />
+                              <CommandList>
+                                <CommandEmpty>No results found</CommandEmpty>
+                                <CommandGroup>
+                                  {uniqueWords
+                                    .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
+                                    .slice(0, 100)
+                                    .map((word) => (
+                                      <CommandItem 
+                                        key={word} 
+                                        value={word}
+                                        onSelect={handleSelectWordForComparison}
+                                      >
+                                        {word}
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </div>
+                        )}
                       </div>
-                    ) : (
+                    </div>
+                    
+                    {wordsForComparison.length > 0 ? (
                       <div className="space-y-4">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 mb-3">
                           {wordsForComparison.map((point) => (
                             <Badge 
                               key={point.id}
-                              className="pl-2 pr-1 py-1.5 flex items-center gap-1"
-                              style={{
-                                backgroundColor: `rgba(${point.color.join(', ')}, 0.2)`,
-                                color: `rgb(${point.color.map(c => Math.floor(c * 200)).join(', ')})`
-                              }}
+                              className="flex items-center gap-1 px-3 py-1"
                             >
                               {point.word}
-                              <X 
-                                className="h-3 w-3 ml-1 cursor-pointer" 
+                              <button 
+                                className="ml-1"
                                 onClick={() => handleRemoveWordFromComparison(point)}
-                              />
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
                             </Badge>
                           ))}
                         </div>
                         
                         <WordComparison 
-                          words={wordsForComparison}
+                          words={wordsForComparison} 
                           onRemoveWord={handleRemoveWordFromComparison}
                           calculateRelationship={calculateRelationship}
                           onAddWordClick={handleAddWordToComparison}
-                          sourceDescription={sentimentData.sourceDescription}
+                          sourceDescription={sentimentData?.sourceDescription}
                         />
                       </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Info className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                        <p>Select words to compare their emotional relationships</p>
+                        <p className="text-sm mt-2">Use the search bar above to find words</p>
+                      </div>
                     )}
-                    
-                    <Popover 
-                      open={wordSearchOpen} 
-                      onOpenChange={setWordSearchOpen}
-                    >
-                      <PopoverContent 
-                        className="p-0 w-full md:w-64"
-                        ref={wordSearchRef}
-                      >
-                        <Command>
-                          <CommandInput 
-                            placeholder="Search words to compare..." 
-                            value={wordSearchTerm}
-                            onValueChange={setWordSearchTerm}
-                          />
-                          <CommandList>
-                            <CommandEmpty>No results found</CommandEmpty>
-                            <CommandGroup>
-                              {uniqueWords
-                                .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
-                                .slice(0, 100)
-                                .map((word) => (
-                                  <CommandItem 
-                                    key={word} 
-                                    value={word}
-                                    onSelect={handleSelectWordForComparison}
-                                  >
-                                    {word}
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
                   </CardContent>
                 </Card>
               </div>
-              
-              {showWellbeingSuggestions && (
-                <Card className="mt-8 border border-border shadow-md bg-card">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center">
-                        <Heart className="h-5 w-5 mr-2 text-red-500" />
-                        Wellbeing Suggestions
-                      </CardTitle>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setShowWellbeingSuggestions(false)}
-                      >
-                        Dismiss
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {wellbeingSuggestions.map((suggestion, index) => (
-                        <div 
-                          key={index}
-                          className="border rounded-lg p-4 hover:bg-muted/30 transition-colors"
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div className="mt-1">
-                              {suggestion.icon}
-                            </div>
-                            <div>
-                              <h3 className="font-medium">{suggestion.title}</h3>
-                              <p className="text-sm text-muted-foreground mt-1">{suggestion.description}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-6 pt-4 border-t">
-                      <h3 className="font-medium mb-2 flex items-center">
-                        <Info className="h-4 w-4 mr-2 text-blue-500" />
-                        Mental Health Resources
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                        {mentalHealthResources.map((resource, index) => (
-                          <a 
-                            key={index}
-                            href={resource.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="border rounded-lg p-3 hover:bg-muted/30 transition-colors"
-                          >
-                            <h4 className="font-medium">{resource.name}</h4>
-                            <p className="text-sm text-muted-foreground mt-1">{resource.description}</p>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           )}
         </div>
