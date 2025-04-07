@@ -31,7 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
-const analyzePdfContent = async (pdfText: string) => {
+const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise((resolve) => {
     setTimeout(() => {
       const mockData = {
@@ -73,8 +73,8 @@ const analyzePdfContent = async (pdfText: string) => {
           { name: "Support System", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.5 },
           { name: "Coping Strategies", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.5 },
         ],
-        summary: "This journal entry describes the experience of a panic attack, including physical symptoms like racing heart and shortness of breath. The author discusses their feelings of fear and helplessness during the episode, as well as the coping mechanisms they attempted to use. There are references to previous therapy sessions and techniques that have been helpful in the past. The entry concludes with some reflection on potential triggers and plans for discussing the episode with their therapist.",
-        sourceDescription: "Personal Journal Entry - Panic Attack Experience"
+        summary: "This document contains various topics and themes that have been analyzed for sentiment and emotional patterns. The analysis identifies key themes, sentiment distribution, and important phrases throughout the text.",
+        sourceDescription: `PDF Document Analysis - ${fileName}`
       };
       
       resolve(mockData);
@@ -183,8 +183,16 @@ const Dashboard = () => {
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
-      const words = mockPoints.map(p => p.word);
-      setUniqueWords([...new Set(words)]);
+      const allWords = pdfText
+        .split(/\s+/)
+        .filter(word => word.length > 2)
+        .map(word => word.replace(/[^\w\s]|_/g, "").toLowerCase())
+        .filter(Boolean);
+      
+      const uniqueWordsSet = [...new Set(allWords)];
+      setUniqueWords(uniqueWordsSet);
+      
+      console.log(`Total unique words found: ${uniqueWordsSet.length}`);
       
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
@@ -228,17 +236,14 @@ const Dashboard = () => {
       const file = files[0];
       setFile(file);
       
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const mockText = `This is a simulated text extraction from ${file.name}. In a real application, we would extract the actual content of the PDF file. For now, we're generating mock data to demonstrate the functionality of the sentiment analysis dashboard. This text would contain information about mental health experiences, emotions, and personal reflections that would be analyzed for sentiment and emotional patterns.`;
-        setPdfText(mockText);
-      };
-      reader.readAsText(file);
-      
-      if (extractedText) {
+      if (extractedText && extractedText.length > 0) {
         setPdfText(extractedText);
         const wordCount = extractedText.split(/\s+/).length;
         toast.info(`Extracted ${wordCount} words from PDF for analysis`);
+      } else {
+        const mockText = `This is a simulated text extraction from ${file.name}. In a real application, we would extract the actual content of the PDF file.`;
+        setPdfText(mockText);
+        toast.warning("Could not extract text properly, using sample text instead");
       }
     }
   };
@@ -248,7 +253,7 @@ const Dashboard = () => {
     
     setIsAnalyzing(true);
     try {
-      const results = await analyzePdfContent(pdfText);
+      const results = await analyzePdfContent(pdfText, file.name);
       setSentimentData({
         ...results,
         fileName: file.name,

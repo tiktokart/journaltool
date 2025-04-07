@@ -5,21 +5,36 @@ import { Info } from "lucide-react";
 
 interface KeyPhrasesProps {
   data: Array<{ 
-    text: string; 
-    sentiment: "positive" | "neutral" | "negative"; 
-    count: number 
+    phrase: string; 
+    sentiment: number;
+    relevance: number;
+    occurrences: number;
   }>;
   sourceDescription?: string; // Add this to show where words came from
 }
 
 export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
   // Group words by sentiment
-  const positiveItems = data.filter(item => item.sentiment === "positive");
-  const neutralItems = data.filter(item => item.sentiment === "neutral");
-  const negativeItems = data.filter(item => item.sentiment === "negative");
+  const positiveItems = data.filter(item => item.sentiment >= 0.6).map(item => ({
+    text: item.phrase,
+    sentiment: "positive" as const,
+    count: item.occurrences
+  }));
+  
+  const neutralItems = data.filter(item => item.sentiment < 0.6 && item.sentiment >= 0.4).map(item => ({
+    text: item.phrase,
+    sentiment: "neutral" as const,
+    count: item.occurrences
+  }));
+  
+  const negativeItems = data.filter(item => item.sentiment < 0.4).map(item => ({
+    text: item.phrase,
+    sentiment: "negative" as const,
+    count: item.occurrences
+  }));
 
   // Sort by count (frequency) within each category
-  const sortByCount = (a: typeof data[0], b: typeof data[0]) => b.count - a.count;
+  const sortByCount = (a: {text: string, sentiment: string, count: number}, b: {text: string, sentiment: string, count: number}) => b.count - a.count;
   positiveItems.sort(sortByCount);
   neutralItems.sort(sortByCount);
   negativeItems.sort(sortByCount);
@@ -35,7 +50,7 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
 
   // Render word group
   const renderWordGroup = (
-    items: typeof data, 
+    items: Array<{text: string, sentiment: string, count: number}>, 
     title: string, 
     sentimentType: "positive" | "neutral" | "negative"
   ) => (

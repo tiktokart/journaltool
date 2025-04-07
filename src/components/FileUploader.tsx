@@ -36,20 +36,29 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       // Extract text from each page with improved extraction
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
+        const textContent = await page.getTextContent({
+          normalizeWhitespace: true,
+          disableCombineTextItems: false
+        });
         
-        // More thorough text extraction - get every text item with position information
-        const pageItems = textContent.items.map((item: any) => {
-          if (!item.str || typeof item.str !== 'string') return '';
-          return item.str;
-        }).filter(Boolean);
+        // Process text items with more detail and whitespace preservation
+        const pageText = textContent.items
+          .map((item: any) => {
+            // Only process text items (not drawings or other elements)
+            if (!item.str || typeof item.str !== 'string') return '';
+            
+            // Add appropriate spacing based on item positions if available
+            if (item.hasEOL) {
+              return item.str + " ";
+            }
+            return item.str;
+          })
+          .join(' ');
         
-        // Join all text items with space
-        const pageText = pageItems.join(' ');
         fullText += pageText + " ";
       }
       
-      // Clean up the text - careful not to lose content
+      // Clean up the text while preserving meaningful content
       fullText = fullText
         .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
         .replace(/(\r\n|\n|\r)/gm, " ")  // Replace line breaks with spaces
@@ -57,7 +66,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       
       // Enhanced logging for debugging
       console.log("Extracted PDF text length:", fullText.length);
-      console.log("First 100 characters:", fullText.substring(0, 100));
+      console.log("First 200 characters:", fullText.substring(0, 200));
       console.log("Total words extracted:", fullText.split(/\s+/).length);
       
       return fullText;
