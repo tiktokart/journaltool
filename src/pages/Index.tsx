@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -147,6 +148,14 @@ const Home = () => {
         <div className="space-y-8">
           <h2 className="text-2xl font-semibold tracking-tight">See How It Works</h2>
           
+          <div className="mt-8 mb-12">
+            <h2 className="text-2xl font-semibold tracking-tight mb-6">Upload Your Journal</h2>
+            <p className="text-muted-foreground mb-6">
+              Upload your personal journal, therapy notes, or any text document to gain insights into your emotional patterns.
+            </p>
+            <FileUploader onFilesAdded={handleFilesAdded} />
+          </div>
+          
           <Card className="shadow-md border-border">
             <CardHeader>
               <CardTitle>Journal Entry Analysis Example</CardTitle>
@@ -204,14 +213,6 @@ const Home = () => {
               />
             </CardFooter>
           </Card>
-          
-          <div className="mt-16">
-            <h2 className="text-2xl font-semibold tracking-tight mb-6">Upload Your Journal</h2>
-            <p className="text-muted-foreground mb-6">
-              Upload your personal journal, therapy notes, or any text document to gain insights into your emotional patterns.
-            </p>
-            <FileUploader onFilesAdded={handleFilesAdded} />
-          </div>
         </div>
       </main>
       
