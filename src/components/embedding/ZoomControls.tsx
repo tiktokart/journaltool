@@ -1,72 +1,25 @@
 
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, Home, MousePointer, Compare } from "lucide-react";
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { MutableRefObject } from "react";
+import { ZoomIn, ZoomOut, Home, MousePointer } from "lucide-react";
 
-export interface ZoomControlsProps {
-  cameraRef: MutableRefObject<THREE.PerspectiveCamera | null>;
-  controlsRef: MutableRefObject<OrbitControls | null>;
-  isCompareMode?: boolean;
-  onToggleCompare?: () => void;
-  onZoomIn?: () => void;
-  onZoomOut?: () => void;
+interface ZoomControlsProps {
+  onZoomIn: () => void;
+  onZoomOut: () => void;
   onResetZoom?: () => void;
 }
 
 export const ZoomControls = ({ 
-  cameraRef,
-  controlsRef,
-  isCompareMode = false,
-  onToggleCompare,
-  onZoomIn: externalZoomIn, 
-  onZoomOut: externalZoomOut, 
-  onResetZoom: externalResetZoom
+  onZoomIn, 
+  onZoomOut, 
+  onResetZoom
 }: ZoomControlsProps) => {
-  
-  const handleZoomIn = () => {
-    if (externalZoomIn) {
-      externalZoomIn();
-    } else if (cameraRef.current) {
-      // Default zoom in behavior
-      const camera = cameraRef.current;
-      const targetZ = Math.max(camera.position.z - 2, 1);
-      camera.position.z = targetZ;
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (externalZoomOut) {
-      externalZoomOut();
-    } else if (cameraRef.current) {
-      // Default zoom out behavior
-      const camera = cameraRef.current;
-      const targetZ = Math.min(camera.position.z + 2, 30);
-      camera.position.z = targetZ;
-    }
-  };
-
-  const handleResetZoom = () => {
-    if (externalResetZoom) {
-      externalResetZoom();
-    } else if (cameraRef.current && controlsRef.current) {
-      // Default reset behavior
-      const camera = cameraRef.current;
-      const controls = controlsRef.current;
-      camera.position.set(0, 0, 15);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-  };
-
   return (
     <div className="absolute bottom-4 left-4 flex flex-col space-y-2">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={handleZoomIn}>
+            <Button variant="outline" size="icon" onClick={onZoomIn}>
               <ZoomIn className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -77,7 +30,7 @@ export const ZoomControls = ({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={handleZoomOut}>
+            <Button variant="outline" size="icon" onClick={onZoomOut}>
               <ZoomOut className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -85,31 +38,15 @@ export const ZoomControls = ({
         </Tooltip>
       </TooltipProvider>
       
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={handleResetZoom}>
-              <Home className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Reset View</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      
-      {onToggleCompare && (
+      {onResetZoom && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant={isCompareMode ? "secondary" : "outline"} 
-                size="icon" 
-                onClick={onToggleCompare}
-                className={isCompareMode ? "border-primary" : ""}
-              >
-                <Compare className="h-4 w-4" />
+              <Button variant="outline" size="icon" onClick={onResetZoom}>
+                <Home className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Toggle Compare Mode</TooltipContent>
+            <TooltipContent>Reset View</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -129,5 +66,3 @@ export const ZoomControls = ({
     </div>
   );
 };
-
-export default ZoomControls;

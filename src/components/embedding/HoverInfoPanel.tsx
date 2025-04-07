@@ -2,16 +2,11 @@
 import { Point } from "../../types/embedding";
 import { getEmotionColor, getSentimentLabel } from "../../utils/embeddingUtils";
 
-export interface HoverInfoPanelProps {
-  hoveredPoint: Point | null;
-  selectedPoint: Point | null;
-  onSelectComparison?: (point: Point) => void;
-  onHighlightEmotionalTone?: (tone: string) => void;
+interface HoverInfoPanelProps {
+  point: Point;
 }
 
-export const HoverInfoPanel = ({ hoveredPoint, selectedPoint, onSelectComparison, onHighlightEmotionalTone }: HoverInfoPanelProps) => {
-  const point = hoveredPoint || selectedPoint;
-  
+export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
   if (!point) return null;
   
   // Use gray color for neutral words
@@ -64,5 +59,3 @@ export const HoverInfoPanel = ({ hoveredPoint, selectedPoint, onSelectComparison
     </div>
   );
 };
-
-export default HoverInfoPanel;
