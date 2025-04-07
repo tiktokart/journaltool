@@ -133,6 +133,13 @@ export const DocumentEmbedding = ({
     }
   };
   
+  const handleVisualSearchSelect = (point: Point) => {
+    handlePointSelect(point);
+    if (onSearchSelect) {
+      onSearchSelect(point);
+    }
+  };
+  
   const toggleCompareMode = () => {
     if (selectedPoint) {
       setIsCompareMode(!isCompareMode);
@@ -152,6 +159,7 @@ export const DocumentEmbedding = ({
       <EmbeddingScene 
         containerRef={containerRef}
         cameraRef={cameraRef}
+        controlsRef={controlsRef}
         points={displayPoints}
         onPointHover={handlePointHover}
         onPointSelect={handlePointSelect}
@@ -170,7 +178,7 @@ export const DocumentEmbedding = ({
             onZoomIn={handleZoomIn} 
             onZoomOut={handleZoomOut}
             onResetZoom={handleResetZoom}
-            onSearchSelect={onSearchSelect}
+            onSearchSelect={handleVisualSearchSelect}
             points={displayPoints}
           />
           
