@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -788,4 +789,170 @@ const Dashboard = () => {
                           onClick={handleAddWordToComparison}
                           className="h-8"
                         >
-                          <Search className="h
+                          <Search className="h-4 w-4 mr-2" />
+                          Add Word
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {wordsForComparison.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center p-6 text-center">
+                        <GitCompareArrows className="h-10 w-10 text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No Words Selected</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Add words to compare their emotional relationships
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleAddWordToComparison}
+                        >
+                          <Search className="h-4 w-4 mr-2" />
+                          Select Words
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {wordsForComparison.map((point) => (
+                            <Badge 
+                              key={point.id}
+                              className="flex items-center gap-1 px-3 py-1.5"
+                              style={{
+                                backgroundColor: `rgba(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255}, 0.2)`,
+                                color: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})`,
+                                border: `1px solid rgba(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255}, 0.5)`
+                              }}
+                            >
+                              {point.word}
+                              <X 
+                                className="h-3 w-3 cursor-pointer opacity-70 hover:opacity-100" 
+                                onClick={() => handleRemoveWordFromComparison(point)}
+                              />
+                            </Badge>
+                          ))}
+                          {wordsForComparison.length < 4 && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="px-2 h-7"
+                              onClick={handleAddWordToComparison}
+                            >
+                              <span className="text-xs">+ Add</span>
+                            </Button>
+                          )}
+                        </div>
+                        
+                        <WordComparison 
+                          words={wordsForComparison}
+                          onSelectWord={handlePointClick}
+                        />
+                      </div>
+                    )}
+                    
+                    <Popover open={wordSearchOpen} onOpenChange={setWordSearchOpen}>
+                      <PopoverContent 
+                        className="p-0 w-64"
+                        ref={wordSearchRef}
+                        align="start"
+                      >
+                        <Command>
+                          <CommandInput 
+                            placeholder="Find words to compare..." 
+                            value={wordSearchTerm}
+                            onValueChange={setWordSearchTerm}
+                          />
+                          <CommandList className="max-h-[200px]">
+                            <CommandEmpty>No words found</CommandEmpty>
+                            <CommandGroup>
+                              {uniqueWords
+                                .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
+                                .slice(0, 50)
+                                .map((word) => (
+                                  <CommandItem 
+                                    key={word} 
+                                    value={word}
+                                    onSelect={handleSelectWordForComparison}
+                                  >
+                                    {word}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {showWellbeingSuggestions && (
+                <Card className="border border-border shadow-md bg-card mt-8">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center">
+                      <Heart className="h-5 w-5 mr-2 text-red-500" />
+                      Wellbeing Resources
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="font-medium text-lg mb-4">Self-Care Suggestions</h3>
+                        <div className="space-y-4">
+                          {wellbeingSuggestions.map((suggestion, index) => (
+                            <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                              <div className="mt-0.5">
+                                {suggestion.icon}
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-sm">{suggestion.title}</h4>
+                                <p className="text-xs text-muted-foreground mt-1">{suggestion.description}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium text-lg mb-4">Mental Health Resources</h3>
+                        <div className="space-y-3">
+                          {mentalHealthResources.map((resource, index) => (
+                            <div key={index} className="border rounded-lg p-3">
+                              <h4 className="font-medium text-sm mb-1">{resource.name}</h4>
+                              <p className="text-xs text-muted-foreground mb-2">{resource.description}</p>
+                              <a 
+                                href={resource.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:underline"
+                              >
+                                Visit Website &rarr;
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-center mt-6">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowWellbeingSuggestions(false)}
+                      >
+                        Hide Wellbeing Resources
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
