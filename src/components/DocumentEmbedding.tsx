@@ -72,10 +72,30 @@ export const DocumentEmbedding = ({
       const distanceFromCenter = Math.sqrt(x*x + y*y + z*z) / 10;
       const sentiment = 1 - distanceFromCenter;
       
-      // Generate color based on sentiment (red to blue gradient)
-      const r = sentiment < 0.5 ? 1 : 2 * (1 - sentiment);
-      const b = sentiment > 0.5 ? 1 : 2 * sentiment;
-      const g = 0.3;
+      // Generate random emotions and matching colors
+      const emotionalToneIndex = Math.floor(Math.random() * emotionalTones.length);
+      const emotionalTone = emotionalTones[emotionalToneIndex];
+      
+      // Color based on emotional tone
+      let r = 0.7, g = 0.7, b = 0.7; // Default light grey
+      
+      if (emotionalTone === "Joy") {
+        r = 1.0; g = 0.9; b = 0.0; // Yellow/gold
+      } else if (emotionalTone === "Sadness") {
+        r = 0.0; g = 0.5; b = 0.9; // Blue
+      } else if (emotionalTone === "Anger") {
+        r = 0.9; g = 0.1; b = 0.1; // Red
+      } else if (emotionalTone === "Fear") {
+        r = 0.6; g = 0.0; b = 0.8; // Purple
+      } else if (emotionalTone === "Surprise") {
+        r = 1.0; g = 0.5; b = 0.0; // Orange
+      } else if (emotionalTone === "Disgust") {
+        r = 0.2; g = 0.8; b = 0.2; // Green
+      } else if (emotionalTone === "Trust") {
+        r = 0.0; g = 0.8; b = 0.6; // Teal
+      } else if (emotionalTone === "Anticipation") {
+        r = 0.9; g = 0.5; b = 0.7; // Pink
+      }
       
       // Generate random keywords
       const keywordCount = 2 + Math.floor(Math.random() * 4);
@@ -91,7 +111,7 @@ export const DocumentEmbedding = ({
         position: [x, y, z],
         color: [r, g, b],
         keywords: keywords,
-        emotionalTone: emotionalTones[Math.floor(Math.random() * emotionalTones.length)],
+        emotionalTone: emotionalTone,
         relationships: []
       });
     }
@@ -126,7 +146,7 @@ export const DocumentEmbedding = ({
     
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x8A898C); // Mid-gray background
+    scene.background = new THREE.Color(0xCCCCCC); // Light grey background
     sceneRef.current = scene;
     
     // Camera setup
@@ -366,6 +386,21 @@ export const DocumentEmbedding = ({
     return "Very Negative";
   };
   
+  // Get color based on emotional tone for the legend
+  const getEmotionColor = (emotion: string) => {
+    switch (emotion) {
+      case "Joy": return "rgb(255, 230, 0)";
+      case "Sadness": return "rgb(0, 128, 230)";
+      case "Anger": return "rgb(230, 26, 26)";
+      case "Fear": return "rgb(153, 0, 204)";
+      case "Surprise": return "rgb(255, 128, 0)";
+      case "Disgust": return "rgb(51, 204, 51)";
+      case "Trust": return "rgb(0, 204, 153)";
+      case "Anticipation": return "rgb(230, 128, 179)";
+      default: return "rgb(179, 179, 179)";
+    }
+  };
+  
   return (
     <div className="relative w-full h-full">
       <div 
@@ -400,17 +435,17 @@ export const DocumentEmbedding = ({
       )}
       
       {hoveredPoint && (
-        <div className="absolute bottom-4 left-4 bg-card p-3 rounded-lg shadow-md max-w-xs">
+        <div className="absolute bottom-4 left-4 bg-card p-3 rounded-lg shadow-md max-w-xs z-10">
           <div className="flex items-center mb-2">
             <div 
               className="w-3 h-3 rounded-full mr-2" 
               style={{ 
-                backgroundColor: `rgb(${hoveredPoint.color[0] * 255}, ${hoveredPoint.color[1] * 255}, ${hoveredPoint.color[2] * 255})` 
+                backgroundColor: getEmotionColor(hoveredPoint.emotionalTone || "")
               }} 
             />
             <span className="font-medium">Text Excerpt</span>
           </div>
-          <p className="text-sm mb-2 truncate">{hoveredPoint.text}</p>
+          <p className="text-sm mb-2">{hoveredPoint.text}</p>
           
           {hoveredPoint.keywords && (
             <div className="mb-2">
@@ -445,6 +480,45 @@ export const DocumentEmbedding = ({
           )}
         </div>
       )}
+      
+      {/* Legend for emotional colors */}
+      <div className="absolute top-4 left-4 bg-card p-2 rounded-lg shadow-md text-xs z-10">
+        <div className="font-medium mb-1">Emotional Tones:</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: getEmotionColor("Joy") }}></div>
+            <span>Joy</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: getEmotionColor("Sadness") }}></div>
+            <span>Sadness</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: getEmotionColor("Anger") }}></div>
+            <span>Anger</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: getEmotionColor("Fear") }}></div>
+            <span>Fear</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: getEmotionColor("Surprise") }}></div>
+            <span>Surprise</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: getEmotionColor("Disgust") }}></div>
+            <span>Disgust</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: getEmotionColor("Trust") }}></div>
+            <span>Trust</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: getEmotionColor("Anticipation") }}></div>
+            <span>Anticipation</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

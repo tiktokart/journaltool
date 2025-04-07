@@ -21,10 +21,6 @@ export const Footer = () => {
             </Link>
           </div>
         </div>
-        
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p>© {new Date().getFullYear()} Journal Analysis. All rights reserved.</p>
-        </div>
       </div>
     </footer>
   );
