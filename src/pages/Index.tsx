@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -785,4 +786,115 @@ const Index = () => {
                                               }} 
                                             />
                                             <span>{point.word}</span>
-                                            <span className="ml-auto text-xs font
+                                            <span className="ml-auto text-xs font-medium">
+                                              {point.emotionalTone}
+                                            </span>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Relationship Analysis Section */}
+                    {selectedPoint && comparisonPoint && (
+                      <div className="mt-6 border-t pt-4">
+                        <h3 className="text-lg font-semibold mb-3">Relationship Analysis</h3>
+                        
+                        {(() => {
+                          const relationship = calculateRelationship(selectedPoint, comparisonPoint);
+                          if (!relationship) return null;
+                          
+                          return (
+                            <div className="space-y-4">
+                              <div>
+                                <p className="text-sm font-medium mb-1">Contextual Similarity</p>
+                                <div className="bg-muted rounded-md p-3">
+                                  <div className="w-full bg-background rounded-full h-2">
+                                    <div 
+                                      className="bg-blue-500 h-2 rounded-full" 
+                                      style={{ width: `${relationship.spatialSimilarity * 100}%` }}
+                                    ></div>
+                                  </div>
+                                  <p className="text-sm mt-1 text-center">
+                                    {Math.round(relationship.spatialSimilarity * 100)}% similar context
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <p className="text-sm font-medium mb-1">Emotional Alignment</p>
+                                <div className="bg-muted rounded-md p-3">
+                                  <div className="w-full bg-background rounded-full h-2">
+                                    <div 
+                                      className="bg-purple-500 h-2 rounded-full" 
+                                      style={{ width: `${relationship.sentimentSimilarity * 100}%` }}
+                                    ></div>
+                                  </div>
+                                  <p className="text-sm mt-1 text-center">
+                                    {Math.round(relationship.sentimentSimilarity * 100)}% sentiment alignment
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-sm font-medium mb-1">Emotional Group</p>
+                                  <div className="bg-muted rounded-md p-3 text-center">
+                                    {relationship.sameEmotionalGroup ? (
+                                      <span className="text-green-500 font-medium">Same group</span>
+                                    ) : (
+                                      <span className="text-orange-500 font-medium">Different groups</span>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <p className="text-sm font-medium mb-1">Shared Keywords</p>
+                                  <div className="bg-muted rounded-md p-3 text-center min-h-[2.5rem] flex items-center justify-center">
+                                    {relationship.sharedKeywords.length > 0 ? (
+                                      <span className="text-green-500 font-medium">
+                                        {relationship.sharedKeywords.length} shared
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground">None</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {relationship.sharedKeywords.length > 0 && (
+                                <div>
+                                  <p className="text-sm font-medium mb-1">Common Themes</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {relationship.sharedKeywords.map((keyword, idx) => (
+                                      <span key={idx} className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 px-2 py-1 rounded-full">
+                                        {keyword}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Index;
