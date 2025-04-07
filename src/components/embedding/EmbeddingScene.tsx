@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -45,6 +46,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const linesRef = useRef<THREE.LineSegments | null>(null);
   const comparisonLinesRef = useRef<THREE.LineSegments | null>(null);
   const spheresRef = useRef<THREE.Mesh[]>([]);
+  const isMiddleMouseDownRef = useRef<boolean>(false);
+  const lastMousePositionRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -97,11 +100,82 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       camera.updateProjectionMatrix();
     };
     
+    // Add middle mouse button panning handlers
+    const handleMiddleMouseDown = (event: MouseEvent) => {
+      if (event.button === 1) { // Middle mouse button
+        event.preventDefault();
+        isMiddleMouseDownRef.current = true;
+        lastMousePositionRef.current = { x: event.clientX, y: event.clientY };
+        
+        // Disable orbit controls to prevent conflicts
+        if (controlsRef.current) {
+          controlsRef.current.enabled = false;
+        }
+      }
+    };
+    
+    const handleMiddleMouseMove = (event: MouseEvent) => {
+      if (!isMiddleMouseDownRef.current || !cameraRef.current) return;
+      
+      const deltaX = event.clientX - lastMousePositionRef.current.x;
+      lastMousePositionRef.current.x = event.clientX;
+      lastMousePositionRef.current.y = event.clientY;
+      
+      // Calculate left/right movement speed based on camera distance
+      const panSpeed = 0.01 * cameraRef.current.position.z;
+      
+      // Calculate movement in camera's local right direction
+      const rightVector = new THREE.Vector3(1, 0, 0);
+      rightVector.applyQuaternion(cameraRef.current.quaternion);
+      
+      // Move the camera position
+      cameraRef.current.position.addScaledVector(rightVector, -deltaX * panSpeed);
+      
+      // Move the controls target point as well to maintain the same view direction
+      if (controlsRef.current) {
+        controlsRef.current.target.addScaledVector(rightVector, -deltaX * panSpeed);
+      }
+    };
+    
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button === 1) { // Middle mouse button
+        isMiddleMouseDownRef.current = false;
+        // Re-enable orbit controls
+        if (controlsRef.current) {
+          controlsRef.current.enabled = true;
+        }
+      }
+    };
+    
+    const handleMouseLeave = () => {
+      if (isMiddleMouseDownRef.current) {
+        isMiddleMouseDownRef.current = false;
+        // Re-enable orbit controls
+        if (controlsRef.current) {
+          controlsRef.current.enabled = true;
+        }
+      }
+    };
+    
+    if (containerRef.current) {
+      containerRef.current.addEventListener('mousedown', handleMiddleMouseDown);
+      document.addEventListener('mousemove', handleMiddleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      containerRef.current.addEventListener('mouseleave', handleMouseLeave);
+    }
+    
     window.addEventListener('resize', handleResize);
     animate();
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (containerRef.current) {
+        containerRef.current.removeEventListener('mousedown', handleMiddleMouseDown);
+        containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
+      }
+      document.removeEventListener('mousemove', handleMiddleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      
       controlsInstance.dispose();
       renderer.dispose();
       if (containerRef.current && renderer.domElement) {

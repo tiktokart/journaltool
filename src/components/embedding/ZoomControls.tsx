@@ -1,7 +1,7 @@
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, Home } from "lucide-react";
+import { ZoomIn, ZoomOut, Home, MousePointer } from "lucide-react";
 import { Point } from "@/types/embedding";
 
 interface ZoomControlsProps {
@@ -53,6 +53,19 @@ export const ZoomControls = ({
           </Tooltip>
         </TooltipProvider>
       )}
+      
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="bg-secondary/50 backdrop-blur-sm border border-border rounded-md p-2 flex items-center justify-center">
+              <MousePointer className="h-4 w-4 text-foreground/80" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-[200px]">
+            <p>Hold middle mouse button and move to pan left/right</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 };
