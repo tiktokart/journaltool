@@ -14,11 +14,12 @@ interface SentimentOverviewProps {
       neutral: number;
       negative: number;
     };
+    fileName?: string;
   };
 }
 
 export const SentimentOverview = ({ data }: SentimentOverviewProps) => {
-  const { overallSentiment, distribution } = data;
+  const { overallSentiment, distribution, fileName } = data;
   
   // Prepare data for pie chart
   const pieData = [
@@ -53,7 +54,7 @@ export const SentimentOverview = ({ data }: SentimentOverviewProps) => {
 
           <h3 className="text-2xl font-bold mb-2">{overallSentiment.label}</h3>
           <p className="text-sm text-muted-foreground text-center">
-            The document has an overall {overallSentiment.label.toLowerCase()} sentiment
+            Your document has an overall {overallSentiment.label.toLowerCase()} sentiment
           </p>
         </CardContent>
       </Card>

@@ -20,7 +20,7 @@ export const EntitySentiment = ({ data }: EntitySentimentProps) => {
   return (
     <Card className="border-0 shadow-md w-full">
       <CardHeader>
-        <CardTitle>Entity Sentiment Analysis</CardTitle>
+        <CardTitle>Theme Sentiment Analysis</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-80 w-full">
@@ -66,7 +66,7 @@ export const EntitySentiment = ({ data }: EntitySentimentProps) => {
           </ResponsiveContainer>
         </div>
         <div className="mt-4 text-sm text-center text-muted-foreground">
-          The chart shows sentiment scores for key entities mentioned in the document.
+          The chart shows sentiment scores for key themes identified in your document.
         </div>
       </CardContent>
     </Card>

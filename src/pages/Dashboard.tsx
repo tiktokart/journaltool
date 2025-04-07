@@ -12,7 +12,7 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
-import { Loader2, CircleDot, Search } from "lucide-react";
+import { Loader2, CircleDot, Search, FileText } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
 
@@ -165,7 +165,9 @@ const analyzePdfContent = (file: File): Promise<any> => {
         timeline: timeline,
         entities: themes, // Renamed to themes but keeping the key as entities for compatibility
         keyPhrases: keyPhrases,
-        embeddingPoints: embeddingPoints
+        embeddingPoints: embeddingPoints,
+        fileName: file.name, // Add filename to results
+        fileSize: file.size // Add filesize to results
       };
 
       resolve(analysisResults);
@@ -284,6 +286,14 @@ const Dashboard = () => {
 
           {sentimentData && (
             <div className="animate-fade-in">
+              {/* Document Information Banner */}
+              <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center">
+                <FileText className="h-5 w-5 mr-2 text-primary" />
+                <span className="text-sm">
+                  <span className="font-medium">Currently analyzing:</span> {sentimentData.fileName} ({(sentimentData.fileSize / 1024 / 1024).toFixed(2)} MB)
+                </span>
+              </div>
+              
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList className="grid grid-cols-5 md:w-[750px]">
                   <TabsTrigger value="embedding">Latent Emotional Analysis</TabsTrigger>

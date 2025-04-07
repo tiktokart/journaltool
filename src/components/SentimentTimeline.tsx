@@ -98,7 +98,7 @@ export const SentimentTimeline = ({ data }: SentimentTimelineProps) => {
           </ResponsiveContainer>
         </div>
         <div className="mt-4 text-sm text-center text-muted-foreground">
-          The chart shows sentiment fluctuations across pages, with scores above 0.6 considered positive and below 0.4 negative.
+          This chart shows sentiment fluctuations across the pages of your document.
         </div>
       </CardContent>
     </Card>
