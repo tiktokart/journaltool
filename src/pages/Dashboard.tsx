@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -620,11 +621,11 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
-                      depressedJournalReference={false}
+                      depressedJournalReference={false} // Fixed: Using boolean instead of string
                       focusOnWord={selectedWord}
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
-                      visibleClusterCount={visibleClusterCount}
+                      visibleClusterCount={visibleClusterCount} // This should already be a number
                     />
                   </div>
                 </CardContent>
