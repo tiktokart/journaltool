@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -162,7 +161,6 @@ const Dashboard = () => {
   const [comparisonSearchTerm, setComparisonSearchTerm] = useState("");
   const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
   const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
-  // Fixed: Changed from string to boolean
   const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState<boolean>(true);
   const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
   const [wordSearchTerm, setWordSearchTerm] = useState("");
@@ -196,7 +194,6 @@ const Dashboard = () => {
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
-      // Fixed: Split pdfText into words and filter properly
       const allWords = pdfText
         .toLowerCase()
         .split(/\s+/)
@@ -620,7 +617,7 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
-                      focusOnWord={selectedWord !== null}
+                      focusOnWord={Boolean(selectedWord)}
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
                       visibleClusterCount={visibleClusterCount}
@@ -679,7 +676,7 @@ const Dashboard = () => {
                       <CardTitle className="text-lg flex items-center">
                         <Settings className="h-5 w-5 mr-2 text-primary" />
                         Emotional Clusters
-                      </CardTitle>
+                      CardTitle>
                       <div className="flex items-center space-x-2">
                         <span className="text-xs text-muted-foreground">Clusters: {visibleClusterCount}</span>
                         <Slider 
@@ -818,7 +815,13 @@ const Dashboard = () => {
                           ))}
                         </div>
                         
-                        <WordComparison words={wordsForComparison} />
+                        <WordComparison 
+                          words={wordsForComparison} 
+                          onRemoveWord={handleRemoveWordFromComparison}
+                          calculateRelationship={calculateRelationship}
+                          onAddWordClick={handleAddWordToComparison}
+                          sourceDescription={sentimentData.sourceDescription}
+                        />
                       </div>
                     )}
                     
