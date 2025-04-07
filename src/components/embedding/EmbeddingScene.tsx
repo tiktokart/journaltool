@@ -51,11 +51,10 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const linesRef = useRef<THREE.LineSegments | null>(null);
   const comparisonLinesRef = useRef<THREE.LineSegments | null>(null);
   const spheresRef = useRef<THREE.Mesh[]>([]);
-  const isMiddleMouseDownRef = useRef<boolean>(false);
-  const lastMousePositionRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
   const emotionalGroupsRef = useRef<Map<string, THREE.Vector3>>(new Map());
   const isZoomingRef = useRef<boolean>(false);
   const zoomTimeoutRef = useRef<number | null>(null);
+  const animationFrameIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -92,21 +91,22 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     controlsInstance.minDistance = 1;
     controlsInstance.maxDistance = 30;
     controlsInstance.maxPolarAngle = Math.PI / 2;
-    controlsInstance.autoRotateSpeed = 0.2;
+    controlsInstance.autoRotateSpeed = 0.1; // Reduced speed for smoother revolution
     controlsInstance.autoRotate = true;
-    controlsInstance.enableZoom = true;
-    controlsInstance.zoomSpeed = 1.0;
+    controlsInstance.enableZoom = false; // Disable built-in zoom, we'll handle it ourselves
+    controlsInstance.enableRotate = true; // Make sure rotation is enabled
+    controlsInstance.rotateSpeed = 0.5; // Reduced rotation speed for smoother control
     controlsInstance.update();
     
-    let animationFrameId: number;
-    
     const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
+      animationFrameIdRef.current = requestAnimationFrame(animate);
       if (!isZoomingRef.current) {
         controlsInstance.update();
       }
       renderer.render(scene, camera);
     };
+    
+    animate();
     
     const handleResize = () => {
       if (!containerRef.current) return;
@@ -158,86 +158,24 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       }, 800);
     };
     
-    const handleMiddleMouseDown = (event: MouseEvent) => {
-      if (event.button === 1) {
-        event.preventDefault();
-        isMiddleMouseDownRef.current = true;
-        lastMousePositionRef.current = { x: event.clientX, y: event.clientY };
-        
-        if (controlsRef.current) {
-          controlsRef.current.enabled = false;
-        }
-      }
-    };
-    
-    const handleMiddleMouseMove = (event: MouseEvent) => {
-      if (!isMiddleMouseDownRef.current || !cameraRef.current) return;
-      
-      const deltaX = event.clientX - lastMousePositionRef.current.x;
-      const deltaY = event.clientY - lastMousePositionRef.current.y;
-      lastMousePositionRef.current.x = event.clientX;
-      lastMousePositionRef.current.y = event.clientY;
-      
-      const panSpeed = 0.01 * cameraRef.current.position.z;
-      
-      const rightVector = new THREE.Vector3(1, 0, 0);
-      rightVector.applyQuaternion(cameraRef.current.quaternion);
-      
-      const upVector = new THREE.Vector3(0, 1, 0);
-      upVector.applyQuaternion(cameraRef.current.quaternion);
-      
-      cameraRef.current.position.addScaledVector(rightVector, -deltaX * panSpeed);
-      cameraRef.current.position.addScaledVector(upVector, deltaY * panSpeed);
-      
-      if (controlsRef.current) {
-        controlsRef.current.target.addScaledVector(rightVector, -deltaX * panSpeed);
-        controlsRef.current.target.addScaledVector(upVector, deltaY * panSpeed);
-      }
-    };
-    
-    const handleMouseUp = (event: MouseEvent) => {
-      if (event.button === 1) {
-        isMiddleMouseDownRef.current = false;
-        if (controlsRef.current) {
-          controlsRef.current.enabled = true;
-        }
-      }
-    };
-    
-    const handleMouseLeave = () => {
-      if (isMiddleMouseDownRef.current) {
-        isMiddleMouseDownRef.current = false;
-        if (controlsRef.current) {
-          controlsRef.current.enabled = true;
-        }
-      }
-    };
+    window.addEventListener('resize', handleResize);
     
     if (containerRef.current) {
-      containerRef.current.addEventListener('mousedown', handleMiddleMouseDown);
-      document.addEventListener('mousemove', handleMiddleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      containerRef.current.addEventListener('mouseleave', handleMouseLeave);
       containerRef.current.addEventListener('wheel', handleWheel, { passive: false });
     }
-    
-    window.addEventListener('resize', handleResize);
-    animate();
 
     return () => {
       window.removeEventListener('resize', handleResize);
       if (containerRef.current) {
-        containerRef.current.removeEventListener('mousedown', handleMiddleMouseDown);
-        containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
         containerRef.current.removeEventListener('wheel', handleWheel);
       }
-      document.removeEventListener('mousemove', handleMiddleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      
-      cancelAnimationFrame(animationFrameId);
       
       if (zoomTimeoutRef.current !== null) {
         window.clearTimeout(zoomTimeoutRef.current);
+      }
+      
+      if (animationFrameIdRef.current !== null) {
+        cancelAnimationFrame(animationFrameIdRef.current);
       }
       
       controlsInstance.dispose();
@@ -398,6 +336,109 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     };
   }, [points, isInteractive, onPointSelect, onPointHover, containerRef, selectedPoint, comparisonPoint, isCompareMode]);
 
+  const focusOnPoint = useCallback((targetPoint: Point | null) => {
+    if (!targetPoint || !cameraRef.current || !controlsRef.current) return;
+    
+    if (controlsRef.current) {
+      controlsRef.current.autoRotate = false;
+    }
+    
+    isZoomingRef.current = true;
+    
+    const point = new THREE.Vector3(targetPoint.position[0], targetPoint.position[1], targetPoint.position[2]);
+    
+    const startPosition = new THREE.Vector3();
+    startPosition.copy(cameraRef.current.position);
+    
+    const endPosition = new THREE.Vector3();
+    endPosition.copy(point).add(new THREE.Vector3(0, 0, 8));
+    
+    gsap.to(cameraRef.current.position, {
+      x: endPosition.x,
+      y: endPosition.y,
+      z: endPosition.z,
+      duration: 1.5,
+      ease: "power2.inOut",
+      onUpdate: () => {
+        if (controlsRef.current) {
+          controlsRef.current.target.set(point.x, point.y, point.z);
+          controlsRef.current.update();
+        }
+      },
+      onComplete: () => {
+        if (controlsRef.current) {
+          controlsRef.current.autoRotate = true;
+        }
+        isZoomingRef.current = false;
+      }
+    });
+  }, [cameraRef]);
+
+  const focusOnEmotionalGroup = useCallback((emotionalTone: string) => {
+    if (!cameraRef.current || !controlsRef.current) return;
+    
+    const groupCenter = emotionalGroupsRef.current.get(emotionalTone);
+    if (!groupCenter) return;
+    
+    if (controlsRef.current) {
+      controlsRef.current.autoRotate = false;
+    }
+    
+    isZoomingRef.current = true;
+    
+    const point = groupCenter;
+    
+    const startPosition = new THREE.Vector3();
+    startPosition.copy(cameraRef.current.position);
+    
+    const endPosition = new THREE.Vector3();
+    endPosition.copy(point).add(new THREE.Vector3(0, 0, 10));
+    
+    gsap.to(cameraRef.current.position, {
+      x: endPosition.x,
+      y: endPosition.y,
+      z: endPosition.z,
+      duration: 2.0,  // Longer duration for smoother transition
+      ease: "power2.inOut",
+      onUpdate: () => {
+        if (controlsRef.current) {
+          controlsRef.current.target.set(point.x, point.y, point.z);
+          controlsRef.current.update();
+        }
+      },
+      onComplete: () => {
+        if (controlsRef.current) {
+          controlsRef.current.autoRotate = true;
+        }
+        isZoomingRef.current = false;
+      }
+    });
+    
+    if (onFocusEmotionalGroup) {
+      onFocusEmotionalGroup(emotionalTone);
+    }
+  }, [cameraRef, onFocusEmotionalGroup]);
+
+  useEffect(() => {
+    if (focusOnWord) {
+      const targetPoint = points.find(point => point.word === focusOnWord);
+      focusOnPoint(targetPoint || null);
+    }
+  }, [focusOnWord, points, focusOnPoint]);
+
+  useEffect(() => {
+    if (!window.documentEmbeddingActions) {
+      window.documentEmbeddingActions = {};
+    }
+    window.documentEmbeddingActions.focusOnEmotionalGroup = focusOnEmotionalGroup;
+    
+    return () => {
+      if (window.documentEmbeddingActions) {
+        window.documentEmbeddingActions.focusOnEmotionalGroup = undefined;
+      }
+    };
+  }, [focusOnEmotionalGroup]);
+
   useEffect(() => {
     const scene = sceneRef.current;
     
@@ -509,109 +550,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       }
     }
   }, [selectedPoint, comparisonPoint]);
-
-  const focusOnPoint = useCallback((targetPoint: Point | null) => {
-    if (!targetPoint || !cameraRef.current || !controlsRef.current) return;
-    
-    if (controlsRef.current) {
-      controlsRef.current.autoRotate = false;
-    }
-    
-    isZoomingRef.current = true;
-    
-    const point = new THREE.Vector3(targetPoint.position[0], targetPoint.position[1], targetPoint.position[2]);
-    
-    const startPosition = new THREE.Vector3();
-    startPosition.copy(cameraRef.current.position);
-    
-    const endPosition = new THREE.Vector3();
-    endPosition.copy(point).add(new THREE.Vector3(0, 0, 8));
-    
-    gsap.to(cameraRef.current.position, {
-      x: endPosition.x,
-      y: endPosition.y,
-      z: endPosition.z,
-      duration: 1.5,
-      ease: "power2.inOut",
-      onUpdate: () => {
-        if (controlsRef.current) {
-          controlsRef.current.target.set(point.x, point.y, point.z);
-          controlsRef.current.update();
-        }
-      },
-      onComplete: () => {
-        if (controlsRef.current) {
-          controlsRef.current.autoRotate = true;
-        }
-        isZoomingRef.current = false;
-      }
-    });
-  }, [cameraRef]);
-
-  const focusOnEmotionalGroup = useCallback((emotionalTone: string) => {
-    if (!cameraRef.current || !controlsRef.current) return;
-    
-    const groupCenter = emotionalGroupsRef.current.get(emotionalTone);
-    if (!groupCenter) return;
-    
-    if (controlsRef.current) {
-      controlsRef.current.autoRotate = false;
-    }
-    
-    isZoomingRef.current = true;
-    
-    const point = groupCenter;
-    
-    const startPosition = new THREE.Vector3();
-    startPosition.copy(cameraRef.current.position);
-    
-    const endPosition = new THREE.Vector3();
-    endPosition.copy(point).add(new THREE.Vector3(0, 0, 10));
-    
-    gsap.to(cameraRef.current.position, {
-      x: endPosition.x,
-      y: endPosition.y,
-      z: endPosition.z,
-      duration: 1.5,
-      ease: "power2.inOut",
-      onUpdate: () => {
-        if (controlsRef.current) {
-          controlsRef.current.target.set(point.x, point.y, point.z);
-          controlsRef.current.update();
-        }
-      },
-      onComplete: () => {
-        if (controlsRef.current) {
-          controlsRef.current.autoRotate = true;
-        }
-        isZoomingRef.current = false;
-      }
-    });
-    
-    if (onFocusEmotionalGroup) {
-      onFocusEmotionalGroup(emotionalTone);
-    }
-  }, [cameraRef, onFocusEmotionalGroup]);
-
-  useEffect(() => {
-    if (focusOnWord) {
-      const targetPoint = points.find(point => point.word === focusOnWord);
-      focusOnPoint(targetPoint || null);
-    }
-  }, [focusOnWord, points, focusOnPoint]);
-
-  useEffect(() => {
-    if (!window.documentEmbeddingActions) {
-      window.documentEmbeddingActions = {};
-    }
-    window.documentEmbeddingActions.focusOnEmotionalGroup = focusOnEmotionalGroup;
-    
-    return () => {
-      if (window.documentEmbeddingActions) {
-        window.documentEmbeddingActions.focusOnEmotionalGroup = undefined;
-      }
-    };
-  }, [focusOnEmotionalGroup]);
 
   return (
     <div ref={externalContainerRef ? undefined : internalContainerRef} style={{ width: '100%', height: '100%' }} />
