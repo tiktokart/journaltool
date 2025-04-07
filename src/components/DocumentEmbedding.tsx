@@ -1,10 +1,11 @@
+
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Point } from "../types/embedding";
 import EmbeddingScene from "./embedding/EmbeddingScene";
-import { HoverInfoPanel } from "./embedding/HoverInfoPanel";
-import { EmotionsLegend } from "./embedding/EmotionsLegend";
+import HoverInfoPanel from "./embedding/HoverInfoPanel";
+import EmotionsLegend from "./embedding/EmotionsLegend";
 import { ZoomControls } from "./embedding/ZoomControls";
-import { ParticleBackground } from "./embedding/ParticleBackground";
+import ParticleBackground from "./embedding/ParticleBackground";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { toast } from "sonner";
@@ -124,7 +125,7 @@ export const DocumentEmbedding: React.FC<DocumentEmbeddingProps> = ({
 
   return (
     <div className="relative w-full h-full">
-      {depressedJournalReference && <ParticleBackground />}
+      {depressedJournalReference && <ParticleBackground containerRef={containerRef} />}
       
       <div className="absolute inset-0" ref={containerRef}>
         {embeddingPoints.length > 0 && (
@@ -149,7 +150,7 @@ export const DocumentEmbedding: React.FC<DocumentEmbeddingProps> = ({
       
       {embeddingPoints.length > 0 && showControls && (
         <>
-          <EmotionsLegend />
+          <EmotionsLegend onFocusEmotionalGroup={handleFocusEmotionalGroup} />
           <ZoomControls 
             cameraRef={cameraRef} 
             controlsRef={controlsRef} 
@@ -167,3 +168,5 @@ export const DocumentEmbedding: React.FC<DocumentEmbeddingProps> = ({
     </div>
   );
 };
+
+export default DocumentEmbedding;

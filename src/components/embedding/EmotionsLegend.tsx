@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-export const EmotionsLegend = () => {
+interface EmotionsLegendProps {
+  onFocusEmotionalGroup?: (tone: string) => void;
+}
+
+export const EmotionsLegend = ({ onFocusEmotionalGroup }: EmotionsLegendProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -20,7 +24,9 @@ export const EmotionsLegend = () => {
     : emotions;
 
   const handleEmotionClick = (emotion: string) => {
-    if (window.documentEmbeddingActions?.focusOnEmotionalGroup) {
+    if (onFocusEmotionalGroup) {
+      onFocusEmotionalGroup(emotion);
+    } else if (window.documentEmbeddingActions?.focusOnEmotionalGroup) {
       window.documentEmbeddingActions.focusOnEmotionalGroup(emotion);
     }
   };
@@ -73,3 +79,5 @@ export const EmotionsLegend = () => {
     </div>
   );
 };
+
+export default EmotionsLegend;
