@@ -1,9 +1,7 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { FileUploader } from "@/components/FileUploader";
 import { SentimentOverview } from "@/components/SentimentOverview";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
@@ -259,8 +257,13 @@ const Dashboard = () => {
         const wordCount = extractedText.split(/\s+/).length;
         toast.info(`Extracted ${wordCount} words from PDF for analysis`);
       } else {
-        const mockText = `This is a simulated text extraction from ${file.name}. In a real application, we would extract the actual content of the PDF file.`;
-        setPdfText(mockText);
+        const fallbackTexts = [
+          `This is a simulated text extraction from ${file.name}. In a real application, we would extract the actual content of the PDF file.`,
+          `Sample content from ${file.name}: Today I felt anxious at work. My heart was racing during the morning meeting. I used deep breathing to calm down.`
+        ];
+        
+        const randomIndex = Math.floor(Math.random() * fallbackTexts.length);
+        setPdfText(fallbackTexts[randomIndex]);
         toast.warning("Could not extract text properly, using sample text instead");
       }
     }
@@ -282,6 +285,42 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error analyzing sentiment:", error);
       toast.error("Failed to analyze document");
+      
+      const mockData = {
+        overallSentiment: {
+          score: 0.3,
+          label: "Negative"
+        },
+        distribution: {
+          positive: 20,
+          neutral: 30,
+          negative: 50
+        },
+        timeline: Array.from({ length: 10 }, (_, i) => ({
+          page: i + 1,
+          score: 0.3 + (Math.random() * 0.3),
+          text: pdfText.substring(i * 100, (i + 1) * 100).trim() || "Sample text segment"
+        })),
+        entities: [
+          { name: "Anxiety", sentiment: 0.2, mentions: 5, contexts: ["Context: Feeling anxious in meetings"] },
+          { name: "Sleep", sentiment: 0.4, mentions: 3, contexts: ["Context: Trouble sleeping at night"] },
+        ],
+        keyPhrases: [
+          { phrase: "panic attack", relevance: 0.8, sentiment: 0.2, occurrences: 3 },
+          { phrase: "deep breathing", relevance: 0.7, sentiment: 0.6, occurrences: 2 },
+        ],
+        clusters: [
+          { name: "Anxiety Symptoms", size: 8, sentiment: 0.2 },
+          { name: "Coping Strategies", size: 6, sentiment: 0.6 },
+        ],
+        summary: "This is a sample analysis of the document. The analysis shows patterns of anxiety and stress with some coping mechanisms mentioned.",
+        fileName: file.name,
+        fileSize: file.size,
+        wordCount: pdfText.split(/\s+/).length,
+        sourceDescription: `PDF Document Analysis - ${file.name}`
+      };
+      
+      setSentimentData(mockData);
     } finally {
       setIsAnalyzing(false);
     }
