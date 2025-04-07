@@ -32,9 +32,86 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
+// This function now processes the actual text from the PDF to generate relevant data
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
+      // Extract words from the PDF text
+      const words = pdfText
+        .split(/\s+/)
+        .filter(word => word.length > 2)
+        .map(word => word.replace(/[^\w\s]|_/g, "").toLowerCase())
+        .filter(Boolean);
+      
+      const wordFrequency: Record<string, number> = {};
+      words.forEach(word => {
+        wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+      });
+      
+      // Sort words by frequency
+      const sortedWords = Object.entries(wordFrequency)
+        .sort(([, countA], [, countB]) => countB - countA)
+        .slice(0, 50);
+      
+      // Generate a sentiment score for each word (in a real app, this would use NLP)
+      const keyPhrases = sortedWords.map(([word, count], index) => {
+        // Generate varied sentiment scores based on word position
+        let sentiment = 0;
+        if (index % 3 === 0) sentiment = Math.random() * 0.4 + 0.1; // negative
+        else if (index % 3 === 1) sentiment = Math.random() * 0.2 + 0.4; // neutral
+        else sentiment = Math.random() * 0.4 + 0.6; // positive
+        
+        return {
+          phrase: word,
+          relevance: Math.random() * 0.5 + 0.5,
+          sentiment,
+          occurrences: count
+        };
+      });
+      
+      // Extract potential entities/themes from the text
+      const commonThemes = [
+        "anxiety", "stress", "therapy", "health", "work", 
+        "family", "sleep", "recovery", "doctor", "treatment", 
+        "medication", "exercise", "symptoms", "panic", "breathing"
+      ];
+      
+      // Find themes present in the text
+      const foundThemes = commonThemes.filter(theme => 
+        pdfText.toLowerCase().includes(theme)
+      );
+      
+      // Create entity data based on found themes
+      const entities = foundThemes.map(theme => {
+        // Count occurrences (simple approach)
+        const regex = new RegExp(`\\b${theme}\\b`, 'gi');
+        const matches = pdfText.match(regex);
+        const mentions = matches ? matches.length : 1;
+        
+        // Extract context around the theme (first occurrence)
+        const themeIndex = pdfText.toLowerCase().indexOf(theme);
+        const startContext = Math.max(0, themeIndex - 50);
+        const endContext = Math.min(pdfText.length, themeIndex + theme.length + 50);
+        const context = pdfText.substring(startContext, endContext);
+        
+        return {
+          name: theme.charAt(0).toUpperCase() + theme.slice(1),
+          sentiment: Math.random() * 0.8 + 0.1,
+          mentions,
+          contexts: [context]
+        };
+      });
+      
+      // If no themes found, provide generic ones
+      const finalEntities = entities.length > 0 ? entities : [
+        { name: "General Tone", sentiment: 0.6, mentions: 1, contexts: ["No specific themes detected in document"] }
+      ];
+      
+      // Generate a brief summary based on PDF content
+      const briefSummary = pdfText.length > 200 
+        ? `Document analysis of ${fileName}: ${pdfText.substring(0, 150)}...` 
+        : `Document analysis of ${fileName}: This appears to be a short document about ${finalEntities[0]?.name || "general topics"}.`;
+      
       const mockData = {
         overallSentiment: {
           score: Math.random() * 0.5 + 0.25,
@@ -48,25 +125,10 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
         timeline: Array.from({ length: 20 }, (_, i) => ({
           page: i + 1,
           score: Math.random() * 0.7 + 0.15,
-          text: pdfText.substring(i * 100, (i + 1) * 100).trim() || "Sample text segment"
+          text: pdfText.substring(i * Math.min(100, Math.floor(pdfText.length/20)), (i + 1) * Math.min(100, Math.floor(pdfText.length/20))).trim() || "Sample text segment"
         })),
-        entities: Array.from({ length: 8 }, (_, i) => ({
-          name: ["Anxiety", "Depression", "Therapy", "Medication", "Doctor", "Family", "Work", "Sleep"][i],
-          sentiment: Math.random() * 0.8 + 0.1,
-          mentions: Math.floor(Math.random() * 10) + 1,
-          contexts: Array.from({ length: Math.floor(Math.random() * 3) + 1 }, () => 
-            "Context: " + pdfText.substring(Math.floor(Math.random() * Math.max(pdfText.length, 1)), 
-            Math.floor(Math.random() * Math.max(pdfText.length, 1)) + 100).trim()
-          )
-        })),
-        keyPhrases: Array.from({ length: 12 }, (_, i) => ({
-          phrase: ["panic attack", "heart racing", "shortness of breath", "feeling overwhelmed", 
-                  "therapy session", "coping mechanisms", "deep breathing", "medication adjustment",
-                  "sleep disturbance", "support system", "trigger identification", "mindfulness practice"][i],
-          relevance: Math.random() * 0.5 + 0.5,
-          sentiment: Math.random() * 0.8 + 0.1,
-          occurrences: Math.floor(Math.random() * 5) + 1
-        })),
+        entities: finalEntities,
+        keyPhrases,
         clusters: [
           { name: "Anxiety Symptoms", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.4 + 0.1 },
           { name: "Treatment", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.4 },
@@ -74,7 +136,7 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
           { name: "Support System", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.5 },
           { name: "Coping Strategies", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.5 },
         ],
-        summary: "This document contains various topics and themes that have been analyzed for sentiment and emotional patterns. The analysis identifies key themes, sentiment distribution, and important phrases throughout the text.",
+        summary: briefSummary,
         sourceDescription: `PDF Document Analysis - ${fileName}`
       };
       
