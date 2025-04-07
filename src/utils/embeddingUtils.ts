@@ -1,3 +1,4 @@
+
 import { Point } from "../types/embedding";
 
 export const getEmotionColor = (emotion: string): string => {
@@ -31,6 +32,7 @@ interface EmotionalDistribution {
   Disgust: number;
   Trust: number;
   Anticipation: number;
+  Neutral: number; // Added Neutral to the interface
 }
 
 export const generateMockPoints = (
@@ -44,7 +46,7 @@ export const generateMockPoints = (
     "Joy", "Sadness", "Anger", "Fear", "Surprise", "Disgust", "Trust", "Anticipation", "Neutral"
   ];
   
-  const defaultDistribution: EmotionalDistribution & { Neutral: number } = {
+  const defaultDistribution: EmotionalDistribution = {
     Joy: 0.10,
     Sadness: 0.10,
     Anger: 0.10,
@@ -56,7 +58,7 @@ export const generateMockPoints = (
     Neutral: 0.20
   };
   
-  const depressedDistribution: EmotionalDistribution & { Neutral: number } = {
+  const depressedDistribution: EmotionalDistribution = {
     Joy: 0.05,
     Sadness: 0.35,
     Anger: 0.10,
