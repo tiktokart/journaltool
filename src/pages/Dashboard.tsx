@@ -516,13 +516,13 @@ const Dashboard = () => {
                             value={searchTerm}
                             onChange={(e) => {
                               setSearchTerm(e.target.value);
-                              // Fix for search click issue - always open dropdown on input
+                              // Always open dropdown when typing
                               if (uniqueWords.length > 0) {
                                 setOpen(true);
                               }
                             }}
                             onClick={() => {
-                              // Fix for search click issue - open dropdown on click
+                              // Always open dropdown when clicking the input
                               if (uniqueWords.length > 0) {
                                 setOpen(true);
                               }
@@ -559,6 +559,7 @@ const Dashboard = () => {
                                         key={word} 
                                         value={word}
                                         onSelect={handleSelectWord}
+                                        className="cursor-pointer"
                                       >
                                         {word}
                                       </CommandItem>
@@ -584,7 +585,7 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
-                      focusOnWord={selectedWord || null}
+                      focusOnWord={selectedWord}
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
                       visibleClusterCount={visibleClusterCount}
@@ -776,13 +777,13 @@ const Dashboard = () => {
                             value={wordSearchTerm}
                             onChange={(e) => {
                               setWordSearchTerm(e.target.value);
-                              // Fix for search click issue
+                              // Always open dropdown when typing
                               if (uniqueWords.length > 0) {
                                 setWordSearchOpen(true);
                               }
                             }}
                             onClick={() => {
-                              // Fix for search click issue - open dropdown on click
+                              // Always open dropdown when clicking the input
                               if (uniqueWords.length > 0) {
                                 setWordSearchOpen(true);
                               }
@@ -823,6 +824,7 @@ const Dashboard = () => {
                                         key={word} 
                                         value={word}
                                         onSelect={handleSelectWordForComparison}
+                                        className="cursor-pointer"
                                       >
                                         {word}
                                       </CommandItem>
