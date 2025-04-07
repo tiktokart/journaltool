@@ -17,4 +17,5 @@ export interface DocumentEmbeddingProps {
   depressedJournalReference?: boolean;  // New prop for home page
   focusOnWord?: string | null;         // Adding this prop to fix the type error
   onComparePoint?: (point1: Point, point2: Point) => void;  // New prop for comparison
+  onSearchSelect?: (point: Point) => void;  // Adding the missing prop
 }

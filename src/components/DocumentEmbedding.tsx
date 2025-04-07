@@ -14,7 +14,8 @@ export const DocumentEmbedding = ({
   isInteractive = true,
   depressedJournalReference = false,
   focusOnWord = null,
-  onComparePoint
+  onComparePoint,
+  onSearchSelect
 }: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -169,6 +170,8 @@ export const DocumentEmbedding = ({
             onZoomIn={handleZoomIn} 
             onZoomOut={handleZoomOut}
             onResetZoom={handleResetZoom}
+            onSearchSelect={onSearchSelect}
+            points={displayPoints}
           />
           
           {selectedPoint && (
