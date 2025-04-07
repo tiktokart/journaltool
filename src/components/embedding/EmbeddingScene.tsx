@@ -109,10 +109,33 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       camera.updateProjectionMatrix();
     };
     
-    const handleMouseWheel = (event: WheelEvent) => {
-      // We're using the OrbitControls built-in zoom but we need to prevent default
-      // to avoid the page from scrolling
+    // Fix for the wheel event to properly zoom
+    const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
+      
+      // Determine zoom direction (in/out)
+      const zoomDirection = event.deltaY > 0 ? 1 : -1;
+      
+      // Amount to zoom - adjust this value as needed
+      const zoomAmount = 1.0;
+      
+      if (zoomDirection > 0) {
+        // Zoom out
+        const targetZ = Math.min(camera.position.z + zoomAmount, 30);
+        gsap.to(camera.position, {
+          z: targetZ,
+          duration: 0.3,
+          ease: "power2.out"
+        });
+      } else {
+        // Zoom in
+        const targetZ = Math.max(camera.position.z - zoomAmount, 1);
+        gsap.to(camera.position, {
+          z: targetZ,
+          duration: 0.3,
+          ease: "power2.out"
+        });
+      }
     };
     
     const handleMiddleMouseDown = (event: MouseEvent) => {
@@ -175,7 +198,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       document.addEventListener('mousemove', handleMiddleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       containerRef.current.addEventListener('mouseleave', handleMouseLeave);
-      containerRef.current.addEventListener('wheel', handleMouseWheel, { passive: false });
+      containerRef.current.addEventListener('wheel', handleWheel, { passive: false });
     }
     
     window.addEventListener('resize', handleResize);
@@ -186,7 +209,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       if (containerRef.current) {
         containerRef.current.removeEventListener('mousedown', handleMiddleMouseDown);
         containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
-        containerRef.current.removeEventListener('wheel', handleMouseWheel);
+        containerRef.current.removeEventListener('wheel', handleWheel);
       }
       document.removeEventListener('mousemove', handleMiddleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
