@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -242,7 +243,7 @@ const Index = () => {
                         <div className="relative w-full">
                           <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                           <Input 
-                            placeholder="Search for a word or emotion..." 
+                            placeholder="Search for a word" 
                             value={searchValue}
                             onChange={(e) => handleSearchChange(e.target.value)}
                             className="pl-8"
@@ -258,7 +259,7 @@ const Index = () => {
                       <PopoverContent className="p-0 w-[300px]" align="start">
                         <Command>
                           <CommandInput 
-                            placeholder="Search words or emotions..." 
+                            placeholder="Search for a word" 
                             value={searchValue}
                             onValueChange={handleSearchChange}
                           />

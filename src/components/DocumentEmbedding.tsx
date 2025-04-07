@@ -9,8 +9,9 @@ import { ZoomControls } from './embedding/ZoomControls';
 import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
 import ParticleBackground from './embedding/ParticleBackground';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { CircleDot, Target } from 'lucide-react';
+import { ChevronDown, ChevronUp, CircleDot, Target } from 'lucide-react';
 import { Button } from './ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -35,6 +36,7 @@ export const DocumentEmbedding = ({
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   const [emotionalGroups, setEmotionalGroups] = useState<string[]>([]);
   const [selectedEmotionalGroup, setSelectedEmotionalGroup] = useState<string | null>(null);
+  const [isEmotionalGroupsOpen, setIsEmotionalGroupsOpen] = useState<boolean>(true);
   
   useEffect(() => {
     if (focusOnWord !== currentFocusWord) {
@@ -235,22 +237,42 @@ export const DocumentEmbedding = ({
       )}
       
       {emotionalGroups.length > 0 && (
-        <div className="absolute top-16 right-4 z-10 flex flex-col gap-1 bg-card/80 backdrop-blur-sm p-2 rounded-md">
-          <div className="text-xs font-semibold mb-1 flex items-center">
-            <Target className="h-3 w-3 mr-1" />
-            Jump to Emotional Group
-          </div>
-          {emotionalGroups.map(group => (
-            <Button
-              key={group}
-              size="sm"
-              variant={selectedEmotionalGroup === group ? "default" : "outline"}
-              className="h-7 text-xs justify-start px-2"
-              onClick={() => focusOnEmotionalGroup(group)}
-            >
-              {group}
-            </Button>
-          ))}
+        <div className="absolute top-16 right-4 z-10 bg-card/80 backdrop-blur-sm p-2 rounded-md">
+          <Collapsible 
+            open={isEmotionalGroupsOpen} 
+            onOpenChange={setIsEmotionalGroupsOpen}
+            className="w-full"
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold flex items-center">
+                <Target className="h-3 w-3 mr-1" />
+                Jump to Emotional Group
+              </div>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                  {isEmotionalGroupsOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            
+            <CollapsibleContent className="mt-1 space-y-1">
+              {emotionalGroups.map(group => (
+                <Button
+                  key={group}
+                  size="sm"
+                  variant={selectedEmotionalGroup === group ? "default" : "outline"}
+                  className="h-7 text-xs justify-start px-2 w-full"
+                  onClick={() => focusOnEmotionalGroup(group)}
+                >
+                  {group}
+                </Button>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       )}
       
