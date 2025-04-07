@@ -160,9 +160,6 @@ const Dashboard = () => {
   const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
   const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true);
   const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
-  const [wordSearchTerm, setWordSearchTerm] = useState("");
-  const [wordSearchOpen, setWordSearchOpen] = useState(false);
-  const wordSearchRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -172,10 +169,6 @@ const Dashboard = () => {
       
       if (comparisonSearchRef.current && !comparisonSearchRef.current.contains(event.target as Node)) {
         setComparisonSearchOpen(false);
-      }
-      
-      if (wordSearchRef.current && !wordSearchRef.current.contains(event.target as Node)) {
-        setWordSearchOpen(false);
       }
     };
 
@@ -391,30 +384,6 @@ const Dashboard = () => {
       sameEmotionalGroup,
       sharedKeywords
     };
-  };
-
-  const handleAddWordToComparison = () => {
-    setWordSearchTerm("");
-    setWordSearchOpen(true);
-  };
-
-  const handleSelectWordForComparison = (word: string) => {
-    const matchingPoint = points.find(p => 
-      p.word.toLowerCase() === word.toLowerCase()
-    );
-    
-    if (matchingPoint && wordsForComparison.length < 4) {
-      if (!wordsForComparison.some(p => p.id === matchingPoint.id)) {
-        setWordsForComparison(prev => [...prev, matchingPoint]);
-        setWordSearchTerm("");
-        setWordSearchOpen(false);
-        toast.info(`Added ${word} to comparison`);
-      } else {
-        toast.info(`${word} is already in comparison`);
-      }
-    } else if (wordsForComparison.length >= 4) {
-      toast.error("Maximum of 4 words can be compared at once");
-    }
   };
 
   const handleRemoveWordFromComparison = (point: Point) => {
@@ -750,73 +719,24 @@ const Dashboard = () => {
                         <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
                         Word Comparison
                       </CardTitle>
-                      <div className="flex items-center space-x-2">
+                      {wordsForComparison.length > 0 && (
                         <Button 
-                          variant="outline" 
+                          variant="ghost" 
                           size="sm"
-                          onClick={handleAddWordToComparison}
+                          onClick={() => setWordsForComparison([])}
                           className="h-8"
                         >
-                          <Search className="h-4 w-4 mr-2" />
-                          Add Word
+                          <X className="h-4 w-4 mr-2" />
+                          Clear All
                         </Button>
-                        {wordsForComparison.length > 0 && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => setWordsForComparison([])}
-                            className="h-8"
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Clear All
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {uniqueWords.length > 0 && wordSearchOpen && (
-                      <div 
-                        ref={wordSearchRef}
-                        className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
-                        style={{ maxWidth: "400px", right: "1rem" }}
-                      >
-                        <Command>
-                          <CommandInput 
-                            placeholder="Find words to compare..." 
-                            value={wordSearchTerm}
-                            onValueChange={(value) => {
-                              setWordSearchTerm(value);
-                              setWordSearchOpen(true);
-                            }}
-                          />
-                          <CommandList>
-                            <CommandEmpty>No results found</CommandEmpty>
-                            <CommandGroup>
-                              {uniqueWords
-                                .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
-                                .slice(0, 100)
-                                .map((word) => (
-                                  <CommandItem 
-                                    key={word} 
-                                    value={word}
-                                    onSelect={() => handleSelectWordForComparison(word)}
-                                    className="cursor-pointer hover:bg-accent"
-                                  >
-                                    {word}
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </div>
-                    )}
-                    
                     <WordComparison 
                       words={wordsForComparison}
                       onRemoveWord={handleRemoveWordFromComparison}
                       calculateRelationship={calculateRelationship}
-                      onAddWordClick={handleAddWordToComparison}
                       sourceDescription={sentimentData?.sourceDescription}
                     />
                   </CardContent>

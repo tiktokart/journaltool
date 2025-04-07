@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight, X, Search, GitCompareArrows, Info } from 'lucide-react';
+import { ArrowLeftRight, X, GitCompareArrows, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface WordComparisonProps {
@@ -15,7 +15,6 @@ interface WordComparisonProps {
     sameEmotionalGroup: boolean;
     sharedKeywords: string[];
   } | null;
-  onAddWordClick: () => void;
   sourceDescription?: string;
 }
 
@@ -23,7 +22,6 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
   words, 
   onRemoveWord, 
   calculateRelationship,
-  onAddWordClick,
   sourceDescription
 }) => {
   // Handle document clicks to close any open dropdowns
@@ -51,22 +49,14 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
         <p className="text-sm text-muted-foreground mt-1 max-w-md">
           {sourceDescription ? (
             <>
-              Add words from your document to see how they relate to each other. You can add up to 4 words to compare.
+              No words available for comparison. Words can be added by clicking on them in the document visualization.
             </>
           ) : (
             <>
-              Add words to see how they relate to each other. You can add up to 4 words to compare.
+              No words available for comparison. Select words from the visualization to compare them.
             </>
           )}
         </p>
-        <Button 
-          variant="outline" 
-          className="mt-4"
-          onClick={onAddWordClick}
-        >
-          <Search className="h-4 w-4 mr-2" />
-          Search Words
-        </Button>
         
         {sourceDescription && (
           <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
