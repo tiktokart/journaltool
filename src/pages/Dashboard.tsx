@@ -32,10 +32,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
-const getRGBColorString = (color: number[]): string => {
-  return `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`;
-};
-
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
@@ -213,7 +209,7 @@ const Dashboard = () => {
         return {
           ...cluster,
           id: index,
-          color: getRGBColorString(color),
+          color: `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`,
         };
       });
       
@@ -481,8 +477,10 @@ const Dashboard = () => {
               <Card className="mb-6 border border-border shadow-md bg-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <BookOpen className="h-5 w-5 mr-2 text-primary" />
-                    <CardTitle className="text-xl">Document Summary</CardTitle>
+                    <div className="flex items-center">
+                      <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                      <CardTitle className="text-xl">Document Summary</CardTitle>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -585,7 +583,7 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
-                      focusOnWord={selectedWord !== null} 
+                      focusOnWord={selectedWord || null}
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
                       visibleClusterCount={visibleClusterCount}
@@ -859,7 +857,7 @@ const Dashboard = () => {
                           onRemoveWord={handleRemoveWordFromComparison}
                           calculateRelationship={calculateRelationship}
                           onAddWordClick={handleAddWordToComparison}
-                          sourceDescription={sentimentData?.sourceDescription || ""}
+                          sourceDescription={sentimentData?.sourceDescription}
                         />
                       </div>
                     ) : (
