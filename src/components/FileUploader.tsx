@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { GlobalWorkerOptions } from 'pdfjs-dist';
 GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface FileUploaderProps {
-  onFilesAdded: (files: File[], extractedText?: string) => void;
+  onFilesAdded: (files: File[], extractedText?: string, pdfUrl?: string) => void;
 }
 
 export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
@@ -119,6 +118,10 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
     }
   };
 
+  const createPdfEmbedUrl = (file: File): string => {
+    return URL.createObjectURL(file);
+  };
+
   const handleFiles = useCallback(async (files: FileList) => {
     if (!files || files.length === 0) {
       toast.error('No files selected');
@@ -143,6 +146,9 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       const firstPdf = pdfFiles[0];
       console.log("Processing PDF file:", firstPdf.name, "Size:", firstPdf.size);
       
+      // Create an embed URL for the PDF
+      const pdfUrl = createPdfEmbedUrl(firstPdf);
+      
       // Try to extract text with improved error handling
       let extractedText = '';
       try {
@@ -164,8 +170,8 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
         toast.success("PDF text extracted successfully");
       }
     
-      // Call the callback with files and text
-      onFilesAdded(pdfFiles, extractedText);
+      // Call the callback with files, text, and PDF URL
+      onFilesAdded(pdfFiles, extractedText, pdfUrl);
     } catch (error) {
       console.error('Error handling files:', error);
       toast.error('Error processing files. Using sample text instead.');

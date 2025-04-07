@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUploader } from "@/components/FileUploader";
+import { PdfViewer } from "@/components/PdfViewer";
 import { SentimentOverview } from "@/components/SentimentOverview";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { EntitySentiment } from "@/components/EntitySentiment";
@@ -139,6 +140,7 @@ const mentalHealthResources = [
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
   const [pdfText, setPdfText] = useState("");
+  const [pdfUrl, setPdfUrl] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [sentimentData, setSentimentData] = useState<any>(null);
   const [points, setPoints] = useState<Point[]>([]);
@@ -166,6 +168,7 @@ const Dashboard = () => {
   const [wordSearchTerm, setWordSearchTerm] = useState("");
   const [wordSearchOpen, setWordSearchOpen] = useState(false);
   const wordSearchRef = useRef<HTMLDivElement | null>(null);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -251,10 +254,15 @@ const Dashboard = () => {
     }
   }, [sentimentData, pdfText]);
 
-  const handleFileUpload = (files: File[], extractedText?: string) => {
+  const handleFileUpload = (files: File[], extractedText?: string, embedUrl?: string) => {
     if (files && files.length > 0) {
       const file = files[0];
       setFile(file);
+      
+      if (embedUrl) {
+        setPdfUrl(embedUrl);
+        setShowPdfViewer(true);
+      }
       
       if (extractedText && extractedText.length > 0) {
         setPdfText(extractedText);
@@ -271,6 +279,10 @@ const Dashboard = () => {
         toast.warning("Could not extract text properly, using sample text instead");
       }
     }
+  };
+
+  const togglePdfViewer = () => {
+    setShowPdfViewer(!showPdfViewer);
   };
 
   const analyzeSentiment = async () => {
@@ -504,10 +516,26 @@ const Dashboard = () => {
                       </>
                     ) : "Analyze Document"}
                   </Button>
+                  {pdfUrl && (
+                    <Button 
+                      variant="outline" 
+                      onClick={togglePdfViewer}
+                      className="w-full"
+                    >
+                      {showPdfViewer ? "Hide PDF" : "View PDF"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          {pdfUrl && showPdfViewer && (
+            <PdfViewer 
+              pdfUrl={pdfUrl} 
+              className="mb-6 animate-fade-in"
+            />
+          )}
 
           {sentimentData && (
             <div className="animate-fade-in">
