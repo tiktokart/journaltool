@@ -248,7 +248,7 @@ const Dashboard = () => {
       });
       setClusterPoints(clusterPointsMap);
       
-      if (window.documentEmbeddingPoints !== undefined) {
+      if (typeof window !== 'undefined' && window.documentEmbeddingPoints !== undefined) {
         window.documentEmbeddingPoints = mockPoints;
       }
     }
