@@ -124,6 +124,7 @@ export const DocumentEmbedding = ({
       
       <EmbeddingScene 
         containerRef={containerRef}
+        cameraRef={cameraRef}
         points={displayPoints}
         onPointHover={handlePointHover}
         onPointSelect={handlePointSelect}

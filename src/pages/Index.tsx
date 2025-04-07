@@ -24,7 +24,6 @@ const Index = () => {
   const [focusWord, setFocusWord] = useState<string | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
 
-  // Get points from the visualization for search
   useEffect(() => {
     const checkForPoints = () => {
       if ((window as any).documentEmbeddingPoints) {
@@ -32,10 +31,8 @@ const Index = () => {
       }
     };
     
-    // Initial check
     checkForPoints();
     
-    // Set up periodic check until points are available
     const intervalId = setInterval(() => {
       if (points.length === 0) {
         checkForPoints();
@@ -49,6 +46,7 @@ const Index = () => {
 
   const handlePointClick = (point: Point) => {
     setSelectedPoint(point);
+    setFocusWord(point.word);
     toast(`Selected: "${point.word}" (${point.emotionalTone})`);
   };
 
@@ -60,12 +58,9 @@ const Index = () => {
       return;
     }
     
-    // Make sure we have points to search
     if (points.length === 0) {
-      // Try to access points directly if they're available in the window
       const embedPoints = (window as any).documentEmbeddingPoints;
       if (embedPoints && Array.isArray(embedPoints) && embedPoints.length > 0) {
-        // Filter points based on search value
         const results = embedPoints.filter(point => 
           point.word.toLowerCase().includes(value.toLowerCase()) ||
           (point.keywords && point.keywords.some(keyword => 
@@ -82,7 +77,6 @@ const Index = () => {
       return;
     }
     
-    // Filter points based on search value
     const results = points.filter(point => 
       point.word.toLowerCase().includes(value.toLowerCase()) ||
       (point.keywords && point.keywords.some(keyword => 
@@ -115,7 +109,6 @@ const Index = () => {
               Visualize emotional patterns in your journal through interactive latent emotional analysis
             </p>
             
-            {/* Search Bar */}
             <div className="w-full max-w-md mb-8">
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
@@ -128,7 +121,6 @@ const Index = () => {
                       className="pl-8"
                       onClick={() => {
                         setOpen(true);
-                        // Ensure we trigger a search when clicking
                         if (searchValue.trim()) {
                           handleSearchChange(searchValue);
                         }
@@ -172,7 +164,6 @@ const Index = () => {
               </Popover>
             </div>
             
-            {/* 3D Visualization Container */}
             <div className="w-full max-w-6xl mb-8 relative">
               <div className="absolute top-2 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground">
                 <CircleDot className="h-4 w-4 mr-2" />

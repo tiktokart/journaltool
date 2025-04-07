@@ -5,6 +5,7 @@ import { Point } from '../../types/embedding';
 
 interface EmbeddingSceneProps {
   containerRef: React.RefObject<HTMLDivElement>;
+  cameraRef?: React.RefObject<THREE.PerspectiveCamera | null>;
   points: Point[];
   onPointHover: (point: Point | null) => void;
   onPointSelect: (point: Point | null) => void;
@@ -16,6 +17,7 @@ interface EmbeddingSceneProps {
 
 export const EmbeddingScene = ({ 
   containerRef, 
+  cameraRef,
   points, 
   onPointHover, 
   onPointSelect, 
@@ -26,7 +28,7 @@ export const EmbeddingScene = ({
 }: EmbeddingSceneProps) => {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const internalCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const pointsRef = useRef<THREE.Points | null>(null);
   const linesRef = useRef<THREE.LineSegments | null>(null);
@@ -186,7 +188,6 @@ export const EmbeddingScene = ({
   const updateHighlightLines = (focusPoint: Point | null, connectedPoints: Point[]) => {
     if (!sceneRef.current || !focusPoint) return;
     
-    // Remove existing highlight lines
     if (highlightLinesRef.current) {
       sceneRef.current.remove(highlightLinesRef.current);
       if (highlightLinesRef.current.geometry) {
@@ -221,7 +222,6 @@ export const EmbeddingScene = ({
         targetPos.x, targetPos.y, targetPos.z
       );
       
-      // Use a brighter color for highlighted connections
       lineColors.push(
         focusPoint.color[0], focusPoint.color[1], focusPoint.color[2],
         targetPoint.color[0], targetPoint.color[1], targetPoint.color[2]
@@ -248,9 +248,9 @@ export const EmbeddingScene = ({
   };
   
   const checkIntersection = () => {
-    if (!raycasterRef.current || !mouseRef.current || !cameraRef.current || !pointsRef.current || !sceneRef.current) return;
+    if (!raycasterRef.current || !mouseRef.current || !internalCameraRef.current || !pointsRef.current || !sceneRef.current) return;
     
-    raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+    raycasterRef.current.setFromCamera(mouseRef.current, internalCameraRef.current);
     const intersects = raycasterRef.current.intersectObject(pointsRef.current);
     
     if (intersects.length > 0 && pointsRef.current.userData?.pointsData) {
@@ -263,23 +263,16 @@ export const EmbeddingScene = ({
           const sizesAttribute = pointsRef.current.geometry.attributes.size;
           const sizesArray = sizesAttribute.array as Float32Array;
           
-          // Reset all sizes first
           for (let i = 0; i < sizesArray.length; i++) {
             sizesArray[i] = 0.05;
           }
           
-          // Make hovered point larger
           sizesArray[index] = 0.15;
           
-          // Find the top 3 connected points by relationship strength
           if (point.relationships && point.relationships.length > 0) {
-            // Sort relationships by strength (descending)
             const sortedRelationships = [...point.relationships].sort((a, b) => b.strength - a.strength);
-            
-            // Take up to 3 strongest relationships
             const topConnections = sortedRelationships.slice(0, 3);
             
-            // Highlight these connections
             topConnections.forEach(rel => {
               const relatedIndex = pointsRef.current!.userData.pointsData.findIndex((p: Point) => p.id === rel.id);
               if (relatedIndex !== -1) {
@@ -306,7 +299,7 @@ export const EmbeddingScene = ({
   };
   
   const focusOnPoint = (wordToFocus: string) => {
-    if (!pointsRef.current || !cameraRef.current || !controlsRef.current) return;
+    if (!pointsRef.current || !internalCameraRef.current || !controlsRef.current) return;
     
     const pointsData = pointsRef.current.userData?.pointsData as Point[];
     if (!pointsData) return;
@@ -314,27 +307,22 @@ export const EmbeddingScene = ({
     const targetPoint = pointsData.find(p => p.word === wordToFocus);
     if (!targetPoint) return;
     
-    // Find the top 3 related points by relationship strength
     if (pointsRef.current.geometry.attributes.size && targetPoint.relationships && targetPoint.relationships.length > 0) {
       const sizesAttribute = pointsRef.current.geometry.attributes.size;
       const sizesArray = sizesAttribute.array as Float32Array;
       
-      // Reset all sizes first
       for (let i = 0; i < sizesArray.length; i++) {
         sizesArray[i] = 0.05;
       }
       
-      // Highlight the focused point
       const targetIndex = pointsData.findIndex(p => p.word === wordToFocus);
       if (targetIndex !== -1) {
         sizesArray[targetIndex] = 0.15;
       }
       
-      // Sort relationships by strength and get top 3
       const sortedRelationships = [...targetPoint.relationships].sort((a, b) => b.strength - a.strength);
       const topConnections = sortedRelationships.slice(0, 3);
       
-      // Highlight top connections
       topConnections.forEach(rel => {
         const relatedIndex = pointsData.findIndex(p => p.id === rel.id);
         if (relatedIndex !== -1) {
@@ -354,7 +342,7 @@ export const EmbeddingScene = ({
     const distance = 5;
     const offsetPosition = targetPosition.clone().add(new THREE.Vector3(0, 0, distance));
     
-    const startPosition = cameraRef.current.position.clone();
+    const startPosition = internalCameraRef.current.position.clone();
     const startTarget = controlsRef.current.target.clone();
     const endTarget = targetPosition.clone();
     
@@ -366,7 +354,7 @@ export const EmbeddingScene = ({
       const progress = Math.min(elapsed / duration, 1);
       const easeProgress = 1 - Math.pow(1 - progress, 3);
       
-      cameraRef.current!.position.lerpVectors(startPosition, offsetPosition, easeProgress);
+      internalCameraRef.current!.position.lerpVectors(startPosition, offsetPosition, easeProgress);
       
       const newTarget = new THREE.Vector3();
       newTarget.lerpVectors(startTarget, endTarget, easeProgress);
@@ -395,7 +383,10 @@ export const EmbeddingScene = ({
       1000
     );
     camera.position.z = 20;
-    cameraRef.current = camera;
+    internalCameraRef.current = camera;
+    if (cameraRef) {
+      cameraRef.current = camera;
+    }
     
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
@@ -420,8 +411,8 @@ export const EmbeddingScene = ({
         controlsRef.current.update();
       }
       
-      if (rendererRef.current && sceneRef.current && cameraRef.current) {
-        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      if (rendererRef.current && sceneRef.current && internalCameraRef.current) {
+        rendererRef.current.render(sceneRef.current, internalCameraRef.current);
       }
     };
     
@@ -460,16 +451,16 @@ export const EmbeddingScene = ({
         rendererRef.current.dispose();
       }
     };
-  }, [points]);
+  }, [points, cameraRef]);
   
   useEffect(() => {
     if (!containerRef.current) return;
     
     const handleResize = () => {
-      if (!containerRef.current || !cameraRef.current || !rendererRef.current) return;
+      if (!containerRef.current || !internalCameraRef.current || !rendererRef.current) return;
       
-      cameraRef.current.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
-      cameraRef.current.updateProjectionMatrix();
+      internalCameraRef.current.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
+      internalCameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
     };
     
@@ -495,9 +486,9 @@ export const EmbeddingScene = ({
     };
     
     const handleClick = () => {
-      if (!isInteractive || !raycasterRef.current || !cameraRef.current || !pointsRef.current) return;
+      if (!isInteractive || !raycasterRef.current || !internalCameraRef.current || !pointsRef.current) return;
       
-      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      raycasterRef.current.setFromCamera(mouseRef.current, internalCameraRef.current);
       const intersects = raycasterRef.current.intersectObject(pointsRef.current);
       
       if (intersects.length > 0 && pointsRef.current.userData?.pointsData) {
@@ -505,6 +496,8 @@ export const EmbeddingScene = ({
         if (index !== undefined) {
           const point = pointsRef.current.userData.pointsData[index];
           onPointSelect(point);
+          
+          focusOnPoint(point.word);
         }
       }
     };
@@ -528,23 +521,19 @@ export const EmbeddingScene = ({
       if (focusPoint) {
         updateHighlightLines(focusPoint, connectedPoints);
         
-        // Highlight the points in the visualization
         if (pointsRef.current.geometry.attributes.size) {
           const sizesAttribute = pointsRef.current.geometry.attributes.size;
           const sizesArray = sizesAttribute.array as Float32Array;
           
-          // Reset all sizes first
           for (let i = 0; i < sizesArray.length; i++) {
             sizesArray[i] = 0.05;
           }
           
-          // Highlight the focused point
           const focusIndex = pointsData.findIndex(p => p.word === focusOnWord);
           if (focusIndex !== -1) {
             sizesArray[focusIndex] = 0.15;
           }
           
-          // Highlight connected points
           connectedPoints.forEach(connectedPoint => {
             const connectedIndex = pointsData.findIndex(p => p.id === connectedPoint.id);
             if (connectedIndex !== -1) {
@@ -557,12 +546,6 @@ export const EmbeddingScene = ({
       }
     }
   }, [focusOnWord, connectedPoints]);
-  
-  useEffect(() => {
-    if (cameraRef.current) {
-      // Assignment to make the ref accessible to zoom controls
-    }
-  }, [cameraRef.current]);
   
   return null;
 };
