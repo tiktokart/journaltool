@@ -9,9 +9,10 @@ import { ZoomControls } from './embedding/ZoomControls';
 import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
 import ParticleBackground from './embedding/ParticleBackground';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { ChevronDown, ChevronUp, CircleDot, Target, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp, CircleDot, Target, RotateCcw, Filter } from 'lucide-react';
 import { Button } from './ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { toast } from 'sonner';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -37,6 +38,7 @@ export const DocumentEmbedding = ({
   const [emotionalGroups, setEmotionalGroups] = useState<string[]>([]);
   const [selectedEmotionalGroup, setSelectedEmotionalGroup] = useState<string | null>(null);
   const [isEmotionalGroupsOpen, setIsEmotionalGroupsOpen] = useState<boolean>(true);
+  const [filterApplied, setFilterApplied] = useState<boolean>(false);
   
   useEffect(() => {
     if (focusOnWord !== currentFocusWord) {
@@ -68,8 +70,10 @@ export const DocumentEmbedding = ({
   
   useEffect(() => {
     if (points.length > 0) {
+      console.log(`Setting display points with ${points.length} points from props`);
       setDisplayPoints(points);
     } else if (generatedPoints.length === 0) {
+      console.log("Generating mock points");
       const mockPoints = generateMockPoints(depressedJournalReference);
       setGeneratedPoints(mockPoints);
       setDisplayPoints(mockPoints);
@@ -80,6 +84,10 @@ export const DocumentEmbedding = ({
     if (displayPoints.length > 0) {
       (window as any).documentEmbeddingPoints = displayPoints;
       console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
+      
+      // Log some sample words to verify the content
+      const sampleWords = displayPoints.slice(0, 10).map(p => p.word);
+      console.log("Sample words in visualization:", sampleWords.join(", "));
       
       const uniqueGroups = new Set<string>();
       displayPoints.forEach(point => {
@@ -170,23 +178,31 @@ export const DocumentEmbedding = ({
   
   const handleFocusEmotionalGroup = (tone: string) => {
     setSelectedEmotionalGroup(tone);
+    setFilterApplied(true);
   };
   
   const focusOnEmotionalGroup = (emotionalTone: string) => {
     setSelectedEmotionalGroup(emotionalTone);
+    setFilterApplied(true);
     
     if (window.documentEmbeddingActions && 
         window.documentEmbeddingActions.focusOnEmotionalGroup) {
       window.documentEmbeddingActions.focusOnEmotionalGroup(emotionalTone);
     }
+    
+    toast.info(`Showing only "${emotionalTone}" emotional group`);
   };
   
   const resetEmotionalGroupFilter = () => {
     setSelectedEmotionalGroup(null);
+    setFilterApplied(false);
+    
     if (window.documentEmbeddingActions && 
         window.documentEmbeddingActions.resetEmotionalGroupFilter) {
       window.documentEmbeddingActions.resetEmotionalGroupFilter();
     }
+    
+    toast.info("Showing all emotional groups");
   };
   
   return (
@@ -202,6 +218,21 @@ export const DocumentEmbedding = ({
         <CircleDot className="h-4 w-4 mr-2" />
         <span>Hover or click on words to see emotional groupings.</span>
       </div>
+      
+      {filterApplied && (
+        <div className="absolute top-3 left-4 z-10 flex items-center text-sm font-normal bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md">
+          <Filter className="h-4 w-4 mr-2 text-primary" />
+          <span>Filtered: {selectedEmotionalGroup}</span>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6 ml-2"
+            onClick={resetEmotionalGroupFilter}
+          >
+            <RotateCcw className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
       
       <EmbeddingScene 
         containerRef={containerRef}

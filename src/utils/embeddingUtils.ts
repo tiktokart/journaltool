@@ -396,6 +396,19 @@ export const generateMockPoints = (
   
   const wordFrequency: Record<string, number> = {};
   
+  const useCustomWordBank = customWordBank && customWordBank.length > 0;
+  let selectedCustomWords: string[] = [];
+  
+  if (useCustomWordBank) {
+    const customWordProbability = 0.9;
+    const customWordCount = Math.min(customWordBank.length, Math.ceil(particleCount * customWordProbability));
+    
+    const shuffledWordBank = [...customWordBank].sort(() => Math.random() - 0.5);
+    selectedCustomWords = shuffledWordBank.slice(0, customWordCount);
+  }
+  
+  const customWordIndices: number[] = [];
+  
   for (let i = 0; i < particleCount; i++) {
     let emotionalToneIndex: number;
     let random = Math.random() * totalWeight;
@@ -473,8 +486,10 @@ export const generateMockPoints = (
     
     let word;
     
-    if (customWordBank && customWordBank.length > 0 && Math.random() < 0.7) {
-      word = customWordBank[Math.floor(Math.random() * customWordBank.length)];
+    if (useCustomWordBank && selectedCustomWords.length > 0 && (i < selectedCustomWords.length || Math.random() < 0.9)) {
+      const wordIndex = i % selectedCustomWords.length;
+      word = selectedCustomWords[wordIndex];
+      customWordIndices.push(i);
     } else if (depressedJournalReference) {
       if (Math.random() < 0.7 && emotionalTone !== "Neutral") {
         word = depressedJournalWords[Math.floor(Math.random() * depressedJournalWords.length)];

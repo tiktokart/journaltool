@@ -63,6 +63,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       } else {
         const wordCount = pdfText.split(/\s+/).length;
         toast.success(`Extracted ${wordCount} words from PDF`);
+        console.log("First 100 characters of extracted text:", pdfText.substring(0, 100));
       }
       
       // Pass the extracted text to the parent component for analysis
