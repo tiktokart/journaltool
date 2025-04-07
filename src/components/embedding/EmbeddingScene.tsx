@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -16,6 +17,7 @@ interface EmbeddingSceneProps {
   selectedPoint?: Point | null;
   comparisonPoint?: Point | null;
   isCompareMode?: boolean;
+  depressedJournalReference?: boolean;  // Added this property to fix the type error
 }
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
