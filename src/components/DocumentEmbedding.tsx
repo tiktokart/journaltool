@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -9,7 +8,7 @@ import { ZoomControls } from './embedding/ZoomControls';
 import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
 import ParticleBackground from './embedding/ParticleBackground';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { ChevronDown, ChevronUp, CircleDot, Target, RotateCcw, Filter } from 'lucide-react';
+import { ChevronDown, ChevronUp, CircleDot, Target, RotateCcw, Filter, Info } from 'lucide-react';
 import { Button } from './ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { toast } from 'sonner';
@@ -21,7 +20,8 @@ export const DocumentEmbedding = ({
   depressedJournalReference = false,
   focusOnWord = null,
   onComparePoint,
-  onSearchSelect
+  onSearchSelect,
+  sourceDescription
 }: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -85,7 +85,6 @@ export const DocumentEmbedding = ({
       (window as any).documentEmbeddingPoints = displayPoints;
       console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
       
-      // Log some sample words to verify the content
       const sampleWords = displayPoints.slice(0, 10).map(p => p.word);
       console.log("Sample words in visualization:", sampleWords.join(", "));
       
@@ -339,6 +338,13 @@ export const DocumentEmbedding = ({
       )}
       
       <EmotionsLegend />
+      
+      {sourceDescription && (
+        <div className="absolute bottom-4 right-4 z-10 flex items-center text-xs bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md text-muted-foreground">
+          <Info className="h-3.5 w-3.5 mr-1" />
+          {sourceDescription}
+        </div>
+      )}
     </div>
   );
 };
