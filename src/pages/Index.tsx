@@ -334,9 +334,9 @@ const Index = () => {
             <div className="w-full max-w-2xl mb-6 text-center">
               <Card className="bg-muted/30 border-border">
                 <CardContent className="pt-4 pb-4">
-                  <h3 className="text-sm font-semibold mb-2 text-primary">Journal Entry Example</h3>
+                  <h3 className="text-sm font-semibold mb-2 text-primary">Upload PDF</h3>
                   <p className="text-sm text-muted-foreground">
-                    This visualization maps the emotional landscape of a personal journal entry about experiencing a panic attack.
+                    Step 1: Upload your Journal: Journal Entry #12.
                   </p>
                 </CardContent>
               </Card>
