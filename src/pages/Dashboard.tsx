@@ -801,4 +801,33 @@ const Dashboard = () => {
                                     key={word} 
                                     value={word}
                                     onSelect={() => handleSelectWordForComparison(word)}
-                                    className
+                                    className="cursor-pointer hover:bg-accent"
+                                  >
+                                    {word}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </div>
+                    )}
+                    
+                    <WordComparison 
+                      words={wordsForComparison}
+                      onRemoveWord={handleRemoveWordFromComparison}
+                      calculateRelationship={calculateRelationship}
+                      onAddWordClick={handleAddWordToComparison}
+                      sourceDescription={sentimentData?.sourceDescription}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
