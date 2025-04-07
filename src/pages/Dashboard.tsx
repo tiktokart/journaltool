@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,10 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+
+const getRGBColorString = (color: number[]): string => {
+  return `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`;
+};
 
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
@@ -208,7 +213,7 @@ const Dashboard = () => {
         return {
           ...cluster,
           id: index,
-          color: `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`,
+          color: getRGBColorString(color),
         };
       });
       
@@ -363,9 +368,9 @@ const Dashboard = () => {
     if (!point1 || !point2) return null;
     
     const distance = Math.sqrt(
-      Math.pow(Number(point1.position[0]) - Number(point2.position[0]), 2) +
-      Math.pow(Number(point1.position[1]) - Number(point2.position[1]), 2) +
-      Math.pow(Number(point1.position[2]) - Number(point2.position[2]), 2)
+      Math.pow(point1.position[0] - point2.position[0], 2) +
+      Math.pow(point1.position[1] - point2.position[1], 2) +
+      Math.pow(point1.position[2] - point2.position[2], 2)
     );
     
     const spatialSimilarity = Math.max(0, 1 - (distance / 2));
@@ -476,10 +481,8 @@ const Dashboard = () => {
               <Card className="mb-6 border border-border shadow-md bg-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <BookOpen className="h-5 w-5 mr-2 text-primary" />
-                      <CardTitle className="text-xl">Document Summary</CardTitle>
-                    </div>
+                    <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                    <CardTitle className="text-xl">Document Summary</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -516,13 +519,11 @@ const Dashboard = () => {
                             value={searchTerm}
                             onChange={(e) => {
                               setSearchTerm(e.target.value);
-                              // Fix for search click issue - always open dropdown on input
                               if (uniqueWords.length > 0) {
                                 setOpen(true);
                               }
                             }}
-                            onClick={() => {
-                              // Fix for search click issue - open dropdown on click
+                            onFocus={() => {
                               if (uniqueWords.length > 0) {
                                 setOpen(true);
                               }
@@ -584,7 +585,7 @@ const Dashboard = () => {
                       points={filteredPoints}
                       onPointClick={handlePointClick}
                       isInteractive={true}
-                      focusOnWord={selectedWord || null}
+                      focusOnWord={selectedWord !== null} 
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
                       visibleClusterCount={visibleClusterCount}
@@ -776,13 +777,11 @@ const Dashboard = () => {
                             value={wordSearchTerm}
                             onChange={(e) => {
                               setWordSearchTerm(e.target.value);
-                              // Fix for search click issue
-                              if (uniqueWords.length > 0) {
+                              if (uniqueWords.length > 0 && !wordSearchOpen) {
                                 setWordSearchOpen(true);
                               }
                             }}
-                            onClick={() => {
-                              // Fix for search click issue - open dropdown on click
+                            onFocus={() => {
                               if (uniqueWords.length > 0) {
                                 setWordSearchOpen(true);
                               }
@@ -808,8 +807,9 @@ const Dashboard = () => {
                                 value={wordSearchTerm}
                                 onValueChange={(value) => {
                                   setWordSearchTerm(value);
-                                  // Always show dropdown while typing
-                                  setWordSearchOpen(true);
+                                  if (!wordSearchOpen) {
+                                    setWordSearchOpen(true);
+                                  }
                                 }}
                               />
                               <CommandList>
@@ -859,7 +859,7 @@ const Dashboard = () => {
                           onRemoveWord={handleRemoveWordFromComparison}
                           calculateRelationship={calculateRelationship}
                           onAddWordClick={handleAddWordToComparison}
-                          sourceDescription={sentimentData?.sourceDescription}
+                          sourceDescription={sentimentData?.sourceDescription || ""}
                         />
                       </div>
                     ) : (
