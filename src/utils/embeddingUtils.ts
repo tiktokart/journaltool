@@ -1,3 +1,4 @@
+
 import { Point } from "../types/embedding";
 
 export const getEmotionColor = (emotion: string): string => {
@@ -22,13 +23,54 @@ export const getSentimentLabel = (score: number): string => {
   return "Very Negative";
 };
 
-export const generateMockPoints = (depressedJournalReference = false): Point[] => {
+interface EmotionalDistribution {
+  Joy: number;
+  Sadness: number;
+  Anger: number;
+  Fear: number;
+  Surprise: number;
+  Disgust: number;
+  Trust: number;
+  Anticipation: number;
+}
+
+export const generateMockPoints = (
+  depressedJournalReference = false, 
+  customDistribution?: EmotionalDistribution
+): Point[] => {
   const mockPoints: Point[] = [];
-  const particleCount = depressedJournalReference ? 300 : 5000;
+  const particleCount = depressedJournalReference ? 300 : 200;
   
   const emotionalTones = [
     "Joy", "Sadness", "Anger", "Fear", "Surprise", "Disgust", "Trust", "Anticipation"
   ];
+  
+  // Default distribution
+  const defaultDistribution: EmotionalDistribution = {
+    Joy: 0.125,
+    Sadness: 0.125,
+    Anger: 0.125,
+    Fear: 0.125,
+    Surprise: 0.125,
+    Disgust: 0.125,
+    Trust: 0.125,
+    Anticipation: 0.125
+  };
+  
+  // Distribution for depressed journal
+  const depressedDistribution: EmotionalDistribution = {
+    Joy: 0.05,
+    Sadness: 0.45,
+    Anger: 0.1,
+    Fear: 0.25,
+    Surprise: 0.02,
+    Disgust: 0.05,
+    Trust: 0.03,
+    Anticipation: 0.05
+  };
+  
+  // Choose the right distribution
+  const distribution = customDistribution || (depressedJournalReference ? depressedDistribution : defaultDistribution);
   
   const emotionalWords = {
     Joy: ["happy", "excited", "thrilled", "pleased", "content", "cheerful", "delighted", "joyful", "grateful", "lively"],
@@ -51,38 +93,42 @@ export const generateMockPoints = (depressedJournalReference = false): Point[] =
     "gray", "black", "blank", "fog", "invisible", "suffocating", "drowning", "falling"
   ];
   
+  // Convert distribution to weights array for random selection
+  const weights = emotionalTones.map(tone => distribution[tone as keyof EmotionalDistribution]);
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  
+  // Word frequency tracking
+  const wordFrequency: Record<string, number> = {};
+  
+  // Create points based on distribution
   for (let i = 0; i < particleCount; i++) {
-    let emotionalToneIndex;
-    if (depressedJournalReference) {
-      const weights = [0.05, 0.45, 0.1, 0.25, 0.02, 0.05, 0.03, 0.05];
-      const totalWeight = weights.reduce((a, b) => a + b, 0);
-      let random = Math.random() * totalWeight;
-      
-      for (let j = 0; j < weights.length; j++) {
-        if (random < weights[j]) {
-          emotionalToneIndex = j;
-          break;
-        }
-        random -= weights[j];
+    // Select emotional tone based on distribution
+    let emotionalToneIndex: number;
+    let random = Math.random() * totalWeight;
+    
+    for (let j = 0; j < weights.length; j++) {
+      if (random < weights[j]) {
+        emotionalToneIndex = j;
+        break;
       }
-      if (emotionalToneIndex === undefined) emotionalToneIndex = 1;
-    } else {
-      emotionalToneIndex = Math.floor(Math.random() * emotionalTones.length);
+      random -= weights[j];
     }
+    
+    // Default to first emotion if something went wrong
+    emotionalToneIndex = emotionalToneIndex !== undefined ? emotionalToneIndex : 0;
     
     const emotionalTone = emotionalTones[emotionalToneIndex];
     
-    let radius = 8 + (Math.random() * 4);
-    
+    // Cluster centers for each emotion
     const clusterCenters = [
-      [8, 8, 8],
-      [-8, -8, -5],
-      [8, -8, 0],
-      [-8, 8, 0],
-      [0, 10, 0],
-      [0, -10, 0],
-      [10, 0, 5],
-      [-10, 0, 5]
+      [8, 8, 8],         // Joy
+      [-8, -8, -5],      // Sadness
+      [8, -8, 0],        // Anger
+      [-8, 8, 0],        // Fear
+      [0, 10, 0],        // Surprise
+      [0, -10, 0],       // Disgust
+      [10, 0, 5],        // Trust
+      [-10, 0, 5]        // Anticipation
     ];
     
     const variance = 3;
@@ -91,17 +137,25 @@ export const generateMockPoints = (depressedJournalReference = false): Point[] =
     const y = clusterCenter[1] + (Math.random() * variance * 2 - variance);
     const z = clusterCenter[2] + (Math.random() * variance * 2 - variance);
     
+    // Determine sentiment based on emotional tone
     let sentiment;
-    if (emotionalTone === "Joy" || emotionalTone === "Trust") sentiment = 0.6 + (Math.random() * 0.4);
-    else if (emotionalTone === "Anticipation" || emotionalTone === "Surprise") sentiment = 0.4 + (Math.random() * 0.4);
-    else if (emotionalTone === "Disgust" || emotionalTone === "Anger") sentiment = 0.1 + (Math.random() * 0.3);
-    else if (emotionalTone === "Sadness" || emotionalTone === "Fear") sentiment = Math.random() * 0.3;
-    else sentiment = 0.4 + (Math.random() * 0.2);
+    if (emotionalTone === "Joy" || emotionalTone === "Trust") {
+      sentiment = 0.6 + (Math.random() * 0.4);
+    } else if (emotionalTone === "Anticipation" || emotionalTone === "Surprise") {
+      sentiment = 0.4 + (Math.random() * 0.4);
+    } else if (emotionalTone === "Disgust" || emotionalTone === "Anger") {
+      sentiment = 0.1 + (Math.random() * 0.3);
+    } else if (emotionalTone === "Sadness" || emotionalTone === "Fear") {
+      sentiment = Math.random() * 0.3;
+    } else {
+      sentiment = 0.4 + (Math.random() * 0.2);
+    }
     
     if (depressedJournalReference) {
       sentiment = Math.max(0.05, sentiment * 0.8);
     }
     
+    // Color based on emotional tone
     let r = 0.7, g = 0.7, b = 0.7;
     
     if (emotionalTone === "Joy") {
@@ -122,6 +176,7 @@ export const generateMockPoints = (depressedJournalReference = false): Point[] =
       r = 0.9; g = 0.5; b = 0.7;
     }
     
+    // Select a word based on emotional tone or use depressed journal words
     let word;
     if (depressedJournalReference) {
       if (Math.random() < 0.7) {
@@ -135,6 +190,10 @@ export const generateMockPoints = (depressedJournalReference = false): Point[] =
       word = toneWords[Math.floor(Math.random() * toneWords.length)];
     }
     
+    // Track word frequency
+    wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+    
+    // Add related keywords
     const keywordCount = 1 + Math.floor(Math.random() * 3);
     const keywords = [];
     
@@ -161,25 +220,67 @@ export const generateMockPoints = (depressedJournalReference = false): Point[] =
     });
   }
   
+  // Add relationships between points, with stronger relationships between same emotional tones
   mockPoints.forEach((point, idx) => {
-    const numRelationships = 2 + Math.floor(Math.random() * 3);
+    // More relationships for higher frequency words
+    const baseRelationships = 2;
+    const frequencyBonus = Math.min(3, Math.floor((wordFrequency[point.word] || 1) / 2));
+    const numRelationships = baseRelationships + frequencyBonus;
+    
     const relationships = [];
     
-    for (let r = 0; r < numRelationships; r++) {
-      const similarPoints = mockPoints.filter((p, i) => 
-        i !== idx && p.emotionalTone === point.emotionalTone
+    // Add relationships to other points with same emotional tone
+    const similarPoints = mockPoints.filter((p, i) => 
+      i !== idx && p.emotionalTone === point.emotionalTone
+    );
+    
+    if (similarPoints.length > 0) {
+      // Calculate how many same-emotion relationships to create
+      const sameEmotionCount = Math.min(similarPoints.length, 
+        Math.max(1, Math.floor(numRelationships * 0.7)));
+      
+      // Add strong relationships to points with same emotion
+      for (let r = 0; r < sameEmotionCount; r++) {
+        if (r < similarPoints.length) {
+          const targetIndex = Math.floor(Math.random() * similarPoints.length);
+          const targetPoint = similarPoints[targetIndex];
+          
+          if (!relationships.some(rel => rel.id === targetPoint.id)) {
+            relationships.push({
+              id: targetPoint.id,
+              strength: 0.6 + Math.random() * 0.4, // Strong relationship
+              word: targetPoint.word
+            });
+          }
+          
+          // Remove from array to avoid duplicates
+          similarPoints.splice(targetIndex, 1);
+        }
+      }
+    }
+    
+    // Fill remaining relationship slots with other points
+    const remainingSlots = numRelationships - relationships.length;
+    if (remainingSlots > 0) {
+      const otherPoints = mockPoints.filter((p, i) => 
+        i !== idx && !relationships.some(rel => rel.id === p.id)
       );
       
-      if (similarPoints.length > 0) {
-        const targetPoint = similarPoints[Math.floor(Math.random() * similarPoints.length)];
+      for (let r = 0; r < remainingSlots && otherPoints.length > 0; r++) {
+        const targetIndex = Math.floor(Math.random() * otherPoints.length);
+        const targetPoint = otherPoints[targetIndex];
         
-        if (!relationships.some(rel => rel.id === targetPoint.id)) {
-          relationships.push({
-            id: targetPoint.id,
-            strength: 0.5 + Math.random() * 0.5,
-            word: targetPoint.word
-          });
-        }
+        // Weaker relationship for different emotions
+        const strength = 0.3 + Math.random() * 0.3;
+        
+        relationships.push({
+          id: targetPoint.id,
+          strength: strength,
+          word: targetPoint.word
+        });
+        
+        // Remove from array to avoid duplicates
+        otherPoints.splice(targetIndex, 1);
       }
     }
     

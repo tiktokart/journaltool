@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,201 +13,170 @@ import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
 import { Loader2, CircleDot } from "lucide-react";
 import { Point } from "@/types/embedding";
+import { generateMockPoints } from "@/utils/embeddingUtils";
 
 const analyzePdfContent = (file: File): Promise<any> => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const journalWords = [
-        "anxious", "calm", "worried", "happy", "sad", 
-        "stressed", "relieved", "angry", "grateful", "overwhelmed",
-        "lonely", "loved", "frustrated", "inspired", "tired",
-        "excited", "afraid", "hopeful", "confused", "confident",
-        "disappointed", "proud", "numb", "peaceful", "annoyed",
-        "content", "exhausted", "motivated", "hurt", "joyful"
-      ];
-
-      const emotionalClusters = {
-        Joy: ["happy", "grateful", "excited", "proud", "joyful", "content", "inspired", "peaceful", "motivated", "confident", "relieved"],
-        Sadness: ["sad", "disappointed", "lonely", "hurt", "exhausted", "tired", "numb"],
-        Anger: ["angry", "frustrated", "annoyed"],
-        Fear: ["anxious", "worried", "afraid", "overwhelmed", "stressed"],
-        Surprise: ["shocked", "amazed", "startled", "stunned", "astonished"],
-        Disgust: ["disgusted", "repulsed", "revolted"],
-        Trust: ["trust", "calm", "hopeful"],
-        Anticipation: ["anticipation", "excited", "looking", "forward"]
+      // Generate a unique seed based on file name for consistency
+      const fileName = file.name.toLowerCase();
+      const seed = fileName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      
+      // Use the seed to influence the generated data
+      const randomMultiplier = ((seed % 100) / 100) * 0.4 + 0.8; // Between 0.8 and 1.2
+      
+      // Generate emotional tone distribution based on filename
+      let emotionalDistribution = {
+        Joy: 0.15,
+        Sadness: 0.25,
+        Anger: 0.1,
+        Fear: 0.2,
+        Surprise: 0.05,
+        Disgust: 0.05,
+        Trust: 0.1,
+        Anticipation: 0.1
       };
+      
+      // Adjust based on keywords in filename
+      if (fileName.includes('happy') || fileName.includes('joy')) {
+        emotionalDistribution.Joy = 0.4;
+        emotionalDistribution.Sadness = 0.05;
+      } else if (fileName.includes('sad') || fileName.includes('depress')) {
+        emotionalDistribution.Sadness = 0.5;
+        emotionalDistribution.Joy = 0.05;
+      } else if (fileName.includes('anger') || fileName.includes('mad')) {
+        emotionalDistribution.Anger = 0.4;
+        emotionalDistribution.Trust = 0.05;
+      } else if (fileName.includes('fear') || fileName.includes('anxiety')) {
+        emotionalDistribution.Fear = 0.4;
+        emotionalDistribution.Trust = 0.05;
+      }
+      
+      // Calculate overall sentiment based on emotional distribution
+      const overallSentiment = 
+        (emotionalDistribution.Joy * 0.9) + 
+        (emotionalDistribution.Trust * 0.8) + 
+        (emotionalDistribution.Anticipation * 0.6) + 
+        (emotionalDistribution.Surprise * 0.5) - 
+        (emotionalDistribution.Sadness * 0.3) - 
+        (emotionalDistribution.Fear * 0.3) - 
+        (emotionalDistribution.Anger * 0.3) - 
+        (emotionalDistribution.Disgust * 0.3);
+      
+      const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
+      
+      // Create embedding points with the custom distribution
+      const embeddingPoints = generateMockPoints(false, emotionalDistribution);
 
-      const embeddingPoints: Point[] = [];
+      // Generate sentiment distribution based on overall sentiment
+      const positivePercentage = Math.round(normalizedSentiment * 100);
+      const negativePercentage = Math.round((1 - normalizedSentiment) * 0.5 * 100);
+      const neutralPercentage = 100 - positivePercentage - negativePercentage;
+
+      // Generate timeline data
+      const pageCount = 5 + Math.floor((seed % 10)); // Between 5 and 14 pages
+      const timeline = [];
+      let prevScore = normalizedSentiment * 0.8; // Start close to the overall sentiment
       
-      journalWords.forEach((word, i) => {
-        let emotionalTone = "Neutral";
-        for (const [emotion, words] of Object.entries(emotionalClusters)) {
-          if (words.includes(word)) {
-            emotionalTone = emotion;
-            break;
-          }
-        }
+      for (let i = 1; i <= pageCount; i++) {
+        // Random walk with trend toward overall sentiment
+        const volatility = 0.15; // How much it can change per step
+        const trend = (normalizedSentiment - prevScore) * 0.3; // Pull toward overall sentiment
+        const randomChange = (Math.random() * 2 - 1) * volatility;
+        let newScore = prevScore + randomChange + trend;
+        newScore = Math.min(1, Math.max(0, newScore)); // Keep within 0-1
         
-        const clusterCenters: { [key: string]: [number, number, number] } = {
-          Joy: [8, 8, 8],
-          Sadness: [-8, -8, -5],
-          Anger: [8, -8, 0],
-          Fear: [-8, 8, 0],
-          Surprise: [0, 10, 0],
-          Disgust: [0, -10, 0],
-          Trust: [10, 0, 5],
-          Anticipation: [-10, 0, 5],
-          Neutral: [0, 0, 0]
-        };
+        timeline.push({ page: i, score: newScore });
+        prevScore = newScore;
+      }
+
+      // Generate entity data
+      const entityNames = [
+        "Work", "Family", "Health", "Relationships", 
+        "Future", "Goals", "Education", "Friends",
+        "Hobbies", "Travel", "Home", "Money"
+      ];
+      
+      const entities = [];
+      const usedEntities = new Set();
+      const entityCount = 4 + Math.floor(Math.random() * 4); // 4-7 entities
+      
+      for (let i = 0; i < entityCount; i++) {
+        let entityIndex;
+        do {
+          entityIndex = Math.floor(Math.random() * entityNames.length);
+        } while (usedEntities.has(entityIndex));
         
-        const variance = 3;
-        const clusterCenter = clusterCenters[emotionalTone] || [0, 0, 0];
-        const x = clusterCenter[0] + (Math.random() * variance * 2 - variance);
-        const y = clusterCenter[1] + (Math.random() * variance * 2 - variance);
-        const z = clusterCenter[2] + (Math.random() * variance * 2 - variance);
+        usedEntities.add(entityIndex);
         
-        let sentiment;
-        if (emotionalTone === "Joy" || emotionalTone === "Trust") sentiment = 0.6 + (Math.random() * 0.4);
-        else if (emotionalTone === "Anticipation" || emotionalTone === "Surprise") sentiment = 0.4 + (Math.random() * 0.4);
-        else if (emotionalTone === "Disgust" || emotionalTone === "Anger") sentiment = 0.1 + (Math.random() * 0.3);
-        else if (emotionalTone === "Sadness" || emotionalTone === "Fear") sentiment = Math.random() * 0.3;
-        else sentiment = 0.4 + (Math.random() * 0.2);
+        // Calculate entity sentiment as a variation of the overall sentiment
+        const variation = Math.random() * 0.4 - 0.2; // -0.2 to 0.2
+        const entitySentiment = Math.min(1, Math.max(0, normalizedSentiment + variation));
         
-        let r = 0.7, g = 0.7, b = 0.7;
-        if (emotionalTone === "Joy") {
-          r = 1.0; g = 0.9; b = 0.0;
-        } else if (emotionalTone === "Sadness") {
-          r = 0.0; g = 0.5; b = 0.9;
-        } else if (emotionalTone === "Anger") {
-          r = 0.9; g = 0.1; b = 0.1;
-        } else if (emotionalTone === "Fear") {
-          r = 0.6; g = 0.0; b = 0.8;
-        } else if (emotionalTone === "Surprise") {
-          r = 1.0; g = 0.5; b = 0.0;
-        } else if (emotionalTone === "Disgust") {
-          r = 0.2; g = 0.8; b = 0.2;
-        } else if (emotionalTone === "Trust") {
-          r = 0.0; g = 0.8; b = 0.6;
-        } else if (emotionalTone === "Anticipation") {
-          r = 0.9; g = 0.5; b = 0.7;
-        }
-        
-        const keywordCount = 1 + Math.floor(Math.random() * 2);
-        const keywords = [];
-        for (let k = 0; k < keywordCount; k++) {
-          const sameEmotionWords = emotionalClusters[emotionalTone as keyof typeof emotionalClusters] || journalWords;
-          let relatedWord;
-          do {
-            relatedWord = sameEmotionWords[Math.floor(Math.random() * sameEmotionWords.length)];
-          } while (relatedWord === word || keywords.includes(relatedWord));
-          
-          keywords.push(relatedWord);
-        }
-        
-        embeddingPoints.push({
-          id: `word-${i}`,
-          word,
-          sentiment,
-          position: [x, y, z],
-          color: [r, g, b],
-          keywords,
-          emotionalTone,
-          relationships: []
+        entities.push({
+          name: entityNames[entityIndex],
+          score: entitySentiment,
+          mentions: 5 + Math.floor(Math.random() * 20)
         });
-      });
+      }
+
+      // Generate key phrases
+      const positiveWords = ["growth", "healing", "success", "happiness", "love", "accomplishment", "strength", "peace", "joy", "progress"];
+      const neutralWords = ["change", "balance", "reflection", "awareness", "routine", "planning", "thoughts", "consideration", "evaluation", "observation"];
+      const negativeWords = ["struggle", "difficulty", "challenge", "pain", "fear", "stress", "anxiety", "exhaustion", "disappointment", "conflict"];
       
-      embeddingPoints.forEach((point, index) => {
-        const relationshipCount = 1 + Math.floor(Math.random() * 3);
-        const relationships = [];
-        
-        const similarTonePoints = embeddingPoints.filter(p => 
-          p.id !== point.id && p.emotionalTone === point.emotionalTone
-        );
-        
-        if (similarTonePoints.length > 0) {
-          const sampleSize = Math.min(relationshipCount, similarTonePoints.length);
-          const sample = [];
-          const usedIndices = new Set();
-          
-          while (sample.length < sampleSize) {
-            const randomIndex = Math.floor(Math.random() * similarTonePoints.length);
-            if (!usedIndices.has(randomIndex)) {
-              usedIndices.add(randomIndex);
-              sample.push(similarTonePoints[randomIndex]);
-            }
-          }
-          
-          for (const targetPoint of sample) {
-            relationships.push({
-              id: targetPoint.id,
-              strength: 0.5 + Math.random() * 0.5,
-              word: targetPoint.word
-            });
-          }
-        }
-        
-        const remainingRelationships = relationshipCount - relationships.length;
-        if (remainingRelationships > 0) {
-          const otherPoints = embeddingPoints.filter(p => 
-            p.id !== point.id && !relationships.some(r => r.id === p.id)
-          );
-          
-          if (otherPoints.length > 0) {
-            for (let i = 0; i < remainingRelationships && i < otherPoints.length; i++) {
-              const randomIndex = Math.floor(Math.random() * otherPoints.length);
-              const targetPoint = otherPoints[randomIndex];
-              
-              relationships.push({
-                id: targetPoint.id,
-                strength: 0.3 + Math.random() * 0.3,
-                word: targetPoint.word
-              });
-              
-              otherPoints.splice(randomIndex, 1);
-            }
-          }
-        }
-        
-        point.relationships = relationships;
-      });
+      const keyPhrases = [];
+      
+      // Add positive phrases proportional to positive sentiment
+      const positiveCount = Math.round(1 + (positivePercentage / 100) * 4);
+      for (let i = 0; i < positiveCount; i++) {
+        const wordIndex = Math.floor(Math.random() * positiveWords.length);
+        const secondWordIndex = (wordIndex + 1 + Math.floor(Math.random() * (positiveWords.length - 1))) % positiveWords.length;
+        keyPhrases.push({
+          text: `${positiveWords[wordIndex]} ${positiveWords[secondWordIndex]}`,
+          sentiment: "positive",
+          count: 1 + Math.floor(Math.random() * 7)
+        });
+      }
+      
+      // Add neutral phrases
+      const neutralCount = Math.round(1 + (neutralPercentage / 100) * 4);
+      for (let i = 0; i < neutralCount; i++) {
+        const wordIndex = Math.floor(Math.random() * neutralWords.length);
+        const secondWordIndex = (wordIndex + 1 + Math.floor(Math.random() * (neutralWords.length - 1))) % neutralWords.length;
+        keyPhrases.push({
+          text: `${neutralWords[wordIndex]} ${neutralWords[secondWordIndex]}`,
+          sentiment: "neutral",
+          count: 1 + Math.floor(Math.random() * 7)
+        });
+      }
+      
+      // Add negative phrases
+      const negativeCount = Math.round(1 + (negativePercentage / 100) * 4);
+      for (let i = 0; i < negativeCount; i++) {
+        const wordIndex = Math.floor(Math.random() * negativeWords.length);
+        const secondWordIndex = (wordIndex + 1 + Math.floor(Math.random() * (negativeWords.length - 1))) % negativeWords.length;
+        keyPhrases.push({
+          text: `${negativeWords[wordIndex]} ${negativeWords[secondWordIndex]}`,
+          sentiment: "negative",
+          count: 1 + Math.floor(Math.random() * 7)
+        });
+      }
 
       const analysisResults = {
         overallSentiment: {
-          score: 0.68,
-          label: "Positive"
+          score: normalizedSentiment,
+          label: normalizedSentiment >= 0.6 ? "Positive" : normalizedSentiment >= 0.4 ? "Neutral" : "Negative"
         },
         distribution: {
-          positive: 68,
-          neutral: 20,
-          negative: 12
+          positive: positivePercentage,
+          neutral: neutralPercentage,
+          negative: negativePercentage
         },
-        timeline: [
-          { page: 1, score: 0.45 },
-          { page: 2, score: 0.58 },
-          { page: 3, score: 0.72 },
-          { page: 4, score: 0.65 },
-          { page: 5, score: 0.81 },
-          { page: 6, score: 0.75 },
-          { page: 7, score: 0.62 },
-          { page: 8, score: 0.70 },
-        ],
-        entities: [
-          { name: "Work", score: 0.65, mentions: 24 },
-          { name: "Family", score: 0.85, mentions: 18 },
-          { name: "Health", score: 0.72, mentions: 15 },
-          { name: "Relationships", score: 0.50, mentions: 12 },
-          { name: "Future", score: 0.45, mentions: 10 },
-          { name: "Goals", score: 0.80, mentions: 8 },
-        ],
-        keyPhrases: [
-          { text: "personal growth", sentiment: "positive", count: 7 },
-          { text: "quality time", sentiment: "positive", count: 5 },
-          { text: "difficult conversation", sentiment: "negative", count: 3 },
-          { text: "mixed feelings", sentiment: "neutral", count: 6 },
-          { text: "feeling accomplished", sentiment: "positive", count: 4 },
-          { text: "lost opportunity", sentiment: "negative", count: 2 },
-        ],
-        embeddingPoints
+        timeline: timeline,
+        entities: entities,
+        keyPhrases: keyPhrases,
+        embeddingPoints: embeddingPoints
       };
 
       resolve(analysisResults);
@@ -225,6 +195,11 @@ const Dashboard = () => {
     if (files && files.length > 0) {
       setFile(files[0]);
       toast.success(`File "${files[0].name}" uploaded successfully`);
+      // Reset sentiment data when a new file is uploaded
+      if (sentimentData) {
+        setSentimentData(null);
+        setSelectedPoint(null);
+      }
     }
   };
 
@@ -310,7 +285,7 @@ const Dashboard = () => {
                 
                 <TabsContent value="embedding" className="mt-6">
                   <Card className="border border-border shadow-md overflow-hidden bg-card">
-                    <CardHeader className="relative z-10">
+                    <CardHeader className="z-10">
                       <CardTitle className="flex justify-between items-center">
                         <span>Latent Emotional Analysis</span>
                         <div className="text-sm font-normal flex items-center text-muted-foreground">

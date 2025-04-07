@@ -1,12 +1,23 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CircleDot } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
+import { Point } from "@/types/embedding";
+import { toast } from "sonner";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Index = () => {
+  const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+
+  const handlePointClick = (point: Point) => {
+    setSelectedPoint(point);
+    toast(`Selected word: "${point.word}"`);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -22,9 +33,66 @@ const Index = () => {
             </p>
             
             {/* 3D Visualization Container */}
-            <div className="w-full max-w-6xl aspect-[16/9] mb-8 bg-card border border-border rounded-xl overflow-hidden shadow-lg">
-              <DocumentEmbedding isInteractive={true} depressedJournalReference={true} />
+            <div className="w-full max-w-6xl mb-8 relative">
+              <div className="absolute top-2 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground">
+                <CircleDot className="h-4 w-4 mr-2" />
+                <span>Hover or click on words to see details</span>
+              </div>
+              <div className="aspect-[16/9] bg-white border border-border rounded-xl overflow-hidden shadow-lg">
+                <DocumentEmbedding 
+                  isInteractive={true} 
+                  depressedJournalReference={true} 
+                  onPointClick={handlePointClick}
+                />
+              </div>
             </div>
+            
+            {selectedPoint && (
+              <Card className="mb-8 w-full max-w-6xl border border-border shadow-sm bg-card">
+                <CardContent className="pt-6">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-sm font-medium mb-1">Word</h3>
+                      <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">{selectedPoint.word}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium mb-1">Sentiment Analysis</h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ 
+                            backgroundColor: `rgb(${selectedPoint.color[0] * 255}, ${selectedPoint.color[1] * 255}, ${selectedPoint.color[2] * 255})` 
+                          }} 
+                        />
+                        <span className="text-sm">
+                          Score: {selectedPoint.sentiment.toFixed(2)}
+                          {selectedPoint.sentiment >= 0.7 ? " (Very Positive)" : 
+                            selectedPoint.sentiment >= 0.5 ? " (Positive)" : 
+                            selectedPoint.sentiment >= 0.4 ? " (Neutral)" : 
+                            selectedPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
+                        </span>
+                      </div>
+                      
+                      {selectedPoint.relationships && selectedPoint.relationships.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-medium mt-3 mb-1">Related Words</h3>
+                          <ul className="text-sm">
+                            {selectedPoint.relationships.map((rel, i) => (
+                              <li key={i} className="py-1 border-b border-border last:border-0">
+                                <div className="flex justify-between">
+                                  <span className="font-medium">{rel.word}</span>
+                                  <span className="text-muted-foreground">Connection: {(rel.strength * 100).toFixed(0)}%</span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             <Button asChild size="lg" className="rounded-md mt-4">
               <Link to="/dashboard" className="flex items-center gap-2">

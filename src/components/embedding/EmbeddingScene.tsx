@@ -60,7 +60,21 @@ export const EmbeddingScene = ({
     const colors = new Float32Array(pointsData.length * 3);
     const sizes = new Float32Array(pointsData.length);
     
-    const defaultSize = 0.05;
+    // Determine frequency of words for size calculation
+    const wordFrequency: Record<string, number> = {};
+    pointsData.forEach(point => {
+      wordFrequency[point.word] = (wordFrequency[point.word] || 0) + 1;
+    });
+    
+    // Calculate min and max frequency for normalization
+    const frequencies = Object.values(wordFrequency);
+    const minFreq = Math.min(...frequencies);
+    const maxFreq = Math.max(...frequencies);
+    const freqRange = maxFreq - minFreq;
+    
+    // Size range
+    const minSize = 0.03;
+    const maxSize = 0.12;
     
     // Fill the arrays
     pointsData.forEach((point, i) => {
@@ -72,7 +86,13 @@ export const EmbeddingScene = ({
       colors[i * 3 + 1] = point.color[1];
       colors[i * 3 + 2] = point.color[2];
       
-      sizes[i] = defaultSize;
+      // Calculate size based on frequency
+      const frequency = wordFrequency[point.word] || 1;
+      const normalizedFreq = freqRange > 0 
+        ? (frequency - minFreq) / freqRange 
+        : 0.5;
+        
+      sizes[i] = minSize + normalizedFreq * (maxSize - minSize);
     });
     
     particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -80,7 +100,7 @@ export const EmbeddingScene = ({
     particlesGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
     
     const particlesMaterial = new THREE.PointsMaterial({
-      size: defaultSize,
+      size: 0.05,
       vertexColors: true,
       transparent: true,
       opacity: 0.8,
@@ -119,7 +139,7 @@ export const EmbeddingScene = ({
           const targetPoint = pointsData.find((p) => p.id === rel.id);
           if (targetPoint) {
             // Only draw lines where the relationships are strong enough
-            if (rel.strength > 0.5) {
+            if (rel.strength > 0.4) {
               const targetPos = new THREE.Vector3(
                 targetPoint.position[0],
                 targetPoint.position[1],
@@ -133,9 +153,6 @@ export const EmbeddingScene = ({
               );
               
               // Add line colors - use a blend of both point colors
-              const alpha = 0.3 + (rel.strength * 0.3); // Line opacity based on relationship strength
-              
-              // Fade to lighter color for better visibility
               lineColors.push(
                 point.color[0], point.color[1], point.color[2], 
                 targetPoint.color[0], targetPoint.color[1], targetPoint.color[2]
@@ -154,7 +171,7 @@ export const EmbeddingScene = ({
       const lineMaterial = new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.25,
         depthWrite: false
       });
       
@@ -223,7 +240,7 @@ export const EmbeddingScene = ({
     
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xF1F1F1); // Light grey background
+    scene.background = new THREE.Color(0xFFFFFF); // White background
     sceneRef.current = scene;
     
     // Camera setup
