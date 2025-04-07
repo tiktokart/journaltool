@@ -1,20 +1,32 @@
 
 import { useState } from "react";
 import { getEmotionColor } from "../../utils/embeddingUtils";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export const EmotionsLegend = () => {
   const [isOpen, setIsOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const emotions = [
     "Joy", "Sadness", "Anger", "Fear", 
     "Surprise", "Disgust", "Trust", "Anticipation"
   ];
 
+  const filteredEmotions = searchQuery 
+    ? emotions.filter(emotion => emotion.toLowerCase().includes(searchQuery.toLowerCase()))
+    : emotions;
+
+  const handleEmotionClick = (emotion: string) => {
+    if (window.documentEmbeddingActions?.focusOnEmotionalGroup) {
+      window.documentEmbeddingActions.focusOnEmotionalGroup(emotion);
+    }
+  };
+
   return (
-    <div className="absolute top-4 left-4 bg-card/80 backdrop-blur-sm p-2 rounded-lg shadow-md text-xs z-10">
+    <div className="absolute top-4 left-4 bg-card/80 backdrop-blur-sm p-2 rounded-lg shadow-md text-xs z-10 w-48">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="flex items-center justify-between">
           <div className="font-medium">Emotional Tones:</div>
@@ -26,15 +38,34 @@ export const EmotionsLegend = () => {
         </div>
         
         <CollapsibleContent>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1">
-            {emotions.map((emotion) => (
-              <div key={emotion} className="flex items-center">
+          <div className="mt-2 mb-2">
+            <div className="relative">
+              <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search emotions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-7 pl-7 text-xs"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-y-1 mt-1">
+            {filteredEmotions.map((emotion) => (
+              <Button
+                key={emotion}
+                variant="ghost"
+                size="sm" 
+                className="flex items-center justify-start h-6 px-2 py-1 w-full hover:bg-accent transition-colors"
+                onClick={() => handleEmotionClick(emotion)}
+              >
                 <div 
-                  className="w-2 h-2 rounded-full mr-1" 
+                  className="w-3 h-3 rounded-full mr-2" 
                   style={{ backgroundColor: getEmotionColor(emotion) }}
                 />
                 <span>{emotion}</span>
-              </div>
+              </Button>
             ))}
           </div>
         </CollapsibleContent>

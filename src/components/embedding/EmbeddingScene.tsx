@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Point } from '@/types/embedding';
@@ -19,6 +19,7 @@ interface EmbeddingSceneProps {
   isCompareMode?: boolean;
   depressedJournalReference?: boolean;
   onFocusEmotionalGroup?: (tone: string) => void;
+  onToggleSearch?: () => void;
 }
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
@@ -34,7 +35,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   selectedPoint,
   comparisonPoint,
   isCompareMode = false,
-  onFocusEmotionalGroup
+  onFocusEmotionalGroup,
+  onToggleSearch
 }) => {
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = externalContainerRef || internalContainerRef;
@@ -56,6 +58,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const zoomTimeoutRef = useRef<number | null>(null);
   const animationFrameIdRef = useRef<number | null>(null);
   const isDraggingRef = useRef<boolean>(false);
+  const isMiddleButtonDownRef = useRef<boolean>(false);
+  const lastMousePosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -88,7 +92,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     controlsRef.current = controlsInstance;
     controlsInstance.enableDamping = true;
     controlsInstance.dampingFactor = 0.1;
-    controlsInstance.screenSpacePanning = false;
+    controlsInstance.screenSpacePanning = true;
     controlsInstance.minDistance = 1;
     controlsInstance.maxDistance = 30;
     controlsInstance.maxPolarAngle = Math.PI / 2;
@@ -97,33 +101,81 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     controlsInstance.enableZoom = false; // Disable built-in zoom, we'll handle it ourselves
     controlsInstance.enableRotate = true; // Make sure rotation is enabled
     controlsInstance.rotateSpeed = 0.5; // Reduced rotation speed for smoother control
+    controlsInstance.enablePan = false; // We'll handle panning ourselves
     
-    const handleMouseDown = () => {
-      isDraggingRef.current = true;
-      controlsInstance.autoRotate = false;
+    const handleMouseDown = (event: MouseEvent) => {
+      if (event.button === 0) { // Left button
+        isDraggingRef.current = true;
+        controlsInstance.autoRotate = false;
+      } else if (event.button === 1) { // Middle button (scroll wheel)
+        event.preventDefault();
+        isMiddleButtonDownRef.current = true;
+        lastMousePosRef.current = { x: event.clientX, y: event.clientY };
+      } else if (event.button === 2 && onToggleSearch) { // Right button
+        event.preventDefault();
+        onToggleSearch();
+      }
     };
     
-    const handleMouseUp = () => {
-      isDraggingRef.current = false;
-      controlsInstance.autoRotate = true;
+    const handleMouseMove = (event: MouseEvent) => {
+      if (isMiddleButtonDownRef.current && cameraRef.current) {
+        const deltaX = (event.clientX - lastMousePosRef.current.x) * 0.01;
+        const deltaY = (event.clientY - lastMousePosRef.current.y) * 0.01;
+        
+        // Create a plane parallel to the camera viewing direction
+        const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(cameraRef.current.quaternion);
+        const rightDirection = new THREE.Vector3(1, 0, 0).applyQuaternion(cameraRef.current.quaternion);
+        const upDirection = new THREE.Vector3(0, 1, 0).applyQuaternion(cameraRef.current.quaternion);
+        
+        // Scale by camera distance for consistent panning speed
+        const distanceScale = cameraRef.current.position.length() * 0.1;
+        
+        // Move the camera position and target
+        cameraRef.current.position.add(rightDirection.multiplyScalar(-deltaX * distanceScale));
+        cameraRef.current.position.add(upDirection.multiplyScalar(-deltaY * distanceScale));
+        
+        if (controlsRef.current) {
+          controlsRef.current.target.add(rightDirection.multiplyScalar(-deltaX * distanceScale));
+          controlsRef.current.target.add(upDirection.multiplyScalar(-deltaY * distanceScale));
+          controlsRef.current.update();
+        }
+        
+        lastMousePosRef.current = { x: event.clientX, y: event.clientY };
+      }
+    };
+    
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button === 0) { // Left button
+        isDraggingRef.current = false;
+        controlsInstance.autoRotate = true;
+      } else if (event.button === 1) { // Middle button
+        isMiddleButtonDownRef.current = false;
+      }
     };
     
     const handleMouseLeave = () => {
       isDraggingRef.current = false;
+      isMiddleButtonDownRef.current = false;
       controlsInstance.autoRotate = true;
+    };
+    
+    const handleContextMenu = (event: MouseEvent) => {
+      event.preventDefault(); // Prevent context menu on right click
     };
     
     if (containerRef.current) {
       containerRef.current.addEventListener('mousedown', handleMouseDown);
-      window.addEventListener('mouseup', handleMouseUp);
+      containerRef.current.addEventListener('mousemove', handleMouseMove);
+      containerRef.current.addEventListener('mouseup', handleMouseUp);
       containerRef.current.addEventListener('mouseleave', handleMouseLeave);
+      containerRef.current.addEventListener('contextmenu', handleContextMenu);
     }
     
     controlsInstance.update();
     
     const animate = () => {
       animationFrameIdRef.current = requestAnimationFrame(animate);
-      if (!isZoomingRef.current) {
+      if (!isZoomingRef.current && !isMiddleButtonDownRef.current) {
         controlsInstance.update();
       }
       renderer.render(scene, camera);
@@ -192,9 +244,11 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       if (containerRef.current) {
         containerRef.current.removeEventListener('wheel', handleWheel);
         containerRef.current.removeEventListener('mousedown', handleMouseDown);
+        containerRef.current.removeEventListener('mousemove', handleMouseMove);
+        containerRef.current.removeEventListener('mouseup', handleMouseUp);
         containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
+        containerRef.current.removeEventListener('contextmenu', handleContextMenu);
       }
-      window.removeEventListener('mouseup', handleMouseUp);
       
       if (zoomTimeoutRef.current !== null) {
         window.clearTimeout(zoomTimeoutRef.current);
@@ -210,7 +264,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         containerRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [cameraRef, containerRef, controlsRef]);
+  }, [cameraRef, containerRef, controlsRef, onToggleSearch]);
 
   useEffect(() => {
     emotionalGroupsRef.current.clear();
