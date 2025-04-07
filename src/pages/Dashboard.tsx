@@ -294,7 +294,7 @@ const Dashboard = () => {
   };
 
   const handleSelectWord = (word: string) => {
-    const point = points.find(p => p.word === word);
+    const point = points.find(p => p.word.toLowerCase() === word.toLowerCase());
     if (point) {
       setSelectedWord(word);
       setSelectedPoint(point);
@@ -323,7 +323,7 @@ const Dashboard = () => {
   };
 
   const handleSelectComparisonWord = (word: string) => {
-    const point = points.find(p => p.word === word);
+    const point = points.find(p => p.word.toLowerCase() === word.toLowerCase());
     if (point) {
       setComparisonWord(word);
       setComparisonPoint(point);
@@ -392,7 +392,7 @@ const Dashboard = () => {
   };
 
   const handleSelectWordForComparison = (word: string) => {
-    const point = points.find(p => p.word === word);
+    const point = points.find(p => p.word.toLowerCase() === word.toLowerCase());
     if (point && wordsForComparison.length < 4) {
       if (!wordsForComparison.some(p => p.id === point.id)) {
         setWordsForComparison(prev => [...prev, point]);
@@ -823,7 +823,7 @@ const Dashboard = () => {
                                       <CommandItem 
                                         key={word} 
                                         value={word}
-                                        onSelect={handleSelectWordForComparison}
+                                        onSelect={() => handleSelectWordForComparison(word)}
                                         className="cursor-pointer"
                                       >
                                         {word}
