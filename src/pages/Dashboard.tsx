@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,11 +37,14 @@ const analyzePdfContent = async (pdfText: string) => {
   return new Promise((resolve) => {
     setTimeout(() => {
       const mockData = {
-        overallSentiment: Math.random() * 0.5 + 0.25, // Random between 0.25 and 0.75
+        overallSentiment: {
+          score: Math.random() * 0.5 + 0.25, // Random between 0.25 and 0.75
+          label: Math.random() > 0.6 ? "Positive" : Math.random() > 0.3 ? "Neutral" : "Negative"
+        },
         distribution: {
-          positive: Math.random() * 0.4 + 0.3, // 30-70%
-          neutral: Math.random() * 0.3 + 0.1,  // 10-40%
-          negative: Math.random() * 0.3 + 0.1, // 10-40%
+          positive: Math.floor(Math.random() * 40 + 30), // 30-70%
+          neutral: Math.floor(Math.random() * 30 + 10),  // 10-40%
+          negative: Math.floor(Math.random() * 30 + 10), // 10-40%
         },
         timeline: Array.from({ length: 20 }, (_, i) => ({
           segment: i + 1,
