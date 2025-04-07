@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, CircleDot, Search, RotateCcw, CompareArrows } from "lucide-react";
+import { ArrowRight, CircleDot, Search, RotateCcw, GitCompareArrows } from "lucide-react";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
@@ -219,7 +219,7 @@ const Index = () => {
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <CompareArrows className="h-5 w-5 text-orange-500" />
+                      <GitCompareArrows className="h-5 w-5 text-orange-500" />
                       Word Comparison
                     </h3>
                     <Button 

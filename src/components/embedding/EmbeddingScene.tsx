@@ -127,7 +127,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       // Highlight special points (selected or comparison)
       const isSelected = selectedPoint && point.id === selectedPoint.id;
       const isComparison = comparisonPoint && point.id === comparisonPoint.id;
-      const isCompareMode = isCompareMode && selectedPoint && point.id === selectedPoint.id;
+      const isInCompareMode = isCompareMode && selectedPoint && point.id === selectedPoint.id;
       
       if (isSelected || isComparison) {
         // Make selected/comparison points brighter
