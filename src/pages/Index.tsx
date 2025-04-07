@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -61,12 +60,35 @@ const Index = () => {
       return;
     }
     
+    // Make sure we have points to search
+    if (points.length === 0) {
+      // Try to access points directly if they're available in the window
+      const embedPoints = (window as any).documentEmbeddingPoints;
+      if (embedPoints && Array.isArray(embedPoints) && embedPoints.length > 0) {
+        // Filter points based on search value
+        const results = embedPoints.filter(point => 
+          point.word.toLowerCase().includes(value.toLowerCase()) ||
+          (point.keywords && point.keywords.some(keyword => 
+            keyword.toLowerCase().includes(value.toLowerCase())
+          )) ||
+          (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase()))
+        );
+        
+        setSearchResults(results);
+        return;
+      }
+      
+      setSearchResults([]);
+      return;
+    }
+    
     // Filter points based on search value
     const results = points.filter(point => 
       point.word.toLowerCase().includes(value.toLowerCase()) ||
       (point.keywords && point.keywords.some(keyword => 
         keyword.toLowerCase().includes(value.toLowerCase())
-      ))
+      )) ||
+      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase()))
     );
     
     setSearchResults(results);
@@ -104,13 +126,23 @@ const Index = () => {
                       value={searchValue}
                       onChange={(e) => handleSearchChange(e.target.value)}
                       className="pl-8"
-                      onClick={() => setOpen(true)}
+                      onClick={() => {
+                        setOpen(true);
+                        // Ensure we trigger a search when clicking
+                        if (searchValue.trim()) {
+                          handleSearchChange(searchValue);
+                        }
+                      }}
                     />
                   </div>
                 </PopoverTrigger>
                 <PopoverContent className="p-0 w-[300px]" align="start">
                   <Command>
-                    <CommandInput placeholder="Search words or emotions..." />
+                    <CommandInput 
+                      placeholder="Search words or emotions..." 
+                      value={searchValue}
+                      onValueChange={handleSearchChange}
+                    />
                     <CommandList>
                       <CommandEmpty>No results found</CommandEmpty>
                       <CommandGroup>

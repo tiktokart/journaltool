@@ -45,10 +45,11 @@ export const DocumentEmbedding = ({
   // Expose generated points to parent component if needed
   useEffect(() => {
     if (displayPoints.length > 0) {
-      if (window.parent) {
-        // Expose points to parent (can be used by parent components)
-        (window as any).documentEmbeddingPoints = displayPoints;
-      }
+      // Expose points to parent (can be used by parent components)
+      (window as any).documentEmbeddingPoints = displayPoints;
+      
+      // To help with debugging
+      console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
     }
   }, [displayPoints]);
   
