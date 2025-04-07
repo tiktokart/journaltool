@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -493,7 +494,7 @@ const Index = () => {
                                 <div className="relative w-full">
                                   <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                   <Input 
-                                    placeholder="Search by emotion..." 
+                                    placeholder="Search by word..." 
                                     value={firstWordSearchValue}
                                     onChange={(e) => {
                                       handleFirstWordSearchChange(e.target.value);
@@ -507,7 +508,7 @@ const Index = () => {
                               <PopoverContent className="p-0 w-[300px]" align="start">
                                 <Command>
                                   <CommandInput 
-                                    placeholder="Search by emotion..." 
+                                    placeholder="Search by word..." 
                                     value={firstWordSearchValue}
                                     onValueChange={handleFirstWordSearchChange}
                                   />
@@ -653,7 +654,7 @@ const Index = () => {
                                     <div className="relative w-full">
                                       <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                       <Input 
-                                        placeholder="Search by emotion..." 
+                                        placeholder="Search by word..." 
                                         value={firstWordSearchValue}
                                         onChange={(e) => {
                                           handleFirstWordSearchChange(e.target.value);
@@ -667,7 +668,7 @@ const Index = () => {
                                   <PopoverContent className="p-0 w-[300px]" align="start">
                                     <Command>
                                       <CommandInput 
-                                        placeholder="Search by emotion..." 
+                                        placeholder="Search by word..." 
                                         value={firstWordSearchValue}
                                         onValueChange={handleFirstWordSearchChange}
                                       />
@@ -742,7 +743,7 @@ const Index = () => {
                                   <div className="relative w-full">
                                     <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input 
-                                      placeholder="Search by emotion..." 
+                                      placeholder="Search by word..." 
                                       value={firstWordSearchValue}
                                       onChange={(e) => {
                                         handleFirstWordSearchChange(e.target.value);
@@ -756,7 +757,7 @@ const Index = () => {
                                 <PopoverContent className="p-0 w-[300px]" align="start">
                                   <Command>
                                     <CommandInput 
-                                      placeholder="Search by emotion..." 
+                                      placeholder="Search by word..." 
                                       value={firstWordSearchValue}
                                       onValueChange={handleFirstWordSearchChange}
                                     />
@@ -822,7 +823,7 @@ const Index = () => {
                                     <div className="relative w-full">
                                       <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                       <Input 
-                                        placeholder="Search by emotion..." 
+                                        placeholder="Search by word..." 
                                         value={secondWordSearchValue}
                                         onChange={(e) => {
                                           handleSecondWordSearchChange(e.target.value);
@@ -836,7 +837,7 @@ const Index = () => {
                                   <PopoverContent className="p-0 w-[300px]" align="start">
                                     <Command>
                                       <CommandInput 
-                                        placeholder="Search by emotion..." 
+                                        placeholder="Search by word..." 
                                         value={secondWordSearchValue}
                                         onValueChange={handleSecondWordSearchChange}
                                       />
@@ -911,7 +912,7 @@ const Index = () => {
                                   <div className="relative w-full">
                                     <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input 
-                                      placeholder="Search by emotion..." 
+                                      placeholder="Search by word..." 
                                       value={secondWordSearchValue}
                                       onChange={(e) => {
                                         handleSecondWordSearchChange(e.target.value);
@@ -925,7 +926,7 @@ const Index = () => {
                                 <PopoverContent className="p-0 w-[300px]" align="start">
                                   <Command>
                                     <CommandInput 
-                                      placeholder="Search by emotion..." 
+                                      placeholder="Search by word..." 
                                       value={secondWordSearchValue}
                                       onValueChange={handleSecondWordSearchChange}
                                     />
@@ -1058,3 +1059,4 @@ const Index = () => {
 };
 
 export default Index;
+
