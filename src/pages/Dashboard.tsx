@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -329,6 +328,8 @@ const Dashboard = () => {
         setSentimentData(null);
         setSelectedPoint(null);
         setAnalysisComplete(false);
+        setCompareWords([]);
+        setCompareSearchResults([]);
       }
     }
   };
@@ -341,6 +342,8 @@ const Dashboard = () => {
 
     setIsAnalyzing(true);
     setAnalysisComplete(false);
+    setCompareWords([]);
+    setCompareSearchResults([]);
     
     try {
       const results = await analyzePdfContent(file, pdfText);
@@ -356,6 +359,8 @@ const Dashboard = () => {
         .sort();
       
       setUniqueWords(words);
+      
+      setCompareSearchResults(results.embeddingPoints.slice(0, 15));
       
       if (results.pdfTextLength > 0) {
         toast.success(`Analysis completed! Analyzed ${results.pdfTextLength} characters of text from your PDF.`);
@@ -521,6 +526,18 @@ const Dashboard = () => {
     
     setFilteredPoints(filtered);
   }, [searchTerm, sentimentData]);
+
+  useEffect(() => {
+    if (compareWords.length > 0 && activeTab !== "comparison") {
+      setActiveTab("comparison");
+    }
+  }, [compareWords]);
+
+  useEffect(() => {
+    if (sentimentData && sentimentData.embeddingPoints) {
+      setCompareSearchResults(sentimentData.embeddingPoints.slice(0, 15));
+    }
+  }, [sentimentData]);
 
   const handleClearSearch = () => {
     setSearchTerm("");
@@ -783,7 +800,12 @@ const Dashboard = () => {
                         <div className="flex items-center gap-2">
                           <Popover open={compareSearchOpen} onOpenChange={setCompareSearchOpen}>
                             <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-8">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8"
+                                disabled={!sentimentData || !sentimentData.embeddingPoints}
+                              >
                                 <Search className="h-4 w-4 mr-2" />
                                 Add Word
                               </Button>
@@ -846,7 +868,13 @@ const Dashboard = () => {
                         words={compareWords} 
                         onRemoveWord={handleRemoveFromComparison}
                         calculateRelationship={calculateRelationship}
-                        onAddWordClick={() => setCompareSearchOpen(true)}
+                        onAddWordClick={() => {
+                          if (sentimentData && sentimentData.embeddingPoints) {
+                            setCompareSearchOpen(true);
+                          } else {
+                            toast.error("Please analyze a document first");
+                          }
+                        }}
                       />
                     </CardContent>
                   </Card>
