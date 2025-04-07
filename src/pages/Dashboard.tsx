@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -202,7 +203,7 @@ const Dashboard = () => {
           )
         );
         
-        const shuffled = availablePoints.sort(() => 0.5 - Math.random());
+        const shuffled = [...availablePoints].sort(() => 0.5 - Math.random());
         const assignedPoints = shuffled.slice(0, Math.min(clusterSize, shuffled.length));
         
         clusterPointsMap[cluster.name] = assignedPoints;
