@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -184,7 +185,7 @@ const Dashboard = () => {
   const handleFileUpload = (files: File[]) => {
     if (files && files.length > 0) {
       setFile(files[0]);
-      toast.success(`File "${files[0].name}" uploaded successfully");
+      toast.success(`File "${files[0].name}" uploaded successfully`);
       // Reset sentiment data when a new file is uploaded
       if (sentimentData) {
         setSentimentData(null);
@@ -357,8 +358,7 @@ const Dashboard = () => {
                               </span>
                             </div>
                             
-                            {selectedPoint.relationships && selectedPoint.relationships.length >
-                             0 && (
+                            {selectedPoint.relationships && selectedPoint.relationships.length > 0 && (
                               <div>
                                 <h3 className="text-sm font-medium mt-3 mb-1">Related Words</h3>
                                 <ul className="text-sm">
