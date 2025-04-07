@@ -25,6 +25,12 @@ const Index = () => {
   const [focusWord, setFocusWord] = useState<string | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
   const [isComparing, setIsComparing] = useState(false);
+  const [firstWordSearchValue, setFirstWordSearchValue] = useState("");
+  const [firstWordSearchOpen, setFirstWordSearchOpen] = useState(false);
+  const [secondWordSearchValue, setSecondWordSearchValue] = useState("");
+  const [secondWordSearchOpen, setSecondWordSearchOpen] = useState(false);
+  const [firstWordSearchResults, setFirstWordSearchResults] = useState<Point[]>([]);
+  const [secondWordSearchResults, setSecondWordSearchResults] = useState<Point[]>([]);
 
   useEffect(() => {
     const checkForPoints = () => {
@@ -50,8 +56,6 @@ const Index = () => {
     if (!point) {
       setSelectedPoint(null);
       setFocusWord(null);
-      setIsComparing(false);
-      setComparisonPoint(null);
       toast.info("Point deselected");
       return;
     }
@@ -62,7 +66,6 @@ const Index = () => {
   };
   
   const handlePointCompare = (point1: Point, point2: Point) => {
-    setIsComparing(true);
     setComparisonPoint(point2);
     toast.info(`Comparing "${point1.word}" with "${point2.word}"`);
   };
@@ -104,6 +107,44 @@ const Index = () => {
     
     setSearchResults(results);
   };
+  
+  const handleFirstWordSearchChange = (value: string) => {
+    setFirstWordSearchValue(value);
+    
+    if (!value.trim()) {
+      setFirstWordSearchResults([]);
+      return;
+    }
+    
+    const results = points.filter(point => 
+      point.word.toLowerCase().includes(value.toLowerCase()) ||
+      (point.keywords && point.keywords.some(keyword => 
+        keyword.toLowerCase().includes(value.toLowerCase())
+      )) ||
+      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase()))
+    );
+    
+    setFirstWordSearchResults(results);
+  };
+  
+  const handleSecondWordSearchChange = (value: string) => {
+    setSecondWordSearchValue(value);
+    
+    if (!value.trim()) {
+      setSecondWordSearchResults([]);
+      return;
+    }
+    
+    const results = points.filter(point => 
+      point.word.toLowerCase().includes(value.toLowerCase()) ||
+      (point.keywords && point.keywords.some(keyword => 
+        keyword.toLowerCase().includes(value.toLowerCase())
+      )) ||
+      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase()))
+    );
+    
+    setSecondWordSearchResults(results);
+  };
 
   const handleSearchSelect = (point: Point) => {
     setSelectedPoint(point);
@@ -112,32 +153,44 @@ const Index = () => {
     toast(`Zooming to: "${point.word}"`);
   };
   
-  const handleClearComparison = () => {
-    setIsComparing(false);
+  const handleFirstWordSearchSelect = (point: Point) => {
+    setSelectedPoint(point);
+    setFocusWord(point.word);
+    setFirstWordSearchOpen(false);
+    toast(`Selected first word: "${point.word}"`);
+  };
+  
+  const handleSecondWordSearchSelect = (point: Point) => {
+    setComparisonPoint(point);
+    setSecondWordSearchOpen(false);
+    toast(`Selected second word: "${point.word}"`);
+  };
+  
+  const handleClearFirstWord = () => {
+    setSelectedPoint(null);
+    setFocusWord(null);
+    toast.info("First word cleared");
+  };
+  
+  const handleClearSecondWord = () => {
     setComparisonPoint(null);
-    toast.info("Comparison cleared");
+    toast.info("Second word cleared");
   };
 
   const handleVisualSearchSelect = (point: Point) => {
-    setSelectedPoint(point);
-    setFocusWord(point.word);
-    toast(`Zooming to: "${point.word}"`);
-  };
-
-  const toggleCompareMode = () => {
-    if (selectedPoint) {
-      setIsComparing(!isComparing);
-      if (!isComparing) {
-        setComparisonPoint(null);
-      }
-      toast.info(isComparing ? "Comparison mode disabled" : "Select a word to compare");
+    if (!selectedPoint) {
+      setSelectedPoint(point);
+      setFocusWord(point.word);
+      toast(`Selected: "${point.word}"`);
+    } else if (!comparisonPoint) {
+      setComparisonPoint(point);
+      toast(`Comparing with: "${point.word}"`);
     }
   };
 
   const handleClearSelection = () => {
     setSelectedPoint(null);
     setFocusWord(null);
-    setIsComparing(false);
     setComparisonPoint(null);
     toast.info("Selection cleared");
   };
@@ -251,7 +304,7 @@ const Index = () => {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={handleClearSelection}
+                            onClick={handleClearFirstWord}
                             className="h-6 w-6"
                             title="Clear selection"
                           >
@@ -266,6 +319,60 @@ const Index = () => {
                           <p className="text-xl bg-muted p-2 rounded flex items-center justify-center">
                             {selectedPoint.word}
                           </p>
+                        </div>
+                        <div className="w-full">
+                          <Popover open={firstWordSearchOpen} onOpenChange={setFirstWordSearchOpen}>
+                            <PopoverTrigger asChild>
+                              <div className="relative w-full">
+                                <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                  placeholder="Change first word..." 
+                                  value={firstWordSearchValue}
+                                  onChange={(e) => handleFirstWordSearchChange(e.target.value)}
+                                  className="pl-8 text-sm"
+                                  onClick={() => {
+                                    setFirstWordSearchOpen(true);
+                                    if (firstWordSearchValue.trim()) {
+                                      handleFirstWordSearchChange(firstWordSearchValue);
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent className="p-0 w-[300px]" align="start">
+                              <Command>
+                                <CommandInput 
+                                  placeholder="Search first word..." 
+                                  value={firstWordSearchValue}
+                                  onValueChange={handleFirstWordSearchChange}
+                                />
+                                <CommandList>
+                                  <CommandEmpty>No results found</CommandEmpty>
+                                  <CommandGroup>
+                                    {firstWordSearchResults.map((point) => (
+                                      <CommandItem
+                                        key={point.id}
+                                        onSelect={() => handleFirstWordSearchSelect(point)}
+                                        value={point.word}
+                                        className="flex items-center gap-2"
+                                      >
+                                        <div 
+                                          className="w-3 h-3 rounded-full flex-shrink-0" 
+                                          style={{ 
+                                            backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                          }} 
+                                        />
+                                        <span>{point.word}</span>
+                                        <span className="ml-auto text-xs text-muted-foreground">
+                                          {point.emotionalTone}
+                                        </span>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                         <div>
                           <h3 className="text-sm font-medium mb-1">Sentiment Analysis</h3>
@@ -312,26 +419,6 @@ const Index = () => {
                             </ul>
                           </div>
                         )}
-                        
-                        {!isComparing && (
-                          <Button
-                            onClick={toggleCompareMode}
-                            className="w-full"
-                          >
-                            Compare with another word
-                          </Button>
-                        )}
-                        
-                        {isComparing && (
-                          <Button 
-                            variant="outline" 
-                            onClick={handleClearComparison}
-                            className="w-full"
-                          >
-                            <RotateCcw className="h-3 w-3 mr-1" />
-                            Cancel comparison
-                          </Button>
-                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -351,112 +438,374 @@ const Index = () => {
               </div>
             </div>
             
-            {isComparing && selectedPoint && comparisonPoint && (
-              <Card className="mb-8 w-full max-w-6xl border border-border shadow-sm bg-card animate-fade-in">
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <GitCompareArrows className="h-5 w-5 text-orange-500" />
-                      Word Comparison
-                    </h3>
+            <Card className="mb-8 w-full max-w-6xl border border-border shadow-sm bg-card">
+              <CardContent className="pt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <GitCompareArrows className="h-5 w-5 text-orange-500" />
+                    Word Comparison
+                  </h3>
+                  {(selectedPoint || comparisonPoint) && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={handleClearComparison}
+                      onClick={handleClearSelection}
                       className="text-xs"
                     >
                       <RotateCcw className="h-3 w-3 mr-1" />
-                      Clear Comparison
+                      Clear All
                     </Button>
+                  )}
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="border rounded-md p-4 bg-background/50">
+                    {selectedPoint ? (
+                      <>
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded-full" 
+                              style={{ 
+                                backgroundColor: `rgb(${selectedPoint.color[0] * 255}, ${selectedPoint.color[1] * 255}, ${selectedPoint.color[2] * 255})` 
+                              }} 
+                            />
+                            <h4 className="text-xl font-bold">{selectedPoint.word}</h4>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleClearFirstWord}
+                            className="h-6 w-6"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div className="w-full mb-2">
+                            <Popover open={firstWordSearchOpen} onOpenChange={setFirstWordSearchOpen}>
+                              <PopoverTrigger asChild>
+                                <div className="relative w-full">
+                                  <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                                  <Input 
+                                    placeholder="Change first word..." 
+                                    value={firstWordSearchValue}
+                                    onChange={(e) => handleFirstWordSearchChange(e.target.value)}
+                                    className="pl-8 text-sm"
+                                    onClick={() => {
+                                      setFirstWordSearchOpen(true);
+                                      if (firstWordSearchValue.trim()) {
+                                        handleFirstWordSearchChange(firstWordSearchValue);
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-0 w-[300px]" align="start">
+                                <Command>
+                                  <CommandInput 
+                                    placeholder="Search first word..." 
+                                    value={firstWordSearchValue}
+                                    onValueChange={handleFirstWordSearchChange}
+                                  />
+                                  <CommandList>
+                                    <CommandEmpty>No results found</CommandEmpty>
+                                    <CommandGroup>
+                                      {firstWordSearchResults.map((point) => (
+                                        <CommandItem
+                                          key={point.id}
+                                          onSelect={() => handleFirstWordSearchSelect(point)}
+                                          value={point.word}
+                                          className="flex items-center gap-2"
+                                        >
+                                          <div 
+                                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                                            style={{ 
+                                              backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                            }} 
+                                          />
+                                          <span>{point.word}</span>
+                                          <span className="ml-auto text-xs text-muted-foreground">
+                                            {point.emotionalTone}
+                                          </span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                          
+                          <div>
+                            <p className="text-sm font-medium mb-1">Emotional Tone</p>
+                            <p className="bg-muted p-2 rounded-md text-center">
+                              {selectedPoint.emotionalTone || "Neutral"}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-sm font-medium mb-1">Sentiment Score</p>
+                            <p className="bg-muted p-2 rounded-md text-center">
+                              {selectedPoint.sentiment.toFixed(2)}
+                              {selectedPoint.sentiment >= 0.7 ? " (Very Positive)" : 
+                                selectedPoint.sentiment >= 0.5 ? " (Positive)" : 
+                                selectedPoint.sentiment >= 0.4 ? " (Neutral)" : 
+                                selectedPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
+                            </p>
+                          </div>
+                          
+                          {selectedPoint.keywords && selectedPoint.keywords.length > 0 && (
+                            <div>
+                              <p className="text-sm font-medium mb-1">Related Concepts</p>
+                              <div className="flex flex-wrap gap-1">
+                                {selectedPoint.keywords.map((keyword, idx) => (
+                                  <span key={idx} className="text-xs bg-muted px-2 py-1 rounded-full">{keyword}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center py-6">
+                        <div className="mb-3 p-3 rounded-full bg-muted/50">
+                          <InfoIcon className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">Click on a word to select it for comparison</p>
+                        <div className="w-full mt-4">
+                          <Popover open={firstWordSearchOpen} onOpenChange={setFirstWordSearchOpen}>
+                            <PopoverTrigger asChild>
+                              <div className="relative w-full">
+                                <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                  placeholder="Search for first word..." 
+                                  value={firstWordSearchValue}
+                                  onChange={(e) => handleFirstWordSearchChange(e.target.value)}
+                                  className="pl-8 text-sm"
+                                  onClick={() => {
+                                    setFirstWordSearchOpen(true);
+                                    if (firstWordSearchValue.trim()) {
+                                      handleFirstWordSearchChange(firstWordSearchValue);
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent className="p-0 w-[300px]" align="start">
+                              <Command>
+                                <CommandInput 
+                                  placeholder="Search first word..." 
+                                  value={firstWordSearchValue}
+                                  onValueChange={handleFirstWordSearchChange}
+                                />
+                                <CommandList>
+                                  <CommandEmpty>No results found</CommandEmpty>
+                                  <CommandGroup>
+                                    {firstWordSearchResults.map((point) => (
+                                      <CommandItem
+                                        key={point.id}
+                                        onSelect={() => handleFirstWordSearchSelect(point)}
+                                        value={point.word}
+                                        className="flex items-center gap-2"
+                                      >
+                                        <div 
+                                          className="w-3 h-3 rounded-full flex-shrink-0" 
+                                          style={{ 
+                                            backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                          }} 
+                                        />
+                                        <span>{point.word}</span>
+                                        <span className="ml-auto text-xs text-muted-foreground">
+                                          {point.emotionalTone}
+                                        </span>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="border rounded-md p-4 bg-background/50">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div 
-                          className="w-4 h-4 rounded-full" 
-                          style={{ 
-                            backgroundColor: `rgb(${selectedPoint.color[0] * 255}, ${selectedPoint.color[1] * 255}, ${selectedPoint.color[2] * 255})` 
-                          }} 
-                        />
-                        <h4 className="text-xl font-bold">{selectedPoint.word}</h4>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm font-medium mb-1">Emotional Tone</p>
-                          <p className="bg-muted p-2 rounded-md text-center">
-                            {selectedPoint.emotionalTone || "Neutral"}
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <p className="text-sm font-medium mb-1">Sentiment Score</p>
-                          <p className="bg-muted p-2 rounded-md text-center">
-                            {selectedPoint.sentiment.toFixed(2)}
-                            {selectedPoint.sentiment >= 0.7 ? " (Very Positive)" : 
-                              selectedPoint.sentiment >= 0.5 ? " (Positive)" : 
-                              selectedPoint.sentiment >= 0.4 ? " (Neutral)" : 
-                              selectedPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
-                          </p>
-                        </div>
-                        
-                        {selectedPoint.keywords && selectedPoint.keywords.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium mb-1">Related Concepts</p>
-                            <div className="flex flex-wrap gap-1">
-                              {selectedPoint.keywords.map((keyword, idx) => (
-                                <span key={idx} className="text-xs bg-muted px-2 py-1 rounded-full">{keyword}</span>
-                              ))}
-                            </div>
+                  <div className="border rounded-md p-4 bg-background/50">
+                    {comparisonPoint ? (
+                      <>
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded-full" 
+                              style={{ 
+                                backgroundColor: `rgb(${comparisonPoint.color[0] * 255}, ${comparisonPoint.color[1] * 255}, ${comparisonPoint.color[2] * 255})` 
+                              }} 
+                            />
+                            <h4 className="text-xl font-bold">{comparisonPoint.word}</h4>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="border rounded-md p-4 bg-background/50">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div 
-                          className="w-4 h-4 rounded-full" 
-                          style={{ 
-                            backgroundColor: `rgb(${comparisonPoint.color[0] * 255}, ${comparisonPoint.color[1] * 255}, ${comparisonPoint.color[2] * 255})` 
-                          }} 
-                        />
-                        <h4 className="text-xl font-bold">{comparisonPoint.word}</h4>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm font-medium mb-1">Emotional Tone</p>
-                          <p className="bg-muted p-2 rounded-md text-center">
-                            {comparisonPoint.emotionalTone || "Neutral"}
-                          </p>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleClearSecondWord}
+                            className="h-6 w-6"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
                         
-                        <div>
-                          <p className="text-sm font-medium mb-1">Sentiment Score</p>
-                          <p className="bg-muted p-2 rounded-md text-center">
-                            {comparisonPoint.sentiment.toFixed(2)}
-                            {comparisonPoint.sentiment >= 0.7 ? " (Very Positive)" : 
-                              comparisonPoint.sentiment >= 0.5 ? " (Positive)" : 
-                              comparisonPoint.sentiment >= 0.4 ? " (Neutral)" : 
-                              comparisonPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
-                          </p>
-                        </div>
-                        
-                        {comparisonPoint.keywords && comparisonPoint.keywords.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium mb-1">Related Concepts</p>
-                            <div className="flex flex-wrap gap-1">
-                              {comparisonPoint.keywords.map((keyword, idx) => (
-                                <span key={idx} className="text-xs bg-muted px-2 py-1 rounded-full">{keyword}</span>
-                              ))}
-                            </div>
+                        <div className="space-y-3">
+                          <div className="w-full mb-2">
+                            <Popover open={secondWordSearchOpen} onOpenChange={setSecondWordSearchOpen}>
+                              <PopoverTrigger asChild>
+                                <div className="relative w-full">
+                                  <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                                  <Input 
+                                    placeholder="Change second word..." 
+                                    value={secondWordSearchValue}
+                                    onChange={(e) => handleSecondWordSearchChange(e.target.value)}
+                                    className="pl-8 text-sm"
+                                    onClick={() => {
+                                      setSecondWordSearchOpen(true);
+                                      if (secondWordSearchValue.trim()) {
+                                        handleSecondWordSearchChange(secondWordSearchValue);
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-0 w-[300px]" align="start">
+                                <Command>
+                                  <CommandInput 
+                                    placeholder="Search second word..." 
+                                    value={secondWordSearchValue}
+                                    onValueChange={handleSecondWordSearchChange}
+                                  />
+                                  <CommandList>
+                                    <CommandEmpty>No results found</CommandEmpty>
+                                    <CommandGroup>
+                                      {secondWordSearchResults.map((point) => (
+                                        <CommandItem
+                                          key={point.id}
+                                          onSelect={() => handleSecondWordSearchSelect(point)}
+                                          value={point.word}
+                                          className="flex items-center gap-2"
+                                        >
+                                          <div 
+                                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                                            style={{ 
+                                              backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                            }} 
+                                          />
+                                          <span>{point.word}</span>
+                                          <span className="ml-auto text-xs text-muted-foreground">
+                                            {point.emotionalTone}
+                                          </span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                           </div>
-                        )}
+                          
+                          <div>
+                            <p className="text-sm font-medium mb-1">Emotional Tone</p>
+                            <p className="bg-muted p-2 rounded-md text-center">
+                              {comparisonPoint.emotionalTone || "Neutral"}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-sm font-medium mb-1">Sentiment Score</p>
+                            <p className="bg-muted p-2 rounded-md text-center">
+                              {comparisonPoint.sentiment.toFixed(2)}
+                              {comparisonPoint.sentiment >= 0.7 ? " (Very Positive)" : 
+                                comparisonPoint.sentiment >= 0.5 ? " (Positive)" : 
+                                comparisonPoint.sentiment >= 0.4 ? " (Neutral)" : 
+                                comparisonPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
+                            </p>
+                          </div>
+                          
+                          {comparisonPoint.keywords && comparisonPoint.keywords.length > 0 && (
+                            <div>
+                              <p className="text-sm font-medium mb-1">Related Concepts</p>
+                              <div className="flex flex-wrap gap-1">
+                                {comparisonPoint.keywords.map((keyword, idx) => (
+                                  <span key={idx} className="text-xs bg-muted px-2 py-1 rounded-full">{keyword}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center py-6">
+                        <div className="mb-3 p-3 rounded-full bg-muted/50">
+                          <InfoIcon className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">Click on a word to select it for comparison</p>
+                        <div className="w-full mt-4">
+                          <Popover open={secondWordSearchOpen} onOpenChange={setSecondWordSearchOpen}>
+                            <PopoverTrigger asChild>
+                              <div className="relative w-full">
+                                <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                  placeholder="Search for second word..." 
+                                  value={secondWordSearchValue}
+                                  onChange={(e) => handleSecondWordSearchChange(e.target.value)}
+                                  className="pl-8 text-sm"
+                                  onClick={() => {
+                                    setSecondWordSearchOpen(true);
+                                    if (secondWordSearchValue.trim()) {
+                                      handleSecondWordSearchChange(secondWordSearchValue);
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent className="p-0 w-[300px]" align="start">
+                              <Command>
+                                <CommandInput 
+                                  placeholder="Search second word..." 
+                                  value={secondWordSearchValue}
+                                  onValueChange={handleSecondWordSearchChange}
+                                />
+                                <CommandList>
+                                  <CommandEmpty>No results found</CommandEmpty>
+                                  <CommandGroup>
+                                    {secondWordSearchResults.map((point) => (
+                                      <CommandItem
+                                        key={point.id}
+                                        onSelect={() => handleSecondWordSearchSelect(point)}
+                                        value={point.word}
+                                        className="flex items-center gap-2"
+                                      >
+                                        <div 
+                                          className="w-3 h-3 rounded-full flex-shrink-0" 
+                                          style={{ 
+                                            backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                          }} 
+                                        />
+                                        <span>{point.word}</span>
+                                        <span className="ml-auto text-xs text-muted-foreground">
+                                          {point.emotionalTone}
+                                        </span>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
                       </div>
-                    </div>
-                    
+                    )}
+                  </div>
+                  
+                  {selectedPoint && comparisonPoint && (
                     <div className="md:col-span-2 border border-dashed border-orange-300 rounded-md p-4 bg-orange-50 dark:bg-orange-950/20">
                       <h4 className="text-sm font-medium mb-2 text-orange-700 dark:text-orange-400">Relationship Analysis</h4>
                       
@@ -513,10 +862,10 @@ const Index = () => {
                         </div>
                       )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  )}
+                </div>
+              </CardContent>
+            </Card>
             
             <Button asChild size="lg" className="rounded-md mt-4">
               <Link to="/dashboard" className="flex items-center gap-2">
