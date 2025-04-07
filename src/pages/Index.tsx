@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, CircleDot, Search } from "lucide-react";
 import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
 import { toast } from "sonner";
@@ -103,7 +102,7 @@ const Index = () => {
         <div className="container mx-auto max-w-7xl px-4 py-10 md:py-16">
           <div className="flex flex-col items-center">
             <h1 className="text-3xl md:text-5xl font-bold text-center mb-6 text-foreground">
-              Panic Attack Analysis
+              Journal Analysis Tool
             </h1>
             <p className="text-lg text-gray-400 max-w-2xl text-center mb-8">
               Visual analysis of anxiety and emotional patterns in a panic attack journal entry
@@ -262,8 +261,6 @@ const Index = () => {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 };
