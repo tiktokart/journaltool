@@ -38,6 +38,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const pointsRef = useRef<THREE.Points | null>(null);
+  const linesRef = useRef<THREE.LineSegments | null>(null);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -187,6 +188,73 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       }
     };
   }, [points, isInteractive, onPointSelect, onPointHover, containerRef]);
+
+  // Add lines between connected points
+  useEffect(() => {
+    const scene = sceneRef.current;
+    
+    // Remove old lines
+    if (linesRef.current) {
+      scene.remove(linesRef.current);
+      linesRef.current = null;
+    }
+    
+    if (connectedPoints.length === 0 || !focusOnWord) return;
+    
+    // Find the source point (the focused point)
+    const sourcePoint = points.find(p => p.word === focusOnWord);
+    if (!sourcePoint) return;
+    
+    const lineVertices: number[] = [];
+    const lineColors: number[] = [];
+    
+    // Create lines from the source point to each connected point
+    connectedPoints.forEach(connectedPoint => {
+      // Source point coordinates
+      lineVertices.push(
+        sourcePoint.position[0],
+        sourcePoint.position[1],
+        sourcePoint.position[2]
+      );
+      
+      // Connected point coordinates
+      lineVertices.push(
+        connectedPoint.position[0],
+        connectedPoint.position[1],
+        connectedPoint.position[2]
+      );
+      
+      // Source point color
+      lineColors.push(
+        sourcePoint.color[0],
+        sourcePoint.color[1],
+        sourcePoint.color[2]
+      );
+      
+      // Connected point color
+      lineColors.push(
+        connectedPoint.color[0],
+        connectedPoint.color[1],
+        connectedPoint.color[2]
+      );
+    });
+    
+    if (lineVertices.length > 0) {
+      const linesGeometry = new THREE.BufferGeometry();
+      linesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(lineVertices, 3));
+      linesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3));
+      
+      const linesMaterial = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        linewidth: 2,
+        transparent: true,
+        opacity: 0.7
+      });
+      
+      linesRef.current = new THREE.LineSegments(linesGeometry, linesMaterial);
+      scene.add(linesRef.current);
+    }
+  }, [points, connectedPoints, focusOnWord]);
 
   const focusOnPoint = useCallback((targetPoint: Point | null) => {
     if (!targetPoint || !cameraRef.current || !controlsRef.current) return;
