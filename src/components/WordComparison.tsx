@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,21 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
   onAddWordClick,
   sourceDescription
 }) => {
+  // Handle document clicks to close any open dropdowns
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      // This component doesn't have any dropdowns of its own,
+      // but we're adding this for future-proofing
+      // and consistency with the overall click-outside behavior
+    };
+    
+    document.addEventListener('mousedown', handleDocumentClick);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentClick);
+    };
+  }, []);
+
   if (words.length === 0) {
     return (
       <div className="py-12 flex flex-col items-center justify-center text-center">

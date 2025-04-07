@@ -400,7 +400,8 @@ const Dashboard = () => {
   const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
   const [resourcesTab, setResourcesTab] = useState("wellbeing");
   const [visibleClusterCount, setVisibleClusterCount] = useState(8);
-  
+  const searchDropdownRef = useRef<HTMLDivElement>(null);
+
   const handleFileUpload = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
       setFile(files[0]);
@@ -636,6 +637,39 @@ const Dashboard = () => {
     }
   }, [sentimentData]);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if ((event.target as HTMLElement).closest('[data-radix-popper-content-wrapper]') === null &&
+          !(event.target as HTMLElement).closest('button')?.contains(document.querySelector('[aria-haspopup="dialog"]'))) {
+        setCompareSearchOpen(false);
+      }
+    }
+
+    if (compareSearchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [compareSearchOpen]);
+
   const handleClearSearch = () => {
     setSearchTerm("");
     setSelectedWord(null);
@@ -772,7 +806,10 @@ const Dashboard = () => {
                               )}
                             </div>
                             {uniqueWords.length > 0 && open && (
-                              <div className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto">
+                              <div 
+                                ref={searchDropdownRef}
+                                className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
+                              >
                                 <Command>
                                   <CommandInput 
                                     placeholder="Search words..." 
@@ -900,7 +937,10 @@ const Dashboard = () => {
                       </CardTitle>
                       
                       <div className="flex gap-2">
-                        <Popover open={compareSearchOpen} onOpenChange={setCompareSearchOpen}>
+                        <Popover 
+                          open={compareSearchOpen} 
+                          onOpenChange={setCompareSearchOpen}
+                        >
                           <PopoverTrigger asChild>
                             <Button variant="outline" size="sm" className="h-9">
                               <Search className="h-4 w-4 mr-2" />
