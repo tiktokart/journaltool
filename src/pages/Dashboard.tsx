@@ -31,7 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
-const analyzePdfContent = async (pdfText) => {
+const analyzePdfContent = async (pdfText: string) => {
   // Simulate API call to analyze sentiment
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -132,40 +132,40 @@ const mentalHealthResources = [
 ];
 
 const Dashboard = () => {
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [pdfText, setPdfText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [sentimentData, setSentimentData] = useState(null);
-  const [points, setPoints] = useState([]);
-  const [selectedWord, setSelectedWord] = useState(null);
-  const [selectedPoint, setSelectedPoint] = useState(null);
-  const [comparisonWord, setComparisonWord] = useState(null);
-  const [comparisonPoint, setComparisonPoint] = useState(null);
+  const [sentimentData, setSentimentData] = useState<any>(null);
+  const [points, setPoints] = useState<Point[]>([]);
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const [comparisonWord, setComparisonWord] = useState<string | null>(null);
+  const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
-  const [uniqueWords, setUniqueWords] = useState([]);
+  const [uniqueWords, setUniqueWords] = useState<string[]>([]);
   const [visibleClusterCount, setVisibleClusterCount] = useState(5);
-  const searchDropdownRef = useRef(null);
+  const searchDropdownRef = useRef<HTMLDivElement | null>(null);
   const [showComparison, setShowComparison] = useState(false);
-  const [emotionalClusters, setEmotionalClusters] = useState([]);
-  const [clusterColors, setClusterColors] = useState({});
-  const [clusterExpanded, setClusterExpanded] = useState({});
-  const [clusterPoints, setClusterPoints] = useState({});
-  const [filteredPoints, setFilteredPoints] = useState([]);
-  const [selectedCluster, setSelectedCluster] = useState(null);
+  const [emotionalClusters, setEmotionalClusters] = useState<any[]>([]);
+  const [clusterColors, setClusterColors] = useState<Record<string, string>>({});
+  const [clusterExpanded, setClusterExpanded] = useState<Record<string, boolean>>({});
+  const [clusterPoints, setClusterPoints] = useState<Record<string, Point[]>>({});
+  const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
+  const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
   const [comparisonSearchTerm, setComparisonSearchTerm] = useState("");
   const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
-  const comparisonSearchRef = useRef(null);
+  const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
   const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true);
 
   useEffect(() => {
     // Close search dropdown when clicking outside
-    const handleClickOutside = (event) => {
-      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
         setOpen(false);
       }
       
-      if (comparisonSearchRef.current && !comparisonSearchRef.current.contains(event.target)) {
+      if (comparisonSearchRef.current && !comparisonSearchRef.current.contains(event.target as Node)) {
         setComparisonSearchOpen(false);
       }
     };
@@ -188,7 +188,7 @@ const Dashboard = () => {
       setUniqueWords([...new Set(words)]);
       
       // Generate emotional clusters
-      const clusters = sentimentData.clusters.map((cluster, index) => {
+      const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
         return {
           ...cluster,
@@ -200,26 +200,26 @@ const Dashboard = () => {
       setEmotionalClusters(clusters);
       
       // Initialize cluster colors
-      const colorMap = {};
-      clusters.forEach(cluster => {
+      const colorMap: Record<string, string> = {};
+      clusters.forEach((cluster: any) => {
         colorMap[cluster.name] = cluster.color;
       });
       setClusterColors(colorMap);
       
       // Initialize cluster expanded state
-      const expandedMap = {};
-      clusters.forEach(cluster => {
+      const expandedMap: Record<string, boolean> = {};
+      clusters.forEach((cluster: any) => {
         expandedMap[cluster.name] = false;
       });
       setClusterExpanded(expandedMap);
       
       // Assign points to clusters
-      const clusterPointsMap = {};
-      clusters.forEach(cluster => {
+      const clusterPointsMap: Record<string, Point[]> = {};
+      clusters.forEach((cluster: any) => {
         // Randomly assign points to clusters for demo
         const clusterSize = cluster.size;
         const assignedPoints = mockPoints
-          .filter(p => !Object.values(clusterPointsMap).flat().includes(p))
+          .filter(p => !Object.values(clusterPointsMap).flat().some(cp => cp.id === p.id))
           .sort(() => 0.5 - Math.random())
           .slice(0, clusterSize);
         
@@ -229,7 +229,7 @@ const Dashboard = () => {
     }
   }, [sentimentData, pdfText]);
 
-  const handleFileUpload = (files) => {
+  const handleFileUpload = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
       const file = files[0];
       setFile(file);
@@ -242,6 +242,12 @@ const Dashboard = () => {
         setPdfText(mockText);
       };
       reader.readAsText(file);
+      
+      if (extractedText) {
+        setPdfText(extractedText);
+        const wordCount = extractedText.split(/\s+/).length;
+        toast.info(`Extracted ${wordCount} words from PDF for analysis`);
+      }
     }
   };
 
@@ -266,7 +272,7 @@ const Dashboard = () => {
     }
   };
 
-  const handlePointClick = (point) => {
+  const handlePointClick = (point: Point | null) => {
     if (point) {
       setSelectedWord(point.word);
       setSelectedPoint(point);
@@ -277,7 +283,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleSelectWord = (word) => {
+  const handleSelectWord = (word: string) => {
     const point = points.find(p => p.word === word);
     if (point) {
       setSelectedWord(word);
@@ -306,7 +312,7 @@ const Dashboard = () => {
     setShowComparison(true);
   };
 
-  const handleSelectComparisonWord = (word) => {
+  const handleSelectComparisonWord = (word: string) => {
     const point = points.find(p => p.word === word);
     if (point) {
       setComparisonWord(word);
@@ -323,14 +329,14 @@ const Dashboard = () => {
     setShowComparison(false);
   };
 
-  const toggleClusterExpanded = (clusterName) => {
+  const toggleClusterExpanded = (clusterName: string) => {
     setClusterExpanded(prev => ({
       ...prev,
       [clusterName]: !prev[clusterName]
     }));
   };
 
-  const handleSelectCluster = (cluster) => {
+  const handleSelectCluster = (cluster: any) => {
     if (selectedCluster === cluster.name) {
       // Deselect if already selected
       setSelectedCluster(null);
@@ -344,7 +350,7 @@ const Dashboard = () => {
     }
   };
 
-  const calculateRelationship = (point1, point2) => {
+  const calculateRelationship = (point1: Point, point2: Point) => {
     if (!point1 || !point2) return null;
     
     // Calculate Euclidean distance between points in 3D space
@@ -553,7 +559,7 @@ const Dashboard = () => {
               </Card>
               
               {/* Other analysis tabs */}
-              <Tabs value="overview" className="space-y-4">
+              <Tabs defaultValue="overview" className="space-y-4">
                 <div className="overflow-x-auto">
                   <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto">
                     <TabsTrigger value="overview" className="min-w-max">Overview</TabsTrigger>
