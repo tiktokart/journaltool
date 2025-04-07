@@ -147,7 +147,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         prevScore = newScore;
       }
 
-      const themeNames = [
+      let themeNames = [
         "Work", "Family", "Health", "Relationships", 
         "Future", "Goals", "Education", "Friends",
         "Hobbies", "Travel", "Home", "Money"
