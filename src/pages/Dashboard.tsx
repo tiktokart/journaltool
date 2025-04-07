@@ -31,8 +31,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
-// Analyzer function that takes pdfText and filename to generate mock analysis data
-// Fixed TypeScript issue: argument types and return type
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
@@ -185,21 +183,18 @@ const Dashboard = () => {
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
-      // Fixed: Better handling of pdfText and word extraction
       const allWords = pdfText
         .split(/\s+/)
         .filter(word => word.length > 2)
         .map(word => word.replace(/[^\w\s]|_/g, "").toLowerCase())
         .filter(Boolean);
       
-      // Use a Set to store unique words then convert back to array
       const uniqueWordsSet = new Set(allWords);
       const uniqueWordsArray = Array.from(uniqueWordsSet);
       setUniqueWords(uniqueWordsArray);
       
       console.log(`Total unique words found: ${uniqueWordsArray.length}`);
       
-      // Handle clusters
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
         return {
@@ -211,32 +206,27 @@ const Dashboard = () => {
       
       setEmotionalClusters(clusters);
       
-      // Set up color map for clusters
       const colorMap: Record<string, string> = {};
       clusters.forEach((cluster: any) => {
         colorMap[cluster.name] = cluster.color;
       });
       setClusterColors(colorMap);
       
-      // Initialize expanded state for clusters
       const expandedMap: Record<string, boolean> = {};
       clusters.forEach((cluster: any) => {
         expandedMap[cluster.name] = false;
       });
       setClusterExpanded(expandedMap);
       
-      // Assign points to clusters
       const clusterPointsMap: Record<string, Point[]> = {};
       clusters.forEach((cluster: any) => {
         const clusterSize = cluster.size;
-        // Fix spread operator issue - filter points that haven't been assigned yet
         const availablePoints = mockPoints.filter(p => 
           !Object.values(clusterPointsMap).some(assignedPoints => 
             assignedPoints.some(ap => ap.id === p.id)
           )
         );
         
-        // Get random subset for this cluster
         const shuffled = availablePoints.sort(() => 0.5 - Math.random());
         const assignedPoints = shuffled.slice(0, Math.min(clusterSize, shuffled.length));
         
@@ -792,4 +782,68 @@ const Dashboard = () => {
                               </div>
                               <div className="space-y-2 text-sm">
                                 <div>
-                                  <span className="font-medium">Emotion:
+                                  <span className="font-medium">Emotion: </span>
+                                  <span>{comparisonPoint.emotionalTone || "Neutral"}</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Sentiment: </span>
+                                  <span>
+                                    {comparisonPoint.sentiment.toFixed(2)}
+                                    {comparisonPoint.sentiment >= 0.7 ? " (Very Positive)" : 
+                                      comparisonPoint.sentiment >= 0.5 ? " (Positive)" : 
+                                      comparisonPoint.sentiment >= 0.4 ? " (Neutral)" : 
+                                      comparisonPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
+                                  </span>
+                                </div>
+                                {comparisonPoint.keywords && comparisonPoint.keywords.length > 0 && (
+                                  <div>
+                                    <span className="font-medium">Related concepts: </span>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {comparisonPoint.keywords.map((keyword, idx) => (
+                                        <Badge key={idx} variant="outline" className="text-xs">
+                                          {keyword}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="border rounded-md p-3 bg-muted/30 flex items-center justify-center">
+                              <div className="text-sm text-muted-foreground text-center">
+                                <div className="mb-2">
+                                  <ArrowLeftRight className="h-10 w-10 mx-auto text-muted-foreground/50" />
+                                </div>
+                                <p>Click "Compare" to select another word and see their relationship</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {comparisonPoint && selectedPoint && (
+                          <WordComparison 
+                            point1={selectedPoint} 
+                            point2={comparisonPoint} 
+                            relationship={calculateRelationship(selectedPoint, comparisonPoint)}
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground">
+                        <GitCompareArrows className="h-12 w-12 mb-3 text-muted-foreground/50" />
+                        <p>Select a word from the visualization or search to see its emotional properties</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
