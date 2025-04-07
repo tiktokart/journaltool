@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -243,7 +244,7 @@ const Dashboard = () => {
     if (files && files.length > 0) {
       setFile(files[0]);
       setPdfText(pdfText || "");
-      toast.success(`File "${files[0].name}" uploaded successfully");
+      toast.success(`File "${files[0].name}" uploaded successfully`);
       if (sentimentData) {
         setSentimentData(null);
         setSelectedPoint(null);
