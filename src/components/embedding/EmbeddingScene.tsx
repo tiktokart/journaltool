@@ -15,6 +15,8 @@ interface EmbeddingSceneProps {
   depressedJournalReference?: boolean;
   connectedPoints?: Point[];
   selectedPoint?: Point | null;
+  comparisonPoint?: Point | null;
+  isCompareMode?: boolean;
 }
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
@@ -26,7 +28,9 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   onPointSelect,
   focusOnWord,
   connectedPoints = [],
-  selectedPoint
+  selectedPoint,
+  comparisonPoint,
+  isCompareMode = false
 }) => {
   // Use internal refs if external ones aren't provided
   const internalContainerRef = useRef<HTMLDivElement>(null);
@@ -40,6 +44,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const controlsRef = useRef<OrbitControls | null>(null);
   const pointsRef = useRef<THREE.Points | null>(null);
   const linesRef = useRef<THREE.LineSegments | null>(null);
+  const comparisonLinesRef = useRef<THREE.LineSegments | null>(null);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -114,22 +119,58 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
     const vertices: number[] = [];
     const colors: number[] = [];
+    const sizes: number[] = [];
 
     points.forEach(point => {
       vertices.push(point.position[0], point.position[1], point.position[2]);
-      colors.push(point.color[0], point.color[1], point.color[2]);
+      
+      // Highlight special points (selected or comparison)
+      const isSelected = selectedPoint && point.id === selectedPoint.id;
+      const isComparison = comparisonPoint && point.id === comparisonPoint.id;
+      const isCompareMode = isCompareMode && selectedPoint && point.id === selectedPoint.id;
+      
+      if (isSelected || isComparison) {
+        // Make selected/comparison points brighter
+        colors.push(
+          Math.min(1, point.color[0] * 1.5), 
+          Math.min(1, point.color[1] * 1.5), 
+          Math.min(1, point.color[2] * 1.5)
+        );
+        sizes.push(0.15); // Make them bigger
+      } else {
+        colors.push(point.color[0], point.color[1], point.color[2]);
+        sizes.push(0.1); // Regular size
+      }
     });
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    
+    // Add size attribute
+    geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
 
     const material = new THREE.PointsMaterial({
       size: 0.1,
       vertexColors: true,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.8,
+      sizeAttenuation: true
     });
+
+    // Custom shader to handle different sizes
+    material.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          'void main() {',
+          `attribute float size;
+           void main() {`
+        )
+        .replace(
+          'gl_PointSize = size;',
+          'gl_PointSize = size * 150.0;'
+        );
+    };
 
     pointsRef.current = new THREE.Points(geometry, material);
     scene.add(pointsRef.current);
@@ -173,8 +214,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         const pointIndex = intersects[0].index;
         const clickedPoint = points[pointIndex];
         
-        // Check if we're clicking on the already selected point
-        if (selectedPoint && clickedPoint.id === selectedPoint.id) {
+        // Check if we're clicking on the already selected point and not in compare mode
+        if (!isCompareMode && selectedPoint && clickedPoint.id === selectedPoint.id) {
           // Deselect the point
           if (onPointSelect) {
             onPointSelect(null);
@@ -199,8 +240,9 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         containerRef.current.removeEventListener('mousemove', handleMouseMove);
       }
     };
-  }, [points, isInteractive, onPointSelect, onPointHover, containerRef, selectedPoint]);
+  }, [points, isInteractive, onPointSelect, onPointHover, containerRef, selectedPoint, comparisonPoint, isCompareMode]);
 
+  // Handle connection lines for the primary selected point
   useEffect(() => {
     const scene = sceneRef.current;
     
@@ -270,6 +312,59 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       }
     }
   }, [points, connectedPoints, focusOnWord]);
+
+  // Add lines between selected and comparison points when in comparison mode
+  useEffect(() => {
+    const scene = sceneRef.current;
+    
+    // Remove old comparison lines
+    if (comparisonLinesRef.current) {
+      scene.remove(comparisonLinesRef.current);
+      comparisonLinesRef.current = null;
+    }
+    
+    if (!selectedPoint || !comparisonPoint) return;
+    
+    const lineVertices: number[] = [];
+    const lineColors: number[] = [];
+    
+    // Add a connection line between selected and comparison points
+    lineVertices.push(
+      selectedPoint.position[0],
+      selectedPoint.position[1],
+      selectedPoint.position[2]
+    );
+    
+    lineVertices.push(
+      comparisonPoint.position[0],
+      comparisonPoint.position[1],
+      comparisonPoint.position[2]
+    );
+    
+    // Use a distinct color for comparison line (orange)
+    lineColors.push(1.0, 0.5, 0.0);
+    lineColors.push(1.0, 0.5, 0.0);
+    
+    if (lineVertices.length > 0) {
+      const linesGeometry = new THREE.BufferGeometry();
+      linesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(lineVertices, 3));
+      linesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3));
+      
+      const linesMaterial = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        linewidth: 5,
+        transparent: true,
+        opacity: 1.0
+      });
+      
+      comparisonLinesRef.current = new THREE.LineSegments(linesGeometry, linesMaterial);
+      scene.add(comparisonLinesRef.current);
+      
+      if (rendererRef.current && cameraRef.current) {
+        rendererRef.current.render(scene, cameraRef.current);
+      }
+    }
+  }, [selectedPoint, comparisonPoint]);
 
   const focusOnPoint = useCallback((targetPoint: Point | null) => {
     if (!targetPoint || !cameraRef.current || !controlsRef.current) return;

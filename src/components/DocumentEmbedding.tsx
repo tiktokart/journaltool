@@ -13,13 +13,16 @@ export const DocumentEmbedding = ({
   onPointClick, 
   isInteractive = true,
   depressedJournalReference = false,
-  focusOnWord = null
+  focusOnWord = null,
+  onComparePoint
 }: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
+  const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
   const [currentFocusWord, setCurrentFocusWord] = useState<string | null>(null);
   const [generatedPoints, setGeneratedPoints] = useState<Point[]>([]);
   const [displayPoints, setDisplayPoints] = useState<Point[]>([]);
@@ -91,11 +94,24 @@ export const DocumentEmbedding = ({
   };
   
   const handlePointSelect = (point: Point | null) => {
+    if (isCompareMode) {
+      // In compare mode, second click selects comparison point
+      setComparisonPoint(point);
+      setIsCompareMode(false);
+      
+      if (onComparePoint && selectedPoint && point) {
+        onComparePoint(selectedPoint, point);
+      }
+      
+      return;
+    }
+    
     setSelectedPoint(point);
     
     if (!point) {
       // Point was deselected
       setConnectedPoints([]);
+      setComparisonPoint(null);
       if (onPointClick) {
         // Pass null to parent to indicate deselection
         onPointClick(null);
@@ -123,6 +139,16 @@ export const DocumentEmbedding = ({
     }
   };
   
+  const toggleCompareMode = () => {
+    if (selectedPoint) {
+      setIsCompareMode(!isCompareMode);
+      if (!isCompareMode) {
+        // Entering compare mode
+        setComparisonPoint(null); // Reset comparison point
+      }
+    }
+  };
+  
   return (
     <div className="relative w-full h-full">
       <div 
@@ -141,13 +167,30 @@ export const DocumentEmbedding = ({
         focusOnWord={currentFocusWord}
         connectedPoints={connectedPoints}
         selectedPoint={selectedPoint}
+        comparisonPoint={comparisonPoint}
+        isCompareMode={isCompareMode}
       />
       
       {isInteractive && (
-        <ZoomControls 
-          onZoomIn={handleZoomIn} 
-          onZoomOut={handleZoomOut} 
-        />
+        <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
+          <ZoomControls 
+            onZoomIn={handleZoomIn} 
+            onZoomOut={handleZoomOut} 
+          />
+          
+          {selectedPoint && (
+            <button
+              onClick={toggleCompareMode}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs ${
+                isCompareMode 
+                  ? "bg-orange-500 text-white" 
+                  : "bg-muted text-foreground"
+              }`}
+            >
+              {isCompareMode ? "Selecting comparison..." : "Compare with another word"}
+            </button>
+          )}
+        </div>
       )}
       
       {hoveredPoint && (

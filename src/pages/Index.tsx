@@ -1,7 +1,8 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, CircleDot, Search } from "lucide-react";
+import { ArrowRight, CircleDot, Search, RotateCcw, CompareArrows } from "lucide-react";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
@@ -15,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 const Index = () => {
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [searchValue, setSearchValue] = useState("");
@@ -22,6 +24,7 @@ const Index = () => {
   const [searchResults, setSearchResults] = useState<Point[]>([]);
   const [focusWord, setFocusWord] = useState<string | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
+  const [isComparing, setIsComparing] = useState(false);
 
   useEffect(() => {
     const checkForPoints = () => {
@@ -47,6 +50,8 @@ const Index = () => {
     if (!point) {
       setSelectedPoint(null);
       setFocusWord(null);
+      setIsComparing(false);
+      setComparisonPoint(null);
       toast.info("Point deselected");
       return;
     }
@@ -54,6 +59,12 @@ const Index = () => {
     setSelectedPoint(point);
     setFocusWord(point.word);
     toast(`Selected: "${point.word}" (${point.emotionalTone || 'Neutral'})`);
+  };
+  
+  const handlePointCompare = (point1: Point, point2: Point) => {
+    setIsComparing(true);
+    setComparisonPoint(point2);
+    toast.info(`Comparing "${point1.word}" with "${point2.word}"`);
   };
 
   const handleSearchChange = (value: string) => {
@@ -99,6 +110,12 @@ const Index = () => {
     setFocusWord(point.word);
     setOpen(false);
     toast(`Zooming to: "${point.word}"`);
+  };
+  
+  const handleClearComparison = () => {
+    setIsComparing(false);
+    setComparisonPoint(null);
+    toast.info("Comparison cleared");
   };
 
   return (
@@ -192,11 +209,181 @@ const Index = () => {
                   depressedJournalReference={true} 
                   onPointClick={handlePointClick}
                   focusOnWord={focusWord}
+                  onComparePoint={handlePointCompare}
                 />
               </div>
             </div>
             
-            {selectedPoint && (
+            {isComparing && selectedPoint && comparisonPoint ? (
+              <Card className="mb-8 w-full max-w-6xl border border-border shadow-sm bg-card animate-fade-in">
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <CompareArrows className="h-5 w-5 text-orange-500" />
+                      Word Comparison
+                    </h3>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleClearComparison}
+                      className="text-xs"
+                    >
+                      <RotateCcw className="h-3 w-3 mr-1" />
+                      Clear Comparison
+                    </Button>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* First Point */}
+                    <div className="border rounded-md p-4 bg-background/50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ 
+                            backgroundColor: `rgb(${selectedPoint.color[0] * 255}, ${selectedPoint.color[1] * 255}, ${selectedPoint.color[2] * 255})` 
+                          }} 
+                        />
+                        <h4 className="text-xl font-bold">{selectedPoint.word}</h4>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium mb-1">Emotional Tone</p>
+                          <p className="bg-muted p-2 rounded-md text-center">
+                            {selectedPoint.emotionalTone || "Neutral"}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm font-medium mb-1">Sentiment Score</p>
+                          <p className="bg-muted p-2 rounded-md text-center">
+                            {selectedPoint.sentiment.toFixed(2)}
+                            {selectedPoint.sentiment >= 0.7 ? " (Very Positive)" : 
+                              selectedPoint.sentiment >= 0.5 ? " (Positive)" : 
+                              selectedPoint.sentiment >= 0.4 ? " (Neutral)" : 
+                              selectedPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
+                          </p>
+                        </div>
+                        
+                        {selectedPoint.keywords && selectedPoint.keywords.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-1">Related Concepts</p>
+                            <div className="flex flex-wrap gap-1">
+                              {selectedPoint.keywords.map((keyword, idx) => (
+                                <span key={idx} className="text-xs bg-muted px-2 py-1 rounded-full">{keyword}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Second Point */}
+                    <div className="border rounded-md p-4 bg-background/50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ 
+                            backgroundColor: `rgb(${comparisonPoint.color[0] * 255}, ${comparisonPoint.color[1] * 255}, ${comparisonPoint.color[2] * 255})` 
+                          }} 
+                        />
+                        <h4 className="text-xl font-bold">{comparisonPoint.word}</h4>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium mb-1">Emotional Tone</p>
+                          <p className="bg-muted p-2 rounded-md text-center">
+                            {comparisonPoint.emotionalTone || "Neutral"}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm font-medium mb-1">Sentiment Score</p>
+                          <p className="bg-muted p-2 rounded-md text-center">
+                            {comparisonPoint.sentiment.toFixed(2)}
+                            {comparisonPoint.sentiment >= 0.7 ? " (Very Positive)" : 
+                              comparisonPoint.sentiment >= 0.5 ? " (Positive)" : 
+                              comparisonPoint.sentiment >= 0.4 ? " (Neutral)" : 
+                              comparisonPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
+                          </p>
+                        </div>
+                        
+                        {comparisonPoint.keywords && comparisonPoint.keywords.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-1">Related Concepts</p>
+                            <div className="flex flex-wrap gap-1">
+                              {comparisonPoint.keywords.map((keyword, idx) => (
+                                <span key={idx} className="text-xs bg-muted px-2 py-1 rounded-full">{keyword}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Comparison Analysis */}
+                    <div className="md:col-span-2 border border-dashed border-orange-300 rounded-md p-4 bg-orange-50 dark:bg-orange-950/20">
+                      <h4 className="text-sm font-medium mb-2 text-orange-700 dark:text-orange-400">Relationship Analysis</h4>
+                      
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-medium mb-1">Sentiment Difference</p>
+                          <div className="flex items-center justify-between gap-2 bg-white dark:bg-black/20 p-2 rounded-md">
+                            <span className="text-sm">{selectedPoint.word}: {selectedPoint.sentiment.toFixed(2)}</span>
+                            <span className="text-sm font-bold">
+                              {Math.abs(selectedPoint.sentiment - comparisonPoint.sentiment).toFixed(2)} 
+                              <span className="text-xs ml-1 font-normal text-muted-foreground">difference</span>
+                            </span>
+                            <span className="text-sm">{comparisonPoint.word}: {comparisonPoint.sentiment.toFixed(2)}</span>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <p className="text-xs font-medium mb-1">Emotional Connection</p>
+                          <div className="bg-white dark:bg-black/20 p-2 rounded-md">
+                            <p className="text-sm text-center">
+                              {selectedPoint.emotionalTone === comparisonPoint.emotionalTone ? 
+                                `Both words share the same emotional tone: ${selectedPoint.emotionalTone || "Neutral"}` : 
+                                `Different emotional tones: "${selectedPoint.word}" is ${selectedPoint.emotionalTone || "Neutral"} while "${comparisonPoint.word}" is ${comparisonPoint.emotionalTone || "Neutral"}`}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Check for shared keywords */}
+                      {selectedPoint.keywords && comparisonPoint.keywords && (
+                        <div className="mt-3">
+                          <p className="text-xs font-medium mb-1">Concept Overlap</p>
+                          <div className="bg-white dark:bg-black/20 p-2 rounded-md">
+                            {(() => {
+                              const sharedKeywords = selectedPoint.keywords?.filter(k => 
+                                comparisonPoint.keywords?.includes(k)
+                              );
+                              
+                              if (sharedKeywords && sharedKeywords.length > 0) {
+                                return (
+                                  <div>
+                                    <p className="text-sm mb-1">These words share {sharedKeywords.length} concept{sharedKeywords.length > 1 ? 's' : ''}:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {sharedKeywords.map((keyword, idx) => (
+                                        <span key={idx} className="text-xs bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-full">{keyword}</span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              } else {
+                                return <p className="text-sm">No shared concepts found between these words.</p>;
+                              }
+                            })()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : selectedPoint && (
               <Card className="mb-8 w-full max-w-6xl border border-border shadow-sm bg-card animate-fade-in">
                 <CardContent className="pt-6">
                   <div className="grid md:grid-cols-2 gap-4">
