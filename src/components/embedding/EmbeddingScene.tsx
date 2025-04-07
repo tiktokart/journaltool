@@ -56,6 +56,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const zoomTimeoutRef = useRef<number | null>(null);
   const animationFrameIdRef = useRef<number | null>(null);
   const isDraggingRef = useRef<boolean>(false);
+  const rotationRef = useRef<THREE.Vector3>(new THREE.Vector3(0.0001, 0.0002, 0));
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -102,14 +103,23 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     const handleMouseDown = () => {
       isDraggingRef.current = true;
+      if (controlsInstance) {
+        controlsInstance.autoRotate = false;
+      }
     };
     
     const handleMouseUp = () => {
       isDraggingRef.current = false;
+      if (controlsInstance) {
+        controlsInstance.autoRotate = true;
+      }
     };
     
     const handleMouseLeave = () => {
       isDraggingRef.current = false;
+      if (controlsInstance) {
+        controlsInstance.autoRotate = true;
+      }
     };
     
     if (containerRef.current) {
@@ -122,9 +132,16 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     const animate = () => {
       animationFrameIdRef.current = requestAnimationFrame(animate);
+      
+      if (!isZoomingRef.current && !isDraggingRef.current && spheresGroupRef.current) {
+        spheresGroupRef.current.rotation.x += rotationRef.current.x;
+        spheresGroupRef.current.rotation.y += rotationRef.current.y;
+      }
+      
       if (!isZoomingRef.current) {
         controlsInstance.update();
       }
+      
       renderer.render(scene, camera);
     };
     
@@ -245,6 +262,11 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     });
     
     scene.add(spheresGroup);
+    
+    if (spheresGroup) {
+      spheresGroup.rotation.x = Math.random() * 0.2;
+      spheresGroup.rotation.y = Math.random() * 0.2;
+    }
     
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -495,8 +517,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       comparisonPoint.position[2]
     );
     
-    lineColors.push(1.0, 0.5, 0.0);
-    lineColors.push(1.0, 0.5, 0.0);
+    lineColors.push(1.0, 0.6, 0.0);
+    lineColors.push(1.0, 0.6, 0.0);
     
     if (lineVertices.length > 0) {
       const linesGeometry = new THREE.BufferGeometry();

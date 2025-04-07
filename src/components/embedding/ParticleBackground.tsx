@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
@@ -15,6 +14,7 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
   const animationIdRef = useRef<number | null>(null);
   const mountedRef = useRef<boolean>(false);
   const canvasAddedRef = useRef<boolean>(false);
+  const rotationSpeedRef = useRef<THREE.Vector3>(new THREE.Vector3(0.0001, 0.0001, 0.00005));
 
   useEffect(() => {
     if (!containerRef.current || points.length === 0) return;
@@ -180,8 +180,8 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
     minZ -= padding;
     maxZ += padding;
 
-    // Create particles - increase count for more density
-    const particleCount = 3000;
+    // Create particles - increase count for more density and cloud-like effect
+    const particleCount = 4000; // Increased for more density
     const particleGeometry = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     const particleSizes = new Float32Array(particleCount);
@@ -193,46 +193,13 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
       particlePositions[i * 3 + 1] = minY + Math.random() * (maxY - minY);
       particlePositions[i * 3 + 2] = minZ + Math.random() * (maxZ - minZ);
       
-      // Determine if this particle is inside any emotional group
-      const x = particlePositions[i * 3];
-      const y = particlePositions[i * 3 + 1];
-      const z = particlePositions[i * 3 + 2];
+      // Variable particle sizes for more natural cloud appearance
+      particleSizes[i] = 0.02 + Math.random() * 0.05;
       
-      let insideAnyGroup = false;
-      let groupColor = [0.8, 0.9, 0.8]; // Default light green
-      
-      // Check if particle is within any group's radius
-      emotionalGroupings.forEach(group => {
-        const dx = x - group.center[0];
-        const dy = y - group.center[1];
-        const dz = z - group.center[2];
-        const distanceToCenter = Math.sqrt(dx*dx + dy*dy + dz*dz);
-        
-        if (distanceToCenter <= group.radius) {
-          insideAnyGroup = true;
-          groupColor = group.color;
-          
-          // Adjust particle size based on distance from center (larger near center)
-          const distanceRatio = 1 - (distanceToCenter / group.radius);
-          particleSizes[i] = 0.05 + (distanceRatio * 0.1);
-        }
-      });
-      
-      // If not in any group, assign a smaller size
-      if (!insideAnyGroup) {
-        particleSizes[i] = 0.02 + Math.random() * 0.03;
-        
-        // Sparse green particles for areas outside groups
-        particleColors[i * 3] = 0.7 + Math.random() * 0.2; // Red (low) 
-        particleColors[i * 3 + 1] = 0.8 + Math.random() * 0.2; // Green (high)
-        particleColors[i * 3 + 2] = 0.7 + Math.random() * 0.2; // Blue (low)
-      } else {
-        // Use group color with variation
-        const colorVariation = 0.2; // Amount of variation
-        particleColors[i * 3] = groupColor[0] * (0.8 + Math.random() * colorVariation); 
-        particleColors[i * 3 + 1] = groupColor[1] * (0.8 + Math.random() * colorVariation);
-        particleColors[i * 3 + 2] = groupColor[2] * (0.8 + Math.random() * colorVariation);
-      }
+      // Subtle color variation for cloud-like effect
+      particleColors[i * 3] = 0.7 + Math.random() * 0.3; // Red
+      particleColors[i * 3 + 1] = 0.8 + Math.random() * 0.2; // Green
+      particleColors[i * 3 + 2] = 0.7 + Math.random() * 0.3; // Blue
     }
     
     particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
@@ -254,14 +221,22 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
     particlesRef.current = particles;
     scene.add(particles);
 
-    // Animation loop with extremely slow rotation
+    // Animation loop with improved cloud-like rotation
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
       
       if (particlesRef.current) {
-        // Extremely slowed down rotation speed to reduce flickering
-        particlesRef.current.rotation.x += 0.00001;
-        particlesRef.current.rotation.y += 0.00001;
+        // Slightly random rotation for cloud-like movement
+        particlesRef.current.rotation.x += rotationSpeedRef.current.x;
+        particlesRef.current.rotation.y += rotationSpeedRef.current.y;
+        particlesRef.current.rotation.z += rotationSpeedRef.current.z;
+        
+        // Periodically adjust rotation speed for more natural movement
+        if (Math.random() < 0.01) {
+          rotationSpeedRef.current.x = (Math.random() - 0.5) * 0.0002;
+          rotationSpeedRef.current.y = (Math.random() - 0.5) * 0.0002;
+          rotationSpeedRef.current.z = (Math.random() - 0.5) * 0.0001;
+        }
       }
       
       renderer.render(scene, camera);
