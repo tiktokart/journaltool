@@ -6,7 +6,7 @@ import { generateMockPoints } from '../utils/embeddingUtils';
 import { HoverInfoPanel } from './embedding/HoverInfoPanel';
 import { EmotionsLegend } from './embedding/EmotionsLegend';
 import { ZoomControls } from './embedding/ZoomControls';
-import { EmbeddingScene, zoomIn, zoomOut } from './embedding/EmbeddingScene';
+import EmbeddingScene, { zoomIn, zoomOut } from './embedding/EmbeddingScene';
 
 export const DocumentEmbedding = ({ 
   points = [], 

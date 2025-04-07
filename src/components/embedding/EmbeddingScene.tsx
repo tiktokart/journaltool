@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Point } from '@/types/embedding';
 import gsap from 'gsap';
 
@@ -181,6 +181,26 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ points, isInteractive =
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
   );
+};
+
+export const zoomIn = (camera: THREE.PerspectiveCamera | null) => {
+  if (!camera) return;
+  
+  gsap.to(camera.position, {
+    z: Math.max(camera.position.z - 1, 1),
+    duration: 0.5,
+    ease: "power2.out"
+  });
+};
+
+export const zoomOut = (camera: THREE.PerspectiveCamera | null) => {
+  if (!camera) return;
+  
+  gsap.to(camera.position, {
+    z: Math.min(camera.position.z + 1, 10),
+    duration: 0.5,
+    ease: "power2.out"
+  });
 };
 
 export default EmbeddingScene;
