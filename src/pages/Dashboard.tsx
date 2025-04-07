@@ -1,284 +1,222 @@
-
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { FileUploader } from "@/components/FileUploader";
 import { SentimentOverview } from "@/components/SentimentOverview";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { EntitySentiment } from "@/components/EntitySentiment";
 import { KeyPhrases } from "@/components/KeyPhrases";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
-import { WordComparison } from "@/components/WordComparison";
-import * as pdfjs from 'pdfjs-dist';
-import 'pdfjs-dist/build/pdf.worker.entry';
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
+import { FileUploader } from "@/components/FileUploader";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { 
+  ArrowRight, 
+  Upload, 
+  FileText, 
+  Search, 
+  Trash2, 
+  Download, 
+  Share2, 
+  BookOpen, 
+  BarChart2, 
+  Lightbulb, 
+  RefreshCw,
+  Loader2
+} from "lucide-react";
 
-interface SentimentData {
+const exampleJournalData = {
   overallSentiment: {
-    score: number;
-    label: string;
-  };
+    score: 0.35,
+    label: "Negative"
+  },
   distribution: {
-    positive: number;
-    neutral: number;
-    negative: number;
-  };
-  timeline: {
-    page: number;
-    score: number;
-    text: string;
-  }[];
-  entities: {
-    name: string;
-    sentiment: number;
-    mentions: number;
-    contexts: string[];
-  }[];
-  keyPhrases: {
-    phrase: string;
-    relevance: number;
-    sentiment: number;
-    occurrences: number;
-  }[];
-}
+    positive: 20,
+    neutral: 35,
+    negative: 45
+  },
+  timeline: Array.from({ length: 10 }, (_, i) => ({
+    page: i + 1,
+    score: 0.2 + (i * 0.05),
+    text: [
+      "Today was particularly challenging. My anxiety felt overwhelming from the moment I woke up.",
+      "I struggled to get out of bed, feeling like a heavy weight was pressing down on my chest.",
+      "During breakfast, I had trouble focusing on simple tasks. My mind kept racing with worries.",
+      "My therapist suggested trying deep breathing exercises when I feel overwhelmed.",
+      "I tried the breathing technique during lunch when I started feeling anxious again.",
+      "It helped a bit, but I still felt on edge for most of the afternoon.",
+      "By evening, I was exhausted from fighting my anxiety all day.",
+      "I managed to do some light reading before bed, which was a small accomplishment.",
+      "Tomorrow, I'll try to incorporate more grounding techniques my therapist suggested.",
+      "Despite today's difficulties, I'm trying to remember that not every day will be this hard."
+    ][i]
+  })),
+  entities: [
+    {
+      name: "Anxiety",
+      sentiment: 0.15,
+      mentions: 8,
+      contexts: ["My anxiety felt overwhelming", "fighting my anxiety all day"]
+    },
+    {
+      name: "Therapist",
+      sentiment: 0.65,
+      mentions: 3,
+      contexts: ["My therapist suggested", "techniques my therapist suggested"]
+    },
+    {
+      name: "Breathing",
+      sentiment: 0.55,
+      mentions: 2,
+      contexts: ["deep breathing exercises", "the breathing technique"]
+    },
+    {
+      name: "Sleep",
+      sentiment: 0.3,
+      mentions: 2,
+      contexts: ["struggled to get out of bed", "reading before bed"]
+    }
+  ],
+  keyPhrases: [
+    {
+      phrase: "anxiety",
+      relevance: 0.95,
+      sentiment: 0.15,
+      occurrences: 3
+    },
+    {
+      phrase: "overwhelming",
+      relevance: 0.85,
+      sentiment: 0.10,
+      occurrences: 2
+    },
+    {
+      phrase: "deep breathing",
+      relevance: 0.80,
+      sentiment: 0.60,
+      occurrences: 2
+    },
+    {
+      phrase: "therapist",
+      relevance: 0.75,
+      sentiment: 0.65,
+      occurrences: 2
+    },
+    {
+      phrase: "grounding techniques",
+      relevance: 0.70,
+      sentiment: 0.65,
+      occurrences: 1
+    },
+    {
+      phrase: "struggled",
+      relevance: 0.65,
+      sentiment: 0.25,
+      occurrences: 1
+    }
+  ],
+  sourceDescription: "Example Journal Entry"
+};
+
+const exampleJournalText = `
+Today was particularly challenging. My anxiety felt overwhelming from the moment I woke up. I struggled to get out of bed, feeling like a heavy weight was pressing down on my chest. During breakfast, I had trouble focusing on simple tasks. My mind kept racing with worries.
+
+My therapist suggested trying deep breathing exercises when I feel overwhelmed. I tried the breathing technique during lunch when I started feeling anxious again. It helped a bit, but I still felt on edge for most of the afternoon.
+
+By evening, I was exhausted from fighting my anxiety all day. I managed to do some light reading before bed, which was a small accomplishment. Tomorrow, I'll try to incorporate more grounding techniques my therapist suggested. Despite today's difficulties, I'm trying to remember that not every day will be this hard.
+`;
 
 const Dashboard = () => {
-  const [file, setFile] = useState<File | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [pdfText, setPdfText] = useState<string | null>(null);
-  const [sentimentData, setSentimentData] = useState<SentimentData | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [journalText, setJournalText] = useState(exampleJournalText);
+  const [journalData, setJournalData] = useState(exampleJournalData);
   const [points, setPoints] = useState<Point[]>([]);
-  const [activeTab, setActiveTab] = useState<string>("overview");
-  const [selectedWord, setSelectedWord] = useState<string | null>(null);
-  const [relatedWords, setRelatedWords] = useState<string[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [analysisComplete, setAnalysisComplete] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [focusWord, setFocusWord] = useState<string | null>(null);
+  const [isUsingExample, setIsUsingExample] = useState(true);
 
   useEffect(() => {
-    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
-  }, []);
+    // Generate visualization points when journal data changes
+    const newPoints = generateMockPoints(journalText, journalData);
+    setPoints(newPoints);
+  }, [journalText, journalData]);
 
-  const loadPdf = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = async (event: ProgressEvent<FileReader>) => {
-      try {
-        const arrayBuffer = event.target?.result as ArrayBuffer;
-        const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-        let fullText = "";
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => (item as any).str).join(" ");
-          fullText += pageText + "\n";
-        }
-        setPdfText(fullText);
-      } catch (error) {
-        console.error("Error loading PDF:", error);
-        toast.error("Failed to load PDF. Please try again.");
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  };
-
-  const getPdfText = async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async (event: ProgressEvent<FileReader>) => {
-        try {
-          const arrayBuffer = event.target?.result as ArrayBuffer;
-          const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-          let fullText = "";
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map(item => (item as any).str).join(" ");
-            fullText += pageText + "\n";
-          }
-          resolve(fullText);
-        } catch (error) {
-          console.error("Error extracting text from PDF:", error);
-          reject(error);
-        }
-      };
-      reader.onerror = (error) => {
-        console.error("Error reading PDF:", error);
-        reject(error);
-      };
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
-  const analyzePdfContent = async (file: File) => {
-    try {
-      const text = await getPdfText(file);
-      // Here you would send 'text' to your backend for sentiment analysis
-      // and update the sentimentData state with the results.
-      console.log("Extracted Text:", text);
-      toast.success("Text extracted successfully! (Analysis not yet implemented)");
-    } catch (error) {
-      console.error("Error during PDF content analysis:", error);
-      toast.error("Failed to analyze PDF content.");
-    }
-  };
-
-  const extractMetadata = async (file: File) => {
-    try {
-      const reader = new FileReader();
-      reader.onload = async (event: ProgressEvent<FileReader>) => {
-        const arrayBuffer = event.target?.result as ArrayBuffer;
-        const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-        const metadata = await pdf.getMetadata();
-        console.log("PDF Metadata:", metadata);
-        toast.success("Metadata extracted successfully! (Display not yet implemented)");
-      };
-      reader.readAsArrayBuffer(file);
-    } catch (error) {
-      console.error("Error extracting metadata:", error);
-      toast.error("Failed to extract metadata.");
-    }
-  };
-
-  const calculateSentiment = async (text: string) => {
-    // Placeholder for sentiment calculation
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return Math.random() * 2 - 1; // Returns a score between -1 and 1
-  };
-
-  useEffect(() => {
-    if (sentimentData && pdfText) {
-      const wordPoints = generateMockPoints(pdfText, {
-        overallSentiment: sentimentData.overallSentiment,
-        distribution: sentimentData.distribution,
-        timeline: sentimentData.timeline,
-        entities: sentimentData.entities,
-        keyPhrases: sentimentData.keyPhrases,
-        sourceDescription: fileName || "Uploaded Document"
-      });
+  const handleFileUpload = (files: File[]) => {
+    if (files.length > 0) {
+      setSelectedFile(files[0]);
+      setIsUsingExample(false);
       
-      setPoints(wordPoints);
-    }
-  }, [sentimentData, pdfText, fileName]);
-
-  const handleFilesAdded = (files: File[], extractedText?: string) => {
-    if (files && files.length > 0) {
-      const file = files[0];
-      setFile(file);
-      setFileName(file.name);
-      
-      if (extractedText) {
-        setPdfText(extractedText);
-      } else {
-        loadPdf(file);
-      }
-      
-      setActiveTab("overview");
-      toast.success("File uploaded successfully!");
-    }
-  };
-
-  const analyzeSentiment = async () => {
-    if (!file) return;
-    
-    try {
+      // Simulate file processing
       setIsAnalyzing(true);
-      
-      const positiveVal = Math.random() * 0.4 + 0.3; // 0.3 to 0.7
-      const negativeVal = Math.random() * 0.3; // 0 to 0.3
-      const neutralVal = 1 - positiveVal - negativeVal; // Calculate neutral to make sum = 1
-      
-      const mockSentimentData: SentimentData = {
-        overallSentiment: {
-          score: Math.random() * 0.6 + 0.2, // 0.2 to 0.8
-          label: (Math.random() * 0.6 + 0.2) < 0.4 ? "Negative" : (Math.random() * 0.6 + 0.2) > 0.6 ? "Positive" : "Neutral"
-        },
-        distribution: {
-          positive: positiveVal,
-          neutral: neutralVal,
-          negative: negativeVal
-        },
-        timeline: Array.from({ length: 10 }, (_, i) => ({
-          page: i + 1,
-          score: 0.2 + Math.random() * 0.6, // 0.2 to 0.8
-          text: pdfText?.substring(i * 50, (i + 1) * 50) || "Text segment"
-        })),
-        entities: [
-          {
-            name: "Anxiety",
-            sentiment: Math.random() * 0.4 + 0.1, // 0.1 to 0.5
-            mentions: Math.floor(Math.random() * 10) + 1,
-            contexts: ["Context 1", "Context 2"]
-          },
-          {
-            name: "Therapy",
-            sentiment: Math.random() * 0.4 + 0.5, // 0.5 to 0.9
-            mentions: Math.floor(Math.random() * 8) + 1,
-            contexts: ["Context 1", "Context 2"]
-          },
-          {
-            name: "Sleep",
-            sentiment: Math.random() * 0.6 + 0.2, // 0.2 to 0.8
-            mentions: Math.floor(Math.random() * 5) + 1,
-            contexts: ["Context 1", "Context 2"]
-          }
-        ],
-        keyPhrases: [
-          {
-            phrase: "mental health",
-            relevance: Math.random() * 0.3 + 0.7, // 0.7 to 1.0
-            sentiment: Math.random() * 0.4 + 0.5, // 0.5 to 0.9
-            occurrences: Math.floor(Math.random() * 10) + 1
-          },
-          {
-            phrase: "feeling anxious",
-            relevance: Math.random() * 0.3 + 0.6, // 0.6 to 0.9
-            sentiment: Math.random() * 0.3, // 0 to 0.3
-            occurrences: Math.floor(Math.random() * 8) + 1
-          },
-          {
-            phrase: "therapy session",
-            relevance: Math.random() * 0.2 + 0.7, // 0.7 to 0.9
-            sentiment: Math.random() * 0.4 + 0.5, // 0.5 to 0.9
-            occurrences: Math.floor(Math.random() * 5) + 1
-          }
-        ]
-      };
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setSentimentData(mockSentimentData);
-      setAnalysisComplete(true);
-      toast.success("Analysis complete!");
-    } catch (error) {
-      console.error("Error analyzing sentiment:", error);
-      toast.error("Error analyzing sentiment");
-    } finally {
-      setIsAnalyzing(false);
+      setTimeout(() => {
+        setIsAnalyzing(false);
+        toast.success(`File "${files[0].name}" analyzed successfully!`);
+      }, 2500);
     }
   };
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
+  const handleTextAnalysis = () => {
+    if (journalText.trim().length < 50) {
+      toast.error("Please enter at least 50 characters for meaningful analysis.");
+      return;
+    }
+    
+    setIsAnalyzing(true);
+    setIsUsingExample(false);
+    
+    // Simulate analysis
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      toast.success("Journal text analyzed successfully!");
+    }, 2000);
   };
 
-  const handleWordClick = (word: string) => {
-    setSelectedWord(word);
-    const related = getRelatedWords(word);
-    setRelatedWords(related);
+  const handleSearchKeywords = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
+    const searchWord = searchQuery.toLowerCase().trim();
+    const foundPoint = points.find(p => p.word.toLowerCase() === searchWord);
+    
+    if (foundPoint) {
+      setFocusWord(foundPoint.word);
+      toast.success(`Found "${foundPoint.word}" in the visualization.`);
+    } else {
+      toast.error(`"${searchQuery}" not found in the document.`);
+    }
   };
 
-  const handleResetComparison = () => {
-    setSelectedWord(null);
-    setRelatedWords([]);
+  const handleClearAnalysis = () => {
+    setSelectedFile(null);
+    setJournalText("");
+    setFocusWord(null);
+    setIsUsingExample(false);
+    toast.info("Analysis cleared. Upload a new file or enter text to analyze.");
   };
 
-  const getRelatedWords = (word: string): string[] => {
-    // Placeholder for related word retrieval logic
-    return [`${word}-related1`, `${word}-related2`, `${word}-related3`];
+  const handleUseExample = () => {
+    setJournalText(exampleJournalText);
+    setJournalData(exampleJournalData);
+    setIsUsingExample(true);
+    setSelectedFile(null);
+    toast.info("Using example journal entry for demonstration.");
+  };
+
+  const handlePointClick = (point: Point | null) => {
+    if (point) {
+      setFocusWord(point.word);
+    } else {
+      setFocusWord(null);
+    }
   };
 
   return (
@@ -286,128 +224,239 @@ const Dashboard = () => {
       <Header />
       
       <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 gap-8">
-          <Card className="shadow-md border-border">
-            <CardHeader>
-              <CardTitle>Upload and Analyze</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FileUploader 
-                onFilesAdded={handleFilesAdded}
-                fileInputRef={fileInputRef}
-              />
-              {file && (
-                <div className="mt-4">
-                  <p>File: {fileName}</p>
-                  <Button 
-                    onClick={analyzeSentiment} 
-                    disabled={isAnalyzing}
-                  >
-                    {isAnalyzing ? "Analyzing..." : "Analyze Sentiment"}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="flex flex-col gap-8">
+          <div className="space-y-4">
+            <h1 className="text-3xl font-bold tracking-tight">Document Analysis Dashboard</h1>
+            <p className="text-muted-foreground">
+              Upload your journal entries, therapy notes, or personal narratives to gain insights into emotional patterns.
+            </p>
+          </div>
           
-          {analysisComplete && sentimentData && (
-            <Card className="shadow-md border-border">
-              <CardHeader>
-                <CardTitle>Analysis Results</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="overview" className="space-y-4" onValueChange={handleTabChange}>
-                  <TabsList className="overflow-x-auto w-full justify-start">
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                    <TabsTrigger value="themes">Themes</TabsTrigger>
-                    <TabsTrigger value="keyphrases">Key Words</TabsTrigger>
-                    <TabsTrigger value="wordcomparison">Word Comparison</TabsTrigger>
-                  </TabsList>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Sidebar - Upload & Input */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    Upload Document
+                  </CardTitle>
+                  <CardDescription>
+                    Upload a PDF, Word document, or text file for analysis
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FileUploader 
+                    onFilesAdded={handleFileUpload}
+                    className="h-32"
+                  />
                   
-                  <TabsContent value="overview" className="mt-6">
-                    <SentimentOverview 
-                      data={{
-                        overallSentiment: sentimentData.overallSentiment,
-                        distribution: sentimentData.distribution,
-                        fileName: fileName || "Uploaded Document"
-                      }}
-                      sourceDescription={fileName || "Uploaded Document"}
-                    />
-                  </TabsContent>
+                  {selectedFile && (
+                    <div className="flex items-center justify-between bg-muted p-2 rounded-md">
+                      <div className="flex items-center">
+                        <FileText className="h-4 w-4 mr-2 text-blue-500" />
+                        <span className="text-sm font-medium truncate max-w-[180px]">
+                          {selectedFile.name}
+                        </span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setSelectedFile(null)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5" />
+                    Journal Text
+                  </CardTitle>
+                  <CardDescription>
+                    Enter or paste your journal entry for analysis
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Textarea 
+                    placeholder="Enter your journal text here..."
+                    className="min-h-[200px] resize-none"
+                    value={journalText}
+                    onChange={(e) => setJournalText(e.target.value)}
+                  />
                   
-                  <TabsContent value="timeline" className="mt-6">
-                    <SentimentTimeline 
-                      data={sentimentData.timeline}
-                      sourceDescription={fileName || "Uploaded Document"}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="themes" className="mt-6">
-                    <EntitySentiment 
-                      data={sentimentData.entities}
-                      sourceDescription={fileName || "Uploaded Document"}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="keyphrases" className="mt-6">
-                    <KeyPhrases 
-                      data={sentimentData.keyPhrases}
-                      sourceDescription={fileName || "Uploaded Document"}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="wordcomparison" className="mt-6">
-                    {selectedWord ? (
-                      <WordComparison 
-                        words={[
-                          {
-                            id: "selected-word",
-                            word: selectedWord,
-                            color: [0.5, 0.5, 0.8],
-                            sentiment: 0.7,
-                            position: [0, 0, 0], // Add the required position property
-                            emotionalTone: "Positive"
-                          }
-                        ]}
-                        onRemoveWord={() => handleResetComparison()}
-                        calculateRelationship={() => ({
-                          spatialSimilarity: 0.7,
-                          sentimentSimilarity: 0.8,
-                          sameEmotionalGroup: true,
-                          sharedKeywords: ["keyword1", "keyword2"]
-                        })}
-                        sourceDescription={fileName || "Uploaded Document"}
+                  <div className="flex flex-col gap-2">
+                    <Button 
+                      onClick={handleTextAnalysis}
+                      disabled={isAnalyzing || journalText.trim().length < 50}
+                      className="w-full"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <BarChart2 className="h-4 w-4 mr-2" />
+                          Analyze Text
+                        </>
+                      )}
+                    </Button>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleClearAnalysis}
+                        className="flex-1"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Clear
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleUseExample}
+                        className="flex-1"
+                      >
+                        <Lightbulb className="h-4 w-4 mr-2" />
+                        Use Example
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Search className="h-5 w-5" />
+                    Search Keywords
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSearchKeywords} className="space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Search for a word..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                       />
-                    ) : (
-                      <div className="text-center p-6">
-                        <p className="text-muted-foreground">Select a word from the document to see analysis</p>
+                      <Button type="submit">
+                        <Search className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {focusWord && (
+                      <div className="flex items-center justify-between bg-primary/10 p-2 rounded-md">
+                        <span className="text-sm">
+                          Focused on: <strong>{focusWord}</strong>
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setFocusWord(null)}
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
                       </div>
                     )}
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          )}
-          
-          {points.length > 0 && (
-            <Card className="shadow-md border-border">
-              <CardHeader>
-                <CardTitle>Document Embedding</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="w-full h-[600px]">
-                  <DocumentEmbedding 
-                    points={points}
-                    onPointClick={(point) => point && handleWordClick(point.word)}
-                    isInteractive={true}
-                    focusOnWord={null}
-                    sourceDescription={fileName || "Uploaded Document"}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Main Content - Visualization */}
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-0">
+                  <CardTitle>Emotional Landscape Visualization</CardTitle>
+                  <CardDescription>
+                    3D visualization of emotional patterns in your document
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="h-[500px] rounded-md overflow-hidden border">
+                    <DocumentEmbedding 
+                      points={points}
+                      onPointClick={handlePointClick}
+                      isInteractive={true}
+                      focusOnWord={focusWord}
+                      sourceDescription={isUsingExample ? "Example Journal Entry" : selectedFile?.name}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-0">
+                  <CardTitle>Detailed Analysis</CardTitle>
+                  <CardDescription>
+                    Explore different aspects of your document analysis
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                    <TabsList className="overflow-x-auto w-full justify-start">
+                      <TabsTrigger value="overview">Overview</TabsTrigger>
+                      <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                      <TabsTrigger value="themes">Themes</TabsTrigger>
+                      <TabsTrigger value="keyphrases">Key Words</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="overview" className="mt-6">
+                      <SentimentOverview 
+                        data={{
+                          overallSentiment: journalData.overallSentiment,
+                          distribution: journalData.distribution,
+                          fileName: isUsingExample ? "Example Journal Entry" : selectedFile?.name || "Journal Text"
+                        }}
+                        sourceDescription={isUsingExample ? "Example Journal Entry" : selectedFile?.name}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="timeline" className="mt-6">
+                      <SentimentTimeline 
+                        data={journalData.timeline}
+                        sourceDescription={isUsingExample ? "Example Journal Entry" : selectedFile?.name}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="themes" className="mt-6">
+                      <EntitySentiment 
+                        data={journalData.entities}
+                        sourceDescription={isUsingExample ? "Example Journal Entry" : selectedFile?.name}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="keyphrases" className="mt-6">
+                      <KeyPhrases 
+                        data={journalData.keyPhrases}
+                        sourceDescription={isUsingExample ? "Example Journal Entry" : selectedFile?.name}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+              
+              <div className="flex justify-end gap-4">
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Report
+                </Button>
+                <Button variant="outline">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share Insights
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
       

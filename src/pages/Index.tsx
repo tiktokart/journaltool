@@ -118,7 +118,7 @@ By evening, I was exhausted from fighting my anxiety all day. I managed to do so
 `;
 
 const Home = () => {
-  // Fix for ensuring isInteractive is a boolean, not a string
+  // This line was causing the error - fixing it to use a boolean instead of a string
   const [points] = useState<Point[]>(() => generateMockPoints(exampleJournalText, exampleJournalData));
 
   return (
@@ -200,7 +200,7 @@ const Home = () => {
           </Card>
         </div>
         
-        {/* New section for PDF Upload */}
+        {/* PDF Upload Section */}
         <div className="space-y-8 mb-16">
           <h2 className="text-2xl font-semibold tracking-tight">Upload a PDF: Your story, your life</h2>
           
