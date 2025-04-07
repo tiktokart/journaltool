@@ -294,10 +294,13 @@ const Dashboard = () => {
   };
 
   const handleSelectWord = (word: string) => {
-    const point = points.find(p => p.word.toLowerCase() === word.toLowerCase());
-    if (point) {
+    const matchingPoint = points.find(p => 
+      p.word.toLowerCase() === word.toLowerCase()
+    );
+    
+    if (matchingPoint) {
       setSelectedWord(word);
-      setSelectedPoint(point);
+      setSelectedPoint(matchingPoint);
       setOpen(false);
       toast.info(`Selected: ${word}`);
     }
@@ -323,10 +326,13 @@ const Dashboard = () => {
   };
 
   const handleSelectComparisonWord = (word: string) => {
-    const point = points.find(p => p.word.toLowerCase() === word.toLowerCase());
-    if (point) {
+    const matchingPoint = points.find(p => 
+      p.word.toLowerCase() === word.toLowerCase()
+    );
+    
+    if (matchingPoint) {
       setComparisonWord(word);
-      setComparisonPoint(point);
+      setComparisonPoint(matchingPoint);
       setComparisonSearchOpen(false);
       toast.info(`Comparing with: ${word}`);
     }
@@ -388,14 +394,18 @@ const Dashboard = () => {
   };
 
   const handleAddWordToComparison = () => {
+    setWordSearchTerm("");
     setWordSearchOpen(true);
   };
 
   const handleSelectWordForComparison = (word: string) => {
-    const point = points.find(p => p.word.toLowerCase() === word.toLowerCase());
-    if (point && wordsForComparison.length < 4) {
-      if (!wordsForComparison.some(p => p.id === point.id)) {
-        setWordsForComparison(prev => [...prev, point]);
+    const matchingPoint = points.find(p => 
+      p.word.toLowerCase() === word.toLowerCase()
+    );
+    
+    if (matchingPoint && wordsForComparison.length < 4) {
+      if (!wordsForComparison.some(p => p.id === matchingPoint.id)) {
+        setWordsForComparison(prev => [...prev, matchingPoint]);
         setWordSearchTerm("");
         setWordSearchOpen(false);
         toast.info(`Added ${word} to comparison`);
@@ -516,13 +526,11 @@ const Dashboard = () => {
                             value={searchTerm}
                             onChange={(e) => {
                               setSearchTerm(e.target.value);
-                              // Always open dropdown when typing
                               if (uniqueWords.length > 0) {
                                 setOpen(true);
                               }
                             }}
                             onClick={() => {
-                              // Always open dropdown when clicking the input
                               if (uniqueWords.length > 0) {
                                 setOpen(true);
                               }
@@ -558,8 +566,8 @@ const Dashboard = () => {
                                       <CommandItem 
                                         key={word} 
                                         value={word}
-                                        onSelect={handleSelectWord}
-                                        className="cursor-pointer"
+                                        onSelect={() => handleSelectWord(word)}
+                                        className="cursor-pointer hover:bg-accent"
                                       >
                                         {word}
                                       </CommandItem>
@@ -777,13 +785,11 @@ const Dashboard = () => {
                             value={wordSearchTerm}
                             onChange={(e) => {
                               setWordSearchTerm(e.target.value);
-                              // Always open dropdown when typing
                               if (uniqueWords.length > 0) {
                                 setWordSearchOpen(true);
                               }
                             }}
                             onClick={() => {
-                              // Always open dropdown when clicking the input
                               if (uniqueWords.length > 0) {
                                 setWordSearchOpen(true);
                               }
@@ -809,7 +815,6 @@ const Dashboard = () => {
                                 value={wordSearchTerm}
                                 onValueChange={(value) => {
                                   setWordSearchTerm(value);
-                                  // Always show dropdown while typing
                                   setWordSearchOpen(true);
                                 }}
                               />
@@ -824,7 +829,7 @@ const Dashboard = () => {
                                         key={word} 
                                         value={word}
                                         onSelect={() => handleSelectWordForComparison(word)}
-                                        className="cursor-pointer"
+                                        className="cursor-pointer hover:bg-accent"
                                       >
                                         {word}
                                       </CommandItem>

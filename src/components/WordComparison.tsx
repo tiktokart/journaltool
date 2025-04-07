@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
@@ -94,7 +95,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
               <div 
                 className="w-4 h-4 rounded-full" 
                 style={{ 
-                  backgroundColor: `rgb(${word.color[0] * 255}, ${word.color[1] * 255}, ${word.color[2] * 255})` 
+                  backgroundColor: `rgb(${Math.floor(word.color[0] * 255)}, ${Math.floor(word.color[1] * 255)}, ${Math.floor(word.color[2] * 255)})` 
                 }} 
               />
               <h3 className="font-bold truncate">{word.word}</h3>
@@ -149,7 +150,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                         <div 
                           className="w-3 h-3 rounded-full" 
                           style={{ 
-                            backgroundColor: `rgb(${word1.color[0] * 255}, ${word1.color[1] * 255}, ${word1.color[2] * 255})` 
+                            backgroundColor: `rgb(${Math.floor(word1.color[0] * 255)}, ${Math.floor(word1.color[1] * 255)}, ${Math.floor(word1.color[2] * 255)})` 
                           }} 
                         />
                         <span className="font-bold">{word1.word}</span>
@@ -159,7 +160,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                         <div 
                           className="w-3 h-3 rounded-full" 
                           style={{ 
-                            backgroundColor: `rgb(${word2.color[0] * 255}, ${word2.color[1] * 255}, ${word2.color[2] * 255})` 
+                            backgroundColor: `rgb(${Math.floor(word2.color[0] * 255)}, ${Math.floor(word2.color[1] * 255)}, ${Math.floor(word2.color[2] * 255)})` 
                           }} 
                         />
                         <span className="font-bold">{word2.word}</span>
