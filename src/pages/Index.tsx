@@ -123,6 +123,16 @@ const Index = () => {
     toast(`Zooming to: "${point.word}"`);
   };
 
+  const toggleCompareMode = () => {
+    if (selectedPoint) {
+      setIsComparing(!isComparing);
+      if (!isComparing) {
+        setComparisonPoint(null);
+      }
+      toast.info(isComparing ? "Comparison mode disabled" : "Select a word to compare");
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
