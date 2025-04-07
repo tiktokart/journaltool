@@ -126,7 +126,7 @@ export const DocumentEmbedding = ({
     
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xDDDDDD); // Light gray background
+    scene.background = new THREE.Color(0x8A898C); // Mid-gray background
     sceneRef.current = scene;
     
     // Camera setup
@@ -305,22 +305,22 @@ export const DocumentEmbedding = ({
         // Highlight the point
         if (pointsRef.current.geometry.attributes.size) {
           const sizesAttribute = pointsRef.current.geometry.attributes.size;
-          const sizes = sizesAttribute.array;
+          const sizesArray = sizesAttribute.array as Float32Array;
           
           // Reset all sizes
-          for (let i = 0; i < sizes.length; i++) {
-            sizes[i] = 0.05;
+          for (let i = 0; i < sizesArray.length; i++) {
+            sizesArray[i] = 0.05;
           }
           
           // Highlight the hovered point
-          sizes[index] = 0.15;
+          sizesArray[index] = 0.15;
           
           // Highlight related points if any
           if (point.relationships) {
             point.relationships.forEach(rel => {
               const relatedIndex = pointsRef.current!.userData.pointsData.findIndex((p: Point) => p.id === rel.id);
               if (relatedIndex !== -1) {
-                sizes[relatedIndex] = 0.1;
+                sizesArray[relatedIndex] = 0.1;
               }
             });
           }
@@ -334,9 +334,9 @@ export const DocumentEmbedding = ({
       // Reset all point sizes
       if (pointsRef.current.geometry.attributes.size) {
         const sizesAttribute = pointsRef.current.geometry.attributes.size;
-        const sizes = sizesAttribute.array;
-        for (let i = 0; i < sizes.length; i++) {
-          sizes[i] = 0.05;
+        const sizesArray = sizesAttribute.array as Float32Array;
+        for (let i = 0; i < sizesArray.length; i++) {
+          sizesArray[i] = 0.05;
         }
         sizesAttribute.needsUpdate = true;
       }
