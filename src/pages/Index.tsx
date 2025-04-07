@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -461,21 +462,21 @@ const Index = () => {
                       
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <p className="text-xs font-medium mb-1">Sentiment Difference</p>
+                          <p className="text-xs font-medium mb-1 text-foreground">Sentiment Difference</p>
                           <div className="flex items-center justify-between gap-2 bg-white dark:bg-black/20 p-2 rounded-md">
-                            <span className="text-sm">{selectedPoint.word}: {selectedPoint.sentiment.toFixed(2)}</span>
-                            <span className="text-sm font-bold">
+                            <span className="text-sm text-foreground">{selectedPoint.word}: {selectedPoint.sentiment.toFixed(2)}</span>
+                            <span className="text-sm font-bold text-foreground">
                               {Math.abs(selectedPoint.sentiment - comparisonPoint.sentiment).toFixed(2)} 
                               <span className="text-xs ml-1 font-normal text-muted-foreground">difference</span>
                             </span>
-                            <span className="text-sm">{comparisonPoint.word}: {comparisonPoint.sentiment.toFixed(2)}</span>
+                            <span className="text-sm text-foreground">{comparisonPoint.word}: {comparisonPoint.sentiment.toFixed(2)}</span>
                           </div>
                         </div>
                         
                         <div>
-                          <p className="text-xs font-medium mb-1">Emotional Connection</p>
+                          <p className="text-xs font-medium mb-1 text-foreground">Emotional Connection</p>
                           <div className="bg-white dark:bg-black/20 p-2 rounded-md">
-                            <p className="text-sm text-center">
+                            <p className="text-sm text-center text-foreground">
                               {selectedPoint.emotionalTone === comparisonPoint.emotionalTone ? 
                                 `Both words share the same emotional tone: ${selectedPoint.emotionalTone || "Neutral"}` : 
                                 `Different emotional tones: "${selectedPoint.word}" is ${selectedPoint.emotionalTone || "Neutral"} while "${comparisonPoint.word}" is ${comparisonPoint.emotionalTone || "Neutral"}`}
@@ -486,7 +487,7 @@ const Index = () => {
                       
                       {selectedPoint.keywords && comparisonPoint.keywords && (
                         <div className="mt-3">
-                          <p className="text-xs font-medium mb-1">Concept Overlap</p>
+                          <p className="text-xs font-medium mb-1 text-foreground">Concept Overlap</p>
                           <div className="bg-white dark:bg-black/20 p-2 rounded-md">
                             {(() => {
                               const sharedKeywords = selectedPoint.keywords?.filter(k => 
@@ -496,16 +497,16 @@ const Index = () => {
                               if (sharedKeywords && sharedKeywords.length > 0) {
                                 return (
                                   <div>
-                                    <p className="text-sm mb-1">These words share {sharedKeywords.length} concept{sharedKeywords.length > 1 ? 's' : ''}:</p>
+                                    <p className="text-sm mb-1 text-foreground">These words share {sharedKeywords.length} concept{sharedKeywords.length > 1 ? 's' : ''}:</p>
                                     <div className="flex flex-wrap gap-1">
                                       {sharedKeywords.map((keyword, idx) => (
-                                        <span key={idx} className="text-xs bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-full">{keyword}</span>
+                                        <span key={idx} className="text-xs bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-full text-foreground">{keyword}</span>
                                       ))}
                                     </div>
                                   </div>
                                 );
                               } else {
-                                return <p className="text-sm">No shared concepts found between these words.</p>;
+                                return <p className="text-sm text-foreground">No shared concepts found between these words.</p>;
                               }
                             })()}
                           </div>
