@@ -1,5 +1,5 @@
+
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
@@ -11,7 +11,6 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
-import { useNavigate } from "react-router-dom";
 
 // Example journal entry data for demonstration
 const exampleJournalData = {
@@ -117,7 +116,6 @@ By evening, I was exhausted from fighting my anxiety all day. I managed to do so
 `;
 
 const Home = () => {
-  const navigate = useNavigate();
   const [points] = useState<Point[]>(() => generateMockPoints(exampleJournalText, exampleJournalData));
 
   return (
@@ -132,22 +130,7 @@ const Home = () => {
               Analyze your journal entries, therapy notes, and personal narratives 
               to gain deeper insights into your emotional patterns and mental health journey.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                size="lg"
-                onClick={() => navigate('/dashboard')}
-                className="flex-grow sm:flex-grow-0"
-              >
-                Try It Now
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="flex-grow sm:flex-grow-0"
-              >
-                Learn More
-              </Button>
-            </div>
+            {/* Removed the buttons as requested */}
           </div>
           
           <div className="rounded-lg overflow-hidden shadow-xl border min-h-[350px] border-border relative">
@@ -212,12 +195,12 @@ const Home = () => {
               </Tabs>
             </CardContent>
             <CardFooter>
-              <Button 
-                onClick={() => navigate('/dashboard')}
-                className="w-full md:w-auto"
-              >
-                Upload Your Journal
-              </Button>
+              {/* Fixed TypeScript error by explicitly passing a boolean */}
+              <DocumentEmbedding 
+                points={points}
+                isInteractive={false}
+                sourceDescription="Example Journal Visualization"
+              />
             </CardFooter>
           </Card>
         </div>
