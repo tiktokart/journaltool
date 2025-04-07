@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { InfoCircle } from "lucide-react"; 
 
 interface SentimentOverviewProps {
   data: {
@@ -16,9 +17,10 @@ interface SentimentOverviewProps {
     };
     fileName?: string;
   };
+  sourceDescription?: string; // Add this to show where data came from
 }
 
-export const SentimentOverview = ({ data }: SentimentOverviewProps) => {
+export const SentimentOverview = ({ data, sourceDescription }: SentimentOverviewProps) => {
   const { overallSentiment, distribution, fileName } = data;
   
   // Prepare data for pie chart
@@ -54,7 +56,11 @@ export const SentimentOverview = ({ data }: SentimentOverviewProps) => {
 
           <h3 className="text-2xl font-bold mb-2">{overallSentiment.label}</h3>
           <p className="text-sm text-muted-foreground text-center">
-            Your document has an overall {overallSentiment.label.toLowerCase()} sentiment
+            {fileName ? (
+              <>Your document <strong>{fileName}</strong> has an overall {overallSentiment.label.toLowerCase()} sentiment</>
+            ) : (
+              <>Your document has an overall {overallSentiment.label.toLowerCase()} sentiment</>
+            )}
           </p>
         </CardContent>
       </Card>
@@ -108,6 +114,14 @@ export const SentimentOverview = ({ data }: SentimentOverviewProps) => {
             ))}
           </div>
         </CardContent>
+        {sourceDescription && (
+          <div className="px-6 pb-4 text-sm text-center text-muted-foreground">
+            <div className="flex items-center justify-center">
+              <InfoCircle className="h-4 w-4 mr-1" />
+              {sourceDescription}
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

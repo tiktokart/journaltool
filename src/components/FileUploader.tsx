@@ -43,6 +43,17 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
         fullText += pageText + " ";
       }
       
+      // Validate the extracted text
+      if (!fullText || fullText.trim().length === 0) {
+        console.error("No text extracted from PDF");
+        return "";
+      }
+      
+      // Log a 200-character sample to help diagnose issues
+      console.log("PDF text extraction sample (200 chars):", fullText.substring(0, 200));
+      console.log("Total characters extracted:", fullText.length);
+      console.log("Total words extracted:", fullText.split(/\s+/).filter(w => w.length > 0).length);
+      
       return fullText;
     } catch (error) {
       console.error("Error extracting text from PDF:", error);
@@ -61,9 +72,18 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       if (pdfText.trim().length === 0) {
         toast.warning("No readable text found in the PDF");
       } else {
-        const wordCount = pdfText.split(/\s+/).length;
+        const wordCount = pdfText.split(/\s+/).filter(w => w.length > 0).length;
         toast.success(`Extracted ${wordCount} words from PDF`);
-        console.log("First 100 characters of extracted text:", pdfText.substring(0, 100));
+        
+        // Log text sample for easier debugging
+        console.log("PDF text sample:", pdfText.substring(0, 100));
+        
+        const uniqueWords = new Set(pdfText.toLowerCase()
+          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+          .split(/\s+/)
+          .filter(word => word.length > 3));
+          
+        console.log("Unique significant words:", Array.from(uniqueWords).slice(0, 20));
       }
       
       // Pass the extracted text to the parent component for analysis

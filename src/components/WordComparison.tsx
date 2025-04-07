@@ -3,7 +3,7 @@ import React from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight, X, Search, GitCompareArrows } from 'lucide-react';
+import { ArrowLeftRight, X, Search, GitCompareArrows, InfoCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface WordComparisonProps {
@@ -16,13 +16,15 @@ interface WordComparisonProps {
     sharedKeywords: string[];
   } | null;
   onAddWordClick: () => void;
+  sourceDescription?: string; // Add this to show where words came from
 }
 
 export const WordComparison: React.FC<WordComparisonProps> = ({ 
   words, 
   onRemoveWord, 
   calculateRelationship,
-  onAddWordClick 
+  onAddWordClick,
+  sourceDescription
 }) => {
   if (words.length === 0) {
     return (
@@ -32,7 +34,15 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
         </div>
         <h3 className="text-lg font-medium">No words selected</h3>
         <p className="text-sm text-muted-foreground mt-1 max-w-md">
-          Add words to see how they relate to each other. You can add up to 4 words to compare.
+          {sourceDescription ? (
+            <>
+              Add words from your document to see how they relate to each other. You can add up to 4 words to compare.
+            </>
+          ) : (
+            <>
+              Add words to see how they relate to each other. You can add up to 4 words to compare.
+            </>
+          )}
         </p>
         <Button 
           variant="outline" 
@@ -42,6 +52,13 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
           <Search className="h-4 w-4 mr-2" />
           Search Words
         </Button>
+        
+        {sourceDescription && (
+          <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
+            <InfoCircle className="h-4 w-4 mr-1" />
+            {sourceDescription}
+          </div>
+        )}
       </div>
     );
   }
@@ -192,6 +209,13 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
               })
             )}
           </div>
+        </div>
+      )}
+      
+      {sourceDescription && words.length > 0 && (
+        <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
+          <InfoCircle className="h-4 w-4 mr-1" />
+          {sourceDescription}
         </div>
       )}
     </div>

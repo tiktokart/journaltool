@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { InfoCircle } from "lucide-react";
 
 interface KeyPhrasesProps {
   data: Array<{ 
@@ -8,9 +9,10 @@ interface KeyPhrasesProps {
     sentiment: "positive" | "neutral" | "negative"; 
     count: number 
   }>;
+  sourceDescription?: string; // Add this to show where words came from
 }
 
-export const KeyPhrases = ({ data }: KeyPhrasesProps) => {
+export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
   // Group words by sentiment
   const positiveItems = data.filter(item => item.sentiment === "positive");
   const neutralItems = data.filter(item => item.sentiment === "neutral");
@@ -69,7 +71,14 @@ export const KeyPhrases = ({ data }: KeyPhrasesProps) => {
           {renderWordGroup(negativeItems, "Negative Words", "negative")}
         </div>
         <div className="mt-6 text-sm text-center text-muted-foreground">
-          All commonly used words in your document, grouped by sentiment and sized by frequency.
+          {sourceDescription ? (
+            <div className="flex items-center justify-center">
+              <InfoCircle className="h-4 w-4 mr-1" />
+              {sourceDescription}
+            </div>
+          ) : (
+            "All commonly used words in your document, grouped by sentiment and sized by frequency."
+          )}
         </div>
       </CardContent>
     </Card>
