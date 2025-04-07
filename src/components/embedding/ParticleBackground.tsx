@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
@@ -13,53 +14,35 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
   const particlesRef = useRef<THREE.Points | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const mountedRef = useRef<boolean>(false);
+  const canvasAddedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!containerRef.current || points.length === 0) return;
     
-    // Prevent duplicate initializations
-    if (mountedRef.current && rendererRef.current) {
-      // If already mounted and we have a renderer, just clear old particles
-      if (sceneRef.current && particlesRef.current) {
-        sceneRef.current.remove(particlesRef.current);
-        
-        // Clean up previous particles geometry and material
-        if (particlesRef.current.geometry) {
-          particlesRef.current.geometry.dispose();
-        }
-        if (particlesRef.current.material) {
-          if (Array.isArray(particlesRef.current.material)) {
-            particlesRef.current.material.forEach(m => m.dispose());
-          } else {
-            particlesRef.current.material.dispose();
-          }
-        }
-      }
-    } else {
-      mountedRef.current = true;
+    // Clear previous animation frame
+    if (animationIdRef.current !== null) {
+      cancelAnimationFrame(animationIdRef.current);
+      animationIdRef.current = null;
     }
 
-    // Initialize scene
-    const scene = sceneRef.current || new THREE.Scene();
-    if (!sceneRef.current) {
+    // Initialize only once or when renderer doesn't exist
+    if (!rendererRef.current) {
+      // Initialize scene
+      const scene = new THREE.Scene();
       sceneRef.current = scene;
-    }
 
-    // Initialize camera
-    const camera = cameraRef.current || new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-    if (!cameraRef.current) {
+      // Initialize camera
+      const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
       camera.position.z = 15;
       cameraRef.current = camera;
-    }
 
-    // Create renderer with transparency and anti-flickering settings
-    const renderer = rendererRef.current || new THREE.WebGLRenderer({ 
-      alpha: true,
-      antialias: true,
-      preserveDrawingBuffer: true // Helps reduce flickering
-    });
-    
-    if (!rendererRef.current) {
+      // Create renderer with transparency and anti-flickering settings
+      const renderer = new THREE.WebGLRenderer({ 
+        alpha: true,
+        antialias: true,
+        preserveDrawingBuffer: true // Helps reduce flickering
+      });
+      
       renderer.setClearColor(0x000000, 0);
       // Set pixel ratio to device pixel ratio to improve quality
       renderer.setPixelRatio(window.devicePixelRatio);
@@ -70,12 +53,39 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
       const containerHeight = containerRef.current.clientHeight;
       renderer.setSize(containerWidth, containerHeight);
       
-      // Add canvas as background
-      renderer.domElement.style.position = 'absolute';
-      renderer.domElement.style.zIndex = '0';
-      renderer.domElement.style.top = '0';
-      renderer.domElement.style.left = '0';
-      containerRef.current.appendChild(renderer.domElement);
+      // Add canvas as background - only add it once
+      if (!canvasAddedRef.current && containerRef.current) {
+        renderer.domElement.style.position = 'absolute';
+        renderer.domElement.style.zIndex = '0';
+        renderer.domElement.style.top = '0';
+        renderer.domElement.style.left = '0';
+        containerRef.current.appendChild(renderer.domElement);
+        canvasAddedRef.current = true;
+      }
+    }
+
+    // Get references
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    const renderer = rendererRef.current;
+    
+    if (!scene || !camera || !renderer) return;
+
+    // Remove existing particles if they exist
+    if (particlesRef.current) {
+      scene.remove(particlesRef.current);
+      
+      // Clean up previous particles geometry and material
+      if (particlesRef.current.geometry) {
+        particlesRef.current.geometry.dispose();
+      }
+      if (particlesRef.current.material) {
+        if (Array.isArray(particlesRef.current.material)) {
+          particlesRef.current.material.forEach(m => m.dispose());
+        } else {
+          particlesRef.current.material.dispose();
+        }
+      }
     }
 
     // Group points by emotional tone
@@ -244,25 +254,20 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
     particlesRef.current = particles;
     scene.add(particles);
 
-    // Animation loop with slower rotation
+    // Animation loop with extremely slow rotation
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
       
       if (particlesRef.current) {
         // Extremely slowed down rotation speed to reduce flickering
-        particlesRef.current.rotation.x += 0.00005;
-        particlesRef.current.rotation.y += 0.00002;
+        particlesRef.current.rotation.x += 0.00001;
+        particlesRef.current.rotation.y += 0.00001;
       }
       
       renderer.render(scene, camera);
     };
     
-    // Make sure to cancel any previous animation frame before starting a new one
-    if (animationIdRef.current !== null) {
-      cancelAnimationFrame(animationIdRef.current);
-    }
-    
-    // Start the animation and keep track of the ID
+    // Start the animation
     animationIdRef.current = requestAnimationFrame(animate);
     
     // Handle window resize
@@ -281,7 +286,7 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
     window.addEventListener('resize', handleResize);
     
     return () => {
-      // Important: This cleanup function needs to handle multiple scenarios
+      // Cleanup function
       if (animationIdRef.current !== null) {
         cancelAnimationFrame(animationIdRef.current);
         animationIdRef.current = null;
@@ -289,28 +294,8 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ containerRef, p
       
       window.removeEventListener('resize', handleResize);
       
-      // Only remove the renderer DOM element when the component is truly unmounting
-      // Not on every re-render or data update
-      if (containerRef.current && renderer.domElement && !mountedRef.current) {
-        try {
-          containerRef.current.removeChild(renderer.domElement);
-        } catch (e) {
-          console.log("Error removing canvas element", e);
-        }
-      }
-      
-      // Only dispose of resources when truly unmounting
-      if (!mountedRef.current) {
-        if (particleGeometry) {
-          particleGeometry.dispose();
-        }
-        if (particleMaterial) {
-          particleMaterial.dispose();
-        }
-        if (renderer) {
-          renderer.dispose();
-        }
-      }
+      // Don't remove the renderer or dispose elements here as we're reusing them
+      // Only clean up when component is truly unmounting
     };
   }, [containerRef, points]);
 
