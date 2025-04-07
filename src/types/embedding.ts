@@ -1,7 +1,7 @@
 
 export interface Point {
   id: string;
-  text: string;
+  word: string;           // Changed from text to word
   sentiment: number;
   position: [number, number, number];
   color: [number, number, number];
@@ -14,4 +14,5 @@ export interface DocumentEmbeddingProps {
   points?: Point[];
   onPointClick?: (point: Point) => void;
   isInteractive?: boolean;
+  depressedJournalReference?: boolean;  // New prop for home page
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,171 +11,165 @@ import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
 import { Loader2, CircleDot } from "lucide-react";
+import { Point } from "@/types/embedding";
 
-// Enhanced PDF analysis utility function
 const analyzePdfContent = (file: File): Promise<any> => {
   return new Promise((resolve) => {
-    // In a real app, this would send the file to a backend API for processing
-    // Here we'll simulate analysis with a timeout and enhanced mock data
-
     setTimeout(() => {
-      // Generate more realistic text excerpts for sentiment analysis
-      const journalExcerpts = [
-        "Today I felt a profound sense of accomplishment after completing my project. The feedback was overwhelmingly positive.",
-        "The meeting didn't go as planned. I felt frustrated by the lack of progress and clear direction from management.",
-        "I'm anxious about the upcoming presentation, but trying to channel that energy into thorough preparation.",
-        "Spending time with family today brought me genuine joy. These moments remind me what truly matters in life.",
-        "The criticism was difficult to hear, but I recognize it as an opportunity for growth and improvement.",
-        "I'm feeling conflicted about the decision I need to make. There are compelling reasons for both options.",
-        "Today's setback was disappointing, but I'm determined not to let it derail the overall progress.",
-        "The conversation with my friend was deeply meaningful. I felt truly understood and supported.",
-        "I'm excited about the new opportunity but also uncertain about whether I'm ready for the challenge.",
-        "Reflecting on the past year brings mixed emotions - pride in achievements, regret for missed opportunities."
+      const journalWords = [
+        "anxious", "calm", "worried", "happy", "sad", 
+        "stressed", "relieved", "angry", "grateful", "overwhelmed",
+        "lonely", "loved", "frustrated", "inspired", "tired",
+        "excited", "afraid", "hopeful", "confused", "confident",
+        "disappointed", "proud", "numb", "peaceful", "annoyed",
+        "content", "exhausted", "motivated", "hurt", "joyful"
       ];
 
-      // Generate more meaningful entity relationships
-      const entityWords = [
-        "work", "family", "future", "relationship", "health", "goals", 
-        "anxiety", "happiness", "stress", "achievements", "challenges",
-        "growth", "self-reflection", "change", "opportunity", "balance"
-      ];
+      const emotionalClusters = {
+        Joy: ["happy", "grateful", "excited", "proud", "joyful", "content", "inspired", "peaceful", "motivated", "confident", "relieved"],
+        Sadness: ["sad", "disappointed", "lonely", "hurt", "exhausted", "tired", "numb"],
+        Anger: ["angry", "frustrated", "annoyed"],
+        Fear: ["anxious", "worried", "afraid", "overwhelmed", "stressed"],
+        Surprise: ["shocked", "amazed", "startled", "stunned", "astonished"],
+        Disgust: ["disgusted", "repulsed", "revolted"],
+        Trust: ["trust", "calm", "hopeful"],
+        Anticipation: ["anticipation", "excited", "looking", "forward"]
+      };
 
-      // Create more realistic emotional tones
-      const emotionalTones = [
-        "Joy", "Sadness", "Anxiety", "Contentment", "Frustration", 
-        "Hope", "Fear", "Gratitude", "Regret", "Pride"
-      ];
-
-      // Generate 3D visualization data points that represent emotional clusters
-      const embeddingPoints = Array.from({ length: 500 }, (_, i) => {
-        // Create clusters around certain emotional states
-        let cluster = Math.floor(Math.random() * 5);
-        let radius = 5 + (Math.random() * 5);
-        
-        // Base positions for different emotional clusters
-        const clusterCenters = [
-          [8, 8, 8],    // Joy/Positive cluster
-          [-8, -8, -8],  // Sadness/Negative cluster
-          [8, -8, 0],    // Anxiety/Fear cluster
-          [-8, 8, 0],    // Contentment cluster
-          [0, 0, 10]     // Neutral/Mixed emotions
-        ];
-        
-        // Add random variation around the cluster center
-        const variance = 3;
-        const x = clusterCenters[cluster][0] + (Math.random() * variance * 2 - variance);
-        const y = clusterCenters[cluster][1] + (Math.random() * variance * 2 - variance);
-        const z = clusterCenters[cluster][2] + (Math.random() * variance * 2 - variance);
-        
-        // Determine sentiment based on position
-        // Clusters 0 and 3 are more positive, 1 and 2 more negative, 4 is neutral
-        let sentiment;
-        if (cluster === 0) sentiment = 0.7 + (Math.random() * 0.3); // Very positive
-        else if (cluster === 1) sentiment = Math.random() * 0.3; // Very negative
-        else if (cluster === 2) sentiment = 0.2 + (Math.random() * 0.2); // Negative
-        else if (cluster === 3) sentiment = 0.5 + (Math.random() * 0.2); // Positive
-        else sentiment = 0.4 + (Math.random() * 0.2); // Neutral
-        
-        // Color based on sentiment (red to blue gradient)
-        const r = sentiment < 0.5 ? 1 : 2 * (1 - sentiment);
-        const b = sentiment > 0.5 ? 1 : 2 * sentiment;
-        const g = 0.3;
-        
-        // Select text based on sentiment range
-        let textIndex;
-        if (sentiment > 0.7) textIndex = 0; // Very positive
-        else if (sentiment > 0.5) textIndex = 3; // Positive
-        else if (sentiment > 0.4) textIndex = 5; // Neutral
-        else if (sentiment > 0.25) textIndex = 2; // Negative
-        else textIndex = 1; // Very negative
-        
-        // Select random text with some randomization
-        const randomOffset = Math.floor(Math.random() * 5);
-        textIndex = (textIndex + randomOffset) % journalExcerpts.length;
-        
-        // Generate keywords for this point
-        const keywordCount = 2 + Math.floor(Math.random() * 3);
-        const keywords = [];
-        const usedIndices = new Set();
-        
-        for (let k = 0; k < keywordCount; k++) {
-          let wordIndex;
-          do {
-            wordIndex = Math.floor(Math.random() * entityWords.length);
-          } while (usedIndices.has(wordIndex));
-          
-          usedIndices.add(wordIndex);
-          keywords.push(entityWords[wordIndex]);
+      const embeddingPoints: Point[] = [];
+      
+      journalWords.forEach((word, i) => {
+        let emotionalTone = "Neutral";
+        for (const [emotion, words] of Object.entries(emotionalClusters)) {
+          if (words.includes(word)) {
+            emotionalTone = emotion;
+            break;
+          }
         }
         
-        // Select emotional tone based on sentiment
-        let toneIndex;
-        if (sentiment > 0.7) toneIndex = 0; // Joy
-        else if (sentiment > 0.6) toneIndex = 9; // Pride
-        else if (sentiment > 0.5) toneIndex = 7; // Gratitude
-        else if (sentiment > 0.45) toneIndex = 3; // Contentment
-        else if (sentiment > 0.4) toneIndex = 5; // Hope
-        else if (sentiment > 0.35) toneIndex = 2; // Anxiety
-        else if (sentiment > 0.3) toneIndex = 4; // Frustration
-        else if (sentiment > 0.2) toneIndex = 6; // Fear
-        else toneIndex = 1; // Sadness
+        const clusterCenters: { [key: string]: [number, number, number] } = {
+          Joy: [8, 8, 8],
+          Sadness: [-8, -8, -5],
+          Anger: [8, -8, 0],
+          Fear: [-8, 8, 0],
+          Surprise: [0, 10, 0],
+          Disgust: [0, -10, 0],
+          Trust: [10, 0, 5],
+          Anticipation: [-10, 0, 5],
+          Neutral: [0, 0, 0]
+        };
         
-        return {
-          id: `point-${i}`,
-          text: journalExcerpts[textIndex],
+        const variance = 3;
+        const clusterCenter = clusterCenters[emotionalTone] || [0, 0, 0];
+        const x = clusterCenter[0] + (Math.random() * variance * 2 - variance);
+        const y = clusterCenter[1] + (Math.random() * variance * 2 - variance);
+        const z = clusterCenter[2] + (Math.random() * variance * 2 - variance);
+        
+        let sentiment;
+        if (emotionalTone === "Joy" || emotionalTone === "Trust") sentiment = 0.6 + (Math.random() * 0.4);
+        else if (emotionalTone === "Anticipation" || emotionalTone === "Surprise") sentiment = 0.4 + (Math.random() * 0.4);
+        else if (emotionalTone === "Disgust" || emotionalTone === "Anger") sentiment = 0.1 + (Math.random() * 0.3);
+        else if (emotionalTone === "Sadness" || emotionalTone === "Fear") sentiment = Math.random() * 0.3;
+        else sentiment = 0.4 + (Math.random() * 0.2);
+        
+        let r = 0.7, g = 0.7, b = 0.7;
+        if (emotionalTone === "Joy") {
+          r = 1.0; g = 0.9; b = 0.0;
+        } else if (emotionalTone === "Sadness") {
+          r = 0.0; g = 0.5; b = 0.9;
+        } else if (emotionalTone === "Anger") {
+          r = 0.9; g = 0.1; b = 0.1;
+        } else if (emotionalTone === "Fear") {
+          r = 0.6; g = 0.0; b = 0.8;
+        } else if (emotionalTone === "Surprise") {
+          r = 1.0; g = 0.5; b = 0.0;
+        } else if (emotionalTone === "Disgust") {
+          r = 0.2; g = 0.8; b = 0.2;
+        } else if (emotionalTone === "Trust") {
+          r = 0.0; g = 0.8; b = 0.6;
+        } else if (emotionalTone === "Anticipation") {
+          r = 0.9; g = 0.5; b = 0.7;
+        }
+        
+        const keywordCount = 1 + Math.floor(Math.random() * 2);
+        const keywords = [];
+        for (let k = 0; k < keywordCount; k++) {
+          const sameEmotionWords = emotionalClusters[emotionalTone as keyof typeof emotionalClusters] || journalWords;
+          let relatedWord;
+          do {
+            relatedWord = sameEmotionWords[Math.floor(Math.random() * sameEmotionWords.length)];
+          } while (relatedWord === word || keywords.includes(relatedWord));
+          
+          keywords.push(relatedWord);
+        }
+        
+        embeddingPoints.push({
+          id: `word-${i}`,
+          word,
           sentiment,
           position: [x, y, z],
           color: [r, g, b],
           keywords,
-          emotionalTone: emotionalTones[toneIndex],
+          emotionalTone,
           relationships: []
-        };
+        });
       });
       
-      // Add meaningful relationships between points
       embeddingPoints.forEach((point, index) => {
-        // Create 2-4 relationships for each point
-        const relationshipCount = 2 + Math.floor(Math.random() * 3);
+        const relationshipCount = 1 + Math.floor(Math.random() * 3);
         const relationships = [];
         
-        // Find points with similar sentiment or in nearby clusters
-        for (let j = 0; j < relationshipCount; j++) {
-          let targetIndex;
-          do {
-            // Bias toward points with similar sentiment
-            const similarPoints = embeddingPoints.filter((p, idx) => 
-              idx !== index && 
-              Math.abs(p.sentiment - point.sentiment) < 0.2
-            );
-            
-            if (similarPoints.length > 0) {
-              targetIndex = embeddingPoints.indexOf(
-                similarPoints[Math.floor(Math.random() * similarPoints.length)]
-              );
-            } else {
-              do {
-                targetIndex = Math.floor(Math.random() * embeddingPoints.length);
-              } while (targetIndex === index);
+        const similarTonePoints = embeddingPoints.filter(p => 
+          p.id !== point.id && p.emotionalTone === point.emotionalTone
+        );
+        
+        if (similarTonePoints.length > 0) {
+          const sampleSize = Math.min(relationshipCount, similarTonePoints.length);
+          const sample = [];
+          const usedIndices = new Set();
+          
+          while (sample.length < sampleSize) {
+            const randomIndex = Math.floor(Math.random() * similarTonePoints.length);
+            if (!usedIndices.has(randomIndex)) {
+              usedIndices.add(randomIndex);
+              sample.push(similarTonePoints[randomIndex]);
             }
-          } while (relationships.some(r => r.id === embeddingPoints[targetIndex].id));
+          }
           
-          // Use a keyword from the target point as the connecting word
-          const targetPoint = embeddingPoints[targetIndex];
-          const word = targetPoint.keywords && targetPoint.keywords.length > 0
-            ? targetPoint.keywords[Math.floor(Math.random() * targetPoint.keywords.length)]
-            : entityWords[Math.floor(Math.random() * entityWords.length)];
+          for (const targetPoint of sample) {
+            relationships.push({
+              id: targetPoint.id,
+              strength: 0.5 + Math.random() * 0.5,
+              word: targetPoint.word
+            });
+          }
+        }
+        
+        const remainingRelationships = relationshipCount - relationships.length;
+        if (remainingRelationships > 0) {
+          const otherPoints = embeddingPoints.filter(p => 
+            p.id !== point.id && !relationships.some(r => r.id === p.id)
+          );
           
-          relationships.push({
-            id: targetPoint.id,
-            strength: 0.5 + Math.random() * 0.5, // Stronger connections
-            word
-          });
+          if (otherPoints.length > 0) {
+            for (let i = 0; i < remainingRelationships && i < otherPoints.length; i++) {
+              const randomIndex = Math.floor(Math.random() * otherPoints.length);
+              const targetPoint = otherPoints[randomIndex];
+              
+              relationships.push({
+                id: targetPoint.id,
+                strength: 0.3 + Math.random() * 0.3,
+                word: targetPoint.word
+              });
+              
+              otherPoints.splice(randomIndex, 1);
+            }
+          }
         }
         
         point.relationships = relationships;
       });
 
-      // Create complete analysis results
       const analysisResults = {
         overallSentiment: {
           score: 0.68,
@@ -226,7 +219,7 @@ const Dashboard = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [sentimentData, setSentimentData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("embedding");
-  const [selectedPoint, setSelectedPoint] = useState<any>(null);
+  const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
 
   const handleFileUpload = (files: File[]) => {
     if (files && files.length > 0) {
@@ -255,9 +248,9 @@ const Dashboard = () => {
     }
   };
 
-  const handlePointClick = (point: any) => {
+  const handlePointClick = (point: Point) => {
     setSelectedPoint(point);
-    toast(`Selected: "${point.text.substring(0, 30)}..."`);
+    toast(`Selected word: "${point.word}"`);
   };
 
   return (
@@ -317,12 +310,12 @@ const Dashboard = () => {
                 
                 <TabsContent value="embedding" className="mt-6">
                   <Card className="border border-border shadow-md overflow-hidden bg-card">
-                    <CardHeader>
+                    <CardHeader className="relative z-10">
                       <CardTitle className="flex justify-between items-center">
                         <span>Latent Emotional Analysis</span>
                         <div className="text-sm font-normal flex items-center text-muted-foreground">
                           <CircleDot className="h-4 w-4 mr-2" />
-                          <span>Hover over points to see details</span>
+                          <span>Hover or click on words to see details</span>
                         </div>
                       </CardTitle>
                     </CardHeader>
@@ -340,13 +333,13 @@ const Dashboard = () => {
                   {selectedPoint && (
                     <Card className="mt-4 border border-border shadow-sm bg-card">
                       <CardHeader className="py-3">
-                        <CardTitle className="text-lg">Selected Point Details</CardTitle>
+                        <CardTitle className="text-lg">Selected Word</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
-                            <h3 className="text-sm font-medium mb-1">Text Excerpt</h3>
-                            <p className="text-sm bg-muted p-3 rounded">{selectedPoint.text}</p>
+                            <h3 className="text-sm font-medium mb-1">Word</h3>
+                            <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">{selectedPoint.word}</p>
                           </div>
                           <div>
                             <h3 className="text-sm font-medium mb-1">Sentiment Analysis</h3>
@@ -368,12 +361,14 @@ const Dashboard = () => {
                             
                             {selectedPoint.relationships && selectedPoint.relationships.length > 0 && (
                               <div>
-                                <h3 className="text-sm font-medium mt-3 mb-1">Related Concepts</h3>
-                                <ul className="text-xs">
+                                <h3 className="text-sm font-medium mt-3 mb-1">Related Words</h3>
+                                <ul className="text-sm">
                                   {selectedPoint.relationships.map((rel, i) => (
-                                    <li key={i} className="py-1 border-b border-gray-700 last:border-0">
-                                      {rel.word && <span className="font-medium">{rel.word}: </span>}
-                                      Connection strength: {(rel.strength * 100).toFixed(0)}%
+                                    <li key={i} className="py-1 border-b border-border last:border-0">
+                                      <div className="flex justify-between">
+                                        <span className="font-medium">{rel.word}</span>
+                                        <span className="text-muted-foreground">Connection: {(rel.strength * 100).toFixed(0)}%</span>
+                                      </div>
                                     </li>
                                   ))}
                                 </ul>

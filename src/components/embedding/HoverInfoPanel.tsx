@@ -18,13 +18,13 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
             backgroundColor: getEmotionColor(point.emotionalTone || "")
           }} 
         />
-        <span className="font-medium">Text Excerpt</span>
+        <span className="font-medium">Word</span>
       </div>
-      <p className="text-sm mb-2">{point.text}</p>
+      <p className="text-lg font-bold mb-2">{point.word}</p>
       
       {point.keywords && (
         <div className="mb-2">
-          <span className="text-xs font-medium block mb-1">Keywords:</span>
+          <span className="text-xs font-medium block mb-1">Related Concepts:</span>
           <div className="flex flex-wrap gap-1">
             {point.keywords.map((keyword, idx) => (
               <span key={idx} className="text-xs bg-accent px-1.5 py-0.5 rounded-full">{keyword}</span>

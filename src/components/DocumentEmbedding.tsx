@@ -11,7 +11,8 @@ import { EmbeddingScene, zoomIn, zoomOut } from './embedding/EmbeddingScene';
 export const DocumentEmbedding = ({ 
   points = [], 
   onPointClick, 
-  isInteractive = true 
+  isInteractive = true,
+  depressedJournalReference = false
 }: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -22,7 +23,7 @@ export const DocumentEmbedding = ({
   // Generate mock points if none are provided
   const getPoints = () => {
     if (points.length > 0) return points;
-    return generateMockPoints();
+    return generateMockPoints(depressedJournalReference);
   };
   
   const handleZoomIn = () => {
@@ -59,6 +60,7 @@ export const DocumentEmbedding = ({
         onPointHover={handlePointHover}
         onPointSelect={handlePointSelect}
         isInteractive={isInteractive}
+        depressedJournalReference={depressedJournalReference}
       />
       
       {isInteractive && (

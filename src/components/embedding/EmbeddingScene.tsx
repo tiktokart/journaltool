@@ -10,6 +10,7 @@ interface EmbeddingSceneProps {
   onPointHover: (point: Point | null) => void;
   onPointSelect: (point: Point | null) => void;
   isInteractive: boolean;
+  depressedJournalReference?: boolean;
 }
 
 export const EmbeddingScene = ({ 
@@ -17,20 +18,22 @@ export const EmbeddingScene = ({
   points, 
   onPointHover, 
   onPointSelect, 
-  isInteractive
+  isInteractive,
+  depressedJournalReference = false
 }: EmbeddingSceneProps) => {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const pointsRef = useRef<THREE.Points | null>(null);
+  const linesRef = useRef<THREE.LineSegments | null>(null);
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   
   const createPointCloud = (pointsData: Point[]) => {
     if (!sceneRef.current) return;
     
-    // Remove old points
+    // Remove old points and lines
     if (pointsRef.current) {
       sceneRef.current.remove(pointsRef.current);
       if (pointsRef.current.geometry) {
@@ -39,6 +42,17 @@ export const EmbeddingScene = ({
       if (pointsRef.current.material) {
         (pointsRef.current.material as THREE.Material).dispose();
       }
+    }
+    
+    if (linesRef.current) {
+      sceneRef.current.remove(linesRef.current);
+      if (linesRef.current.geometry) {
+        linesRef.current.geometry.dispose();
+      }
+      if (linesRef.current.material) {
+        (linesRef.current.material as THREE.Material).dispose();
+      }
+      linesRef.current = null;
     }
     
     const particlesGeometry = new THREE.BufferGeometry();
@@ -80,6 +94,74 @@ export const EmbeddingScene = ({
     
     // Store point data for raycasting
     points.userData = { pointsData };
+    
+    // Create lines between related points
+    createRelationshipLines(pointsData);
+  };
+  
+  const createRelationshipLines = (pointsData: Point[]) => {
+    if (!sceneRef.current) return;
+    
+    // Collect line positions from relationships
+    const linePositions: number[] = [];
+    const lineColors: number[] = [];
+    
+    pointsData.forEach((point) => {
+      if (point.relationships && point.relationships.length > 0) {
+        const pointPos = new THREE.Vector3(
+          point.position[0],
+          point.position[1],
+          point.position[2]
+        );
+        
+        point.relationships.forEach((rel) => {
+          // Find the target point
+          const targetPoint = pointsData.find((p) => p.id === rel.id);
+          if (targetPoint) {
+            // Only draw lines where the relationships are strong enough
+            if (rel.strength > 0.5) {
+              const targetPos = new THREE.Vector3(
+                targetPoint.position[0],
+                targetPoint.position[1],
+                targetPoint.position[2]
+              );
+              
+              // Add line vertices
+              linePositions.push(
+                pointPos.x, pointPos.y, pointPos.z,
+                targetPos.x, targetPos.y, targetPos.z
+              );
+              
+              // Add line colors - use a blend of both point colors
+              const alpha = 0.3 + (rel.strength * 0.3); // Line opacity based on relationship strength
+              
+              // Fade to lighter color for better visibility
+              lineColors.push(
+                point.color[0], point.color[1], point.color[2], 
+                targetPoint.color[0], targetPoint.color[1], targetPoint.color[2]
+              );
+            }
+          }
+        });
+      }
+    });
+    
+    if (linePositions.length > 0) {
+      const lineGeometry = new THREE.BufferGeometry();
+      lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+      lineGeometry.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3));
+      
+      const lineMaterial = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.3,
+        depthWrite: false
+      });
+      
+      const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
+      sceneRef.current.add(lines);
+      linesRef.current = lines;
+    }
   };
   
   const checkIntersection = () => {
@@ -141,7 +223,7 @@ export const EmbeddingScene = ({
     
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xCCCCCC); // Light grey background
+    scene.background = new THREE.Color(0xF1F1F1); // Light grey background
     sceneRef.current = scene;
     
     // Camera setup
@@ -194,12 +276,18 @@ export const EmbeddingScene = ({
         containerRef.current.removeChild(rendererRef.current.domElement);
       }
       
-      if (sceneRef.current && pointsRef.current) {
-        sceneRef.current.remove(pointsRef.current);
-      }
-      
-      if (pointsRef.current && pointsRef.current.geometry) {
-        pointsRef.current.geometry.dispose();
+      if (sceneRef.current) {
+        if (pointsRef.current) {
+          sceneRef.current.remove(pointsRef.current);
+          if (pointsRef.current.geometry) pointsRef.current.geometry.dispose();
+          if (pointsRef.current.material) (pointsRef.current.material as THREE.Material).dispose();
+        }
+        
+        if (linesRef.current) {
+          sceneRef.current.remove(linesRef.current);
+          if (linesRef.current.geometry) linesRef.current.geometry.dispose();
+          if (linesRef.current.material) (linesRef.current.material as THREE.Material).dispose();
+        }
       }
       
       if (rendererRef.current) {
