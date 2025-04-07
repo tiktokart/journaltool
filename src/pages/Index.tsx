@@ -27,13 +27,26 @@ const Index = () => {
 
   // Get points from the visualization for search
   useEffect(() => {
-    // We'll use the mock points generated in DocumentEmbedding
-    // This effect will run after the first render
-    const timer = setTimeout(() => {
-      setPoints([]); // Placeholder - points will be generated within the DocumentEmbedding
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    const checkForPoints = () => {
+      if ((window as any).documentEmbeddingPoints) {
+        setPoints((window as any).documentEmbeddingPoints);
+      }
+    };
+    
+    // Initial check
+    checkForPoints();
+    
+    // Set up periodic check until points are available
+    const intervalId = setInterval(() => {
+      if (points.length === 0) {
+        checkForPoints();
+      } else {
+        clearInterval(intervalId);
+      }
+    }, 500);
+    
+    return () => clearInterval(intervalId);
+  }, [points.length]);
 
   const handlePointClick = (point: Point) => {
     setSelectedPoint(point);
@@ -64,11 +77,6 @@ const Index = () => {
     setFocusWord(point.word);
     setOpen(false);
     toast(`Zooming to: "${point.word}"`);
-  };
-
-  // This function will be called when the DocumentEmbedding renders its points
-  const handlePointsUpdate = (updatedPoints: Point[]) => {
-    setPoints(updatedPoints);
   };
 
   return (

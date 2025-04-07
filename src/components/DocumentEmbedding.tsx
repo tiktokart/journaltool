@@ -22,35 +22,35 @@ export const DocumentEmbedding = ({
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [currentFocusWord, setCurrentFocusWord] = useState<string | null>(null);
   const [generatedPoints, setGeneratedPoints] = useState<Point[]>([]);
+  const [displayPoints, setDisplayPoints] = useState<Point[]>([]);
   
   // Update currentFocusWord when focusOnWord changes
   useEffect(() => {
     if (focusOnWord !== currentFocusWord) {
       setCurrentFocusWord(focusOnWord);
     }
-  }, [focusOnWord]);
+  }, [focusOnWord, currentFocusWord]);
   
   // Generate mock points if none are provided
-  const getPoints = () => {
-    if (points.length > 0) return points;
-    
-    const mockPoints = generateMockPoints(depressedJournalReference);
-    // Store the generated points for search functionality in parent component
-    setGeneratedPoints(mockPoints);
-    return mockPoints;
-  };
+  useEffect(() => {
+    if (points.length > 0) {
+      setDisplayPoints(points);
+    } else if (generatedPoints.length === 0) {
+      const mockPoints = generateMockPoints(depressedJournalReference);
+      setGeneratedPoints(mockPoints);
+      setDisplayPoints(mockPoints);
+    }
+  }, [points, depressedJournalReference, generatedPoints.length]);
   
   // Expose generated points to parent component if needed
   useEffect(() => {
-    const pointData = getPoints();
-    // Check if parent component wants the point data (by passing an onPointsUpdate prop)
-    if (pointData && pointData.length > 0) {
+    if (displayPoints.length > 0) {
       if (window.parent) {
         // Expose points to parent (can be used by parent components)
-        (window as any).documentEmbeddingPoints = pointData;
+        (window as any).documentEmbeddingPoints = displayPoints;
       }
     }
-  }, [points, depressedJournalReference]);
+  }, [displayPoints]);
   
   const handleZoomIn = () => {
     zoomIn(cameraRef.current);
@@ -82,7 +82,7 @@ export const DocumentEmbedding = ({
       
       <EmbeddingScene 
         containerRef={containerRef}
-        points={getPoints()}
+        points={displayPoints}
         onPointHover={handlePointHover}
         onPointSelect={handlePointSelect}
         isInteractive={isInteractive}
