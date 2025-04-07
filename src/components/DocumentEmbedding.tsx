@@ -1,16 +1,16 @@
+
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
-import { generateMockPoints, getEmotionColor } from '../utils/embeddingUtils';
+import { generateMockPoints } from '../utils/embeddingUtils';
 import { HoverInfoPanel } from './embedding/HoverInfoPanel';
 import { EmotionsLegend } from './embedding/EmotionsLegend';
 import { ZoomControls } from './embedding/ZoomControls';
 import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
 import ParticleBackground from './embedding/ParticleBackground';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { ChevronDown, ChevronUp, CircleDot, Target } from 'lucide-react';
+import { CircleDot, Target } from 'lucide-react';
 import { Button } from './ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -35,7 +35,6 @@ export const DocumentEmbedding = ({
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   const [emotionalGroups, setEmotionalGroups] = useState<string[]>([]);
   const [selectedEmotionalGroup, setSelectedEmotionalGroup] = useState<string | null>(null);
-  const [isEmotionalGroupsOpen, setIsEmotionalGroupsOpen] = useState<boolean>(true);
   
   useEffect(() => {
     if (focusOnWord !== currentFocusWord) {
@@ -80,6 +79,7 @@ export const DocumentEmbedding = ({
       (window as any).documentEmbeddingPoints = displayPoints;
       console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
       
+      // Extract unique emotional groups
       const uniqueGroups = new Set<string>();
       displayPoints.forEach(point => {
         if (point.emotionalTone) {
@@ -235,46 +235,22 @@ export const DocumentEmbedding = ({
       )}
       
       {emotionalGroups.length > 0 && (
-        <div className="absolute top-16 right-4 z-10 bg-card/80 backdrop-blur-sm p-2 rounded-md">
-          <Collapsible 
-            open={isEmotionalGroupsOpen} 
-            onOpenChange={setIsEmotionalGroupsOpen}
-            className="w-full"
-          >
-            <div className="flex items-center justify-between">
-              <div className="text-xs font-semibold flex items-center">
-                <Target className="h-3 w-3 mr-1" />
-                Jump to Emotional Group
-              </div>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  {isEmotionalGroupsOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            
-            <CollapsibleContent className="mt-1 space-y-1">
-              {emotionalGroups.map(group => (
-                <Button
-                  key={group}
-                  size="sm"
-                  variant={selectedEmotionalGroup === group ? "default" : "outline"}
-                  className="h-7 text-xs justify-start px-2 w-full"
-                  onClick={() => focusOnEmotionalGroup(group)}
-                >
-                  <div 
-                    className="w-3 h-3 rounded-full mr-1.5" 
-                    style={{ backgroundColor: getEmotionColor(group) }}
-                  />
-                  {group}
-                </Button>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
+        <div className="absolute top-16 right-4 z-10 flex flex-col gap-1 bg-card/80 backdrop-blur-sm p-2 rounded-md">
+          <div className="text-xs font-semibold mb-1 flex items-center">
+            <Target className="h-3 w-3 mr-1" />
+            Jump to Emotional Group
+          </div>
+          {emotionalGroups.map(group => (
+            <Button
+              key={group}
+              size="sm"
+              variant={selectedEmotionalGroup === group ? "default" : "outline"}
+              className="h-7 text-xs justify-start px-2"
+              onClick={() => focusOnEmotionalGroup(group)}
+            >
+              {group}
+            </Button>
+          ))}
         </div>
       )}
       
@@ -287,6 +263,7 @@ export const DocumentEmbedding = ({
   );
 };
 
+// Add global type definitions
 declare global {
   interface Window {
     documentEmbeddingPoints?: Point[];

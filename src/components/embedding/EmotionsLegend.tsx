@@ -14,7 +14,7 @@ export const EmotionsLegend = () => {
   ];
 
   return (
-    <div className="absolute top-4 left-4 bg-background/95 backdrop-blur-sm p-2 rounded-lg shadow-md text-xs z-10 border border-border">
+    <div className="absolute top-4 left-4 bg-card/80 backdrop-blur-sm p-2 rounded-lg shadow-md text-xs z-10">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="flex items-center justify-between">
           <div className="font-medium">Emotional Tones:</div>
