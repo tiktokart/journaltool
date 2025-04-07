@@ -18,7 +18,7 @@ const Index = () => {
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null); // Fixed: removed brackets and added proper declaration
+  const containerRef = useRef<HTMLDivElement>(null);
   const [searchValue, setSearchValue] = useState("");
   const [open, setOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Point[]>([]);
