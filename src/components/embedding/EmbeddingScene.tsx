@@ -92,25 +92,22 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     controlsInstance.minDistance = 1;
     controlsInstance.maxDistance = 30;
     controlsInstance.maxPolarAngle = Math.PI / 2;
-    controlsInstance.autoRotateSpeed = 0.1; // Reduced speed for smoother revolution
+    controlsInstance.autoRotateSpeed = 0.5;
     controlsInstance.autoRotate = true;
-    controlsInstance.enableZoom = false; // Disable built-in zoom, we'll handle it ourselves
-    controlsInstance.enableRotate = true; // Make sure rotation is enabled
-    controlsInstance.rotateSpeed = 0.5; // Reduced rotation speed for smoother control
+    controlsInstance.enableZoom = false;
+    controlsInstance.enableRotate = true;
+    controlsInstance.rotateSpeed = 0.5;
     
     const handleMouseDown = () => {
       isDraggingRef.current = true;
-      controlsInstance.autoRotate = false;
     };
     
     const handleMouseUp = () => {
       isDraggingRef.current = false;
-      controlsInstance.autoRotate = true;
     };
     
     const handleMouseLeave = () => {
       isDraggingRef.current = false;
-      controlsInstance.autoRotate = true;
     };
     
     if (containerRef.current) {
@@ -144,10 +141,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
       
-      if (controlsRef.current) {
-        controlsRef.current.autoRotate = false;
-      }
-      
       isZoomingRef.current = true;
       
       if (zoomTimeoutRef.current !== null) {
@@ -174,9 +167,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       }
       
       zoomTimeoutRef.current = window.setTimeout(() => {
-        if (controlsRef.current) {
-          controlsRef.current.autoRotate = true;
-        }
         isZoomingRef.current = false;
       }, 800);
     };
@@ -367,10 +357,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const focusOnPoint = useCallback((targetPoint: Point | null) => {
     if (!targetPoint || !cameraRef.current || !controlsRef.current) return;
     
-    if (controlsRef.current) {
-      controlsRef.current.autoRotate = false;
-    }
-    
     isZoomingRef.current = true;
     
     const point = new THREE.Vector3(targetPoint.position[0], targetPoint.position[1], targetPoint.position[2]);
@@ -394,9 +380,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         }
       },
       onComplete: () => {
-        if (controlsRef.current) {
-          controlsRef.current.autoRotate = true;
-        }
         isZoomingRef.current = false;
       }
     });
@@ -407,10 +390,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     const groupCenter = emotionalGroupsRef.current.get(emotionalTone);
     if (!groupCenter) return;
-    
-    if (controlsRef.current) {
-      controlsRef.current.autoRotate = false;
-    }
     
     isZoomingRef.current = true;
     
@@ -426,7 +405,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       x: endPosition.x,
       y: endPosition.y,
       z: endPosition.z,
-      duration: 2.0,  // Longer duration for smoother transition
+      duration: 2.0,
       ease: "power2.inOut",
       onUpdate: () => {
         if (controlsRef.current) {
@@ -435,9 +414,6 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         }
       },
       onComplete: () => {
-        if (controlsRef.current) {
-          controlsRef.current.autoRotate = true;
-        }
         isZoomingRef.current = false;
       }
     });
