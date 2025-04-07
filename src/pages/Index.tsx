@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,8 +10,8 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
+import { FileUploader } from "@/components/FileUploader";
 
-// Example journal entry data for demonstration
 const exampleJournalData = {
   overallSentiment: {
     score: 0.35,
@@ -106,7 +105,6 @@ const exampleJournalData = {
   sourceDescription: "Example Journal Entry"
 };
 
-// Journal entry text for generating embedding points
 const exampleJournalText = `
 Today was particularly challenging. My anxiety felt overwhelming from the moment I woke up. I struggled to get out of bed, feeling like a heavy weight was pressing down on my chest. During breakfast, I had trouble focusing on simple tasks. My mind kept racing with worries.
 
@@ -117,6 +115,11 @@ By evening, I was exhausted from fighting my anxiety all day. I managed to do so
 
 const Home = () => {
   const [points] = useState<Point[]>(() => generateMockPoints(exampleJournalText, exampleJournalData));
+
+  const handleFilesAdded = (files: File[], extractedText?: string) => {
+    console.log('Files added:', files);
+    console.log('Extracted text:', extractedText);
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -130,7 +133,6 @@ const Home = () => {
               Analyze your journal entries, therapy notes, and personal narratives 
               to gain deeper insights into your emotional patterns and mental health journey.
             </p>
-            {/* Removed the buttons as requested */}
           </div>
           
           <div className="rounded-lg overflow-hidden shadow-xl border min-h-[350px] border-border relative">
@@ -195,7 +197,6 @@ const Home = () => {
               </Tabs>
             </CardContent>
             <CardFooter>
-              {/* Fixed TypeScript error by explicitly passing a boolean */}
               <DocumentEmbedding 
                 points={points}
                 isInteractive={false}
@@ -203,6 +204,14 @@ const Home = () => {
               />
             </CardFooter>
           </Card>
+          
+          <div className="mt-16">
+            <h2 className="text-2xl font-semibold tracking-tight mb-6">Upload Your Journal</h2>
+            <p className="text-muted-foreground mb-6">
+              Upload your personal journal, therapy notes, or any text document to gain insights into your emotional patterns.
+            </p>
+            <FileUploader onFilesAdded={handleFilesAdded} />
+          </div>
         </div>
       </main>
       
