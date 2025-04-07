@@ -1,7 +1,7 @@
 
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, Home, MousePointer, Compare } from "lucide-react";
+import { ZoomIn, ZoomOut, Home, MousePointer, SplitSquareVertical } from "lucide-react";
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { MutableRefObject } from "react";
@@ -106,7 +106,7 @@ export const ZoomControls = ({
                 onClick={onToggleCompare}
                 className={isCompareMode ? "border-primary" : ""}
               >
-                <Compare className="h-4 w-4" />
+                <SplitSquareVertical className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Toggle Compare Mode</TooltipContent>
