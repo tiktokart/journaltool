@@ -1,43 +1,64 @@
 
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { GitCompareArrows, Home, LayoutDashboard } from "lucide-react";
+import { FileText, Menu, X } from "lucide-react";
+import { useState } from "react";
 
 export const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
-    <header className="border-b bg-background">
-      <div className="container mx-auto max-w-7xl flex items-center justify-between h-16 px-4">
-        <Link to="/" className="font-semibold text-xl">
-          Document Analyzer
-        </Link>
-        <nav className="hidden md:flex items-center gap-6">
-          <Link 
-            to="/" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center"
-          >
-            <Home className="h-4 w-4 mr-1" />
-            Home
+    <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <Link to="/" className="flex items-center space-x-2">
+            <FileText className="h-6 w-6 text-primary" />
+            <span className="font-bold text-xl">Journal Analysis</span>
           </Link>
-          <Link 
-            to="/dashboard" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center"
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link to="/" className="text-foreground/80 hover:text-foreground transition-colors">
+              Home
+            </Link>
+            <Link to="/dashboard" className="text-foreground/80 hover:text-foreground transition-colors">
+              Dashboard
+            </Link>
+          </nav>
+          
+          {/* Mobile Menu Button */}
+          <button 
+            className="md:hidden text-foreground" 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            <LayoutDashboard className="h-4 w-4 mr-1" />
-            Dashboard
-          </Link>
-          <Link 
-            to="/comparison" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center"
-          >
-            <GitCompareArrows className="h-4 w-4 mr-1" />
-            Word Comparison
-          </Link>
-        </nav>
-        <div className="flex items-center gap-4">
-          <Button asChild variant="outline" size="sm">
-            <Link to="/dashboard">Analyze Document</Link>
-          </Button>
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
         </div>
+        
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden py-4 animate-fade-in">
+            <nav className="flex flex-col space-y-4">
+              <Link 
+                to="/" 
+                className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link 
+                to="/dashboard" 
+                className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
