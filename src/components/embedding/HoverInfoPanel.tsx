@@ -18,7 +18,7 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
             backgroundColor: getEmotionColor(point.emotionalTone || "")
           }} 
         />
-        <span className="font-medium">Word</span>
+        <span className="font-medium">Emotional Grouping: {point.emotionalTone || "Neutral"}</span>
       </div>
       <p className="text-lg font-bold mb-2">{point.word}</p>
       

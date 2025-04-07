@@ -15,7 +15,7 @@ const Index = () => {
 
   const handlePointClick = (point: Point) => {
     setSelectedPoint(point);
-    toast(`Selected word: "${point.word}"`);
+    toast(`Selected: "${point.word}" (${point.emotionalTone})`);
   };
 
   return (
@@ -36,7 +36,7 @@ const Index = () => {
             <div className="w-full max-w-6xl mb-8 relative">
               <div className="absolute top-2 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground">
                 <CircleDot className="h-4 w-4 mr-2" />
-                <span>Hover or click on words to see details</span>
+                <span>Hover or click on words to see emotional groupings</span>
               </div>
               <div className="aspect-[16/9] bg-white border border-border rounded-xl overflow-hidden shadow-lg">
                 <DocumentEmbedding 
@@ -52,8 +52,14 @@ const Index = () => {
                 <CardContent className="pt-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <h3 className="text-sm font-medium mb-1">Word</h3>
-                      <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">{selectedPoint.word}</p>
+                      <h3 className="text-sm font-medium mb-1">Emotional Grouping</h3>
+                      <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">
+                        {selectedPoint.emotionalTone || "Neutral"}
+                      </p>
+                      <h3 className="text-sm font-medium mt-3 mb-1">Word</h3>
+                      <p className="text-xl bg-muted p-2 rounded flex items-center justify-center">
+                        {selectedPoint.word}
+                      </p>
                     </div>
                     <div>
                       <h3 className="text-sm font-medium mb-1">Sentiment Analysis</h3>

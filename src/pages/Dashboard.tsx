@@ -225,7 +225,7 @@ const Dashboard = () => {
 
   const handlePointClick = (point: Point) => {
     setSelectedPoint(point);
-    toast(`Selected word: "${point.word}"`);
+    toast(`Selected: "${point.word}" (${point.emotionalTone})`);
   };
 
   return (
@@ -290,7 +290,7 @@ const Dashboard = () => {
                         <span>Latent Emotional Analysis</span>
                         <div className="text-sm font-normal flex items-center text-muted-foreground">
                           <CircleDot className="h-4 w-4 mr-2" />
-                          <span>Hover or click on words to see details</span>
+                          <span>Hover or click on words to see emotional groupings</span>
                         </div>
                       </CardTitle>
                     </CardHeader>
@@ -307,14 +307,17 @@ const Dashboard = () => {
                   
                   {selectedPoint && (
                     <Card className="mt-4 border border-border shadow-sm bg-card">
-                      <CardHeader className="py-3">
-                        <CardTitle className="text-lg">Selected Word</CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                      <CardContent className="pt-6">
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
-                            <h3 className="text-sm font-medium mb-1">Word</h3>
-                            <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">{selectedPoint.word}</p>
+                            <h3 className="text-sm font-medium mb-1">Emotional Grouping</h3>
+                            <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">
+                              {selectedPoint.emotionalTone || "Neutral"}
+                            </p>
+                            <h3 className="text-sm font-medium mt-3 mb-1">Word</h3>
+                            <p className="text-xl bg-muted p-2 rounded flex items-center justify-center">
+                              {selectedPoint.word}
+                            </p>
                           </div>
                           <div>
                             <h3 className="text-sm font-medium mb-1">Sentiment Analysis</h3>
