@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { GlobalWorkerOptions } from 'pdfjs-dist';
 
 // Set the worker path for PDF.js
+// Make sure the PDF.js worker is correctly loaded with the right version
 GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface FileUploaderProps {
@@ -21,11 +21,19 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
 
   const extractTextFromPdf = async (file: File): Promise<string> => {
     try {
+      console.log("Starting PDF extraction process");
       const arrayBuffer = await file.arrayBuffer();
+      console.log("PDF loaded as ArrayBuffer, size:", arrayBuffer.byteLength);
+      
+      // Load the PDF document using PDF.js
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      console.log("PDF document loaded, pages:", pdf.numPages);
+      
       let fullText = '';
 
+      // Extract text from each page
       for (let i = 1; i <= pdf.numPages; i++) {
+        console.log(`Processing page ${i} of ${pdf.numPages}`);
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items
@@ -34,10 +42,11 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
         fullText += pageText + '\n\n';
       }
 
+      console.log(`Text extraction complete. Extracted ${fullText.length} characters`);
       return fullText;
     } catch (error) {
       console.error('Error extracting text from PDF:', error);
-      toast.error('Failed to extract text from PDF');
+      toast.error('Failed to extract text from PDF. Please try a different file or check if the PDF contains text content.');
       return '';
     }
   };
@@ -60,13 +69,22 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       }
     
       const firstPdf = pdfFiles[0];
+      console.log("Processing PDF file:", firstPdf.name, "Size:", firstPdf.size);
+      
       const extractedText = await extractTextFromPdf(firstPdf);
+      
+      if (!extractedText || extractedText.trim().length === 0) {
+        console.warn("No text was extracted from the PDF");
+        toast.warning("Could not extract text from PDF. It may be scanned or protected.");
+      } else {
+        console.log("Extracted text length:", extractedText.length);
+      }
     
       onFilesAdded(pdfFiles, extractedText);
       toast.success('PDF processed successfully');
     } catch (error) {
       console.error('Error handling files:', error);
-      toast.error('Error processing files');
+      toast.error('Error processing files. Please try again.');
     } finally {
       setIsProcessing(false);
     }
