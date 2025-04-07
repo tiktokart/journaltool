@@ -12,16 +12,12 @@ GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs
 
 interface FileUploaderProps {
   onFilesAdded: (files: File[], extractedText?: string) => void;
-  fileInputRef?: React.RefObject<HTMLInputElement>;
 }
 
-export const FileUploader = ({ onFilesAdded, fileInputRef }: FileUploaderProps) => {
+export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const internalFileInputRef = useRef<HTMLInputElement>(null);
-
-  // Use the provided ref or fall back to the internal one
-  const actualFileInputRef = fileInputRef || internalFileInputRef;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const extractTextFromPdf = async (file: File): Promise<string> => {
     try {
@@ -95,8 +91,8 @@ export const FileUploader = ({ onFilesAdded, fileInputRef }: FileUploaderProps) 
   };
 
   const handleClick = () => {
-    if (actualFileInputRef.current) {
-      actualFileInputRef.current.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
@@ -137,8 +133,8 @@ export const FileUploader = ({ onFilesAdded, fileInputRef }: FileUploaderProps) 
               </div>
               <Button className="mt-6" onClick={(e) => {
                 e.stopPropagation();
-                if (actualFileInputRef.current) {
-                  actualFileInputRef.current.click();
+                if (fileInputRef.current) {
+                  fileInputRef.current.click();
                 }
               }}>
                 Select File
@@ -148,7 +144,7 @@ export const FileUploader = ({ onFilesAdded, fileInputRef }: FileUploaderProps) 
         </div>
         <input 
           type="file"
-          ref={actualFileInputRef}
+          ref={fileInputRef}
           className="hidden"
           accept="application/pdf"
           onChange={handleFileInputChange}
