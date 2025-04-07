@@ -23,13 +23,35 @@ export const DocumentEmbedding = ({
   const [currentFocusWord, setCurrentFocusWord] = useState<string | null>(null);
   const [generatedPoints, setGeneratedPoints] = useState<Point[]>([]);
   const [displayPoints, setDisplayPoints] = useState<Point[]>([]);
+  const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   
   // Update currentFocusWord when focusOnWord changes
   useEffect(() => {
     if (focusOnWord !== currentFocusWord) {
       setCurrentFocusWord(focusOnWord);
+      
+      // Find connected points when focus word changes
+      if (focusOnWord && displayPoints.length > 0) {
+        const focusedPoint = displayPoints.find(p => p.word === focusOnWord);
+        if (focusedPoint && focusedPoint.relationships) {
+          // Get top 3 connections by strength
+          const sortedRelationships = [...focusedPoint.relationships]
+            .sort((a, b) => b.strength - a.strength)
+            .slice(0, 3);
+            
+          const connected = sortedRelationships
+            .map(rel => displayPoints.find(p => p.id === rel.id))
+            .filter(p => p !== undefined) as Point[];
+            
+          setConnectedPoints(connected);
+        } else {
+          setConnectedPoints([]);
+        }
+      } else {
+        setConnectedPoints([]);
+      }
     }
-  }, [focusOnWord, currentFocusWord]);
+  }, [focusOnWord, currentFocusWord, displayPoints]);
   
   // Generate mock points if none are provided
   useEffect(() => {
@@ -69,6 +91,22 @@ export const DocumentEmbedding = ({
     if (!point) return;
     
     setSelectedPoint(point);
+    
+    // Find the top 3 connected points
+    if (point.relationships && point.relationships.length > 0) {
+      const sortedRelationships = [...point.relationships]
+        .sort((a, b) => b.strength - a.strength)
+        .slice(0, 3);
+        
+      const connected = sortedRelationships
+        .map(rel => displayPoints.find(p => p.id === rel.id))
+        .filter(p => p !== undefined) as Point[];
+        
+      setConnectedPoints(connected);
+    } else {
+      setConnectedPoints([]);
+    }
+    
     if (onPointClick) {
       onPointClick(point);
     }

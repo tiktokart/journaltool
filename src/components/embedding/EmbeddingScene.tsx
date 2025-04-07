@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -185,14 +186,24 @@ export const EmbeddingScene = ({
           const sizesAttribute = pointsRef.current.geometry.attributes.size;
           const sizesArray = sizesAttribute.array as Float32Array;
           
+          // Reset all sizes first
           for (let i = 0; i < sizesArray.length; i++) {
             sizesArray[i] = 0.05;
           }
           
+          // Make hovered point larger
           sizesArray[index] = 0.15;
           
-          if (point.relationships) {
-            point.relationships.forEach(rel => {
+          // Find the top 3 connected points by relationship strength
+          if (point.relationships && point.relationships.length > 0) {
+            // Sort relationships by strength (descending)
+            const sortedRelationships = [...point.relationships].sort((a, b) => b.strength - a.strength);
+            
+            // Take up to 3 strongest relationships
+            const topConnections = sortedRelationships.slice(0, 3);
+            
+            // Highlight these connections
+            topConnections.forEach(rel => {
               const relatedIndex = pointsRef.current!.userData.pointsData.findIndex((p: Point) => p.id === rel.id);
               if (relatedIndex !== -1) {
                 sizesArray[relatedIndex] = 0.1;
@@ -225,6 +236,37 @@ export const EmbeddingScene = ({
     
     const targetPoint = pointsData.find(p => p.word === wordToFocus);
     if (!targetPoint) return;
+    
+    // Find the top 3 related points by relationship strength
+    if (pointsRef.current.geometry.attributes.size && targetPoint.relationships && targetPoint.relationships.length > 0) {
+      const sizesAttribute = pointsRef.current.geometry.attributes.size;
+      const sizesArray = sizesAttribute.array as Float32Array;
+      
+      // Reset all sizes first
+      for (let i = 0; i < sizesArray.length; i++) {
+        sizesArray[i] = 0.05;
+      }
+      
+      // Highlight the focused point
+      const targetIndex = pointsData.findIndex(p => p.word === wordToFocus);
+      if (targetIndex !== -1) {
+        sizesArray[targetIndex] = 0.15;
+      }
+      
+      // Sort relationships by strength and get top 3
+      const sortedRelationships = [...targetPoint.relationships].sort((a, b) => b.strength - a.strength);
+      const topConnections = sortedRelationships.slice(0, 3);
+      
+      // Highlight top connections
+      topConnections.forEach(rel => {
+        const relatedIndex = pointsData.findIndex(p => p.id === rel.id);
+        if (relatedIndex !== -1) {
+          sizesArray[relatedIndex] = 0.1;
+        }
+      });
+      
+      sizesAttribute.needsUpdate = true;
+    }
     
     const targetPosition = new THREE.Vector3(
       targetPoint.position[0],

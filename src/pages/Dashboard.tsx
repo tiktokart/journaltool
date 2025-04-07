@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 
 const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
   return new Promise((resolve) => {
@@ -48,7 +48,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         Neutral: 0.0
       };
       
-      // Process PDF text if available
       if (pdfText && pdfText.length > 0) {
         const cleanText = pdfText
           .toLowerCase()
@@ -56,7 +55,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
           .replace(/\s+/g, ' ')
           .trim();
         
-        // Extract significant words, filtering out stopwords
         const stopWords = new Set(['the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']);
         customWordBank = cleanText
           .split(' ')
@@ -64,7 +62,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
           .filter((word, index, self) => self.indexOf(word) === index)
           .slice(0, 200);
           
-        // Analyze emotional content based on keywords
         const emotionWords = {
           Joy: ['happy', 'joy', 'delight', 'pleased', 'glad', 'content', 'satisfied'],
           Sadness: ['sad', 'sorrow', 'unhappy', 'depressed', 'gloomy', 'miserable'],
@@ -98,7 +95,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
           }
         }
       } else {
-        // If no PDF text, use filename to make some guesses (fallback)
         if (fileName.includes('happy') || fileName.includes('joy')) {
           emotionalDistribution.Joy = 0.4;
           emotionalDistribution.Sadness = 0.05;
@@ -114,7 +110,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         }
       }
       
-      // Calculate overall sentiment based on emotional distribution
       const overallSentiment = 
         (emotionalDistribution.Joy * 0.9) + 
         (emotionalDistribution.Trust * 0.8) + 
@@ -127,25 +122,21 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
       
       const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
       
-      // Generate embedding points based on PDF content
       const embeddingPoints = generateMockPoints(
         false, 
         emotionalDistribution, 
         customWordBank.length > 0 ? customWordBank : undefined
       );
 
-      // Calculate sentiment distribution percentages
       const positivePercentage = Math.round(normalizedSentiment * 100);
       const negativePercentage = Math.round((1 - normalizedSentiment) * 0.5 * 100);
       const neutralPercentage = 100 - positivePercentage - negativePercentage;
 
-      // Generate timeline data based on PDF content
       const pageCount = pdfText ? Math.ceil(pdfText.length / 2000) : 5 + Math.floor((seed % 10));
       const timeline = [];
       let prevScore = normalizedSentiment * 0.8;
 
       for (let i = 1; i <= pageCount; i++) {
-        // Use lower volatility for real text to simulate more realistic sentiment flow
         const volatility = pdfText ? 0.1 : 0.15;
         const trend = (normalizedSentiment - prevScore) * 0.3;
         const randomChange = (Math.random() * 2 - 1) * volatility;
@@ -156,14 +147,12 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         prevScore = newScore;
       }
 
-      // Generate themes based on actual PDF content if available
-      let themeNames = [
+      const themeNames = [
         "Work", "Family", "Health", "Relationships", 
         "Future", "Goals", "Education", "Friends",
         "Hobbies", "Travel", "Home", "Money"
       ];
 
-      // Use the most common words from PDF as themes if possible
       if (customWordBank.length > 20) {
         const potentialThemes = customWordBank.slice(0, 20);
         const selectedThemes = [];
@@ -202,7 +191,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         });
       }
 
-      // Calculate word frequencies and sentiments from embedding points
       const wordFrequency: Record<string, { count: number, sentiment: number, emotionalTone: string }> = {};
       embeddingPoints.forEach(point => {
         if (point.word) {
@@ -223,7 +211,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         entry.sentiment = entry.sentiment / entry.count;
       });
 
-      // Extract most common words for key phrases analysis
       const sortedWords = Object.entries(wordFrequency)
         .sort((a, b) => b[1].count - a[1].count)
         .slice(0, 30);
@@ -247,7 +234,6 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         };
       });
 
-      // Compile all analysis results
       const analysisResults = {
         overallSentiment: {
           score: normalizedSentiment,
@@ -265,7 +251,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         fileName: file.name,
         fileSize: file.size,
         wordCount: customWordBank.length,
-        pdfTextLength: pdfText ? pdfText.length : 0  // Store text length for reference
+        pdfTextLength: pdfText ? pdfText.length : 0
       };
 
       resolve(analysisResults);
@@ -286,6 +272,7 @@ const Dashboard = () => {
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
   const [pdfText, setPdfText] = useState<string>(""); 
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
 
   const handleFileUpload = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
@@ -293,7 +280,6 @@ const Dashboard = () => {
       setPdfText(extractedText || "");
       toast.success(`File "${files[0].name}" uploaded successfully`);
       
-      // If extractedText is available, show a toast to indicate that
       if (extractedText && extractedText.length > 0) {
         const wordCount = extractedText.split(/\s+/).length;
         toast.info(`Extracted ${wordCount} words from PDF for analysis`);
@@ -317,13 +303,11 @@ const Dashboard = () => {
     setAnalysisComplete(false);
     
     try {
-      // Pass PDF text to the analysis function
       const results = await analyzePdfContent(file, pdfText);
       setSentimentData(results);
       setFilteredPoints(results.embeddingPoints);
       setAnalysisComplete(true);
       
-      // Extract unique words for search functionality
       const words = results.embeddingPoints
         .map((point: Point) => point.word)
         .filter((word: string, index: number, self: string[]) => 
@@ -349,6 +333,20 @@ const Dashboard = () => {
   const handlePointClick = (point: Point) => {
     setSelectedPoint(point);
     setSelectedWord(point.word);
+    
+    if (point.relationships && point.relationships.length > 0) {
+      const sortedRelationships = [...point.relationships]
+        .sort((a, b) => b.strength - a.strength)
+        .slice(0, 3);
+        
+      const connected = sentimentData.embeddingPoints
+        .filter(p => sortedRelationships.some(rel => rel.id === p.id));
+      
+      setConnectedPoints(connected);
+    } else {
+      setConnectedPoints([]);
+    }
+    
     toast(`Selected: "${point.word}" (${point.emotionalTone})`);
   };
   
@@ -561,9 +559,32 @@ const Dashboard = () => {
                               </span>
                             </div>
                             
+                            <div>
+                              <h3 className="text-sm font-medium mt-3 mb-1">Top Connected Words</h3>
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {connectedPoints.length > 0 ? (
+                                  connectedPoints.map((point, index) => (
+                                    <Badge 
+                                      key={point.id}
+                                      variant="outline" 
+                                      className="px-3 py-1 text-sm"
+                                      style={{
+                                        borderColor: `rgba(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255}, 0.5)`,
+                                        backgroundColor: `rgba(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255}, 0.1)`
+                                      }}
+                                    >
+                                      {point.word}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">No connected words found</span>
+                                )}
+                              </div>
+                            </div>
+                            
                             {selectedPoint.relationships && selectedPoint.relationships.length > 0 && (
                               <div>
-                                <h3 className="text-sm font-medium mt-3 mb-1">Related Words</h3>
+                                <h3 className="text-sm font-medium mt-3 mb-1">All Related Words</h3>
                                 <ul className="text-sm">
                                   {selectedPoint.relationships.map((rel, i) => (
                                     <li key={i} className="py-1 border-b border-border last:border-0">
