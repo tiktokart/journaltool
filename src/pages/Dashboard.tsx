@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -454,7 +453,7 @@ const Dashboard = () => {
                     <TabsTrigger value="overview" className="min-w-max">Overview</TabsTrigger>
                     <TabsTrigger value="timeline" className="min-w-max">Timeline</TabsTrigger>
                     <TabsTrigger value="themes" className="min-w-max">Themes</TabsTrigger>
-                    <TabsTrigger value="keyphrases" className="min-w-max">Key Words</TabsTrigger>
+                    <TabsTrigger value="keyphrases" className="min-w-max">Key Phrases</TabsTrigger>
                   </TabsList>
                 </div>
                 
