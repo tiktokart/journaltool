@@ -533,6 +533,7 @@ const Dashboard = () => {
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
+          {/* File Upload Card */}
           <Card className="border border-border shadow-md bg-card">
             <CardHeader>
               <CardTitle>Document Analysis</CardTitle>
@@ -578,6 +579,7 @@ const Dashboard = () => {
 
           {sentimentData && (
             <div className="animate-fade-in">
+              {/* File Info Bar */}
               <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center">
                 <FileText className="h-5 w-5 mr-2 text-primary" />
                 <span className="text-sm">
@@ -588,6 +590,7 @@ const Dashboard = () => {
                 </span>
               </div>
               
+              {/* Summary Card - Modified to ensure full display */}
               <Card className="mb-6 border border-border shadow-md bg-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center">
@@ -596,12 +599,13 @@ const Dashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                     {sentimentData.summary || "No summary available for this document."}
-                  </p>
+                  </div>
                 </CardContent>
               </Card>
               
+              {/* Tabs Section */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList className="grid grid-cols-6 md:w-[900px]">
                   <TabsTrigger value="embedding">Latent Emotional Analysis</TabsTrigger>
