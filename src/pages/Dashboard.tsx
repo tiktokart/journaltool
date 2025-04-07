@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +31,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
-// Analyzer function that takes pdfText and filename to generate mock analysis data
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
@@ -193,21 +191,18 @@ const Dashboard = () => {
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
-      // Fixed: Better handling of pdfText and word extraction
       const allWords = pdfText
         .split(/\s+/)
         .filter(word => word.length > 2)
         .map(word => word.replace(/[^\w\s]|_/g, "").toLowerCase())
         .filter(Boolean);
       
-      // Use a Set to store unique words then convert back to array
       const uniqueWordsSet = new Set(allWords);
       const uniqueWordsArray = Array.from(uniqueWordsSet);
       setUniqueWords(uniqueWordsArray);
       
       console.log(`Total unique words found: ${uniqueWordsArray.length}`);
       
-      // Handle clusters
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
         return {
@@ -219,32 +214,27 @@ const Dashboard = () => {
       
       setEmotionalClusters(clusters);
       
-      // Set up color map for clusters
       const colorMap: Record<string, string> = {};
       clusters.forEach((cluster: any) => {
         colorMap[cluster.name] = cluster.color;
       });
       setClusterColors(colorMap);
       
-      // Initialize expanded state for clusters
       const expandedMap: Record<string, boolean> = {};
       clusters.forEach((cluster: any) => {
         expandedMap[cluster.name] = false;
       });
       setClusterExpanded(expandedMap);
       
-      // Assign points to clusters
       const clusterPointsMap: Record<string, Point[]> = {};
       clusters.forEach((cluster: any) => {
         const clusterSize = cluster.size;
-        // Filter points that haven't been assigned yet
         const availablePoints = mockPoints.filter(p => 
           !Object.values(clusterPointsMap).some(assignedPoints => 
             assignedPoints.some(ap => ap.id === p.id)
           )
         );
         
-        // Get random subset for this cluster
         const shuffled = availablePoints.sort(() => 0.5 - Math.random());
         const assignedPoints = shuffled.slice(0, Math.min(clusterSize, shuffled.length));
         
@@ -404,7 +394,6 @@ const Dashboard = () => {
   const handleSelectWordForComparison = (word: string) => {
     const point = points.find(p => p.word === word);
     if (point && wordsForComparison.length < 4) {
-      // Check if word is already in comparison
       if (!wordsForComparison.some(p => p.id === point.id)) {
         setWordsForComparison(prev => [...prev, point]);
         setWordSearchTerm("");
@@ -771,7 +760,6 @@ const Dashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="mb-4">
-                      {/* Word Search Dropdown */}
                       <div className="relative">
                         <div className="relative w-full">
                           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
