@@ -61,9 +61,11 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       if (pdfText.trim().length === 0) {
         toast.warning("No readable text found in the PDF");
       } else {
-        toast.success(`Extracted ${pdfText.split(/\s+/).length} words from PDF`);
+        const wordCount = pdfText.split(/\s+/).length;
+        toast.success(`Extracted ${wordCount} words from PDF`);
       }
       
+      // Pass the extracted text to the parent component for analysis
       onFilesAdded([file], pdfText);
     } catch (error) {
       console.error("Error processing PDF:", error);
