@@ -11,7 +11,7 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
-import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen } from "lucide-react";
+import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen, Info, Settings, Heart, Brain } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
 import { WordComparison } from "@/components/WordComparison";
@@ -29,6 +29,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 
 const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
   return new Promise((resolve) => {
@@ -315,6 +316,76 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
   });
 };
 
+// Sample wellbeing suggestions
+const wellbeingSuggestions = [
+  {
+    title: "Practice Mindfulness",
+    description: "Spend 5-10 minutes each day focusing on your breath and being present in the moment.",
+    category: "Meditation",
+    benefit: "Reduces stress and anxiety, improves focus and emotional regulation."
+  },
+  {
+    title: "Connect with Others",
+    description: "Reach out to a friend or family member you haven't spoken to in a while.",
+    category: "Social Connection",
+    benefit: "Strengthens relationships, reduces feelings of isolation."
+  },
+  {
+    title: "Physical Activity",
+    description: "Take a 20-minute walk outdoors or do a short home workout.",
+    category: "Exercise",
+    benefit: "Boosts mood, improves energy levels and overall health."
+  },
+  {
+    title: "Digital Detox",
+    description: "Set aside 1-2 hours before bed as screen-free time.",
+    category: "Lifestyle",
+    benefit: "Improves sleep quality and reduces mental fatigue."
+  },
+  {
+    title: "Gratitude Practice",
+    description: "Write down three things you're grateful for before going to sleep.",
+    category: "Reflection",
+    benefit: "Shifts focus to positive aspects of life, improves outlook."
+  }
+];
+
+// Sample mental health resources
+const mentalHealthResources = [
+  {
+    name: "Crisis Text Line",
+    description: "Text HOME to 741741 to connect with a Crisis Counselor",
+    category: "Crisis Support",
+    contact: "Text 741741",
+    website: "crisistextline.org"
+  },
+  {
+    name: "National Suicide Prevention Lifeline",
+    description: "24/7, free and confidential support for people in distress",
+    category: "Crisis Support",
+    contact: "1-800-273-8255",
+    website: "suicidepreventionlifeline.org"
+  },
+  {
+    name: "Psychology Today Therapist Finder",
+    description: "Find therapists and counselors near you",
+    category: "Professional Help",
+    website: "psychologytoday.com/us/therapists"
+  },
+  {
+    name: "Headspace",
+    description: "Guided meditation and mindfulness app",
+    category: "Self-help Apps",
+    website: "headspace.com"
+  },
+  {
+    name: "MoodTools",
+    description: "Free app designed to help you combat depression and alleviate your negative moods",
+    category: "Self-help Apps",
+    website: "moodtools.org"
+  }
+];
+
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -333,8 +404,9 @@ const Dashboard = () => {
   const [compareSearchOpen, setCompareSearchOpen] = useState(false);
   const [compareSearchTerm, setCompareSearchTerm] = useState("");
   const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
-  const [embeddingSubTab, setEmbeddingSubTab] = useState("visualization");
-
+  const [resourcesTab, setResourcesTab] = useState("wellbeing");
+  const [visibleClusterCount, setVisibleClusterCount] = useState(8);
+  
   const handleFileUpload = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
       setFile(files[0]);
@@ -369,8 +441,9 @@ const Dashboard = () => {
     
     try {
       const results = await analyzePdfContent(file, pdfText);
+      console.log("Analysis results:", results); // Debug the results
       setSentimentData(results);
-      setFilteredPoints(results.embeddingPoints);
+      setFilteredPoints(results.embeddingPoints || []);
       setAnalysisComplete(true);
       
       const words = results.embeddingPoints
@@ -398,6 +471,13 @@ const Dashboard = () => {
   };
 
   const handlePointClick = (point: Point) => {
+    if (!point) {
+      setSelectedPoint(null);
+      setSelectedWord(null);
+      setConnectedPoints([]);
+      return;
+    }
+    
     setSelectedPoint(point);
     setSelectedWord(point.word);
     
@@ -407,7 +487,7 @@ const Dashboard = () => {
         .slice(0, 3);
         
       const connected = sentimentData.embeddingPoints
-        .filter(p => sortedRelationships.some(rel => rel.id === p.id));
+        .filter((p: Point) => sortedRelationships.some(rel => rel.id === p.id));
       
       setConnectedPoints(connected);
     } else {
@@ -455,7 +535,7 @@ const Dashboard = () => {
       return;
     }
     
-    if (!sentimentData) return;
+    if (!sentimentData || !sentimentData.embeddingPoints) return;
     
     const results = sentimentData.embeddingPoints.filter((point: Point) => 
       (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
@@ -465,7 +545,7 @@ const Dashboard = () => {
       ))
     );
     
-    results.sort((a, b) => {
+    results.sort((a: Point, b: Point) => {
       const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
       const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
       
@@ -537,7 +617,7 @@ const Dashboard = () => {
     
     const term = searchTerm.toLowerCase().trim();
     if (!term) {
-      setFilteredPoints(sentimentData.embeddingPoints);
+      setFilteredPoints(sentimentData.embeddingPoints || []);
       return;
     }
     
@@ -548,12 +628,6 @@ const Dashboard = () => {
     
     setFilteredPoints(filtered);
   }, [searchTerm, sentimentData]);
-
-  useEffect(() => {
-    if (compareWords.length > 0 && activeTab !== "comparison") {
-      setActiveTab("comparison");
-    }
-  }, [compareWords]);
 
   useEffect(() => {
     if (sentimentData && sentimentData.embeddingPoints) {
@@ -649,7 +723,6 @@ const Dashboard = () => {
                     <TabsTrigger value="timeline" className="min-w-max">Timeline</TabsTrigger>
                     <TabsTrigger value="themes" className="min-w-max">Themes</TabsTrigger>
                     <TabsTrigger value="keyphrases" className="min-w-max">Key Words</TabsTrigger>
-                    <TabsTrigger value="comparison" className="min-w-max">Word Comparison</TabsTrigger>
                   </TabsList>
                 </div>
                 
@@ -717,265 +790,4 @@ const Dashboard = () => {
                       </div>
                       <div className="text-sm font-normal flex items-center text-muted-foreground">
                         <CircleDot className="h-4 w-4 mr-2" />
-                        <span>Hover or click on words to see emotional groupings</span>
-                      </div>
-                    </CardHeader>
-
-                    <div className="px-6 mb-2">
-                      {/* Remove tabs and show visualization directly */}
-                      <div className="w-full aspect-[16/9]">
-                        <DocumentEmbedding 
-                          points={filteredPoints}
-                          onPointClick={handlePointClick}
-                          isInteractive={true}
-                          focusOnWord={selectedWord}
-                          sourceDescription={sentimentData.sourceDescription}
-                        />
-                      </div>
-                    </div>
-                  </Card>
-                  
-                  {/* Show Emotional Clusters directly below visualization */}
-                  <Card className="mt-4 border border-border shadow-sm bg-card">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Emotional Clusters</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {Object.entries(getEmotionColor("default")).map(([emotion, colorInfo]) => {
-                          const colorData = colorInfo as any;
-                          const rgb = colorData.rgb || [128, 128, 128]; // Default to gray if rgb is missing
-                          
-                          return (
-                            <div 
-                              key={emotion} 
-                              className="p-3 rounded-lg border" 
-                              style={{
-                                backgroundColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.1)`,
-                                borderColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.5)`
-                              }}
-                            >
-                              <h3 className="font-medium text-center mb-2">{emotion}</h3>
-                              <div className="text-xs text-muted-foreground">
-                                {filteredPoints
-                                  .filter(p => p.emotionalTone === emotion)
-                                  .slice(0, 5)
-                                  .map(p => p.word)
-                                  .join(", ")}
-                                {filteredPoints.filter(p => p.emotionalTone === emotion).length > 5 && 
-                                  ` and ${filteredPoints.filter(p => p.emotionalTone === emotion).length - 5} more...`}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  {selectedPoint && (
-                    <Card className="mt-4 border border-border shadow-sm bg-card">
-                      <CardContent className="pt-6">
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <h3 className="text-sm font-medium mb-1">Emotional Grouping</h3>
-                            <p className="text-2xl font-bold bg-muted p-3 rounded flex items-center justify-center">
-                              {selectedPoint.emotionalTone || "Neutral"}
-                            </p>
-                            <h3 className="text-sm font-medium mt-3 mb-1">Word</h3>
-                            <p className="text-xl bg-muted p-2 rounded flex items-center justify-center">
-                              {selectedPoint.word}
-                            </p>
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-medium mb-1">Sentiment Analysis</h3>
-                            <div className="flex items-center gap-2 mb-2">
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ 
-                                  backgroundColor: `rgb(${selectedPoint.color[0] * 255}, ${selectedPoint.color[1] * 255}, ${selectedPoint.color[2] * 255})` 
-                                }} 
-                              />
-                              <span className="text-sm">
-                                Score: {selectedPoint.sentiment.toFixed(2)}
-                                {selectedPoint.sentiment >= 0.7 ? " (Very Positive)" : 
-                                  selectedPoint.sentiment >= 0.5 ? " (Positive)" : 
-                                  selectedPoint.sentiment >= 0.4 ? " (Neutral)" : 
-                                  selectedPoint.sentiment >= 0.25 ? " (Negative)" : " (Very Negative)"}
-                              </span>
-                            </div>
-                            
-                            <div>
-                              <h3 className="text-sm font-medium mt-3 mb-1">Top Connected Words</h3>
-                              <div className="flex flex-wrap gap-2 mb-2">
-                                {connectedPoints.length > 0 ? (
-                                  connectedPoints.map((point, index) => (
-                                    <Badge 
-                                      key={point.id}
-                                      variant="outline" 
-                                      className="px-3 py-1 text-sm"
-                                      style={{
-                                        borderColor: `rgba(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255}, 0.5)`,
-                                        backgroundColor: `rgba(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255}, 0.1)`
-                                      }}
-                                    >
-                                      {point.word}
-                                    </Badge>
-                                  ))
-                                ) : (
-                                  <span className="text-sm text-muted-foreground">No connected words found</span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {selectedPoint.relationships && selectedPoint.relationships.length > 0 && (
-                              <div>
-                                <h3 className="text-sm font-medium mt-3 mb-1">All Related Words</h3>
-                                <ul className="text-sm">
-                                  {selectedPoint.relationships.map((rel, i) => (
-                                    <li key={i} className="py-1 border-b border-border last:border-0">
-                                      <div className="flex justify-between">
-                                        <span className="font-medium">{rel.word}</span>
-                                        <span className="text-muted-foreground">Connection: {(rel.strength * 100).toFixed(0)}%</span>
-                                      </div>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="overview" className="mt-6">
-                  <SentimentOverview 
-                    data={sentimentData}
-                    sourceDescription={sentimentData.sourceDescription} 
-                  />
-                </TabsContent>
-                
-                <TabsContent value="timeline" className="mt-6">
-                  <SentimentTimeline 
-                    data={sentimentData.timeline}
-                    sourceDescription={sentimentData.sourceDescription}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="themes" className="mt-6">
-                  <EntitySentiment 
-                    data={sentimentData.entities}
-                    sourceDescription={sentimentData.sourceDescription}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="keyphrases" className="mt-6">
-                  <KeyPhrases 
-                    data={sentimentData.keyPhrases}
-                    sourceDescription={sentimentData.sourceDescription}
-                  />
-                </TabsContent>
-                
-                {/* Move Word Comparison tab to the end */}
-                <TabsContent value="comparison" className="mt-6">
-                  <Card className="border border-border shadow-md overflow-hidden bg-card">
-                    <CardHeader className="z-10">
-                      <div className="flex flex-col space-y-2 md:flex-row md:justify-between md:items-center">
-                        <CardTitle className="flex items-center">
-                          <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
-                          <span>Word Comparison & Relationship Analysis</span>
-                        </CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Popover open={compareSearchOpen} onOpenChange={setCompareSearchOpen}>
-                            <PopoverTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8"
-                                disabled={!sentimentData || !sentimentData.embeddingPoints}
-                              >
-                                <Search className="h-4 w-4 mr-2" />
-                                Add Word
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="p-0 w-[300px]" align="end">
-                              <Command>
-                                <CommandInput 
-                                  placeholder="Search words..." 
-                                  value={compareSearchTerm}
-                                  onValueChange={handleCompareSearchChange}
-                                />
-                                <CommandList>
-                                  <CommandEmpty>No results found</CommandEmpty>
-                                  <CommandGroup>
-                                    {compareSearchResults.map((point) => (
-                                      <CommandItem
-                                        key={point.id}
-                                        onSelect={() => handleAddToComparison(point)}
-                                        value={point.word}
-                                        className="flex items-center gap-2"
-                                      >
-                                        <div 
-                                          className="w-3 h-3 rounded-full flex-shrink-0" 
-                                          style={{ 
-                                            backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
-                                          }} 
-                                        />
-                                        <span>{point.word}</span>
-                                        <span className="ml-auto text-xs font-medium">
-                                          {point.emotionalTone || "Neutral"}
-                                        </span>
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                          
-                          {compareWords.length > 0 && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={handleClearComparison}
-                              className="h-8"
-                            >
-                              <RotateCcw className="h-4 w-4 mr-2" />
-                              Clear All
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-sm font-normal flex items-center text-muted-foreground">
-                        <ArrowLeftRight className="h-4 w-4 mr-2" />
-                        <span>Add up to 4 words to compare their relationships</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <WordComparison 
-                        words={compareWords} 
-                        onRemoveWord={handleRemoveFromComparison}
-                        calculateRelationship={calculateRelationship}
-                        onAddWordClick={() => {
-                          if (sentimentData && sentimentData.embeddingPoints) {
-                            setCompareSearchOpen(true);
-                          } else {
-                            toast.error("Please analyze a document first");
-                          }
-                        }}
-                        sourceDescription={sentimentData.sourceDescription}
-                      />
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default Dashboard;
+                        <span>
