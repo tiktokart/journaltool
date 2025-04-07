@@ -119,6 +119,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       if (!isMiddleMouseDownRef.current || !cameraRef.current) return;
       
       const deltaX = event.clientX - lastMousePositionRef.current.x;
+      const deltaY = event.clientY - lastMousePositionRef.current.y;
       lastMousePositionRef.current.x = event.clientX;
       lastMousePositionRef.current.y = event.clientY;
       
@@ -127,10 +128,15 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       const rightVector = new THREE.Vector3(1, 0, 0);
       rightVector.applyQuaternion(cameraRef.current.quaternion);
       
+      const upVector = new THREE.Vector3(0, 1, 0);
+      upVector.applyQuaternion(cameraRef.current.quaternion);
+      
       cameraRef.current.position.addScaledVector(rightVector, -deltaX * panSpeed);
+      cameraRef.current.position.addScaledVector(upVector, deltaY * panSpeed);
       
       if (controlsRef.current) {
         controlsRef.current.target.addScaledVector(rightVector, -deltaX * panSpeed);
+        controlsRef.current.target.addScaledVector(upVector, deltaY * panSpeed);
       }
     };
     

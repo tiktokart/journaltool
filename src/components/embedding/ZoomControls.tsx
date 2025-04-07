@@ -1,115 +1,21 @@
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, Home, MousePointer, Search } from "lucide-react";
-import { Point } from "@/types/embedding";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ZoomIn, ZoomOut, Home, MousePointer } from "lucide-react";
 
 interface ZoomControlsProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetZoom?: () => void;
-  onSearchSelect?: (point: Point) => void;
-  points?: Point[];
 }
 
 export const ZoomControls = ({ 
   onZoomIn, 
   onZoomOut, 
-  onResetZoom,
-  onSearchSelect,
-  points = []
+  onResetZoom
 }: ZoomControlsProps) => {
-  const [searchValue, setSearchValue] = useState("");
-  const [open, setOpen] = useState(false);
-  const [searchResults, setSearchResults] = useState<Point[]>([]);
-
-  const handleSearchChange = (value: string) => {
-    setSearchValue(value);
-    
-    if (!value.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    
-    const results = points.filter(point => 
-      point.word.toLowerCase().includes(value.toLowerCase()) ||
-      (point.keywords && point.keywords.some(keyword => 
-        keyword.toLowerCase().includes(value.toLowerCase())
-      )) ||
-      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase()))
-    );
-    
-    setSearchResults(results);
-  };
-  
-  const handleSearchSelect = (point: Point) => {
-    if (onSearchSelect) {
-      onSearchSelect(point);
-      setOpen(false);
-    }
-  };
-
   return (
     <div className="absolute bottom-4 left-4 flex flex-col space-y-2">
-      {points && points.length > 0 && onSearchSelect && (
-        <div className="mb-2 w-[200px]">
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <div className="relative w-full">
-                <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                <Input 
-                  placeholder="Search words..." 
-                  value={searchValue}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-7 h-8 text-xs bg-background/80 backdrop-blur-sm"
-                  onClick={() => {
-                    setOpen(true);
-                    if (searchValue.trim()) {
-                      handleSearchChange(searchValue);
-                    }
-                  }}
-                />
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="p-0 w-[200px]" align="start">
-              <Command>
-                <CommandInput 
-                  placeholder="Search..." 
-                  value={searchValue}
-                  onValueChange={handleSearchChange}
-                  className="h-8 text-xs"
-                />
-                <CommandList className="max-h-[200px]">
-                  <CommandEmpty>No results found</CommandEmpty>
-                  <CommandGroup>
-                    {searchResults.map((point) => (
-                      <CommandItem
-                        key={point.id}
-                        onSelect={() => handleSearchSelect(point)}
-                        value={point.word}
-                        className="flex items-center gap-2 text-xs py-1"
-                      >
-                        <div 
-                          className="w-2 h-2 rounded-full flex-shrink-0" 
-                          style={{ 
-                            backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
-                          }} 
-                        />
-                        <span>{point.word}</span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-      )}
-      
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -153,7 +59,7 @@ export const ZoomControls = ({
             </div>
           </TooltipTrigger>
           <TooltipContent className="max-w-[200px]">
-            <p>Hold middle mouse button and move to pan left/right</p>
+            <p>Hold middle mouse button and move to pan in any direction</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
