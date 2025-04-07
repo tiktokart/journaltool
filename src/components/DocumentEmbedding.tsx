@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ZoomIn, ZoomOut, CircleDot } from "lucide-react";
@@ -12,7 +12,9 @@ interface Point {
   sentiment: number;
   position: [number, number, number];
   color: [number, number, number];
-  relationships?: Array<{ id: string; strength: number }>;
+  keywords?: string[];
+  emotionalTone?: string;
+  relationships?: Array<{ id: string; strength: number; word?: string }>;
 }
 
 interface DocumentEmbeddingProps {
@@ -46,6 +48,16 @@ export const DocumentEmbedding = ({
     const mockPoints: Point[] = [];
     const particleCount = 5000;
     
+    const emotionalTones = [
+      "Joy", "Sadness", "Anger", "Fear", "Surprise", "Disgust", "Trust", "Anticipation"
+    ];
+    
+    const commonKeywords = [
+      "life", "feel", "time", "experience", "emotions", "thoughts", "mind", "people",
+      "understand", "journey", "reflection", "growth", "challenge", "struggle", "hope",
+      "frustration", "happiness", "anxiety", "motivation", "future", "past", "present"
+    ];
+    
     for (let i = 0; i < particleCount; i++) {
       // Generate points in a 3D gaussian distribution
       const radius = 10 * Math.pow(Math.random(), 1/3);
@@ -65,12 +77,21 @@ export const DocumentEmbedding = ({
       const b = sentiment > 0.5 ? 1 : 2 * sentiment;
       const g = 0.3;
       
+      // Generate random keywords
+      const keywordCount = 2 + Math.floor(Math.random() * 4);
+      const keywords = [];
+      for (let k = 0; k < keywordCount; k++) {
+        keywords.push(commonKeywords[Math.floor(Math.random() * commonKeywords.length)]);
+      }
+      
       mockPoints.push({
         id: `point-${i}`,
         text: `Sample text ${i}`,
         sentiment: sentiment,
         position: [x, y, z],
         color: [r, g, b],
+        keywords: keywords,
+        emotionalTone: emotionalTones[Math.floor(Math.random() * emotionalTones.length)],
         relationships: []
       });
     }
@@ -89,7 +110,8 @@ export const DocumentEmbedding = ({
         
         relationships.push({
           id: mockPoints[relatedIndex].id,
-          strength: 0.3 + Math.random() * 0.7
+          strength: 0.3 + Math.random() * 0.7,
+          word: commonKeywords[Math.floor(Math.random() * commonKeywords.length)]
         });
       }
       
@@ -104,7 +126,7 @@ export const DocumentEmbedding = ({
     
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff);
+    scene.background = new THREE.Color(0xDDDDDD); // Light gray background
     sceneRef.current = scene;
     
     // Camera setup
@@ -282,7 +304,8 @@ export const DocumentEmbedding = ({
         
         // Highlight the point
         if (pointsRef.current.geometry.attributes.size) {
-          const sizes = pointsRef.current.geometry.attributes.size.array;
+          const sizesAttribute = pointsRef.current.geometry.attributes.size;
+          const sizes = sizesAttribute.array;
           
           // Reset all sizes
           for (let i = 0; i < sizes.length; i++) {
@@ -302,7 +325,7 @@ export const DocumentEmbedding = ({
             });
           }
           
-          pointsRef.current.geometry.attributes.size.needsUpdate = true;
+          sizesAttribute.needsUpdate = true;
         }
       }
     } else {
@@ -310,11 +333,12 @@ export const DocumentEmbedding = ({
       
       // Reset all point sizes
       if (pointsRef.current.geometry.attributes.size) {
-        const sizes = pointsRef.current.geometry.attributes.size.array;
+        const sizesAttribute = pointsRef.current.geometry.attributes.size;
+        const sizes = sizesAttribute.array;
         for (let i = 0; i < sizes.length; i++) {
           sizes[i] = 0.05;
         }
-        pointsRef.current.geometry.attributes.size.needsUpdate = true;
+        sizesAttribute.needsUpdate = true;
       }
     }
   };
@@ -376,7 +400,7 @@ export const DocumentEmbedding = ({
       )}
       
       {hoveredPoint && (
-        <div className="absolute bottom-4 left-4 bg-white p-3 rounded-lg shadow-md max-w-xs">
+        <div className="absolute bottom-4 left-4 bg-card p-3 rounded-lg shadow-md max-w-xs">
           <div className="flex items-center mb-2">
             <div 
               className="w-3 h-3 rounded-full mr-2" 
@@ -387,10 +411,38 @@ export const DocumentEmbedding = ({
             <span className="font-medium">Text Excerpt</span>
           </div>
           <p className="text-sm mb-2 truncate">{hoveredPoint.text}</p>
-          <div className="text-xs flex justify-between">
+          
+          {hoveredPoint.keywords && (
+            <div className="mb-2">
+              <span className="text-xs font-medium block mb-1">Keywords:</span>
+              <div className="flex flex-wrap gap-1">
+                {hoveredPoint.keywords.map((keyword, idx) => (
+                  <span key={idx} className="text-xs bg-accent px-1.5 py-0.5 rounded-full">{keyword}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="text-xs flex justify-between mb-2">
             <span>Sentiment: {getSentimentLabel(hoveredPoint.sentiment)}</span>
-            <span>{hoveredPoint.relationships?.length || 0} connections</span>
+            {hoveredPoint.emotionalTone && (
+              <span>Emotional Tone: {hoveredPoint.emotionalTone}</span>
+            )}
           </div>
+          
+          {hoveredPoint.relationships && hoveredPoint.relationships.length > 0 && (
+            <div className="mt-2">
+              <span className="text-xs font-medium block mb-1">Connected words:</span>
+              <div className="grid grid-cols-2 gap-1">
+                {hoveredPoint.relationships.map((rel, idx) => (
+                  <div key={idx} className="text-xs flex items-center">
+                    <div className="w-1 h-1 rounded-full bg-primary mr-1"></div>
+                    <span>{rel.word || `Connection ${idx + 1}`}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

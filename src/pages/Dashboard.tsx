@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +12,6 @@ import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
 import { Loader2, CircleDot } from "lucide-react";
 
-// Mock sentiment data
 const mockSentimentData = {
   overallSentiment: {
     score: 0.68,
@@ -51,7 +49,6 @@ const mockSentimentData = {
     { text: "needs improvement", sentiment: "negative", count: 2 },
   ],
   embeddingPoints: Array.from({ length: 500 }, (_, i) => {
-    // Create a sphere of points with different colors based on sentiment
     const radius = 10 * Math.pow(Math.random(), 1/3);
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos((Math.random() * 2) - 1);
@@ -60,15 +57,12 @@ const mockSentimentData = {
     const y = radius * Math.sin(phi) * Math.sin(theta);
     const z = radius * Math.cos(phi);
     
-    // Sentiment ranges from 0 (negative) to 1 (positive)
     const sentiment = Math.random();
     
-    // Color: red for negative, blue for positive
     const r = sentiment < 0.5 ? 1 : 2 * (1 - sentiment);
     const b = sentiment > 0.5 ? 1 : 2 * sentiment;
     const g = 0.3;
     
-    // Generate random text excerpts
     const phrases = [
       "The product exceeds expectations",
       "Customer service was disappointing",
@@ -118,7 +112,6 @@ const Dashboard = () => {
 
     setIsAnalyzing(true);
     
-    // Simulate API call with timeout
     setTimeout(() => {
       setSentimentData(mockSentimentData);
       setIsAnalyzing(false);
@@ -132,13 +125,12 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/30">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
-          {/* Upload Section */}
-          <Card className="border-0 shadow-md">
+          <Card className="border border-border shadow-md bg-card">
             <CardHeader>
               <CardTitle>Document Analysis</CardTitle>
             </CardHeader>
@@ -176,12 +168,11 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Results Section */}
           {sentimentData && (
             <div className="animate-fade-in">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList className="grid grid-cols-5 md:w-[750px]">
-                  <TabsTrigger value="embedding">3D Embedding</TabsTrigger>
+                  <TabsTrigger value="embedding">Latent Emotional Analysis</TabsTrigger>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="timeline">Timeline</TabsTrigger>
                   <TabsTrigger value="entities">Entities</TabsTrigger>
@@ -189,10 +180,10 @@ const Dashboard = () => {
                 </TabsList>
                 
                 <TabsContent value="embedding" className="mt-6">
-                  <Card className="border-0 shadow-md overflow-hidden">
+                  <Card className="border border-border shadow-md overflow-hidden bg-card">
                     <CardHeader>
                       <CardTitle className="flex justify-between items-center">
-                        <span>Document Embedding Visualization</span>
+                        <span>Latent Emotional Analysis</span>
                         <div className="text-sm font-normal flex items-center text-muted-foreground">
                           <CircleDot className="h-4 w-4 mr-2" />
                           <span>Hover over points to see details</span>
@@ -211,7 +202,7 @@ const Dashboard = () => {
                   </Card>
                   
                   {selectedPoint && (
-                    <Card className="mt-4 border-0 shadow-sm">
+                    <Card className="mt-4 border border-border shadow-sm bg-card">
                       <CardHeader className="py-3">
                         <CardTitle className="text-lg">Selected Point Details</CardTitle>
                       </CardHeader>
@@ -243,8 +234,9 @@ const Dashboard = () => {
                               <div>
                                 <h3 className="text-sm font-medium mt-3 mb-1">Related Concepts</h3>
                                 <ul className="text-xs">
-                                  {selectedPoint.relationships.map((rel: any, i: number) => (
-                                    <li key={i} className="py-1 border-b border-gray-100 last:border-0">
+                                  {selectedPoint.relationships.map((rel, i) => (
+                                    <li key={i} className="py-1 border-b border-gray-700 last:border-0">
+                                      {rel.word && <span className="font-medium">{rel.word}: </span>}
                                       Connection strength: {(rel.strength * 100).toFixed(0)}%
                                     </li>
                                   ))}

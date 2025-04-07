@@ -7,12 +7,12 @@ export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <FileText className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl">SentiSphere</span>
+            <span className="font-bold text-xl">Journal Analysis</span>
           </Link>
           
           {/* Desktop Navigation */}
