@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,8 +48,76 @@ const analyzePdfContent = (file: File): Promise<any> => {
         Disgust: 0.05,
         Trust: 0.1,
         Anticipation: 0.1,
-        Neutral: 0.0  // Add the Neutral property that was missing
+        Neutral: 0.0  // Add the Neutral property
       };
+      
+      // Generate custom word bank based on the file name to simulate different documents
+      let customWordBank: string[] = [];
+      
+      // Seed the word bank with file-specific words
+      if (fileName.includes('journal') || fileName.includes('diary')) {
+        customWordBank = [
+          "reflection", "thoughts", "feelings", "today", "morning", "evening", 
+          "experience", "moment", "emotion", "memory", "dream", "hope",
+          "frustration", "accomplishment", "challenge", "progress", "setback",
+          "relationship", "conversation", "insight", "realization", "growth"
+        ];
+      } else if (fileName.includes('report') || fileName.includes('business')) {
+        customWordBank = [
+          "analysis", "strategy", "growth", "market", "revenue", "profit", 
+          "investment", "stakeholder", "customer", "client", "product", "service",
+          "opportunity", "challenge", "solution", "implementation", "development",
+          "performance", "objective", "target", "result", "success"
+        ];
+      } else if (fileName.includes('academic') || fileName.includes('research')) {
+        customWordBank = [
+          "study", "research", "analysis", "theory", "methodology", "data", 
+          "finding", "conclusion", "literature", "hypothesis", "experiment", "evidence",
+          "argument", "discussion", "implication", "limitation", "contribution", "scope",
+          "framework", "concept", "paradigm", "perspective"
+        ];
+      } else if (fileName.includes('novel') || fileName.includes('story')) {
+        customWordBank = [
+          "character", "plot", "setting", "scene", "dialogue", "narrative", 
+          "protagonist", "antagonist", "conflict", "resolution", "theme", "motif",
+          "imagery", "symbolism", "foreshadowing", "flashback", "climax", "denouement",
+          "tension", "emotion", "description", "action"
+        ];
+      } else {
+        // Default generic words
+        customWordBank = [
+          "life", "work", "time", "experience", "change", "challenge", "opportunity",
+          "relationship", "feeling", "thought", "idea", "plan", "goal", "achievement",
+          "problem", "solution", "decision", "choice", "future", "past", "present",
+          "moment", "memory", "dream", "reality", "perspective", "attitude"
+        ];
+      }
+      
+      // Add some emotional words to the word bank based on the dominant emotions in the distribution
+      const emotionWords = {
+        Joy: ["happy", "joyful", "delighted", "excited", "pleased", "content", "cheerful"],
+        Sadness: ["sad", "unhappy", "depressed", "downcast", "melancholy", "gloomy", "somber"],
+        Anger: ["angry", "furious", "irritated", "annoyed", "enraged", "indignant", "hostile"],
+        Fear: ["afraid", "fearful", "anxious", "worried", "terrified", "nervous", "uneasy"],
+        Surprise: ["surprised", "amazed", "astonished", "shocked", "startled", "stunned", "bewildered"],
+        Disgust: ["disgusted", "repulsed", "revolted", "appalled", "nauseated", "offended", "displeased"],
+        Trust: ["trustful", "confident", "assured", "reliant", "faithful", "dependable", "reliable"],
+        Anticipation: ["expectant", "awaiting", "forward-looking", "hopeful", "enthusiastic", "eager", "ready"]
+      };
+      
+      // Find dominant emotions
+      const sortedEmotions = Object.entries(emotionalDistribution)
+        .filter(([emotion]) => emotion !== 'Neutral')
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+      
+      // Add emotion-specific words to the word bank
+      sortedEmotions.forEach(([emotion]) => {
+        if (emotion in emotionWords) {
+          const words = emotionWords[emotion as keyof typeof emotionWords];
+          customWordBank = [...customWordBank, ...words.slice(0, 5)]; // Add up to 5 words for each dominant emotion
+        }
+      });
       
       // Adjust based on keywords in filename
       if (fileName.includes('happy') || fileName.includes('joy')) {
@@ -80,8 +147,8 @@ const analyzePdfContent = (file: File): Promise<any> => {
       
       const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
       
-      // Create embedding points with the custom distribution
-      const embeddingPoints = generateMockPoints(false, emotionalDistribution);
+      // Create embedding points with the custom word bank and distribution
+      const embeddingPoints = generateMockPoints(false, emotionalDistribution, customWordBank);
 
       // Generate sentiment distribution based on overall sentiment
       const positivePercentage = Math.round(normalizedSentiment * 100);
@@ -222,7 +289,7 @@ const Dashboard = () => {
   const handleFileUpload = (files: File[]) => {
     if (files && files.length > 0) {
       setFile(files[0]);
-      toast.success(`File "${files[0].name}" uploaded successfully`);
+      toast.success(`File "${files[0].name}" uploaded successfully");
       // Reset sentiment data when a new file is uploaded
       if (sentimentData) {
         setSentimentData(null);
