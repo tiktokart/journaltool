@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -12,6 +11,7 @@ interface EmbeddingSceneProps {
   isInteractive: boolean;
   depressedJournalReference?: boolean;
   focusOnWord?: string | null;
+  connectedPoints?: Point[];
 }
 
 export const EmbeddingScene = ({ 
@@ -21,7 +21,8 @@ export const EmbeddingScene = ({
   onPointSelect, 
   isInteractive,
   depressedJournalReference = false,
-  focusOnWord = null
+  focusOnWord = null,
+  connectedPoints = []
 }: EmbeddingSceneProps) => {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -29,6 +30,7 @@ export const EmbeddingScene = ({
   const controlsRef = useRef<OrbitControls | null>(null);
   const pointsRef = useRef<THREE.Points | null>(null);
   const linesRef = useRef<THREE.LineSegments | null>(null);
+  const highlightLinesRef = useRef<THREE.LineSegments | null>(null);
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const animationFrameRef = useRef<number | null>(null);
@@ -55,6 +57,17 @@ export const EmbeddingScene = ({
         (linesRef.current.material as THREE.Material).dispose();
       }
       linesRef.current = null;
+    }
+    
+    if (highlightLinesRef.current) {
+      sceneRef.current.remove(highlightLinesRef.current);
+      if (highlightLinesRef.current.geometry) {
+        highlightLinesRef.current.geometry.dispose();
+      }
+      if (highlightLinesRef.current.material) {
+        (highlightLinesRef.current.material as THREE.Material).dispose();
+      }
+      highlightLinesRef.current = null;
     }
     
     const particlesGeometry = new THREE.BufferGeometry();
@@ -167,6 +180,70 @@ export const EmbeddingScene = ({
       const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
       sceneRef.current.add(lines);
       linesRef.current = lines;
+    }
+  };
+  
+  const updateHighlightLines = (focusPoint: Point | null, connectedPoints: Point[]) => {
+    if (!sceneRef.current || !focusPoint) return;
+    
+    // Remove existing highlight lines
+    if (highlightLinesRef.current) {
+      sceneRef.current.remove(highlightLinesRef.current);
+      if (highlightLinesRef.current.geometry) {
+        highlightLinesRef.current.geometry.dispose();
+      }
+      if (highlightLinesRef.current.material) {
+        (highlightLinesRef.current.material as THREE.Material).dispose();
+      }
+      highlightLinesRef.current = null;
+    }
+    
+    if (connectedPoints.length === 0) return;
+    
+    const linePositions: number[] = [];
+    const lineColors: number[] = [];
+    
+    const focusPos = new THREE.Vector3(
+      focusPoint.position[0],
+      focusPoint.position[1],
+      focusPoint.position[2]
+    );
+    
+    connectedPoints.forEach(targetPoint => {
+      const targetPos = new THREE.Vector3(
+        targetPoint.position[0],
+        targetPoint.position[1],
+        targetPoint.position[2]
+      );
+      
+      linePositions.push(
+        focusPos.x, focusPos.y, focusPos.z,
+        targetPos.x, targetPos.y, targetPos.z
+      );
+      
+      // Use a brighter color for highlighted connections
+      lineColors.push(
+        focusPoint.color[0], focusPoint.color[1], focusPoint.color[2],
+        targetPoint.color[0], targetPoint.color[1], targetPoint.color[2]
+      );
+    });
+    
+    if (linePositions.length > 0) {
+      const lineGeometry = new THREE.BufferGeometry();
+      lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+      lineGeometry.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3));
+      
+      const lineMaterial = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        linewidth: 2,
+        depthWrite: false
+      });
+      
+      const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
+      sceneRef.current.add(lines);
+      highlightLinesRef.current = lines;
     }
   };
   
@@ -371,6 +448,12 @@ export const EmbeddingScene = ({
           if (linesRef.current.geometry) linesRef.current.geometry.dispose();
           if (linesRef.current.material) (linesRef.current.material as THREE.Material).dispose();
         }
+        
+        if (highlightLinesRef.current) {
+          sceneRef.current.remove(highlightLinesRef.current);
+          if (highlightLinesRef.current.geometry) highlightLinesRef.current.geometry.dispose();
+          if (highlightLinesRef.current.material) (highlightLinesRef.current.material as THREE.Material).dispose();
+        }
       }
       
       if (rendererRef.current) {
@@ -438,10 +521,42 @@ export const EmbeddingScene = ({
   }, [isInteractive, onPointHover, onPointSelect]);
   
   useEffect(() => {
-    if (focusOnWord && pointsRef.current) {
-      focusOnPoint(focusOnWord);
+    if (focusOnWord && pointsRef.current && pointsRef.current.userData?.pointsData) {
+      const pointsData = pointsRef.current.userData.pointsData as Point[];
+      const focusPoint = pointsData.find(p => p.word === focusOnWord);
+      
+      if (focusPoint) {
+        updateHighlightLines(focusPoint, connectedPoints);
+        
+        // Highlight the points in the visualization
+        if (pointsRef.current.geometry.attributes.size) {
+          const sizesAttribute = pointsRef.current.geometry.attributes.size;
+          const sizesArray = sizesAttribute.array as Float32Array;
+          
+          // Reset all sizes first
+          for (let i = 0; i < sizesArray.length; i++) {
+            sizesArray[i] = 0.05;
+          }
+          
+          // Highlight the focused point
+          const focusIndex = pointsData.findIndex(p => p.word === focusOnWord);
+          if (focusIndex !== -1) {
+            sizesArray[focusIndex] = 0.15;
+          }
+          
+          // Highlight connected points
+          connectedPoints.forEach(connectedPoint => {
+            const connectedIndex = pointsData.findIndex(p => p.id === connectedPoint.id);
+            if (connectedIndex !== -1) {
+              sizesArray[connectedIndex] = 0.12;
+            }
+          });
+          
+          sizesAttribute.needsUpdate = true;
+        }
+      }
     }
-  }, [focusOnWord]);
+  }, [focusOnWord, connectedPoints]);
   
   useEffect(() => {
     if (cameraRef.current) {

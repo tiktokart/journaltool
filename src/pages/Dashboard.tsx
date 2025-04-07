@@ -350,6 +350,36 @@ const Dashboard = () => {
     toast(`Selected: "${point.word}" (${point.emotionalTone})`);
   };
   
+  const handleSelectWord = (word: string) => {
+    setSearchTerm(word);
+    setSelectedWord(word);
+    setOpen(false);
+    
+    if (sentimentData && sentimentData.embeddingPoints) {
+      const selectedPoint = sentimentData.embeddingPoints.find(
+        (point: Point) => point.word === word
+      );
+      
+      if (selectedPoint) {
+        setSelectedPoint(selectedPoint);
+        
+        if (selectedPoint.relationships && selectedPoint.relationships.length > 0) {
+          const sortedRelationships = [...selectedPoint.relationships]
+            .sort((a, b) => b.strength - a.strength)
+            .slice(0, 3);
+            
+          const connected = sentimentData.embeddingPoints
+            .filter((p: Point) => sortedRelationships.some(rel => rel.id === p.id));
+          
+          setConnectedPoints(connected);
+          toast(`Selected: "${selectedPoint.word}" (${selectedPoint.emotionalTone || 'Neutral'})`);
+        } else {
+          setConnectedPoints([]);
+        }
+      }
+    }
+  };
+  
   useEffect(() => {
     if (!sentimentData) return;
     
@@ -366,12 +396,6 @@ const Dashboard = () => {
     
     setFilteredPoints(filtered);
   }, [searchTerm, sentimentData]);
-
-  const handleSelectWord = (word: string) => {
-    setSearchTerm(word);
-    setSelectedWord(word);
-    setOpen(false);
-  };
 
   const handleClearSearch = () => {
     setSearchTerm("");

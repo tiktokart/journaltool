@@ -44,6 +44,9 @@ export const DocumentEmbedding = ({
             .filter(p => p !== undefined) as Point[];
             
           setConnectedPoints(connected);
+          if (focusedPoint) {
+            setSelectedPoint(focusedPoint);
+          }
         } else {
           setConnectedPoints([]);
         }
@@ -127,6 +130,7 @@ export const DocumentEmbedding = ({
         isInteractive={isInteractive}
         depressedJournalReference={depressedJournalReference}
         focusOnWord={currentFocusWord}
+        connectedPoints={connectedPoints}
       />
       
       {isInteractive && (
