@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -39,7 +38,6 @@ const Index = () => {
   const [secondWordSearchResults, setSecondWordSearchResults] = useState<Point[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Sample data for tab panels
   const sampleSentimentData = {
     overallSentiment: {
       score: 0.32,
@@ -348,9 +346,14 @@ const Index = () => {
               <Card className="border border-border shadow-md overflow-hidden bg-card">
                 <CardHeader className="z-10">
                   <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-                    <CardTitle className="flex items-center">
-                      <span>Latent Emotional Analysis</span>
-                    </CardTitle>
+                    <div>
+                      <CardTitle className="flex items-center">
+                        <span>Latent Emotional Analysis</span>
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        This is data analyzed from a made up experience of a Panic Attack
+                      </p>
+                    </div>
                     
                     <div className="flex items-center space-x-2">
                       <Button 
@@ -363,73 +366,71 @@ const Index = () => {
                         Reset View
                       </Button>
                       
-                      <div className="relative w-full md:w-64">
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
-                            <div className="relative w-full">
-                              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input 
-                                placeholder="Search words..." 
-                                className="pl-8 w-full pr-8"
-                                value={searchTerm}
-                                onChange={(e) => {
-                                  setSearchTerm(e.target.value);
-                                  setOpen(true);
+                      <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                          <div className="relative w-full md:w-64">
+                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                              placeholder="Search words..." 
+                              className="pl-8 w-full pr-8"
+                              value={searchTerm}
+                              onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setOpen(true);
+                              }}
+                              onFocus={() => setOpen(true)}
+                            />
+                            {searchTerm && (
+                              <button 
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                                onClick={() => {
+                                  setSearchTerm("");
+                                  setSelectedPoint(null);
+                                  setFocusWord(null);
                                 }}
-                                onFocus={() => setOpen(true)}
-                              />
-                              {searchTerm && (
-                                <button 
-                                  className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                                  onClick={() => {
-                                    setSearchTerm("");
-                                    setSelectedPoint(null);
-                                    setFocusWord(null);
-                                  }}
-                                >
-                                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                                </button>
-                              )}
-                            </div>
-                          </PopoverTrigger>
-                          <PopoverContent className="p-0 w-full max-w-[300px]" align="start">
-                            <Command>
-                              <CommandInput 
-                                placeholder="Search words..." 
-                                value={searchTerm}
-                                onValueChange={setSearchTerm}
-                              />
-                              <CommandList>
-                                <CommandEmpty>No results found</CommandEmpty>
-                                <CommandGroup>
-                                  {points
-                                    .filter(point => point.word.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                                    (point.emotionalTone && point.emotionalTone.toLowerCase().includes(searchTerm.toLowerCase())))
-                                    .slice(0, 100)
-                                    .map((point) => (
-                                      <CommandItem 
-                                        key={point.id} 
-                                        value={point.word}
-                                        onSelect={() => handleSearchSelect(point)}
-                                      >
-                                        <div 
-                                          className="w-3 h-3 rounded-full mr-2" 
-                                          style={{ 
-                                            backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
-                                          }} 
-                                        />
-                                        {point.word}
-                                        <span className="ml-auto text-xs text-muted-foreground">
-                                          {point.emotionalTone || "Neutral"}
-                                        </span>
-                                      </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
+                              >
+                                <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </button>
+                            )}
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0 w-full max-w-[300px]" align="start">
+                          <Command>
+                            <CommandInput 
+                              placeholder="Search words..." 
+                              value={searchTerm}
+                              onValueChange={setSearchTerm}
+                            />
+                            <CommandList>
+                              <CommandEmpty>No results found</CommandEmpty>
+                              <CommandGroup>
+                                {points
+                                  .filter(point => point.word.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                                  (point.emotionalTone && point.emotionalTone.toLowerCase().includes(searchTerm.toLowerCase())))
+                                  .slice(0, 100)
+                                  .map((point) => (
+                                    <CommandItem 
+                                      key={point.id} 
+                                      value={point.word}
+                                      onSelect={() => handleSearchSelect(point)}
+                                    >
+                                      <div 
+                                        className="w-3 h-3 rounded-full mr-2" 
+                                        style={{ 
+                                          backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                        }} 
+                                      />
+                                      {point.word}
+                                      <span className="ml-auto text-xs text-muted-foreground">
+                                        {point.emotionalTone || "Neutral"}
+                                      </span>
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                   <div className="text-sm font-normal flex items-center text-muted-foreground">
