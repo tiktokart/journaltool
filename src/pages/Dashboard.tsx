@@ -838,7 +838,7 @@ const Dashboard = () => {
                         
                         <WordComparison 
                           words={wordsForComparison}
-                          onSelectWord={handlePointClick}
+                          onSelectWord={(point) => handlePointClick(point)}
                           onRemoveWord={handleRemoveWordFromComparison}
                           calculateRelationship={calculateRelationship}
                           onAddWordClick={handleAddWordToComparison}
