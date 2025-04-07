@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -6,7 +5,8 @@ import { generateMockPoints } from '../utils/embeddingUtils';
 import { HoverInfoPanel } from './embedding/HoverInfoPanel';
 import { EmotionsLegend } from './embedding/EmotionsLegend';
 import { ZoomControls } from './embedding/ZoomControls';
-import EmbeddingScene, { zoomIn, zoomOut } from './embedding/EmbeddingScene';
+import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -18,6 +18,7 @@ export const DocumentEmbedding = ({
 }: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
   
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
@@ -28,16 +29,13 @@ export const DocumentEmbedding = ({
   const [displayPoints, setDisplayPoints] = useState<Point[]>([]);
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   
-  // Update currentFocusWord when focusOnWord changes
   useEffect(() => {
     if (focusOnWord !== currentFocusWord) {
       setCurrentFocusWord(focusOnWord);
       
-      // Find connected points when focus word changes
       if (focusOnWord && displayPoints.length > 0) {
         const focusedPoint = displayPoints.find(p => p.word === focusOnWord);
         if (focusedPoint && focusedPoint.relationships) {
-          // Get top 3 connections by strength
           const sortedRelationships = [...focusedPoint.relationships]
             .sort((a, b) => b.strength - a.strength)
             .slice(0, 3);
@@ -59,7 +57,6 @@ export const DocumentEmbedding = ({
     }
   }, [focusOnWord, currentFocusWord, displayPoints]);
   
-  // Generate mock points if none are provided
   useEffect(() => {
     if (points.length > 0) {
       setDisplayPoints(points);
@@ -70,13 +67,9 @@ export const DocumentEmbedding = ({
     }
   }, [points, depressedJournalReference, generatedPoints.length]);
   
-  // Expose generated points to parent component if needed
   useEffect(() => {
     if (displayPoints.length > 0) {
-      // Expose points to parent (can be used by parent components)
       (window as any).documentEmbeddingPoints = displayPoints;
-      
-      // To help with debugging
       console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
     }
   }, [displayPoints]);
@@ -89,13 +82,16 @@ export const DocumentEmbedding = ({
     zoomOut(cameraRef.current);
   };
   
+  const handleResetZoom = () => {
+    resetZoom(cameraRef.current, controlsRef.current);
+  };
+  
   const handlePointHover = (point: Point | null) => {
     setHoveredPoint(point);
   };
   
   const handlePointSelect = (point: Point | null) => {
     if (isCompareMode) {
-      // In compare mode, second click selects comparison point
       setComparisonPoint(point);
       setIsCompareMode(false);
       
@@ -109,17 +105,14 @@ export const DocumentEmbedding = ({
     setSelectedPoint(point);
     
     if (!point) {
-      // Point was deselected
       setConnectedPoints([]);
       setComparisonPoint(null);
       if (onPointClick) {
-        // Pass null to parent to indicate deselection
         onPointClick(null);
       }
       return;
     }
     
-    // Find the top 3 connected points
     if (point.relationships && point.relationships.length > 0) {
       const sortedRelationships = [...point.relationships]
         .sort((a, b) => b.strength - a.strength)
@@ -143,8 +136,7 @@ export const DocumentEmbedding = ({
     if (selectedPoint) {
       setIsCompareMode(!isCompareMode);
       if (!isCompareMode) {
-        // Entering compare mode
-        setComparisonPoint(null); // Reset comparison point
+        setComparisonPoint(null);
       }
     }
   };
@@ -175,7 +167,8 @@ export const DocumentEmbedding = ({
         <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
           <ZoomControls 
             onZoomIn={handleZoomIn} 
-            onZoomOut={handleZoomOut} 
+            onZoomOut={handleZoomOut}
+            onResetZoom={handleResetZoom}
           />
           
           {selectedPoint && (

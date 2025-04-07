@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -66,7 +65,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     
     camera.aspect = containerWidth / containerHeight;
     camera.updateProjectionMatrix();
-    camera.position.z = 8;
+    camera.position.z = 15;
 
     scene.background = null;
 
@@ -76,7 +75,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     controlsInstance.dampingFactor = 0.05;
     controlsInstance.screenSpacePanning = false;
     controlsInstance.minDistance = 1;
-    controlsInstance.maxDistance = 15;
+    controlsInstance.maxDistance = 30;
     controlsInstance.maxPolarAngle = Math.PI / 2;
     controlsInstance.autoRotateSpeed = 0.5;
     controlsInstance.autoRotate = true;
@@ -113,65 +112,52 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
   useEffect(() => {
     const scene = sceneRef.current;
-    // Remove previous spheres group if it exists
+    
     if (spheresGroupRef.current) {
       scene.remove(spheresGroupRef.current);
       spheresGroupRef.current = null;
     }
     
-    // Create a new group to hold all spheres
     const spheresGroup = new THREE.Group();
     spheresGroupRef.current = spheresGroup;
     
-    // Clear previous spheres reference array
     spheresRef.current = [];
     
-    // Create spheres for each point
-    const sphereGeometry = new THREE.SphereGeometry(0.04, 16, 16); // Small sphere with moderate detail
+    const sphereGeometry = new THREE.SphereGeometry(0.04, 16, 16);
     
     points.forEach((point, index) => {
       const isSelected = selectedPoint && point.id === selectedPoint.id;
       const isComparison = comparisonPoint && point.id === comparisonPoint.id;
       
-      // Create material with point color
       const material = new THREE.MeshBasicMaterial({
         color: new THREE.Color(point.color[0], point.color[1], point.color[2]),
         transparent: true,
         opacity: 0.8
       });
       
-      // If point is selected or comparison, make it larger and brighter
       if (isSelected || isComparison) {
         sphereGeometry.scale(1.5, 1.5, 1.5);
         material.color.multiplyScalar(1.5);
         material.opacity = 1.0;
       }
       
-      // Create sphere mesh
       const sphere = new THREE.Mesh(sphereGeometry, material);
       
-      // Position the sphere at the point's position
       sphere.position.set(point.position[0], point.position[1], point.position[2]);
       
-      // Add user data to identify the point later
       sphere.userData.pointIndex = index;
       
-      // Add sphere to group
       spheresGroup.add(sphere);
       
-      // Store reference to sphere
       spheresRef.current.push(sphere);
       
-      // Reset sphere geometry scale if it was changed
       if (isSelected || isComparison) {
         sphereGeometry.scale(1/1.5, 1/1.5, 1/1.5);
       }
     });
     
-    // Add the spheres group to the scene
     scene.add(spheresGroup);
     
-    // Set up raycaster for interactions
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -363,7 +349,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     startPosition.copy(cameraRef.current.position);
     
     const endPosition = new THREE.Vector3();
-    endPosition.copy(point).add(new THREE.Vector3(0, 0, 4));
+    endPosition.copy(point).add(new THREE.Vector3(0, 0, 8));
     
     gsap.to(cameraRef.current.position, {
       x: endPosition.x,
@@ -396,7 +382,7 @@ export const zoomIn = (camera: THREE.PerspectiveCamera | null) => {
   if (!camera) return;
   
   gsap.to(camera.position, {
-    z: Math.max(camera.position.z - 1, 1),
+    z: Math.max(camera.position.z - 2, 1),
     duration: 0.5,
     ease: "power2.out"
   });
@@ -406,9 +392,27 @@ export const zoomOut = (camera: THREE.PerspectiveCamera | null) => {
   if (!camera) return;
   
   gsap.to(camera.position, {
-    z: Math.min(camera.position.z + 1, 15),
+    z: Math.min(camera.position.z + 3, 30),
     duration: 0.5,
     ease: "power2.out"
+  });
+};
+
+export const resetZoom = (camera: THREE.PerspectiveCamera | null, controls: OrbitControls | null) => {
+  if (!camera || !controls) return;
+  
+  gsap.to(camera.position, {
+    x: 0,
+    y: 0,
+    z: 15,
+    duration: 1,
+    ease: "power2.inOut",
+    onUpdate: () => {
+      if (controls) {
+        controls.target.set(0, 0, 0);
+        controls.update();
+      }
+    }
   });
 };
 
