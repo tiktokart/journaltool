@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -77,15 +76,15 @@ export const DocumentEmbedding = ({
       setDisplayPoints(points);
     } else if (generatedPoints.length === 0) {
       console.log("Generating mock points");
-      const mockPoints = generateMockPoints(depressedJournalReference);
+      const mockPoints = generateMockPoints(false);
       setGeneratedPoints(mockPoints);
       setDisplayPoints(mockPoints);
     }
-  }, [points, depressedJournalReference, generatedPoints.length]);
+  }, [points, generatedPoints.length]);
   
   useEffect(() => {
     if (displayPoints.length > 0) {
-      (window as any).documentEmbeddingPoints = displayPoints;
+      (window as any).documentEmbeddingPoints = displayPoints as any[];
       console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
       
       const sampleWords = displayPoints.slice(0, 10).map(p => p.word);
@@ -378,14 +377,3 @@ export const DocumentEmbedding = ({
     </div>
   );
 };
-
-declare global {
-  interface Window {
-    documentEmbeddingPoints?: Point[];
-    documentEmbeddingActions?: {
-      focusOnEmotionalGroup?: (tone: string) => void;
-      resetEmotionalGroupFilter?: () => void;
-      resetView?: () => void;
-    };
-  }
-}
