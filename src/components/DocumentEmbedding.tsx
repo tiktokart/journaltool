@@ -1,3 +1,4 @@
+
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -12,6 +13,7 @@ import { ChevronDown, ChevronUp, CircleDot, Target, RotateCcw, Filter, Info } fr
 import { Button } from './ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -27,6 +29,7 @@ export const DocumentEmbedding = ({
   showAllPoints = true,
   wordCount
 }: DocumentEmbeddingProps) => {
+  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
@@ -193,7 +196,7 @@ export const DocumentEmbedding = ({
       window.documentEmbeddingActions.focusOnEmotionalGroup(emotionalTone);
     }
     
-    toast.info(`Showing only "${emotionalTone}" emotional group`);
+    toast.info(`${t("showingOnlyEmotionalGroup")} "${emotionalTone}" ${t("emotionalGroup")}`);
   };
   
   const resetEmotionalGroupFilter = () => {
@@ -205,7 +208,7 @@ export const DocumentEmbedding = ({
       window.documentEmbeddingActions.resetEmotionalGroupFilter();
     }
     
-    toast.info("Showing all emotional groups");
+    toast.info(t("showingAllEmotionalGroups"));
   };
   
   const handleResetView = () => {
@@ -220,7 +223,7 @@ export const DocumentEmbedding = ({
     
     setSelectedEmotionalGroup(null);
     setFilterApplied(false);
-    toast.info("View reset to default");
+    toast.info(t("viewReset"));
   };
   
   return (
@@ -235,15 +238,17 @@ export const DocumentEmbedding = ({
       <div className="absolute top-3 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md">
         <CircleDot className="h-4 w-4 mr-2" />
         <span>
-          {wordCount ? `Showing all ${wordCount} words` : 
-           `Showing ${displayPoints.length} ${showAllPoints ? 'words' : 'emotional groupings'}`}
+          {wordCount ? 
+            `${t("showingWords")} ${wordCount} ${t("words")}` : 
+            `${t("showingWords")} ${displayPoints.length} ${showAllPoints ? t("words") : t("emotionalGroups")}`
+          }
         </span>
       </div>
       
       {filterApplied && (
         <div className="absolute top-3 left-4 z-10 flex items-center text-sm font-normal bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md">
           <Filter className="h-4 w-4 mr-2 text-primary" />
-          <span>Filtered: {selectedEmotionalGroup}</span>
+          <span>{t("filtered")} {selectedEmotionalGroup}</span>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -291,7 +296,7 @@ export const DocumentEmbedding = ({
             onClick={handleResetView}
           >
             <RotateCcw className="h-3 w-3" />
-            Reset View
+            {t("resetView")}
           </Button>
           
           {selectedPoint && (
@@ -303,7 +308,7 @@ export const DocumentEmbedding = ({
                   : "bg-muted text-foreground"
               }`}
             >
-              {isCompareMode ? "Selecting comparison..." : "Compare with another word"}
+              {isCompareMode ? t("selectingComparison") : t("compareWithAnotherWord")}
             </button>
           )}
         </div>
@@ -319,7 +324,7 @@ export const DocumentEmbedding = ({
             <div className="flex items-center justify-between">
               <div className="text-xs font-semibold flex items-center">
                 <Target className="h-3 w-3 mr-1.5" />
-                Jump to Emotional Group
+                {t("jumpToEmotionalGroup")}
               </div>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -334,7 +339,7 @@ export const DocumentEmbedding = ({
             
             <CollapsibleContent className="mt-1 space-y-1">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs text-muted-foreground">Filter by emotion:</span>
+                <span className="text-xs text-muted-foreground">{t("filterByEmotion")}</span>
                 {selectedEmotionalGroup && (
                   <Button 
                     variant="ghost" 
@@ -343,7 +348,7 @@ export const DocumentEmbedding = ({
                     className="h-6 py-0 px-1 text-xs"
                   >
                     <RotateCcw className="h-3 w-3 mr-1" />
-                    Reset
+                    {t("reset")}
                   </Button>
                 )}
               </div>
