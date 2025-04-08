@@ -1,9 +1,10 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { FileUploader } from "@/components/FileUploader";
-import { PdfViewer } from "@/components/PdfViewer";
 import { SentimentOverview } from "@/components/SentimentOverview";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { EntitySentiment } from "@/components/EntitySentiment";
@@ -11,11 +12,10 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
-import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen, Info, Settings, Heart, Brain, Bug } from "lucide-react";
+import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen, Info, Settings, Heart, Brain } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
 import { WordComparison } from "@/components/WordComparison";
-import { DebugPanel } from "@/components/DebugPanel";
 import { 
   Command,
   CommandEmpty,
@@ -32,223 +32,367 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 
-const getRGBColorString = (color: number[]): string => {
-  return `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`;
-};
-
-const analyzePdfContent = async (pdfText: string, fileName: string) => {
-  return new Promise<any>((resolve) => {
+const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
+  return new Promise((resolve) => {
     setTimeout(() => {
-      console.log(`Analyzing PDF text of length: ${pdfText.length} from file: ${fileName}`);
+      const fileName = file.name.toLowerCase();
+      const seed = fileName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       
-      const words = pdfText
-        .toLowerCase()
-        .split(/\s+/)
-        .map(word => word.replace(/[^\w\s]|_/g, ""))
-        .filter(word => word.length > 2);
+      let customWordBank: string[] = [];
+      let emotionalDistribution = {
+        Joy: 0.15,
+        Sadness: 0.25,
+        Anger: 0.1,
+        Fear: 0.2,
+        Surprise: 0.05,
+        Disgust: 0.05,
+        Trust: 0.1,
+        Anticipation: 0.1,
+        Neutral: 0.0
+      };
       
-      const wordFrequency: Record<string, number> = {};
-      words.forEach(word => {
-        if (wordFrequency[word]) {
-          wordFrequency[word]++;
-        } else {
-          wordFrequency[word] = 1;
-        }
-      });
-      
-      const topWords = Object.entries(wordFrequency)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 12)
-        .map(([word, count]) => ({
-          phrase: word,
-          relevance: Math.random() * 0.3 + 0.7,
-          sentiment: Math.random() * 0.8 + 0.1,
-          occurrences: count
-        }));
-      
-      const potentialEntities = [
-        "Anxiety", "Depression", "Therapy", "Medication", 
-        "Doctor", "Family", "Work", "Sleep",
-        "Stress", "Fear", "Breathing", "Heart"
-      ];
-      
-      const entities = potentialEntities.map(entity => {
-        const regex = new RegExp(entity.toLowerCase(), 'gi');
-        const matches = pdfText.match(regex);
-        const mentions = matches ? matches.length : 0;
+      if (pdfText && pdfText.length > 0) {
+        console.log("Processing PDF text of length:", pdfText.length);
         
-        if (mentions > 0) {
-          return {
-            name: entity,
-            sentiment: Math.random() * 0.8 + 0.1,
-            mentions: mentions,
-            contexts: Array.from({ length: Math.min(3, mentions) }, () => {
-              const index = pdfText.toLowerCase().indexOf(entity.toLowerCase());
-              const start = Math.max(0, index - 50);
-              const end = Math.min(pdfText.length, index + 50);
-              return `Context: ${pdfText.substring(start, end).trim()}`;
-            })
-          };
+        const cleanText = pdfText
+          .toLowerCase()
+          .replace(/[^\w\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        const stopWords = new Set(['the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'can', 'could', 'may', 'might', 'must', 'shall', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'who', 'whom', 'whose', 'which']);
+        
+        customWordBank = cleanText
+          .split(' ')
+          .filter(word => word.length > 2 && !stopWords.has(word))
+          .filter((word, index, self) => self.indexOf(word) === index)
+          .slice(0, 500);
+          
+        console.log("Extracted unique words:", customWordBank.length);
+        console.log("Sample words:", customWordBank.slice(0, 20));
+        
+        const emotionWords = {
+          Joy: ['happy', 'joy', 'delight', 'pleased', 'glad', 'content', 'satisfied', 'success', 'love', 'enjoy', 'smile', 'laugh', 'enthusiastic', 'excited'],
+          Sadness: ['sad', 'sorrow', 'unhappy', 'depressed', 'gloomy', 'miserable', 'grief', 'sorry', 'regret', 'disappointing', 'melancholy', 'heartbreak'],
+          Anger: ['angry', 'mad', 'furious', 'outraged', 'annoyed', 'irritated', 'frustrated', 'hostile', 'rage', 'hate', 'resent', 'enraged'],
+          Fear: ['afraid', 'scared', 'frightened', 'terrified', 'anxious', 'worried', 'panic', 'dread', 'horror', 'terror', 'stress', 'concern'],
+          Surprise: ['surprised', 'amazed', 'astonished', 'shocked', 'startled', 'unexpected', 'wonder', 'stunned', 'astounded', 'speechless'],
+          Disgust: ['disgusted', 'repulsed', 'revolted', 'appalled', 'distaste', 'nauseated', 'dislike', 'abhor', 'hatred', 'offend'],
+          Trust: ['trust', 'believe', 'faith', 'confidence', 'reliable', 'depend', 'honest', 'loyal', 'sincere', 'integrity', 'assurance'],
+          Anticipation: ['expect', 'anticipate', 'look forward', 'await', 'hope', 'predict', 'forecast', 'ambitious', 'eager', 'prepare']
+        };
+        
+        const emotionCounts: Record<string, number> = {
+          Joy: 0, Sadness: 0, Anger: 0, Fear: 0, Surprise: 0, Disgust: 0, Trust: 0, Anticipation: 0
+        };
+        
+        const words = cleanText.split(' ');
+        words.forEach(word => {
+          for (const [emotion, keywords] of Object.entries(emotionWords)) {
+            if (keywords.some(keyword => word.includes(keyword))) {
+              emotionCounts[emotion] += 1;
+            }
+          }
+        });
+        
+        const totalEmotionWords = Object.values(emotionCounts).reduce((sum, count) => sum + count, 0) || 1;
+        
+        for (const emotion in emotionCounts) {
+          if (totalEmotionWords > 0) {
+            emotionalDistribution[emotion as keyof typeof emotionalDistribution] = 
+              0.1 + (emotionCounts[emotion] / totalEmotionWords) * 0.7;
+          }
         }
-        return null;
-      }).filter(Boolean) as Array<any>;
+      } else {
+        if (fileName.includes('happy') || fileName.includes('joy')) {
+          emotionalDistribution.Joy = 0.4;
+          emotionalDistribution.Sadness = 0.05;
+        } else if (fileName.includes('sad') || fileName.includes('depress')) {
+          emotionalDistribution.Sadness = 0.5;
+          emotionalDistribution.Joy = 0.05;
+        } else if (fileName.includes('anger') || fileName.includes('mad')) {
+          emotionalDistribution.Anger = 0.4;
+          emotionalDistribution.Trust = 0.05;
+        } else if (fileName.includes('fear') || fileName.includes('anxiety')) {
+          emotionalDistribution.Fear = 0.4;
+          emotionalDistribution.Trust = 0.05;
+        }
+      }
       
-      const positiveWords = ["good", "better", "improve", "happy", "calm", "relax", "hope", "positive", "therapy", "help"];
-      const negativeWords = ["anxiety", "panic", "fear", "nervous", "worried", "stress", "bad", "trouble", "difficult", "overwhelm"];
+      const overallSentiment = 
+        (emotionalDistribution.Joy * 0.9) + 
+        (emotionalDistribution.Trust * 0.8) + 
+        (emotionalDistribution.Anticipation * 0.6) + 
+        (emotionalDistribution.Surprise * 0.5) - 
+        (emotionalDistribution.Sadness * 0.3) - 
+        (emotionalDistribution.Fear * 0.3) - 
+        (emotionalDistribution.Anger * 0.3) - 
+        (emotionalDistribution.Disgust * 0.3);
       
-      let positiveCount = 0;
-      let negativeCount = 0;
+      const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
       
-      words.forEach(word => {
-        if (positiveWords.includes(word)) positiveCount++;
-        if (negativeWords.includes(word)) negativeCount++;
+      const embeddingPoints = generateMockPoints(
+        false, 
+        emotionalDistribution, 
+        customWordBank.length > 0 ? customWordBank : undefined
+      );
+
+      console.log("Generated embedding points:", embeddingPoints.length);
+      console.log("Sample embedding words:", embeddingPoints.slice(0, 5).map(p => p.word));
+
+      const positivePercentage = Math.round(normalizedSentiment * 100);
+      const negativePercentage = Math.round((1 - normalizedSentiment) * 0.5 * 100);
+      const neutralPercentage = 100 - positivePercentage - negativePercentage;
+
+      const pageCount = pdfText ? Math.ceil(pdfText.length / 2000) : 5 + Math.floor((seed % 10));
+      const timeline = [];
+      let prevScore = normalizedSentiment * 0.8;
+
+      for (let i = 1; i <= pageCount; i++) {
+        const volatility = pdfText ? 0.1 : 0.15;
+        const trend = (normalizedSentiment - prevScore) * 0.3;
+        const randomChange = (Math.random() * 2 - 1) * volatility;
+        let newScore = prevScore + randomChange + trend;
+        newScore = Math.min(1, Math.max(0, newScore));
+
+        timeline.push({ page: i, score: newScore });
+        prevScore = newScore;
+      }
+
+      let themeNames = [
+        "Work", "Family", "Health", "Relationships", 
+        "Future", "Goals", "Education", "Friends",
+        "Hobbies", "Travel", "Home", "Money"
+      ];
+
+      if (customWordBank.length > 20) {
+        const potentialThemes = customWordBank.slice(0, 20);
+        const selectedThemes = [];
+        const themeCount = 4 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < themeCount && i < potentialThemes.length; i++) {
+          const randomIndex = Math.floor(Math.random() * potentialThemes.length);
+          selectedThemes.push(potentialThemes[randomIndex]);
+          potentialThemes.splice(randomIndex, 1);
+        }
+
+        themeNames = selectedThemes.map(theme => 
+          theme.charAt(0).toUpperCase() + theme.slice(1)
+        );
+        
+        console.log("Using custom themes from PDF:", themeNames);
+      }
+
+      const themes = [];
+      const themeCount = Math.min(themeNames.length, 4 + Math.floor(Math.random() * 4));
+
+      const usedThemeIndices = new Set();
+      for (let i = 0; i < themeCount; i++) {
+        let themeIndex;
+        do {
+          themeIndex = Math.floor(Math.random() * themeNames.length);
+        } while (usedThemeIndices.has(themeIndex) && usedThemeIndices.size < themeNames.length);
+
+        if (usedThemeIndices.size >= themeNames.length) break;
+        usedThemeIndices.add(themeIndex);
+
+        const variation = Math.random() * 0.4 - 0.2;
+        const themeSentiment = Math.min(1, Math.max(0, normalizedSentiment + variation));
+
+        themes.push({
+          name: themeNames[themeIndex],
+          score: themeSentiment,
+          mentions: 5 + Math.floor(Math.random() * 20)
+        });
+      }
+
+      const wordFrequency: Record<string, { count: number, sentiment: number, emotionalTone: string }> = {};
+      embeddingPoints.forEach(point => {
+        if (point.word) {
+          if (!wordFrequency[point.word]) {
+            wordFrequency[point.word] = { 
+              count: 0, 
+              sentiment: 0, 
+              emotionalTone: point.emotionalTone || "Neutral" 
+            };
+          }
+          wordFrequency[point.word].count += 1;
+          wordFrequency[point.word].sentiment += point.sentiment;
+        }
       });
-      
-      const totalSentimentWords = Math.max(1, positiveCount + negativeCount);
-      const sentimentScore = positiveCount / totalSentimentWords;
-      
-      let sentimentLabel = "Neutral";
-      if (sentimentScore >= 0.6) sentimentLabel = "Positive";
-      else if (sentimentScore < 0.4) sentimentLabel = "Negative";
-      
-      const positivePercentage = Math.round((positiveCount / totalSentimentWords) * 100);
-      const negativePercentage = Math.round((negativeCount / totalSentimentWords) * 100);
-      const neutralPercentage = Math.max(0, 100 - positivePercentage - negativePercentage);
-      
-      const mockData = {
+
+      Object.keys(wordFrequency).forEach(word => {
+        const entry = wordFrequency[word];
+        entry.sentiment = entry.sentiment / entry.count;
+      });
+
+      const sortedWords = Object.entries(wordFrequency)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 30);
+
+      console.log("Top words with frequency:", sortedWords.slice(0, 5).map(([word, data]) => `${word}: ${data.count}`));
+
+      const keyPhrases = sortedWords.map(([word, data]) => {
+        let sentimentCategory: "positive" | "neutral" | "negative" = "neutral";
+        if (data.sentiment >= 0.6) {
+          sentimentCategory = "positive";
+        } else if (data.sentiment <= 0.4) {
+          sentimentCategory = "negative";
+        }
+
+        if (data.emotionalTone === "Neutral") {
+          sentimentCategory = "neutral";
+        }
+
+        return {
+          text: word,
+          sentiment: sentimentCategory,
+          count: data.count
+        };
+      });
+
+      let summary = "";
+      if (pdfText && pdfText.length > 0) {
+        const sentences = pdfText
+          .replace(/([.!?])\s*/g, "$1|")
+          .split("|")
+          .filter(s => s.trim().length > 10 && s.trim().length < 250)
+          .map(s => s.trim());
+        
+        if (sentences.length > 0) {
+          const topKeywords = sortedWords.slice(0, 10).map(([word]) => word.toLowerCase());
+          
+          const scoredSentences = sentences.map((sentence, index) => {
+            const normalizedPosition = 1 - (index / sentences.length);
+            const lowerSentence = sentence.toLowerCase();
+            
+            let keywordScore = 0;
+            topKeywords.forEach(keyword => {
+              if (lowerSentence.includes(keyword.toLowerCase())) {
+                keywordScore += 1;
+              }
+            });
+            
+            const score = (keywordScore * 0.7) + (normalizedPosition * 0.3);
+            
+            return { sentence, score };
+          });
+          
+          scoredSentences.sort((a, b) => b.score - a.score);
+          
+          const summaryLength = Math.min(
+            5, 
+            Math.max(2, Math.floor(sentences.length / 10))
+          );
+          
+          const topSentences = scoredSentences.slice(0, summaryLength);
+          
+          topSentences.sort((a, b) => {
+            return sentences.indexOf(a.sentence) - sentences.indexOf(b.sentence);
+          });
+          
+          summary = topSentences.map(s => s.sentence).join(" ");
+          
+          if (summary.length > 500) {
+            summary = summary.substring(0, 497) + "...";
+          }
+        } else {
+          const dominantEmotion = Object.entries(emotionalDistribution)
+            .sort((a, b) => b[1] - a[1])[0][0];
+          
+          const emotionSummaries = {
+            Joy: "This document contains predominantly positive content, expressing optimism and satisfaction. The author appears to convey enthusiasm and positive outlook throughout.",
+            Sadness: "The document expresses significant melancholy and disappointment. Several passages indicate feelings of loss or regret, with an overall somber tone.",
+            Anger: "There are strong expressions of frustration and discontent throughout this document. The author appears to be addressing perceived injustices or grievances.",
+            Fear: "Concerns and anxieties are prominent throughout this text. The author expresses worry about future outcomes and potential threats.",
+            Surprise: "The document contains unexpected revelations and sudden shifts in perspective. The author seems to be processing unexpected information.",
+            Disgust: "There are strong expressions of aversion and disapproval throughout. The author takes a critical stance toward the subject matter.",
+            Trust: "Expressions of confidence and reliability dominate this document. The author establishes credibility and trustworthiness throughout.",
+            Anticipation: "The document focuses on future possibilities and expectations. There's a forward-looking perspective throughout the content.",
+            Neutral: "This document presents information in a balanced, objective manner. The content is primarily factual with minimal emotional expression."
+          };
+          
+          summary = emotionSummaries[dominantEmotion as keyof typeof emotionSummaries];
+        }
+      } else {
+        const dominantEmotion = Object.entries(emotionalDistribution)
+          .sort((a, b) => b[1] - a[1])[0][0];
+        
+        const emotionSummaries = {
+          Joy: "This document contains predominantly positive content, expressing optimism and satisfaction. The author appears to convey enthusiasm and positive outlook throughout.",
+          Sadness: "The document expresses significant melancholy and disappointment. Several passages indicate feelings of loss or regret, with an overall somber tone.",
+          Anger: "There are strong expressions of frustration and discontent throughout this document. The author appears to be addressing perceived injustices or grievances.",
+          Fear: "Concerns and anxieties are prominent throughout this text. The author expresses worry about future outcomes and potential threats.",
+          Surprise: "The document contains unexpected revelations and sudden shifts in perspective. The author seems to be processing unexpected information.",
+          Disgust: "There are strong expressions of aversion and disapproval throughout. The author takes a critical stance toward the subject matter.",
+          Trust: "Expressions of confidence and reliability dominate this document. The author establishes credibility and trustworthiness throughout.",
+          Anticipation: "The document focuses on future possibilities and expectations. There's a forward-looking perspective throughout the content.",
+          Neutral: "This document presents information in a balanced, objective manner. The content is primarily factual with minimal emotional expression."
+        };
+        
+        summary = emotionSummaries[dominantEmotion as keyof typeof emotionSummaries];
+      }
+
+      const sourceDescription = pdfText && pdfText.length > 0 && customWordBank.length > 0
+        ? `Analysis based on ${customWordBank.length} unique words extracted from your PDF`
+        : undefined;
+
+      const analysisResults = {
         overallSentiment: {
-          score: sentimentScore,
-          label: sentimentLabel
+          score: normalizedSentiment,
+          label: normalizedSentiment >= 0.6 ? "Positive" : normalizedSentiment >= 0.4 ? "Neutral" : "Negative"
         },
         distribution: {
           positive: positivePercentage,
           neutral: neutralPercentage,
           negative: negativePercentage
         },
-        timeline: Array.from({ length: 20 }, (_, i) => {
-          const sectionStart = Math.floor(i * pdfText.length / 20);
-          const sectionEnd = Math.floor((i + 1) * pdfText.length / 20);
-          const section = pdfText.substring(sectionStart, sectionEnd);
-          
-          let localPositive = 0;
-          let localNegative = 0;
-          section.toLowerCase().split(/\s+/).forEach(word => {
-            if (positiveWords.includes(word)) localPositive++;
-            if (negativeWords.includes(word)) localNegative++;
-          });
-          
-          const localTotal = Math.max(1, localPositive + localNegative);
-          const localScore = localPositive / localTotal;
-          
-          return {
-            page: i + 1,
-            score: localScore,
-            text: section.trim() || "Sample text segment"
-          };
-        }),
-        entities: entities.length > 0 ? entities : [
-          { name: "Anxiety", sentiment: 0.2, mentions: 3, contexts: ["Context: Sample context for anxiety"] },
-          { name: "Therapy", sentiment: 0.7, mentions: 2, contexts: ["Context: Sample context for therapy"] }
-        ],
-        keyPhrases: topWords.length > 0 ? topWords : [
-          { phrase: "sample phrase", relevance: 0.8, sentiment: 0.5, occurrences: 2 }
-        ],
-        clusters: [
-          { name: "Anxiety Symptoms", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.4 + 0.1 },
-          { name: "Treatment", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.4 },
-          { name: "Daily Life", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.3 },
-          { name: "Support System", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.5 },
-          { name: "Coping Strategies", size: Math.floor(Math.random() * 10) + 5, sentiment: Math.random() * 0.3 + 0.5 },
-        ],
-        summary: `Analysis of "${fileName}": ${pdfText.substring(0, 200)}...`,
-        sourceDescription: `PDF Document Analysis - ${fileName}`
+        timeline: timeline,
+        entities: themes,
+        keyPhrases: keyPhrases,
+        embeddingPoints: embeddingPoints,
+        fileName: file.name,
+        fileSize: file.size,
+        wordCount: customWordBank.length,
+        pdfTextLength: pdfText ? pdfText.length : 0,
+        summary: summary,
+        sourceDescription: sourceDescription
       };
-      
-      resolve(mockData);
+
+      resolve(analysisResults);
     }, 2000);
   });
 };
 
-const sampleData = {
-  overallSentiment: {
-    score: 0.35,
-    label: "Negative"
-  },
-  distribution: {
-    positive: 25,
-    neutral: 15,
-    negative: 60
-  },
-  timeline: Array.from({ length: 20 }, (_, i) => ({
-    page: i + 1,
-    score: 0.3 + (i % 3 === 0 ? 0.1 : i % 2 === 0 ? -0.1 : 0),
-    text: "Journal entry excerpt (sample data)"
-  })),
-  entities: [
-    { name: "Anxiety", sentiment: 0.2, mentions: 8, contexts: ["Context: Experienced anxiety during team meeting"] },
-    { name: "Heart", sentiment: 0.25, mentions: 5, contexts: ["Context: Heart racing during panic attack"] },
-    { name: "Breathing", sentiment: 0.45, mentions: 4, contexts: ["Context: Difficulty breathing while anxious"] },
-    { name: "Panic", sentiment: 0.15, mentions: 6, contexts: ["Context: Panic attack symptoms described"] },
-    { name: "Therapy", sentiment: 0.65, mentions: 3, contexts: ["Context: Discussion of therapy techniques"] },
-    { name: "Sleep", sentiment: 0.35, mentions: 4, contexts: [["Context: Difficulty sleeping due to anxiety"]] },
-    { name: "Medication", sentiment: 0.55, mentions: 2, contexts: ["Context: Starting new anxiety medication"] },
-    { name: "Work", sentiment: 0.25, mentions: 5, contexts: ["Context: Anxiety triggered at work"] },
-  ],
-  keyPhrases: [
-    { phrase: "panic attack", relevance: 0.9, sentiment: 0.2, occurrences: 6 },
-    { phrase: "heart racing", relevance: 0.85, sentiment: 0.25, occurrences: 5 },
-    { phrase: "shortness of breath", relevance: 0.8, sentiment: 0.3, occurrences: 4 },
-    { phrase: "feeling overwhelmed", relevance: 0.75, sentiment: 0.2, occurrences: 5 },
-    { phrase: "therapy session", relevance: 0.7, sentiment: 0.65, occurrences: 3 },
-    { phrase: "coping mechanisms", relevance: 0.75, sentiment: 0.7, occurrences: 2 },
-    { phrase: "deep breathing", relevance: 0.7, sentiment: 0.6, occurrences: 3 },
-    { phrase: "medication adjustment", relevance: 0.65, sentiment: 0.55, occurrences: 2 },
-    { phrase: "sleep disturbance", relevance: 0.6, sentiment: 0.3, occurrences: 4 },
-    { phrase: "support system", relevance: 0.65, sentiment: 0.75, occurrences: 2 },
-    { phrase: "trigger identification", relevance: 0.7, sentiment: 0.6, occurrences: 2 },
-    { phrase: "mindfulness practice", relevance: 0.75, sentiment: 0.8, occurrences: 2 },
-  ],
-  clusters: [
-    { name: "Anxiety Symptoms", size: 12, sentiment: 0.2 },
-    { name: "Treatment", size: 8, sentiment: 0.65 },
-    { name: "Daily Life", size: 10, sentiment: 0.4 },
-    { name: "Support System", size: 6, sentiment: 0.7 },
-    { name: "Coping Strategies", size: 9, sentiment: 0.6 },
-  ],
-  summary: "Journal Entry 12: The anxiety symptoms were particularly intense today. Experienced a panic attack during the team meeting with racing heart and shortness of breath. Therapy techniques helped somewhat, but still feeling overwhelmed. The new medication adjustment might be causing these more intense episodes. I've also been having trouble sleeping, which probably isn't helping. My therapist suggested more mindfulness practice and identifying specific triggers. My support system at home has been helpful, but I'm still struggling at work. I need to find better coping mechanisms for these situations.",
-  fileName: "Journal Entry 12.pdf",
-  fileSize: 1024 * 100, // 100KB mock size
-  wordCount: 432, // Mock word count
-  sourceDescription: "Journal Entry 12 - Personal anxiety log"
-};
-
-const sampleJournalText = "Today I experienced another panic attack during our team meeting. My heart started racing suddenly, and I felt that familiar shortness of breath. I tried to use the breathing techniques my therapist taught me, but I still felt overwhelmed. The physical symptoms lasted about 10 minutes, but the anxious feeling stayed with me for hours afterward. I wonder if the recent medication adjustment is causing these more intense episodes. I've also been having trouble sleeping, which probably isn't helping. My therapist suggested more mindfulness practice and identifying specific triggers. My support system at home has been helpful, but I'm still struggling at work. I need to find better coping mechanisms for these situations.";
-
 const wellbeingSuggestions = [
   {
-    title: "Practice Deep Breathing",
-    description: "Try the 4-7-8 technique: inhale for 4 seconds, hold for 7, exhale for 8.",
-    icon: <Heart className="h-5 w-5 text-red-500" />
-  },
-  {
-    title: "Mindfulness Meditation",
-    description: "Start with just 5 minutes daily of focused awareness on your breath.",
-    icon: <Brain className="h-5 w-5 text-purple-500" />
-  },
-  {
-    title: "Physical Activity",
-    description: "Even a 10-minute walk can reduce anxiety and improve mood.",
-    icon: <Heart className="h-5 w-5 text-green-500" />
-  },
-  {
-    title: "Journaling",
-    description: "Write down your thoughts and feelings to process them more effectively.",
-    icon: <BookOpen className="h-5 w-5 text-blue-500" />
+    title: "Practice Mindfulness",
+    description: "Spend 5-10 minutes each day focusing on your breath and being present in the moment.",
+    category: "Meditation",
+    benefit: "Reduces stress and anxiety, improves focus and emotional regulation."
   },
   {
     title: "Connect with Others",
-    description: "Share your feelings with someone you trust.",
-    icon: <Heart className="h-5 w-5 text-pink-500" />
+    description: "Reach out to a friend or family member you haven't spoken to in a while.",
+    category: "Social Connection",
+    benefit: "Strengthens relationships, reduces feelings of isolation."
+  },
+  {
+    title: "Physical Activity",
+    description: "Take a 20-minute walk outdoors or do a short home workout.",
+    category: "Exercise",
+    benefit: "Boosts mood, improves energy levels and overall health."
+  },
+  {
+    title: "Digital Detox",
+    description: "Set aside 1-2 hours before bed as screen-free time.",
+    category: "Lifestyle",
+    benefit: "Improves sleep quality and reduces mental fatigue."
+  },
+  {
+    title: "Gratitude Practice",
+    description: "Write down three things you're grateful for before going to sleep.",
+    category: "Reflection",
+    benefit: "Shifts focus to positive aspects of life, improves outlook."
   }
 ];
 
@@ -256,348 +400,233 @@ const mentalHealthResources = [
   {
     name: "Crisis Text Line",
     description: "Text HOME to 741741 to connect with a Crisis Counselor",
-    url: "https://www.crisistextline.org/"
+    category: "Crisis Support",
+    contact: "Text 741741",
+    website: "crisistextline.org"
   },
   {
     name: "National Suicide Prevention Lifeline",
-    description: "1-800-273-8255 - Available 24/7",
-    url: "https://suicidepreventionlifeline.org/"
-  },
-  {
-    name: "SAMHSA's National Helpline",
-    description: "1-800-662-4357 - Treatment referral and information service",
-    url: "https://www.samhsa.gov/find-help/national-helpline"
+    description: "24/7, free and confidential support for people in distress",
+    category: "Crisis Support",
+    contact: "1-800-273-8255",
+    website: "suicidepreventionlifeline.org"
   },
   {
     name: "Psychology Today Therapist Finder",
-    description: "Search for therapists in your area",
-    url: "https://www.psychologytoday.com/us/therapists"
+    description: "Find therapists and counselors near you",
+    category: "Professional Help",
+    website: "psychologytoday.com/us/therapists"
+  },
+  {
+    name: "Headspace",
+    description: "Guided meditation and mindfulness app",
+    category: "Self-help Apps",
+    website: "headspace.com"
+  },
+  {
+    name: "MoodTools",
+    description: "Free app designed to help you combat depression and alleviate your negative moods",
+    category: "Self-help Apps",
+    website: "moodtools.org"
   }
 ];
 
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [pdfText, setPdfText] = useState(sampleJournalText);
-  const [pdfUrl, setPdfUrl] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [sentimentData, setSentimentData] = useState<any>(sampleData);
-  const [points, setPoints] = useState<Point[]>([]);
-  const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  const [sentimentData, setSentimentData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("embedding");
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
-  const [comparisonWord, setComparisonWord] = useState<string | null>(null);
-  const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
   const [open, setOpen] = useState(false);
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
-  const [visibleClusterCount, setVisibleClusterCount] = useState(5);
-  const searchDropdownRef = useRef<HTMLDivElement | null>(null);
-  const [showComparison, setShowComparison] = useState(false);
-  const [emotionalClusters, setEmotionalClusters] = useState<any[]>([]);
-  const [clusterColors, setClusterColors] = useState<Record<string, string>>({});
-  const [clusterExpanded, setClusterExpanded] = useState<Record<string, boolean>>({});
-  const [clusterPoints, setClusterPoints] = useState<Record<string, Point[]>>({});
-  const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
-  const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
-  const [comparisonSearchTerm, setComparisonSearchTerm] = useState("");
-  const [comparisonSearchOpen, setComparisonSearchOpen] = useState(false);
-  const comparisonSearchRef = useRef<HTMLDivElement | null>(null);
-  const [showWellbeingSuggestions, setShowWellbeingSuggestions] = useState(true);
-  const [wordsForComparison, setWordsForComparison] = useState<Point[]>([]);
-  const [wordSearchTerm, setWordSearchTerm] = useState("");
-  const [wordSearchOpen, setWordSearchOpen] = useState(false);
-  const wordSearchRef = useRef<HTMLDivElement | null>(null);
-  const [showPdfViewer, setShowPdfViewer] = useState(false);
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const consoleMessages = useState<Array<{ level: string; message: string; timestamp: string }>>([]);
+  const [pdfText, setPdfText] = useState<string>(""); 
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
+  const [compareWords, setCompareWords] = useState<Point[]>([]);
+  const [compareSearchOpen, setCompareSearchOpen] = useState(false);
+  const [compareSearchTerm, setCompareSearchTerm] = useState("");
+  const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
+  const [resourcesTab, setResourcesTab] = useState("wellbeing");
+  const [visibleClusterCount, setVisibleClusterCount] = useState(8);
+  const searchDropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const originalConsoleLog = console.log;
-    const originalConsoleError = console.error;
-    const originalConsoleWarn = console.warn;
-    const originalConsoleInfo = console.info;
-
-    const interceptConsole = (
-      originalFn: any, 
-      level: string
-    ) => (...args: any[]) => {
-      originalFn(...args);
-      
-      const message = args.map(arg => 
-        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-      ).join(' ');
-      
-      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-      
-      setConsoleMessages(prev => [
-        { level, message, timestamp },
-        ...prev.slice(0, 99)
-      ]);
-    };
-
-    console.log = interceptConsole(originalConsoleLog, 'log');
-    console.error = interceptConsole(originalConsoleError, 'error');
-    console.warn = interceptConsole(originalConsoleWarn, 'warn');
-    console.info = interceptConsole(originalConsoleInfo, 'info');
-
-    return () => {
-      console.log = originalConsoleLog;
-      console.error = originalConsoleError;
-      console.warn = originalConsoleWarn;
-      console.info = originalConsoleInfo;
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-      
-      if (comparisonSearchRef.current && !comparisonSearchRef.current.contains(event.target as Node)) {
-        setComparisonSearchOpen(false);
-      }
-      
-      if (wordSearchRef.current && !wordSearchRef.current.contains(event.target as Node)) {
-        setWordSearchOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (sentimentData) {
-      const mockPoints = generateMockPoints(pdfText, sentimentData);
-      setPoints(mockPoints);
-      setFilteredPoints(mockPoints);
-      
-      const allWords = pdfText
-        .toLowerCase()
-        .split(/\s+/)
-        .map(word => word.replace(/[^\w\s]|_/g, ""))
-        .filter(word => word.length > 2);
-      
-      const uniqueWordsSet = new Set(allWords);
-      const uniqueWordsArray = Array.from(uniqueWordsSet);
-      setUniqueWords(uniqueWordsArray);
-      
-      console.log(`Total unique words found: ${uniqueWordsArray.length}`);
-      
-      const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
-        const color = getEmotionColor(cluster.sentiment);
-        return {
-          ...cluster,
-          id: index,
-          color: getRGBColorString(color),
-        };
-      });
-      
-      setEmotionalClusters(clusters);
-      
-      const colorMap: Record<string, string> = {};
-      clusters.forEach((cluster: any) => {
-        colorMap[cluster.name] = cluster.color;
-      });
-      setClusterColors(colorMap);
-      
-      const expandedMap: Record<string, boolean> = {};
-      clusters.forEach((cluster: any) => {
-        expandedMap[cluster.name] = false;
-      });
-      setClusterExpanded(expandedMap);
-      
-      const clusterPointsMap: Record<string, Point[]> = {};
-      clusters.forEach((cluster: any) => {
-        const clusterSize = cluster.size;
-        const availablePoints = mockPoints.filter(p => 
-          !Object.values(clusterPointsMap).some(assignedPoints => 
-            assignedPoints.some(ap => ap.id === p.id)
-          )
-        );
-        
-        const shuffled = availablePoints.sort(() => 0.5 - Math.random());
-        const assignedPoints = shuffled.slice(0, Math.min(clusterSize, shuffled.length));
-        
-        clusterPointsMap[cluster.name] = assignedPoints;
-      });
-      setClusterPoints(clusterPointsMap);
-      
-      if (typeof window !== 'undefined') {
-        (window as any).documentEmbeddingPoints = mockPoints;
-      }
-    }
-  }, [sentimentData, pdfText]);
-
-  const handleFileUpload = (files: File[], extractedText?: string, embedUrl?: string) => {
+  const handleFileUpload = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
-      const file = files[0];
-      setFile(file);
-      
-      if (embedUrl) {
-        setPdfUrl(embedUrl);
-        setShowPdfViewer(true);
-      }
+      setFile(files[0]);
+      setPdfText(extractedText || "");
+      toast.success(`File "${files[0].name}" uploaded successfully`);
       
       if (extractedText && extractedText.length > 0) {
-        setPdfText(extractedText);
         const wordCount = extractedText.split(/\s+/).length;
         toast.info(`Extracted ${wordCount} words from PDF for analysis`);
-        console.log(`PDF text extracted with ${wordCount} words. Beginning analysis...`);
-        
-        analyzeSentiment(file, extractedText);
-      } else {
-        toast.warning("Could not extract text properly, using sample text instead");
-        console.warn("PDF text extraction failed, using fallback text");
-        
-        const fallbackText = sampleJournalText;
-        setPdfText(fallbackText);
-        
-        analyzeSentiment(file, fallbackText);
+      }
+      
+      if (sentimentData) {
+        setSentimentData(null);
+        setSelectedPoint(null);
+        setAnalysisComplete(false);
+        setCompareWords([]);
+        setCompareSearchResults([]);
       }
     }
   };
 
-  const togglePdfViewer = () => {
-    setShowPdfViewer(!showPdfViewer);
-  };
+  const analyzeSentiment = async () => {
+    if (!file) {
+      toast.error("Please upload a PDF file first");
+      return;
+    }
 
-  const analyzeSentiment = async (file: File, text: string) => {
     setIsAnalyzing(true);
+    setAnalysisComplete(false);
+    setCompareWords([]);
+    setCompareSearchResults([]);
+    
     try {
-      console.log(`Starting sentiment analysis for file: ${file.name}`);
-      const results = await analyzePdfContent(text, file.name);
+      const results = await analyzePdfContent(file, pdfText);
+      console.log("Analysis results:", results); // Debug the results
+      setSentimentData(results);
+      setFilteredPoints(results.embeddingPoints || []);
+      setAnalysisComplete(true);
       
-      setSentimentData({
-        ...results,
-        fileName: file.name,
-        fileSize: file.size,
-        wordCount: text.split(/\s+/).length
-      });
+      const words = results.embeddingPoints
+        .map((point: Point) => point.word)
+        .filter((word: string, index: number, self: string[]) => 
+          word && self.indexOf(word) === index
+        )
+        .sort();
       
-      toast.success("Analysis complete!");
-      console.log(`Analysis complete for: ${file.name}`);
+      setUniqueWords(words);
+      
+      setCompareSearchResults(results.embeddingPoints.slice(0, 15));
+      
+      if (results.pdfTextLength > 0) {
+        toast.success(`Analysis completed! Analyzed ${results.pdfTextLength} characters of text from your PDF.`);
+      } else {
+        toast.success("Document analysis completed! All tabs are now available.");
+      }
     } catch (error) {
-      console.error("Error analyzing sentiment:", error);
-      toast.error("Failed to analyze document");
-      
-      const mockData = {
-        overallSentiment: {
-          score: 0.3,
-          label: "Negative"
-        },
-        distribution: {
-          positive: 20,
-          neutral: 30,
-          negative: 50
-        },
-        timeline: Array.from({ length: 10 }, (_, i) => ({
-          page: i + 1,
-          score: 0.3 + (Math.random() * 0.3),
-          text: text.substring(i * 100, (i + 1) * 100).trim() || "Sample text segment"
-        })),
-        entities: [
-          { name: "Anxiety", sentiment: 0.2, mentions: 5, contexts: ["Context: Feeling anxious in meetings"] },
-          { name: "Sleep", sentiment: 0.4, mentions: 3, contexts: ["Context: Trouble sleeping at night"] },
-        ],
-        keyPhrases: [
-          { phrase: "panic attack", relevance: 0.8, sentiment: 0.2, occurrences: 3 },
-          { phrase: "deep breathing", relevance: 0.7, sentiment: 0.6, occurrences: 2 },
-        ],
-        clusters: [
-          { name: "Anxiety Symptoms", size: 8, sentiment: 0.2 },
-          { name: "Coping Strategies", size: 6, sentiment: 0.6 },
-        ],
-        summary: `Fallback analysis for "${file.name}". The analysis shows patterns of anxiety and stress with some coping mechanisms mentioned.`,
-        fileName: file.name,
-        fileSize: file.size,
-        wordCount: text.split(/\s+/).length,
-        sourceDescription: `PDF Document Analysis - ${file.name}`
-      };
-      
-      setSentimentData(mockData);
+      toast.error("Error analyzing document");
+      console.error("Analysis error:", error);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const handlePointClick = (point: Point | null) => {
-    if (point) {
-      setSelectedWord(point.word);
-      setSelectedPoint(point);
-      toast.info(`Selected: ${point.word}`);
-    } else {
-      setSelectedWord(null);
+  const handlePointClick = (point: Point) => {
+    if (!point) {
       setSelectedPoint(null);
+      setSelectedWord(null);
+      setConnectedPoints([]);
+      return;
     }
+    
+    setSelectedPoint(point);
+    setSelectedWord(point.word);
+    
+    if (point.relationships && point.relationships.length > 0) {
+      const sortedRelationships = [...point.relationships]
+        .sort((a, b) => b.strength - a.strength)
+        .slice(0, 3);
+        
+      const connected = sentimentData.embeddingPoints
+        .filter((p: Point) => sortedRelationships.some(rel => rel.id === p.id));
+      
+      setConnectedPoints(connected);
+    } else {
+      setConnectedPoints([]);
+    }
+    
+    toast(`Selected: "${point.word}" (${point.emotionalTone || 'Neutral'})`);
   };
-
+  
   const handleSelectWord = (word: string) => {
-    const point = points.find(p => p.word === word);
-    if (point) {
-      setSelectedWord(word);
-      setSelectedPoint(point);
-      setOpen(false);
-      toast.info(`Selected: ${word}`);
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchTerm("");
+    setSearchTerm(word);
+    setSelectedWord(word);
     setOpen(false);
-  };
-
-  const handleResetVisualization = () => {
-    setSelectedWord(null);
-    setSelectedPoint(null);
-    setComparisonWord(null);
-    setComparisonPoint(null);
-    setSelectedCluster(null);
-    setFilteredPoints(points);
-    toast.info("Visualization reset");
-  };
-
-  const handleCompareWord = () => {
-    setShowComparison(true);
-  };
-
-  const handleSelectComparisonWord = (word: string) => {
-    const point = points.find(p => p.word === word);
-    if (point) {
-      setComparisonWord(word);
-      setComparisonPoint(point);
-      setComparisonSearchOpen(false);
-      toast.info(`Comparing with: ${word}`);
+    
+    if (sentimentData && sentimentData.embeddingPoints) {
+      const selectedPoint = sentimentData.embeddingPoints.find(
+        (point: Point) => point.word === word
+      );
+      
+      if (selectedPoint) {
+        setSelectedPoint(selectedPoint);
+        
+        if (selectedPoint.relationships && selectedPoint.relationships.length > 0) {
+          const sortedRelationships = [...selectedPoint.relationships]
+            .sort((a, b) => b.strength - a.strength)
+            .slice(0, 3);
+            
+          const connected = sentimentData.embeddingPoints
+            .filter((p: Point) => sortedRelationships.some(rel => rel.id === p.id));
+          
+          setConnectedPoints(connected);
+          toast(`Selected: "${selectedPoint.word}" (${selectedPoint.emotionalTone || 'Neutral'})`);
+        } else {
+          setConnectedPoints([]);
+        }
+      }
     }
+  };
+  
+  const handleCompareSearchChange = (value: string) => {
+    setCompareSearchTerm(value);
+    
+    if (!value.trim()) {
+      setCompareSearchResults([]);
+      return;
+    }
+    
+    if (!sentimentData || !sentimentData.embeddingPoints) return;
+    
+    const results = sentimentData.embeddingPoints.filter((point: Point) => 
+      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
+      point.word.toLowerCase().includes(value.toLowerCase()) ||
+      (point.keywords && point.keywords.some(keyword => 
+        keyword.toLowerCase().includes(value.toLowerCase())
+      ))
+    );
+    
+    results.sort((a: Point, b: Point) => {
+      const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
+      const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
+      
+      if (aEmotionMatch && !bEmotionMatch) return -1;
+      if (!aEmotionMatch && bEmotionMatch) return 1;
+      return 0;
+    });
+    
+    setCompareSearchResults(results);
+  };
+
+  const handleAddToComparison = (point: Point) => {
+    if (compareWords.length >= 4) {
+      toast.error("You can only compare up to 4 words");
+      return;
+    }
+    
+    if (compareWords.some(p => p.id === point.id)) {
+      toast.info(`"${point.word}" is already in your comparison`);
+      return;
+    }
+    
+    setCompareWords([...compareWords, point]);
+    setCompareSearchOpen(false);
+    toast.success(`Added "${point.word}" to comparison`);
+  };
+
+  const handleRemoveFromComparison = (point: Point) => {
+    setCompareWords(compareWords.filter(p => p.id !== point.id));
+    toast.info(`Removed "${point.word}" from comparison`);
   };
 
   const handleClearComparison = () => {
-    setComparisonWord(null);
-    setComparisonPoint(null);
-    setComparisonSearchTerm("");
-    setShowComparison(false);
-  };
-
-  const toggleClusterExpanded = (clusterName: string) => {
-    setClusterExpanded(prev => ({
-      ...prev,
-      [clusterName]: !prev[clusterName]
-    }));
-  };
-
-  const handleSelectCluster = (cluster: any) => {
-    if (selectedCluster === cluster.name) {
-      setSelectedCluster(null);
-      setFilteredPoints(points);
-      toast.info(`Showing all words`);
-    } else {
-      setSelectedCluster(cluster.name);
-      const clusterWords = clusterPoints[cluster.name] || [];
-      setFilteredPoints(clusterWords);
-      toast.info(`Filtered to cluster: ${cluster.name}`);
-    }
+    setCompareWords([]);
+    toast.info("Cleared all comparison words");
   };
 
   const calculateRelationship = (point1: Point, point2: Point) => {
@@ -609,12 +638,13 @@ const Dashboard = () => {
       Math.pow(point1.position[2] - point2.position[2], 2)
     );
     
-    const spatialSimilarity = Math.max(0, 1 - (distance / 2));
+    const spatialSimilarity = Math.max(0, 1 - (distance / 40));
     
     const sentimentDiff = Math.abs(point1.sentiment - point2.sentiment);
     const sentimentSimilarity = 1 - sentimentDiff;
     
-    const sameEmotionalGroup = point1.emotionalTone === point2.emotionalTone;
+    const sameEmotionalGroup = 
+      (point1.emotionalTone || "Neutral") === (point2.emotionalTone || "Neutral");
     
     const point1Keywords = point1.keywords || [];
     const point2Keywords = point2.keywords || [];
@@ -628,60 +658,72 @@ const Dashboard = () => {
     };
   };
 
-  const handleAddWordToComparison = () => {
-    setWordSearchOpen(true);
+  const handleResetVisualization = () => {
+    if (window.documentEmbeddingActions && window.documentEmbeddingActions.resetView) {
+      window.documentEmbeddingActions.resetView();
+      toast.info("Visualization reset to default view");
+    }
   };
 
-  const handleSelectWordForComparison = (word: string) => {
-    const point = points.find(p => p.word === word);
-    if (point && wordsForComparison.length < 4) {
-      if (!wordsForComparison.some(p => p.id === point.id)) {
-        setWordsForComparison(prev => [...prev, point]);
-        setWordSearchTerm("");
-        setWordSearchOpen(false);
-        toast.info(`Added ${word} to comparison`);
-      } else {
-        toast.info(`${word} is already in comparison`);
+  useEffect(() => {
+    if (!sentimentData) return;
+    
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) {
+      setFilteredPoints(sentimentData.embeddingPoints || []);
+      return;
+    }
+    
+    const filtered = sentimentData.embeddingPoints.filter((point: Point) => {
+      return point.word.toLowerCase().includes(term) || 
+             (point.emotionalTone && point.emotionalTone.toLowerCase().includes(term));
+    });
+    
+    setFilteredPoints(filtered);
+  }, [searchTerm, sentimentData]);
+
+  useEffect(() => {
+    if (sentimentData && sentimentData.embeddingPoints) {
+      setCompareSearchResults(sentimentData.embeddingPoints.slice(0, 15));
+    }
+  }, [sentimentData]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
       }
-    } else if (wordsForComparison.length >= 4) {
-      toast.error("Maximum of 4 words can be compared at once");
     }
-  };
 
-  const handleRemoveWordFromComparison = (point: Point) => {
-    setWordsForComparison(prev => prev.filter(p => p.id !== point.id));
-    toast.info(`Removed ${point.word} from comparison`);
-  };
-
-  const toggleDebugPanel = () => {
-    setShowDebugPanel(!showDebugPanel);
-    if (!showDebugPanel) {
-      toast.info("Debug panel opened");
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
     }
-  };
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
 
-  const debugState = {
-    file: file ? { 
-      name: file.name, 
-      size: file.size, 
-      type: file.type 
-    } : null,
-    pdfInfo: {
-      hasUrl: Boolean(pdfUrl),
-      textLength: pdfText.length,
-      wordCount: pdfText.split(/\s+/).length
-    },
-    visualizationState: {
-      pointsCount: points.length,
-      filteredCount: filteredPoints.length,
-      selectedWord,
-      selectedCluster,
-      visibleClusterCount
-    },
-    analysisStatus: {
-      isAnalyzing,
-      hasData: Boolean(sentimentData)
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if ((event.target as HTMLElement).closest('[data-radix-popper-content-wrapper]') === null &&
+          !(event.target as HTMLElement).closest('button')?.contains(document.querySelector('[aria-haspopup="dialog"]'))) {
+        setCompareSearchOpen(false);
+      }
     }
+
+    if (compareSearchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [compareSearchOpen]);
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setSelectedWord(null);
   };
 
   return (
@@ -690,20 +732,11 @@ const Dashboard = () => {
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
-          <div className="flex justify-between items-center">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={toggleDebugPanel}
-              className="flex items-center ml-auto"
-            >
-              <Bug className="h-4 w-4 mr-2 text-red-500" />
-              Debug
-            </Button>
-          </div>
-          
           <Card className="border border-border shadow-md bg-card">
-            <CardContent className="pt-6 pb-6">
+            <CardHeader>
+              <CardTitle>Document Analysis</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
                   <FileUploader onFilesAdded={handleFileUpload} />
@@ -726,41 +759,388 @@ const Dashboard = () => {
                     )}
                   </div>
                   <Button 
-                    onClick={() => file && analyzeSentiment(file, pdfText)} 
+                    onClick={analyzeSentiment} 
                     disabled={!file || isAnalyzing}
                     className="w-full"
                   >
                     {isAnalyzing ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Analyzing...
                       </>
-                    ) : (
-                      <>
-                        <CircleDot className="h-4 w-4 mr-2" />
-                        Analyze Content
-                      </>
-                    )}
+                    ) : "Analyze Document"}
                   </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
-          {showPdfViewer && pdfUrl && (
-            <PdfViewer 
-              pdfUrl={pdfUrl} 
-              onClose={togglePdfViewer} 
-              className="z-50"
-            />
-          )}
-          
-          {showDebugPanel && (
-            <DebugPanel 
-              debugState={debugState}
-              consoleMessages={consoleMessages}
-              onClose={() => setShowDebugPanel(false)}
-            />
+
+          {sentimentData && (
+            <div className="animate-fade-in">
+              <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center">
+                <FileText className="h-5 w-5 mr-2 text-primary" />
+                <span className="text-sm">
+                  <span className="font-medium">Currently analyzing:</span> {sentimentData.fileName} ({(sentimentData.fileSize / 1024 / 1024).toFixed(2)} MB)
+                  {sentimentData.wordCount > 0 && (
+                    <> • <span className="font-medium">{sentimentData.wordCount}</span> unique words extracted</>
+                  )}
+                </span>
+              </div>
+              
+              <Card className="mb-6 border border-border shadow-md bg-card">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center">
+                    <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                    <CardTitle className="text-xl">Document Summary</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                    {sentimentData.summary || "No summary available for this document."}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                <div className="overflow-x-auto">
+                  <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto">
+                    <TabsTrigger value="embedding" className="min-w-max">Latent Emotional Analysis</TabsTrigger>
+                    <TabsTrigger value="overview" className="min-w-max">Overview</TabsTrigger>
+                    <TabsTrigger value="timeline" className="min-w-max">Timeline</TabsTrigger>
+                    <TabsTrigger value="themes" className="min-w-max">Themes</TabsTrigger>
+                    <TabsTrigger value="keyphrases" className="min-w-max">Key Words</TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                <TabsContent value="embedding" className="mt-6">
+                  <Card className="border border-border shadow-md overflow-hidden bg-card">
+                    <CardHeader className="z-10">
+                      <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
+                        <CardTitle className="flex items-center">
+                          <span>Latent Emotional Analysis</span>
+                        </CardTitle>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={handleResetVisualization}
+                            className="h-9"
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Reset View
+                          </Button>
+                          
+                          <div className="relative w-full md:w-64">
+                            <div className="relative w-full">
+                              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input 
+                                placeholder="Search words or emotions..." 
+                                className="pl-8 w-full pr-8"
+                                value={searchTerm}
+                                onChange={(e) => {
+                                  setSearchTerm(e.target.value);
+                                }}
+                                onFocus={() => {
+                                  if (uniqueWords.length > 0) {
+                                    setOpen(true);
+                                  }
+                                }}
+                              />
+                              {searchTerm && (
+                                <button 
+                                  className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                                  onClick={handleClearSearch}
+                                >
+                                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                </button>
+                              )}
+                            </div>
+                            {uniqueWords.length > 0 && open && (
+                              <div 
+                                ref={searchDropdownRef}
+                                className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
+                              >
+                                <Command>
+                                  <CommandInput 
+                                    placeholder="Search words..." 
+                                    value={searchTerm}
+                                    onValueChange={setSearchTerm}
+                                  />
+                                  <CommandList>
+                                    <CommandEmpty>No results found</CommandEmpty>
+                                    <CommandGroup>
+                                      {uniqueWords
+                                        .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
+                                        .slice(0, 100)
+                                        .map((word) => (
+                                          <CommandItem 
+                                            key={word} 
+                                            value={word}
+                                            onSelect={handleSelectWord}
+                                          >
+                                            {word}
+                                          </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-sm font-normal flex items-center text-muted-foreground">
+                        <CircleDot className="h-4 w-4 mr-2" />
+                        <span>
+                          Hover or click on words to see emotional relationships. Use the Reset View button when needed.
+                        </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="h-[500px] relative">
+                        <DocumentEmbedding 
+                          points={filteredPoints}
+                          onPointClick={handlePointClick}
+                          isInteractive={true}
+                          focusOnWord={selectedWord || null}
+                          sourceDescription={sentimentData.sourceDescription}
+                          onResetView={handleResetVisualization}
+                          visibleClusterCount={visibleClusterCount}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="overview" className="mt-6">
+                  <SentimentOverview 
+                    data={{
+                      overallSentiment: sentimentData.overallSentiment,
+                      distribution: sentimentData.distribution,
+                      fileName: sentimentData.fileName
+                    }}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="timeline" className="mt-6">
+                  <SentimentTimeline 
+                    data={sentimentData.timeline}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="themes" className="mt-6">
+                  <EntitySentiment 
+                    data={sentimentData.entities}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="keyphrases" className="mt-6">
+                  <KeyPhrases 
+                    data={sentimentData.keyPhrases}
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
+                </TabsContent>
+              </Tabs>
+              
+              <div className="mt-8 mb-4">
+                <Card className="border border-border shadow-md bg-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-xl">
+                      <Brain className="h-5 w-5 mr-2 text-primary" />
+                      Emotional Clusters
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-6">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Adjust the number of emotional clusters visible in the visualization:
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium">4</span>
+                        <Slider 
+                          value={[visibleClusterCount]} 
+                          min={4}
+                          max={12}
+                          step={1}
+                          onValueChange={(value) => {
+                            setVisibleClusterCount(value[0]);
+                            if (activeTab === "embedding") {
+                              toast.info(`Visualization updated to show ${value[0]} emotional clusters`);
+                            }
+                          }}
+                          className="flex-1"
+                        />
+                        <span className="text-sm font-medium">12</span>
+                        <span className="bg-primary/10 text-primary px-2 py-1 rounded-md text-sm font-medium ml-2">
+                          {visibleClusterCount}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="mt-8 mb-4">
+                <Card className="border border-border shadow-md bg-card">
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="flex items-center text-xl">
+                        <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
+                        Word Comparison
+                      </CardTitle>
+                      
+                      <div className="flex gap-2">
+                        <Popover 
+                          open={compareSearchOpen} 
+                          onOpenChange={setCompareSearchOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-9">
+                              <Search className="h-4 w-4 mr-2" />
+                              Add Word
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-0" align="end">
+                            <Command>
+                              <CommandInput 
+                                placeholder="Search words..." 
+                                value={compareSearchTerm}
+                                onValueChange={handleCompareSearchChange}
+                              />
+                              <CommandList>
+                                <CommandEmpty>No matching words</CommandEmpty>
+                                <CommandGroup>
+                                  {compareSearchResults.map((point) => (
+                                    <CommandItem 
+                                      key={point.id} 
+                                      onSelect={() => handleAddToComparison(point)}
+                                    >
+                                      <div className="flex items-center">
+                                        <div 
+                                          className="w-3 h-3 rounded-full mr-2" 
+                                          style={{ 
+                                            backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                          }} 
+                                        />
+                                        <span>{point.word}</span>
+                                      </div>
+                                      <span className="ml-auto text-xs text-muted-foreground">
+                                        {point.emotionalTone || "Neutral"}
+                                      </span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        
+                        {compareWords.length > 0 && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-9"
+                            onClick={handleClearComparison}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Clear All
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <WordComparison 
+                      words={compareWords}
+                      onRemoveWord={handleRemoveFromComparison}
+                      calculateRelationship={calculateRelationship}
+                      onAddWordClick={() => setCompareSearchOpen(true)}
+                      sourceDescription={sentimentData.sourceDescription}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="mt-8">
+                <Card className="border border-border shadow-md bg-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-xl">
+                      <Heart className="h-5 w-5 mr-2 text-primary" />
+                      Resources & Support
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs value={resourcesTab} onValueChange={setResourcesTab} className="space-y-4">
+                      <TabsList>
+                        <TabsTrigger value="wellbeing">Wellbeing Suggestions</TabsTrigger>
+                        <TabsTrigger value="resources">Mental Health Resources</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="wellbeing">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                          {wellbeingSuggestions.map((suggestion, index) => (
+                            <div 
+                              key={index} 
+                              className="border rounded-lg p-4 bg-card/50"
+                            >
+                              <div className="flex items-center mb-2">
+                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                                  {suggestion.category}
+                                </Badge>
+                              </div>
+                              <h3 className="font-medium text-lg">{suggestion.title}</h3>
+                              <p className="text-sm text-muted-foreground mt-1 mb-3">{suggestion.description}</p>
+                              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                                <strong>Benefit:</strong> {suggestion.benefit}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="resources">
+                        <div className="grid md:grid-cols-2 gap-4 mt-2">
+                          {mentalHealthResources.map((resource, index) => (
+                            <div 
+                              key={index} 
+                              className="border rounded-lg p-4 bg-card/50"
+                            >
+                              <div className="flex items-center mb-2">
+                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                                  {resource.category}
+                                </Badge>
+                              </div>
+                              <h3 className="font-medium text-lg">{resource.name}</h3>
+                              <p className="text-sm text-muted-foreground mt-1 mb-3">{resource.description}</p>
+                              {resource.contact && (
+                                <p className="text-sm mt-2">
+                                  <strong>Contact:</strong> {resource.contact}
+                                </p>
+                              )}
+                              <p className="text-sm mt-2">
+                                <strong>Website:</strong> {resource.website}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div className="mt-6 text-sm text-center text-muted-foreground">
+                          <div className="flex items-center justify-center">
+                            <Info className="h-4 w-4 mr-1" />
+                            These resources are provided for informational purposes only. 
+                            Please consult with healthcare professionals for personalized advice.
+                          </div>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           )}
         </div>
       </main>

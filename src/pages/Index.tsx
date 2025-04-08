@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -6,18 +7,12 @@ import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Point } from "@/types/embedding";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { InfoIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { SentimentOverview } from "@/components/SentimentOverview";
-import { SentimentTimeline } from "@/components/SentimentTimeline";
-import { EntitySentiment } from "@/components/EntitySentiment";
-import { KeyPhrases } from "@/components/KeyPhrases";
-import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
@@ -36,51 +31,6 @@ const Index = () => {
   const [secondWordSearchOpen, setSecondWordSearchOpen] = useState(false);
   const [firstWordSearchResults, setFirstWordSearchResults] = useState<Point[]>([]);
   const [secondWordSearchResults, setSecondWordSearchResults] = useState<Point[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  
-  const sampleSentimentData = {
-    overallSentiment: {
-      score: 0.32,
-      label: "Negative"
-    },
-    distribution: {
-      positive: 22,
-      neutral: 18,
-      negative: 60
-    },
-    fileName: "Journal Entry #12",
-    sourceDescription: "Journal Entry About Anxiety"
-  };
-  
-  const sampleTimelineData = [
-    { page: 1, score: 0.25, text: "I felt my heart racing as the panic started to set in." },
-    { page: 2, score: 0.18, text: "My chest tightened and I couldn't catch my breath." },
-    { page: 3, score: 0.22, text: "The world around me started spinning, everything became overwhelming." },
-    { page: 4, score: 0.30, text: "I tried the breathing exercises my therapist taught me." },
-    { page: 5, score: 0.35, text: "Slowly, I could feel my heart rate beginning to stabilize." },
-    { page: 6, score: 0.42, text: "The tightness in my chest started to release, bit by bit." },
-    { page: 7, score: 0.48, text: "I reminded myself that this feeling would pass, it always does." },
-    { page: 8, score: 0.55, text: "Finally, I felt like I could breathe normally again." }
-  ];
-  
-  const sampleEntityData = [
-    { name: "Anxiety", sentiment: 0.22, mentions: 8, contexts: ["Context: I could feel the anxiety creeping up on me like a shadow", "Context: The anxiety made it hard to focus on anything else"] },
-    { name: "Panic", sentiment: 0.18, mentions: 6, contexts: ["Context: The panic attack seemed to come out of nowhere", "Context: I recognized the signs of panic setting in"] },
-    { name: "Breathing", sentiment: 0.45, mentions: 5, contexts: ["Context: My breathing became shallow and rapid", "Context: Deep breathing helped me calm down eventually"] },
-    { name: "Heart", sentiment: 0.28, mentions: 4, contexts: ["Context: My heart was racing so fast I thought it might burst", "Context: I could feel my heartbeat pounding in my ears"] },
-    { name: "Therapy", sentiment: 0.62, mentions: 3, contexts: ["Context: The techniques I learned in therapy really helped", "Context: I made a note to discuss this episode with my therapist"] }
-  ];
-  
-  const sampleKeyPhrasesData = [
-    { phrase: "panic attack", relevance: 0.95, sentiment: 0.18, occurrences: 5 },
-    { phrase: "heart racing", relevance: 0.92, sentiment: 0.22, occurrences: 4 },
-    { phrase: "shortness of breath", relevance: 0.90, sentiment: 0.20, occurrences: 4 },
-    { phrase: "feeling overwhelmed", relevance: 0.88, sentiment: 0.25, occurrences: 3 },
-    { phrase: "deep breathing", relevance: 0.85, sentiment: 0.55, occurrences: 3 },
-    { phrase: "coping strategies", relevance: 0.82, sentiment: 0.60, occurrences: 2 },
-    { phrase: "therapy techniques", relevance: 0.80, sentiment: 0.65, occurrences: 2 },
-    { phrase: "anxiety symptoms", relevance: 0.78, sentiment: 0.30, occurrences: 2 }
-  ];
 
   useEffect(() => {
     const checkForPoints = () => {
@@ -310,13 +260,6 @@ const Index = () => {
     };
   };
 
-  const handleResetVisualization = () => {
-    setSelectedPoint(null);
-    setFocusWord(null);
-    setComparisonPoint(null);
-    toast.info("Visualization reset");
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -334,163 +277,28 @@ const Index = () => {
             <div className="w-full max-w-2xl mb-6 text-center">
               <Card className="bg-muted/30 border-border">
                 <CardContent className="pt-4 pb-4">
-                  <h3 className="text-sm font-semibold mb-2 text-primary">Upload PDF</h3>
+                  <h3 className="text-sm font-semibold mb-2 text-primary">Journal Entry Example</h3>
                   <p className="text-sm text-muted-foreground">
-                    Step 1: Upload your Journal: Journal Entry #12.
+                    This visualization maps the emotional landscape of a personal journal entry about experiencing a panic attack.
                   </p>
                 </CardContent>
               </Card>
             </div>
             
             <div className="w-full max-w-6xl mb-8 flex flex-col gap-6">
-              <Card className="border border-border shadow-md overflow-hidden bg-card">
-                <CardHeader className="z-10">
-                  <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-                    <div>
-                      <CardTitle className="flex items-center">
-                        <span>Latent Emotional Analysis</span>
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        This is data analyzed from a made up experience of a Panic Attack
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleResetVisualization}
-                        className="h-9"
-                      >
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Reset View
-                      </Button>
-                      
-                      <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                          <div className="relative w-full md:w-64">
-                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                              placeholder="Search words..." 
-                              className="pl-8 w-full pr-8"
-                              value={searchTerm}
-                              onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                                setOpen(true);
-                              }}
-                              onFocus={() => setOpen(true)}
-                            />
-                            {searchTerm && (
-                              <button 
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                                onClick={() => {
-                                  setSearchTerm("");
-                                  setSelectedPoint(null);
-                                  setFocusWord(null);
-                                }}
-                              >
-                                <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                              </button>
-                            )}
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent className="p-0 w-full max-w-[300px]" align="start">
-                          <Command>
-                            <CommandInput 
-                              placeholder="Search words..." 
-                              value={searchTerm}
-                              onValueChange={setSearchTerm}
-                            />
-                            <CommandList>
-                              <CommandEmpty>No results found</CommandEmpty>
-                              <CommandGroup>
-                                {points
-                                  .filter(point => point.word.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                                  (point.emotionalTone && point.emotionalTone.toLowerCase().includes(searchTerm.toLowerCase())))
-                                  .slice(0, 100)
-                                  .map((point) => (
-                                    <CommandItem 
-                                      key={point.id} 
-                                      value={point.word}
-                                      onSelect={() => handleSearchSelect(point)}
-                                    >
-                                      <div 
-                                        className="w-3 h-3 rounded-full mr-2" 
-                                        style={{ 
-                                          backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
-                                        }} 
-                                      />
-                                      {point.word}
-                                      <span className="ml-auto text-xs text-muted-foreground">
-                                        {point.emotionalTone || "Neutral"}
-                                      </span>
-                                    </CommandItem>
-                                  ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
-                  <div className="text-sm font-normal flex items-center text-muted-foreground">
-                    <CircleDot className="h-4 w-4 mr-2" />
-                    <span>
-                      Hover or click on words to see emotional relationships. Use the Reset View button when needed.
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="h-[500px] relative">
-                    <DocumentEmbedding 
-                      isInteractive={true} 
-                      depressedJournalReference={true} 
-                      onPointClick={handlePointClick}
-                      focusOnWord={focusWord}
-                      onComparePoint={handlePointCompare}
-                      onSearchSelect={handleVisualSearchSelect}
-                      points={points}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                  <TabsTrigger value="themes">Themes</TabsTrigger>
-                  <TabsTrigger value="keyphrases">Key Words</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="overview" className="mt-6">
-                  <SentimentOverview
-                    data={sampleSentimentData}
-                    sourceDescription={sampleSentimentData.sourceDescription}
+              <div className="w-full relative">
+                <div className="aspect-[21/9] bg-white border border-border rounded-xl overflow-hidden shadow-lg">
+                  <DocumentEmbedding 
+                    isInteractive={true} 
+                    depressedJournalReference={true} 
+                    onPointClick={handlePointClick}
+                    focusOnWord={focusWord}
+                    onComparePoint={handlePointCompare}
+                    onSearchSelect={handleVisualSearchSelect}
+                    points={points}
                   />
-                </TabsContent>
-                
-                <TabsContent value="timeline" className="mt-6">
-                  <SentimentTimeline 
-                    data={sampleTimelineData}
-                    sourceDescription={sampleSentimentData.sourceDescription}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="themes" className="mt-6">
-                  <EntitySentiment 
-                    data={sampleEntityData}
-                    sourceDescription={sampleSentimentData.sourceDescription}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="keyphrases" className="mt-6">
-                  <KeyPhrases 
-                    data={sampleKeyPhrasesData}
-                    sourceDescription={sampleSentimentData.sourceDescription}
-                  />
-                </TabsContent>
-              </Tabs>
+                </div>
+              </div>
               
               <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="w-full flex flex-col gap-4">
@@ -525,7 +333,7 @@ const Index = () => {
                                 <div className="relative w-full">
                                   <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                   <Input 
-                                    placeholder="Search by word..." 
+                                    placeholder="Search by emotion..." 
                                     value={firstWordSearchValue}
                                     onChange={(e) => {
                                       handleFirstWordSearchChange(e.target.value);
@@ -539,7 +347,7 @@ const Index = () => {
                               <PopoverContent className="p-0 w-[300px]" align="start">
                                 <Command>
                                   <CommandInput 
-                                    placeholder="Search by word..." 
+                                    placeholder="Search by emotion..." 
                                     value={firstWordSearchValue}
                                     onValueChange={handleFirstWordSearchChange}
                                   />
@@ -685,7 +493,7 @@ const Index = () => {
                                     <div className="relative w-full">
                                       <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                       <Input 
-                                        placeholder="Search by word..." 
+                                        placeholder="Search by emotion..." 
                                         value={firstWordSearchValue}
                                         onChange={(e) => {
                                           handleFirstWordSearchChange(e.target.value);
@@ -699,7 +507,7 @@ const Index = () => {
                                   <PopoverContent className="p-0 w-[300px]" align="start">
                                     <Command>
                                       <CommandInput 
-                                        placeholder="Search by word..." 
+                                        placeholder="Search by emotion..." 
                                         value={firstWordSearchValue}
                                         onValueChange={handleFirstWordSearchChange}
                                       />
@@ -774,7 +582,7 @@ const Index = () => {
                                   <div className="relative w-full">
                                     <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input 
-                                      placeholder="Search by word..." 
+                                      placeholder="Search by emotion..." 
                                       value={firstWordSearchValue}
                                       onChange={(e) => {
                                         handleFirstWordSearchChange(e.target.value);
@@ -788,7 +596,7 @@ const Index = () => {
                                 <PopoverContent className="p-0 w-[300px]" align="start">
                                   <Command>
                                     <CommandInput 
-                                      placeholder="Search by word..." 
+                                      placeholder="Search by emotion..." 
                                       value={firstWordSearchValue}
                                       onValueChange={handleFirstWordSearchChange}
                                     />
@@ -854,7 +662,7 @@ const Index = () => {
                                     <div className="relative w-full">
                                       <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                       <Input 
-                                        placeholder="Search by word..." 
+                                        placeholder="Search by emotion..." 
                                         value={secondWordSearchValue}
                                         onChange={(e) => {
                                           handleSecondWordSearchChange(e.target.value);
@@ -868,7 +676,7 @@ const Index = () => {
                                   <PopoverContent className="p-0 w-[300px]" align="start">
                                     <Command>
                                       <CommandInput 
-                                        placeholder="Search by word..." 
+                                        placeholder="Search by emotion..." 
                                         value={secondWordSearchValue}
                                         onValueChange={handleSecondWordSearchChange}
                                       />
@@ -943,7 +751,7 @@ const Index = () => {
                                   <div className="relative w-full">
                                     <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input 
-                                      placeholder="Search by word..." 
+                                      placeholder="Search by emotion..." 
                                       value={secondWordSearchValue}
                                       onChange={(e) => {
                                         handleSecondWordSearchChange(e.target.value);
@@ -957,7 +765,7 @@ const Index = () => {
                                 <PopoverContent className="p-0 w-[300px]" align="start">
                                   <Command>
                                     <CommandInput 
-                                      placeholder="Search by word..." 
+                                      placeholder="Search by emotion..." 
                                       value={secondWordSearchValue}
                                       onValueChange={handleSecondWordSearchChange}
                                     />

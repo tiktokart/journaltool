@@ -4,32 +4,18 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Info } from "lucide-react";
 
 interface EntitySentimentProps {
-  data: Array<{ 
-    name: string; 
-    sentiment: number;
-    score?: number; // For backward compatibility
-    mentions: number;
-    contexts?: Array<string>;
-  }>;
-  sourceDescription?: string;
+  data: Array<{ name: string; score: number; mentions: number }>;
+  sourceDescription?: string; // Add this to show where data came from
 }
 
 export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProps) => {
-  // Normalize data to handle both sentiment and score properties
-  const normalizedData = data.map(item => ({
-    name: item.name,
-    sentiment: typeof item.sentiment === 'number' ? item.sentiment : (item.score || 0.5),
-    mentions: item.mentions,
-    contexts: item.contexts
-  }));
+  // Sort data by score for better visualization
+  const sortedData = [...data].sort((a, b) => b.score - a.score);
 
-  // Sort data by sentiment for better visualization
-  const sortedData = [...normalizedData].sort((a, b) => b.sentiment - a.sentiment);
-
-  // Determine color for each bar based on sentiment
-  const getColor = (sentiment: number) => {
-    if (sentiment >= 0.6) return "#27AE60";
-    if (sentiment >= 0.4) return "#3498DB";
+  // Determine color for each bar based on score
+  const getColor = (score: number) => {
+    if (score >= 0.6) return "#27AE60";
+    if (score >= 0.4) return "#3498DB";
     return "#E74C3C";
   };
 
@@ -39,7 +25,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
         <CardTitle>Theme Sentiment Analysis</CardTitle>
       </CardHeader>
       <CardContent>
-        {sortedData.length === 0 ? (
+        {data.length === 0 ? (
           <div className="h-80 w-full flex items-center justify-center">
             <p className="text-muted-foreground">No theme data available from your document</p>
           </div>
@@ -77,11 +63,11 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                   }}
                 />
-                <Bar dataKey="sentiment" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="score" radius={[0, 4, 4, 0]}>
                   {sortedData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getColor(entry.sentiment)} />
+                    <Cell key={`cell-${index}`} fill={getColor(entry.score)} />
                   ))}
-                  <LabelList dataKey="sentiment" position="right" formatter={(value: number) => value.toFixed(2)} />
+                  <LabelList dataKey="score" position="right" formatter={(value: number) => value.toFixed(2)} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

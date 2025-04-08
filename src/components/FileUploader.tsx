@@ -1,198 +1,100 @@
 
-import { useState, useRef, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { Upload, FileText, AlertCircle } from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
-import { GlobalWorkerOptions } from 'pdfjs-dist';
+import { ChangeEvent, useState } from "react";
+import { FileUp, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import * as pdfjsLib from "pdfjs-dist";
 
-// Set the worker path for PDF.js
-GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Set the PDF.js worker source
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface FileUploaderProps {
-  onFilesAdded: (files: File[], extractedText?: string, pdfUrl?: string) => void;
+  onFilesAdded: (files: File[], pdfText?: string) => void;
 }
 
 export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Sample texts that will be used as fallbacks if extraction fails
-  const sampleTexts = [
-    `Journal entry about anxiety: I woke up feeling anxious today. My heart was racing, and I felt a tightness in my chest. 
-    I tried some deep breathing exercises that my therapist recommended. They helped a little bit, but the feeling of 
-    dread stayed with me for most of the morning. I had trouble focusing at work, and small tasks seemed overwhelming.
-    After lunch, I went for a walk outside which helped clear my head. The fresh air and change of scenery gave me some 
-    perspective. I'm going to try to practice more mindfulness and maybe do some light exercise before bed.`,
-    
-    `Today was challenging. I experienced a panic attack in the grocery store. It started with shortness of breath, 
-    then my heart began racing. I felt dizzy and had to leave my cart and exit the store. I sat in my car for 
-    20 minutes doing breathing exercises until I felt calm enough to drive home. I called my therapist afterward 
-    and we scheduled an extra session for tomorrow. I'm trying to identify what might have triggered this episode.`
-  ];
-
-  const extractTextFromPdf = async (file: File): Promise<string> => {
-    try {
-      console.log("Starting PDF extraction process");
-      
-      // Check if file is valid
-      if (!file || file.size === 0) {
-        console.error("Invalid or empty file");
-        return '';
-      }
-      
-      // Read file as ArrayBuffer
-      let arrayBuffer;
-      try {
-        arrayBuffer = await file.arrayBuffer();
-        console.log("PDF loaded as ArrayBuffer, size:", arrayBuffer.byteLength);
-      } catch (error) {
-        console.error("Error reading file as ArrayBuffer:", error);
-        return '';
-      }
-      
-      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-        console.error("Empty PDF file");
-        return '';
-      }
-      
-      // Load the PDF document using PDF.js with error handling
-      let pdf;
-      try {
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-        pdf = await loadingTask.promise;
-        console.log("PDF document loaded, pages:", pdf.numPages);
-      } catch (error) {
-        console.error("Error loading PDF document:", error);
-        return '';
-      }
-      
-      // If the PDF has no pages, return empty string
-      if (!pdf || pdf.numPages === 0) {
-        console.warn("PDF has no pages");
-        return '';
-      }
-      
-      let fullText = '';
-
-      // Extract text from each page with proper error handling
-      for (let i = 1; i <= pdf.numPages; i++) {
-        try {
-          console.log(`Processing page ${i} of ${pdf.numPages}`);
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          
-          if (!textContent || !textContent.items || textContent.items.length === 0) {
-            console.warn(`No text content in page ${i}`);
-            continue;
-          }
-          
-          const pageText = textContent.items
-            .map((item: any) => (item.str || '').trim())
-            .filter((str: string) => str.length > 0)
-            .join(' ');
-            
-          if (pageText.length > 0) {
-            fullText += pageText + '\n\n';
-          }
-        } catch (pageError) {
-          console.error(`Error extracting text from page ${i}:`, pageError);
-          // Continue with next page rather than failing completely
-          continue;
-        }
-      }
-
-      console.log(`Text extraction complete. Extracted ${fullText.length} characters`);
-      
-      // If we got no text at all, return empty string
-      if (fullText.trim().length === 0) {
-        console.warn("No text extracted from PDF");
-        return '';
-      }
-      
-      return fullText;
-    } catch (error) {
-      console.error('Error extracting text from PDF:', error);
-      return '';
-    }
-  };
-
-  const createPdfEmbedUrl = (file: File): string => {
-    return URL.createObjectURL(file);
-  };
-
-  const handleFiles = useCallback(async (files: FileList) => {
-    if (!files || files.length === 0) {
-      toast.error('No files selected');
-      return;
-    }
-
-    try {
-      setIsProcessing(true);
-      const fileArray = Array.from(files);
-      
-      // Filter for PDF files
-      const pdfFiles = fileArray.filter(file => 
-        file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-      );
-      
-      if (pdfFiles.length === 0) {
-        toast.error('Please upload a PDF file');
-        setIsProcessing(false);
-        return;
-      }
-      
-      const firstPdf = pdfFiles[0];
-      console.log("Processing PDF file:", firstPdf.name, "Size:", firstPdf.size);
-      
-      // Create an embed URL for the PDF
-      const pdfUrl = createPdfEmbedUrl(firstPdf);
-      
-      // Try to extract text with improved error handling
-      let extractedText = '';
-      try {
-        extractedText = await extractTextFromPdf(firstPdf);
-      } catch (extractionError) {
-        console.error("Extraction failed completely:", extractionError);
-      }
-      
-      // If extraction failed or returned empty text, use sample text
-      if (!extractedText || extractedText.trim().length === 0) {
-        console.warn("No text was extracted from the PDF, using sample text");
-        toast.warning("Could not extract text from PDF. Using sample text instead.");
-        
-        // Select a random sample text
-        const randomIndex = Math.floor(Math.random() * sampleTexts.length);
-        extractedText = sampleTexts[randomIndex];
-      } else {
-        console.log("Successfully extracted text, length:", extractedText.length);
-        toast.success("PDF text extracted successfully");
-      }
-    
-      // Call the callback with files, text, and PDF URL
-      onFilesAdded(pdfFiles, extractedText, pdfUrl);
-    } catch (error) {
-      console.error('Error handling files:', error);
-      toast.error('Error processing files. Using sample text instead.');
-      
-      // Create fallback data to ensure the app continues to function
-      const mockPdf = new File([new Blob()], "sample.pdf", { type: "application/pdf" });
-      
-      // Use the first sample text as fallback
-      onFilesAdded([mockPdf], sampleTexts[0]);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [onFilesAdded, sampleTexts]);
+  const [isExtracting, setIsExtracting] = useState(false);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
     setIsDragging(false);
+  };
+
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    try {
+      setIsExtracting(true);
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+      
+      // Extract text from each page with improved extraction
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        
+        // More thorough text extraction - get every text item with position information
+        const pageItems = textContent.items.map((item: any) => {
+          if (!item.str || typeof item.str !== 'string') return '';
+          return item.str;
+        }).filter(Boolean);
+        
+        // Join all text items with space
+        const pageText = pageItems.join(' ');
+        fullText += pageText + " ";
+      }
+      
+      // Clean up the text - careful not to lose content
+      fullText = fullText
+        .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+        .replace(/(\r\n|\n|\r)/gm, " ")  // Replace line breaks with spaces
+        .trim();
+      
+      // Enhanced logging for debugging
+      console.log("Extracted PDF text length:", fullText.length);
+      console.log("First 100 characters:", fullText.substring(0, 100));
+      console.log("Total words extracted:", fullText.split(/\s+/).length);
+      
+      return fullText;
+    } catch (error) {
+      console.error("Error extracting text from PDF:", error);
+      toast.error("Failed to extract text from PDF");
+      return "";
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const processPdfFile = async (file: File) => {
+    try {
+      toast.info("Extracting text from PDF...");
+      const pdfText = await extractTextFromPdf(file);
+      
+      if (!pdfText || pdfText.trim().length === 0) {
+        toast.warning("No readable text found in the PDF");
+        onFilesAdded([file], "");
+      } else {
+        const wordCount = pdfText.split(/\s+/).filter(w => w.length > 0).length;
+        toast.success(`Extracted ${wordCount} words from PDF`);
+        
+        // More detailed logging for better debugging
+        console.log("PDF text sample:", pdfText.substring(0, 200));
+        console.log("PDF text length:", pdfText.length);
+        console.log("Words in PDF:", wordCount);
+        
+        // Pass the extracted text to the parent component for analysis
+        onFilesAdded([file], pdfText);
+      }
+    } catch (error) {
+      console.error("Error processing PDF:", error);
+      toast.error("Error processing PDF file");
+      onFilesAdded([file], "");
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -200,62 +102,76 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
     setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFiles(e.dataTransfer.files);
+      const files = Array.from(e.dataTransfer.files);
+      const pdfFiles = files.filter(file => file.type === 'application/pdf');
+      
+      if (pdfFiles.length === 0) {
+        toast.error("Only PDF files are supported");
+        return;
+      }
+      
+      processPdfFile(pdfFiles[0]);
     }
   };
 
-  const handleClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      handleFiles(e.target.files);
+      const files = Array.from(e.target.files);
+      const pdfFiles = files.filter(file => file.type === 'application/pdf');
+      
+      if (pdfFiles.length === 0) {
+        toast.error("Only PDF files are supported");
+        return;
+      }
+      
+      processPdfFile(pdfFiles[0]);
     }
   };
 
   return (
-    <Card className={`border-2 border-dashed transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-border'}`}>
-      <CardContent className="p-0">
-        <div 
-          className="flex flex-col items-center justify-center py-10 px-4 text-center"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={handleClick}
-        >
-          {isProcessing ? (
-            <div className="animate-pulse">
-              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">Processing PDF...</p>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Please wait while we extract text from your document...
-              </p>
-            </div>
-          ) : (
-            <>
-              <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">Upload PDF</p>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Upload your journal entry or any PDF document to analyze emotional patterns
-              </p>
-              <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
-                <AlertCircle className="h-4 w-4" />
-                <span>Supported format: PDF</span>
-              </div>
-            </>
-          )}
+    <div
+      className={`border-2 border-dashed rounded-lg p-8 text-center ${
+        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+      } transition-colors`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div className="flex flex-col items-center justify-center gap-4">
+        <div className="p-4 bg-primary/10 rounded-full">
+          <FileUp className="h-8 w-8 text-primary" />
         </div>
-        <input 
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="application/pdf"
-          onChange={handleFileInputChange}
-        />
-      </CardContent>
-    </Card>
+        <div>
+          <h3 className="font-medium text-lg">Upload your PDF document</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Drag and drop your file here, or click to browse
+          </p>
+        </div>
+        <div className="mt-2">
+          <Button
+            variant="outline"
+            onClick={() => document.getElementById("file-upload")?.click()}
+            disabled={isExtracting}
+          >
+            {isExtracting ? (
+              <>Extracting text...</>
+            ) : (
+              <>Choose File</>
+            )}
+          </Button>
+          <input
+            id="file-upload"
+            type="file"
+            accept=".pdf"
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={isExtracting}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Maximum file size: 10MB
+        </p>
+      </div>
+    </div>
   );
 };

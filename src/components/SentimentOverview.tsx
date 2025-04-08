@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -39,9 +38,6 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
 
   const sentimentColor = getSentimentColor(overallSentiment.score);
 
-  // Get sentiment label in lowercase, safely handling undefined
-  const sentimentLabelLower = overallSentiment.label ? overallSentiment.label.toLowerCase() : 'neutral';
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className="border-0 shadow-md md:col-span-1">
@@ -60,9 +56,9 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
           <h3 className="text-2xl font-bold mb-2">{overallSentiment.label}</h3>
           <p className="text-sm text-muted-foreground text-center">
             {fileName ? (
-              <>Your document <strong>{fileName}</strong> has an overall {sentimentLabelLower} sentiment</>
+              <>Your document <strong>{fileName}</strong> has an overall {overallSentiment.label.toLowerCase()} sentiment</>
             ) : (
-              <>Your document has an overall {sentimentLabelLower} sentiment</>
+              <>Your document has an overall {overallSentiment.label.toLowerCase()} sentiment</>
             )}
           </p>
         </CardContent>

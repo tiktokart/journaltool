@@ -11,15 +11,14 @@ export interface Point {
 }
 
 export interface DocumentEmbeddingProps {
-  points: Point[]; 
+  points?: Point[];
   onPointClick?: (point: Point | null) => void;
   isInteractive?: boolean;
   depressedJournalReference?: boolean;  
-  focusOnWord?: string | null;
-  comparisonWord?: string | null;         
+  focusOnWord?: string | null;         
   onComparePoint?: (point1: Point, point2: Point) => void;  
   onSearchSelect?: (point: Point) => void;  
   sourceDescription?: string;
   onResetView?: () => void;
-  visibleClusterCount?: number;
+  visibleClusterCount?: number;  // Added to control the number of emotional clusters displayed
 }

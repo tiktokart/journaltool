@@ -5,36 +5,21 @@ import { Info } from "lucide-react";
 
 interface KeyPhrasesProps {
   data: Array<{ 
-    phrase: string; 
-    sentiment: number;
-    relevance: number;
-    occurrences: number;
+    text: string; 
+    sentiment: "positive" | "neutral" | "negative"; 
+    count: number 
   }>;
   sourceDescription?: string; // Add this to show where words came from
 }
 
 export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
   // Group words by sentiment
-  const positiveItems = data ? data.filter(item => item.sentiment >= 0.6).map(item => ({
-    text: item.phrase,
-    sentiment: "positive" as const,
-    count: item.occurrences
-  })) : [];
-  
-  const neutralItems = data ? data.filter(item => item.sentiment < 0.6 && item.sentiment >= 0.4).map(item => ({
-    text: item.phrase,
-    sentiment: "neutral" as const,
-    count: item.occurrences
-  })) : [];
-  
-  const negativeItems = data ? data.filter(item => item.sentiment < 0.4).map(item => ({
-    text: item.phrase,
-    sentiment: "negative" as const,
-    count: item.occurrences
-  })) : [];
+  const positiveItems = data.filter(item => item.sentiment === "positive");
+  const neutralItems = data.filter(item => item.sentiment === "neutral");
+  const negativeItems = data.filter(item => item.sentiment === "negative");
 
   // Sort by count (frequency) within each category
-  const sortByCount = (a: {text: string, sentiment: string, count: number}, b: {text: string, sentiment: string, count: number}) => b.count - a.count;
+  const sortByCount = (a: typeof data[0], b: typeof data[0]) => b.count - a.count;
   positiveItems.sort(sortByCount);
   neutralItems.sort(sortByCount);
   negativeItems.sort(sortByCount);
@@ -50,7 +35,7 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
 
   // Render word group
   const renderWordGroup = (
-    items: Array<{text: string, sentiment: string, count: number}>, 
+    items: typeof data, 
     title: string, 
     sentimentType: "positive" | "neutral" | "negative"
   ) => (
