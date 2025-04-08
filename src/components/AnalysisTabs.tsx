@@ -20,6 +20,7 @@ import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { EntitySentiment } from "@/components/EntitySentiment";
 import { KeyPhrases } from "@/components/KeyPhrases";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface AnalysisTabsProps {
   activeTab: string;
@@ -62,6 +63,7 @@ export const AnalysisTabs = ({
   handleResetVisualization,
   handleClearSearch
 }: AnalysisTabsProps) => {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -127,7 +129,7 @@ export const AnalysisTabs = ({
             .filter((p: Point) => sortedRelationships.some(rel => rel.id === p.id));
           
           setConnectedPoints(connected);
-          toast(`Selected: "${selected.word}" (${selected.emotionalTone || 'Neutral'})`);
+          toast(`${t("selected")}: "${selected.word}" (${selected.emotionalTone || t("neutral")})`);
         } else {
           setConnectedPoints([]);
         }
@@ -140,10 +142,9 @@ export const AnalysisTabs = ({
     <Card className="border border-border shadow-md mt-4">
       <CardContent className="flex flex-col items-center justify-center py-16">
         <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium mb-2">No {tabName} Data Available</h3>
+        <h3 className="text-lg font-medium mb-2">{t("noDataTabName").replace("{tabName}", tabName)}</h3>
         <p className="text-sm text-muted-foreground text-center max-w-md">
-          The required data for this view couldn't be loaded. This may happen when analysis is incomplete 
-          or when the document doesn't contain enough information.
+          {t("dataAvailableMissing")}
         </p>
       </CardContent>
     </Card>
@@ -153,23 +154,23 @@ export const AnalysisTabs = ({
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
       <div className="overflow-x-auto">
         <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto">
-          <TabsTrigger value="embedding" className="min-w-max">Latent Emotional Analysis</TabsTrigger>
-          <TabsTrigger value="overview" className="min-w-max">Overview</TabsTrigger>
-          <TabsTrigger value="timeline" className="min-w-max">Timeline</TabsTrigger>
-          <TabsTrigger value="themes" className="min-w-max">Themes</TabsTrigger>
-          <TabsTrigger value="keyphrases" className="min-w-max">Key Words</TabsTrigger>
+          <TabsTrigger value="embedding" className="min-w-max">{t("latentEmotionalAnalysisTab")}</TabsTrigger>
+          <TabsTrigger value="overview" className="min-w-max">{t("overviewTab")}</TabsTrigger>
+          <TabsTrigger value="timeline" className="min-w-max">{t("timelineTab")}</TabsTrigger>
+          <TabsTrigger value="themes" className="min-w-max">{t("themesTab")}</TabsTrigger>
+          <TabsTrigger value="keyphrases" className="min-w-max">{t("keywordsTab")}</TabsTrigger>
         </TabsList>
       </div>
       
       <TabsContent value="embedding" className="mt-6">
         {!hasEmbeddingData ? (
-          <DataMissingFallback tabName="Embedding" />
+          <DataMissingFallback tabName={t("embedding")} />
         ) : (
           <Card className="border border-border shadow-md overflow-hidden bg-card">
             <CardHeader className="z-10">
               <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
                 <CardTitle className="flex items-center">
-                  <span>Latent Emotional Analysis</span>
+                  <span>{t("latentEmotionalAnalysis")}</span>
                 </CardTitle>
                 
                 <div className="flex items-center space-x-2">
@@ -180,14 +181,14 @@ export const AnalysisTabs = ({
                     className="h-9"
                   >
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset View
+                    {t("resetView")}
                   </Button>
                   
                   <div className="relative w-full md:w-64">
                     <div className="relative w-full">
                       <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
-                        placeholder="Search words or emotions..." 
+                        placeholder={t("searchWordsOrEmotions")}
                         className="pl-8 w-full pr-8"
                         value={searchTerm}
                         onChange={(e) => {
@@ -215,12 +216,12 @@ export const AnalysisTabs = ({
                       >
                         <Command>
                           <CommandInput 
-                            placeholder="Search words..." 
+                            placeholder={t("searchWords")}
                             value={searchTerm}
                             onValueChange={setSearchTerm}
                           />
                           <CommandList>
-                            <CommandEmpty>No results found</CommandEmpty>
+                            <CommandEmpty>{t("noResultsFound")}</CommandEmpty>
                             <CommandGroup>
                               {uniqueWords
                                 .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -244,9 +245,7 @@ export const AnalysisTabs = ({
               </div>
               <div className="text-sm font-normal flex items-center text-muted-foreground">
                 <CircleDot className="h-4 w-4 mr-2" />
-                <span>
-                  Hover or click on words to see emotional relationships. Use the Reset View button when needed.
-                </span>
+                <span>{t("hoverOrClick")}</span>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -268,7 +267,7 @@ export const AnalysisTabs = ({
       
       <TabsContent value="overview" className="mt-6">
         {!hasOverviewData ? (
-          <DataMissingFallback tabName="Overview" />
+          <DataMissingFallback tabName={t("overviewTab")} />
         ) : (
           <SentimentOverview 
             data={{
@@ -283,7 +282,7 @@ export const AnalysisTabs = ({
       
       <TabsContent value="timeline" className="mt-6">
         {!hasTimelineData ? (
-          <DataMissingFallback tabName="Timeline" />
+          <DataMissingFallback tabName={t("timelineTab")} />
         ) : (
           <SentimentTimeline 
             data={sentimentData.timeline}
@@ -294,7 +293,7 @@ export const AnalysisTabs = ({
       
       <TabsContent value="themes" className="mt-6">
         {!hasEntitiesData ? (
-          <DataMissingFallback tabName="Themes" />
+          <DataMissingFallback tabName={t("themesTab")} />
         ) : (
           <EntitySentiment 
             data={sentimentData.entities}
@@ -305,7 +304,7 @@ export const AnalysisTabs = ({
       
       <TabsContent value="keyphrases" className="mt-6">
         {!hasKeyPhrasesData ? (
-          <DataMissingFallback tabName="Key Words" />
+          <DataMissingFallback tabName={t("keywordsTab")} />
         ) : (
           <KeyPhrases 
             data={sentimentData.keyPhrases}

@@ -98,23 +98,142 @@ export const generateMockPoints = (
 };
 
 export const getEmotionColor = (emotion: string): string => {
-  const colors: { [key: string]: string } = {
-    'Joy': '#FFD700',       // Gold
-    'Sadness': '#4169E1',   // Royal Blue
-    'Fear': '#800080',      // Purple
-    'Anger': '#FF4500',     // Red-Orange
-    'Surprise': '#32CD32',  // Lime Green
-    'Disgust': '#8B4513',   // Saddle Brown
-    'Neutral': '#A9A9A9'    // Dark Gray
+  const colors: Record<string, string> = {
+    "Joy": "#FFC107", // Amber
+    "Sadness": "#2196F3", // Blue
+    "Anger": "#F44336", // Red
+    "Fear": "#9C27B0", // Purple
+    "Surprise": "#FF9800", // Orange
+    "Disgust": "#4CAF50", // Green
+    "Trust": "#3F51B5", // Indigo
+    "Anticipation": "#E91E63", // Pink
+    "Neutral": "#9E9E9E" // Gray
   };
+
+  // Handle case insensitivity by converting to lowercase for comparison
+  // but maintaining the original casing for the map lookup
+  const normalizedEmotion = emotion.toLowerCase();
   
-  return colors[emotion] || colors['Neutral'];
+  for (const key in colors) {
+    if (key.toLowerCase() === normalizedEmotion) {
+      return colors[key];
+    }
+  }
+  
+  return "#9E9E9E"; // Default to gray if no matching emotion
 };
 
-export const getSentimentLabel = (score: number): string => {
-  if (score >= 0.8) return "Very Positive";
-  if (score >= 0.6) return "Positive";
-  if (score >= 0.4) return "Neutral";
-  if (score >= 0.2) return "Negative";
+export const generatePlaceholderPoint = (id: number): Point => {
+  return {
+    id: id.toString(),
+    x: Math.random() * 100 - 50,
+    y: Math.random() * 100 - 50,
+    z: Math.random() * 100 - 50,
+    word: `Word${id}`,
+    sentiment: Math.random(),
+    emotionalTone: getRandomEmotion(),
+    relationships: []
+  };
+};
+
+export const generateMockPoints = (depressedJournalReference: boolean = false): Point[] => {
+  const mockPointsCount = 200;
+  const mockPoints: Point[] = [];
+  
+  for (let i = 0; i < mockPointsCount; i++) {
+    let emotionalTone = getRandomEmotion();
+    // If depressed journal reference, make 40% of the points sad or fearful
+    if (depressedJournalReference && Math.random() < 0.4) {
+      emotionalTone = Math.random() < 0.5 ? "Sadness" : "Fear";
+    }
+    
+    const point: Point = {
+      id: i.toString(),
+      x: Math.random() * 100 - 50,
+      y: Math.random() * 100 - 50,
+      z: Math.random() * 100 - 50,
+      word: `Word${i}`,
+      sentiment: Math.random(),
+      emotionalTone,
+      relationships: []
+    };
+    
+    // Add some relationships for each point (1 to 3 relationships)
+    const relationshipsCount = Math.floor(Math.random() * 3) + 1;
+    for (let j = 0; j < relationshipsCount; j++) {
+      const targetId = Math.floor(Math.random() * mockPointsCount);
+      if (targetId !== i) {
+        point.relationships.push({
+          id: targetId.toString(),
+          word: `Word${targetId}`,
+          strength: Math.random()
+        });
+      }
+    }
+    
+    mockPoints.push(point);
+  }
+  
+  return mockPoints;
+};
+
+export const getRandomEmotion = (): string => {
+  const emotions = [
+    "Joy", "Sadness", "Anger", "Fear", "Surprise", "Disgust", "Trust", "Anticipation", "Neutral"
+  ];
+  return emotions[Math.floor(Math.random() * emotions.length)];
+};
+
+export const getSentimentLabel = (score: number | string): string => {
+  // Handle string scores (convert to number if possible)
+  let numericScore: number;
+  
+  if (typeof score === 'string') {
+    numericScore = parseFloat(score);
+    if (isNaN(numericScore)) {
+      return "Neutral"; // Default fallback if conversion fails
+    }
+  } else {
+    numericScore = score;
+  }
+  
+  if (numericScore >= 0.75) return "Very Positive";
+  if (numericScore >= 0.6) return "Positive";
+  if (numericScore >= 0.4) return "Neutral";
+  if (numericScore >= 0.25) return "Negative";
   return "Very Negative";
+};
+
+export const getEmotionalToneDistribution = (points: Point[]): Record<string, number> => {
+  const distribution: Record<string, number> = {
+    Joy: 0,
+    Sadness: 0,
+    Anger: 0,
+    Fear: 0,
+    Surprise: 0,
+    Disgust: 0,
+    Trust: 0,
+    Anticipation: 0,
+    Neutral: 0
+  };
+  
+  if (!points || points.length === 0) return distribution;
+  
+  // Count the occurrences of each emotional tone
+  points.forEach(point => {
+    if (point.emotionalTone) {
+      const tone = point.emotionalTone;
+      if (distribution[tone] !== undefined) {
+        distribution[tone]++;
+      }
+    } else {
+      distribution.Neutral++;
+    }
+  });
+  
+  return distribution;
+};
+
+export const isPDFFile = (file: File): boolean => {
+  return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 };

@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 import { Info } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface EntitySentimentProps {
   data: Array<{ name: string; score: number; mentions: number }>;
@@ -9,6 +10,8 @@ interface EntitySentimentProps {
 }
 
 export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProps) => {
+  const { t } = useLanguage();
+  
   // Sort data by score for better visualization
   const sortedData = [...data].sort((a, b) => b.score - a.score);
 
@@ -22,12 +25,12 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
   return (
     <Card className="border-0 shadow-md w-full">
       <CardHeader>
-        <CardTitle>Theme Sentiment Analysis</CardTitle>
+        <CardTitle>{t("themeAnalysisTitle")}</CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
           <div className="h-80 w-full flex items-center justify-center">
-            <p className="text-muted-foreground">No theme data available from your document</p>
+            <p className="text-muted-foreground">{t("noThemeDataAvailable")}</p>
           </div>
         ) : (
           <div className="h-80 w-full">
@@ -42,7 +45,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
                   type="number" 
                   domain={[0, 1]} 
                   ticks={[0, 0.2, 0.4, 0.6, 0.8, 1]} 
-                  label={{ value: 'Sentiment Score', position: 'insideBottom', offset: -5 }}
+                  label={{ value: t("sentimentScore"), position: 'insideBottom', offset: -5 }}
                 />
                 <YAxis 
                   type="category" 
@@ -53,7 +56,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
                   formatter={(value: number, name, entry) => {
                     const { payload } = entry as any;
                     return [
-                      `Score: ${value.toFixed(2)}, Mentions: ${payload.mentions}`,
+                      `${t("score")}: ${value.toFixed(2)}, ${t("mention", { count: payload.mentions })}`,
                       payload.name
                     ];
                   }}
@@ -80,7 +83,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
               {sourceDescription}
             </div>
           ) : (
-            "The chart shows sentiment scores for key themes identified in your document."
+            t("themeAnalysisDescription")
           )}
         </div>
       </CardContent>

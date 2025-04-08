@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Brain } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface EmotionalClustersControlProps {
   visibleClusterCount: number;
@@ -15,18 +16,20 @@ export const EmotionalClustersControl = ({
   setVisibleClusterCount,
   activeTab
 }: EmotionalClustersControlProps) => {
+  const { t } = useLanguage();
+  
   return (
     <Card className="border border-border shadow-md bg-card">
       <CardHeader>
         <CardTitle className="flex items-center text-xl">
           <Brain className="h-5 w-5 mr-2 text-primary" />
-          Emotional Clusters
+          {t("emotionalClusters")}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="mb-6">
           <p className="text-sm text-muted-foreground mb-2">
-            Adjust the number of emotional clusters visible in the visualization:
+            {t("emotionalClustersDescription")}
           </p>
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium">4</span>
@@ -38,7 +41,7 @@ export const EmotionalClustersControl = ({
               onValueChange={(value) => {
                 setVisibleClusterCount(value[0]);
                 if (activeTab === "embedding") {
-                  toast.info(`Visualization updated to show ${value[0]} emotional clusters`);
+                  toast.info(t("visualizationUpdated").replace("{count}", value[0].toString()));
                 }
               }}
               className="flex-1"

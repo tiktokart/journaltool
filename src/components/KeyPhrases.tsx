@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface KeyPhrasesProps {
   data: Array<{ 
@@ -16,8 +17,10 @@ interface KeyPhrasesProps {
 export const KeyPhrases = ({ 
   data, 
   sourceDescription, 
-  maxWordsPerCategory = 30 // Changed back to 30 words per category by default
+  maxWordsPerCategory = 30
 }: KeyPhrasesProps) => {
+  const { t } = useLanguage();
+  
   // Group words by sentiment
   const positiveItems = data.filter(item => item.sentiment === "positive");
   const neutralItems = data.filter(item => item.sentiment === "neutral");
@@ -47,11 +50,18 @@ export const KeyPhrases = ({
     // Limit the number of words to display per category
     const displayItems = items.slice(0, maxWordsPerCategory || 30);
     
+    // Get the correct "no words detected" message based on sentiment type
+    const getNoWordsMessage = () => {
+      if (sentimentType === "positive") return t("noPositiveWords");
+      if (sentimentType === "negative") return t("noNegativeWords");
+      return t("noNeutralWords");
+    };
+    
     return (
       <div>
         <h3 className="font-medium text-lg mb-3">{title} ({items.length})</h3>
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No {sentimentType} words detected</p>
+          <p className="text-sm text-muted-foreground">{getNoWordsMessage()}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {displayItems.map((item, index) => (
@@ -65,7 +75,7 @@ export const KeyPhrases = ({
             ))}
             {items.length > (maxWordsPerCategory || 30) && (
               <p className="text-xs text-muted-foreground mt-2 w-full">
-                + {items.length - (maxWordsPerCategory || 30)} more {sentimentType} words not shown
+                + {items.length - (maxWordsPerCategory || 30)} {t("moreWordsNotShown").replace("{sentiment}", sentimentType)}
               </p>
             )}
           </div>
@@ -77,13 +87,13 @@ export const KeyPhrases = ({
   return (
     <Card className="border-0 shadow-md w-full">
       <CardHeader>
-        <CardTitle>Common Words by Sentiment</CardTitle>
+        <CardTitle>{t("commonWordsBySentiment")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {renderWordGroup(positiveItems, "Positive Words", "positive")}
-          {renderWordGroup(neutralItems, "Neutral Words", "neutral")}
-          {renderWordGroup(negativeItems, "Negative Words", "negative")}
+          {renderWordGroup(positiveItems, t("positiveWords"), "positive")}
+          {renderWordGroup(neutralItems, t("neutralWords"), "neutral")}
+          {renderWordGroup(negativeItems, t("negativeWords"), "negative")}
         </div>
         <div className="mt-6 text-sm text-center text-muted-foreground">
           {sourceDescription ? (
@@ -92,7 +102,7 @@ export const KeyPhrases = ({
               {sourceDescription}
             </div>
           ) : (
-            "Common words in your document, grouped by sentiment and sorted by frequency."
+            t("keywordsDescription")
           )}
         </div>
       </CardContent>

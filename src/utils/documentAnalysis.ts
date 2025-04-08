@@ -24,7 +24,7 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
         Disgust: 0.05,
         Trust: 0.1,
         Anticipation: 0.1,
-        Neutral: 0.0
+        Neutral: 0
       };
       
       // Process PDF text if available
@@ -434,4 +434,141 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
 
 export const fixTypeErrorInFunction = () => {
   console.log("Fix applied to documentAnalysis.ts");
+};
+
+export const processData = (data: any, sourceDescription: string): any => {
+  // Basic validation and data preparation
+  if (!data || typeof data !== 'object') {
+    throw new Error("Invalid data format received from API");
+  }
+
+  let embeddingPoints: Point[] = [];
+  let overallSentiment = { score: 0.5, label: "Neutral" };
+  let distribution = { positive: 0, neutral: 0, negative: 0 };
+  let timeline: { page: number; score: number }[] = [];
+  let entities: { name: string; score: number; mentions: number }[] = [];
+  let keyPhrases: { text: string; sentiment: string; count: number }[] = [];
+  let fileName = "";
+
+  try {
+    // Process embedding points if available
+    if (data.embedding && Array.isArray(data.embedding)) {
+      embeddingPoints = data.embedding.map((point: any, index: number) => {
+        return {
+          id: index.toString(),
+          x: point.x || Math.random() * 100 - 50,
+          y: point.y || Math.random() * 100 - 50,
+          z: point.z || Math.random() * 100 - 50,
+          word: point.word || `Word${index}`,
+          sentiment: point.sentiment || 0.5,
+          emotionalTone: point.emotionalTone || "Neutral",
+          relationships: Array.isArray(point.relationships) 
+            ? point.relationships.map((rel: any) => ({
+                id: rel.id?.toString() || "",
+                word: rel.word || "",
+                strength: rel.strength || 0.5
+              }))
+            : []
+        };
+      });
+    }
+
+    // Process overall sentiment if available
+    if (data.overallSentiment) {
+      overallSentiment = {
+        score: typeof data.overallSentiment.score === 'number' ? data.overallSentiment.score : 0.5,
+        label: data.overallSentiment.label || "Neutral"
+      };
+    }
+
+    // Process sentiment distribution if available
+    if (data.distribution) {
+      distribution = {
+        positive: typeof data.distribution.positive === 'number' ? data.distribution.positive : 0,
+        neutral: typeof data.distribution.neutral === 'number' ? data.distribution.neutral : 0,
+        negative: typeof data.distribution.negative === 'number' ? data.distribution.negative : 0
+      };
+    }
+
+    // Process timeline if available
+    if (data.timeline && Array.isArray(data.timeline)) {
+      timeline = data.timeline.map((item: any) => ({
+        page: item.page || 0,
+        score: typeof item.score === 'number' ? item.score : 0.5
+      }));
+    }
+
+    // Process entities if available
+    if (data.entities && Array.isArray(data.entities)) {
+      entities = data.entities.map((item: any) => ({
+        name: item.name || "Unknown",
+        score: typeof item.score === 'number' ? item.score : 0.5,
+        mentions: typeof item.mentions === 'number' ? item.mentions : 1
+      }));
+    }
+
+    // Process key phrases if available
+    if (data.keyPhrases && Array.isArray(data.keyPhrases)) {
+      keyPhrases = data.keyPhrases.map((item: any) => ({
+        text: item.text || "Unknown",
+        sentiment: item.sentiment || "neutral",
+        count: typeof item.count === 'number' ? item.count : 1
+      }));
+    }
+
+    // Get file name if available
+    if (data.fileName) {
+      fileName = data.fileName;
+    }
+
+    // Calculate emotional tone distribution
+    const emotionalToneDistribution = calculateEmotionalToneDistribution(embeddingPoints);
+
+    return {
+      embeddingPoints,
+      overallSentiment,
+      distribution,
+      timeline,
+      entities,
+      keyPhrases,
+      fileName,
+      emotionalToneDistribution,
+      sourceDescription
+    };
+  } catch (error) {
+    console.error("Error processing data:", error);
+    throw new Error("Failed to process analysis data");
+  }
+};
+
+// Function to calculate emotional tone distribution
+const calculateEmotionalToneDistribution = (points: Point[]): number => {
+  const distribution: Record<string, number> = {
+    Joy: 0,
+    Sadness: 0,
+    Anger: 0,
+    Fear: 0,
+    Surprise: 0,
+    Disgust: 0,
+    Trust: 0,
+    Anticipation: 0,
+    Neutral: 0
+  };
+  
+  if (!points || points.length === 0) return 0;
+  
+  // Count the occurrences of each emotional tone
+  points.forEach(point => {
+    if (point.emotionalTone) {
+      const tone = point.emotionalTone;
+      if (distribution[tone] !== undefined) {
+        distribution[tone]++;
+      }
+    } else {
+      distribution.Neutral++;
+    }
+  });
+  
+  // Return the total number of points for statistical purposes
+  return points.length;
 };

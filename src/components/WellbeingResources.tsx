@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Info } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Wellbeing suggestions data
 const wellbeingSuggestions = [
@@ -77,20 +78,21 @@ const mentalHealthResources = [
 
 export const WellbeingResources = () => {
   const [resourcesTab, setResourcesTab] = useState("wellbeing");
+  const { t } = useLanguage();
 
   return (
     <Card className="border border-border shadow-md bg-card">
       <CardHeader>
         <CardTitle className="flex items-center text-xl">
           <Heart className="h-5 w-5 mr-2 text-primary" />
-          Resources & Support
+          {t("resourcesAndSupport")}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={resourcesTab} onValueChange={setResourcesTab} className="space-y-4">
           <TabsList>
-            <TabsTrigger value="wellbeing">Wellbeing Suggestions</TabsTrigger>
-            <TabsTrigger value="resources">Mental Health Resources</TabsTrigger>
+            <TabsTrigger value="wellbeing">{t("wellbeingSuggestions")}</TabsTrigger>
+            <TabsTrigger value="resources">{t("mentalHealthResources")}</TabsTrigger>
           </TabsList>
           
           <TabsContent value="wellbeing">
@@ -108,7 +110,7 @@ export const WellbeingResources = () => {
                   <h3 className="font-medium text-lg">{suggestion.title}</h3>
                   <p className="text-sm text-muted-foreground mt-1 mb-3">{suggestion.description}</p>
                   <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                    <strong>Benefit:</strong> {suggestion.benefit}
+                    <strong>{t("benefit")}:</strong> {suggestion.benefit}
                   </div>
                 </div>
               ))}
@@ -131,11 +133,11 @@ export const WellbeingResources = () => {
                   <p className="text-sm text-muted-foreground mt-1 mb-3">{resource.description}</p>
                   {resource.contact && (
                     <p className="text-sm mt-2">
-                      <strong>Contact:</strong> {resource.contact}
+                      <strong>{t("contact")}:</strong> {resource.contact}
                     </p>
                   )}
                   <p className="text-sm mt-2">
-                    <strong>Website:</strong> {resource.website}
+                    <strong>{t("website")}:</strong> {resource.website}
                   </p>
                 </div>
               ))}
@@ -144,8 +146,7 @@ export const WellbeingResources = () => {
             <div className="mt-6 text-sm text-center text-muted-foreground">
               <div className="flex items-center justify-center">
                 <Info className="h-4 w-4 mr-1" />
-                These resources are provided for informational purposes only. 
-                Please consult with healthcare professionals for personalized advice.
+                {t("resourcesDisclaimer")}
               </div>
             </div>
           </TabsContent>
