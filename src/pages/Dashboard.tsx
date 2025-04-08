@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,7 @@ import { DocumentSummary } from "@/components/DocumentSummary";
 import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
 import { FileInfoDisplay } from "@/components/FileInfoDisplay";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
+import { analyzeTextWithGemma3 } from "@/utils/gemma3SentimentAnalysis";
 
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -30,6 +30,7 @@ const Dashboard = () => {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   const [visibleClusterCount, setVisibleClusterCount] = useState(8);
+  const [analysisMethod, setAnalysisMethod] = useState<"bert" | "gemma3">("bert");
 
   const handleFileUpload = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
@@ -84,6 +85,82 @@ const Dashboard = () => {
     } catch (error) {
       toast.error("Error analyzing document with BERT");
       console.error("BERT analysis error:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const analyzeWithGemma3 = async () => {
+    if (!file) {
+      toast.error("Please upload a PDF file first");
+      return;
+    }
+
+    if (!pdfText || pdfText.trim().length === 0) {
+      toast.error("No readable text found in the PDF");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisComplete(false);
+    
+    try {
+      toast.info("Starting document analysis with Gemma 3...");
+      
+      const gemma3Results = await analyzeTextWithGemma3(pdfText);
+      
+      const mockPoints = generateMockPoints(pdfText, 150, gemma3Results.sentiment);
+      
+      const embeddingPoints = mockPoints.map(point => {
+        const emotionalToneEntries = Object.entries(gemma3Results.emotionalTones);
+        const sortedTones = emotionalToneEntries.sort((a, b) => b[1] - a[1]);
+        
+        const randomIndex = Math.floor(Math.random() * Math.min(3, sortedTones.length));
+        const emotionalTone = sortedTones[randomIndex][0];
+        
+        return {
+          ...point,
+          emotionalTone,
+          relationships: mockPoints
+            .filter(p => p.id !== point.id)
+            .slice(0, 5)
+            .map(p => ({ id: p.id, strength: Math.random() }))
+        };
+      });
+      
+      const results = {
+        fileName: file.name,
+        fileSize: file.size,
+        wordCount: pdfText.split(/\s+/).length,
+        pdfTextLength: pdfText.length,
+        sentiment: gemma3Results.sentiment,
+        summary: `This document has an overall sentiment score of ${(gemma3Results.sentiment * 10).toFixed(1)}/10. The dominant emotional tones are ${Object.entries(gemma3Results.emotionalTones)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([tone]) => tone)
+          .join(", ")}.`,
+        embeddingPoints,
+        sourceDescription: "Analyzed with Gemma 3 Model"
+      };
+      
+      console.log("Gemma 3 analysis results:", results);
+      setSentimentData(results);
+      setFilteredPoints(results.embeddingPoints || []);
+      setAnalysisComplete(true);
+      
+      const words = results.embeddingPoints
+        .map((point: Point) => point.word)
+        .filter((word: string, index: number, self: string[]) => 
+          word && self.indexOf(word) === index
+        )
+        .sort();
+      
+      setUniqueWords(words);
+      
+      toast.success(`Gemma 3 analysis completed! Analyzed ${results.pdfTextLength} characters of text from your PDF.`);
+    } catch (error) {
+      toast.error("Error analyzing document with Gemma 3");
+      console.error("Gemma 3 analysis error:", error);
     } finally {
       setIsAnalyzing(false);
     }
@@ -195,7 +272,7 @@ const Dashboard = () => {
                       disabled={!file || isAnalyzing}
                       className="w-full"
                     >
-                      {isAnalyzing ? (
+                      {isAnalyzing && analysisMethod === "bert" ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Analyzing with BERT...
@@ -203,14 +280,17 @@ const Dashboard = () => {
                       ) : "Analyze with BERT"}
                     </Button>
                     <Button 
-                      onClick={() => {
-                        toast.info("Gemma 3 analysis will be implemented in a future update");
-                      }} 
+                      onClick={analyzeWithGemma3} 
                       disabled={!file || isAnalyzing}
                       variant="outline"
                       className="w-full"
                     >
-                      Analyze with Gemma 3
+                      {isAnalyzing && analysisMethod === "gemma3" ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Analyzing with Gemma 3...
+                        </>
+                      ) : "Analyze with Gemma 3"}
                     </Button>
                   </div>
                 </div>

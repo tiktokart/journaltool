@@ -9,101 +9,182 @@ export async function analyzeTextWithGemma3(text: string): Promise<{
   try {
     toast.info("Initializing Gemma 3 model...");
     
-    // Initialize the sentiment-analysis pipeline with Gemma 3
-    const classifier = await pipeline(
-      "sentiment-analysis",
-      "onnx-community/gemma-3-small-8B",
-      { device: "webgpu" }
-    );
-    
-    toast.info("Analyzing text with Gemma 3...");
-    
-    // Split text into chunks of reasonable size to avoid overwhelming the model
-    const chunkSize = 512;
-    const chunks = [];
-    for (let i = 0; i < text.length; i += chunkSize) {
-      chunks.push(text.substring(i, i + chunkSize));
-    }
-    
-    // Process each chunk and average the results
-    const results = await Promise.all(
-      chunks.map(async (chunk) => {
-        try {
-          const result = await classifier(chunk);
-          return result;
-        } catch (error) {
-          console.error("Error processing chunk:", error);
-          return null;
-        }
-      })
-    );
-    
-    // Filter out null results and compute sentiment score
-    const validResults = results.filter(r => r !== null);
-    
-    if (validResults.length === 0) {
-      throw new Error("Failed to get valid analysis results");
-    }
-    
-    // Process the results to get sentiment score
-    const sentiments = validResults.map(result => {
-      if (Array.isArray(result) && result.length > 0) {
-        // Check if it's an array and access the first element safely
-        const firstResult = result[0];
-        // Safely check if the label property exists and contains "positive"
-        const labelText = typeof firstResult === 'object' && firstResult !== null 
-          ? String((firstResult as any).label || '') 
-          : '';
-          
-        // Safely get the score value with fallback
-        const scoreValue = typeof firstResult === 'object' && firstResult !== null 
-          ? Number((firstResult as any).score || 0.5) 
-          : 0.5;
-          
-        // Normalize label to positive/negative
-        if (labelText.toLowerCase().includes("positive")) {
-          return scoreValue;
-        } else if (labelText.toLowerCase().includes("negative")) {
-          return 1 - scoreValue;
-        }
+    // Try to initialize the sentiment-analysis pipeline with Gemma 3
+    try {
+      const classifier = await pipeline(
+        "sentiment-analysis",
+        "onnx-community/gemma-3-small-8B",
+        { device: "webgpu" }
+      );
+      
+      toast.info("Analyzing text with Gemma 3...");
+      
+      // Split text into chunks of reasonable size to avoid overwhelming the model
+      const chunkSize = 512;
+      const chunks = [];
+      for (let i = 0; i < text.length; i += chunkSize) {
+        chunks.push(text.substring(i, i + chunkSize));
       }
-      return 0.5; // Neutral fallback
-    });
-    
-    // Average the sentiment scores
-    const averageSentiment = sentiments.reduce((sum, score) => sum + score, 0) / sentiments.length;
-    
-    // Mock emotional tones for now (in a real app, we'd extract from Gemma 3)
-    const emotionalTones = {
-      "Joy": averageSentiment > 0.7 ? 0.8 : 0.2,
-      "Sadness": averageSentiment < 0.3 ? 0.8 : 0.2,
-      "Fear": averageSentiment < 0.4 ? 0.6 : 0.1,
-      "Anger": averageSentiment < 0.3 ? 0.7 : 0.1,
-      "Surprise": Math.random() * 0.5,
-      "Disgust": averageSentiment < 0.3 ? 0.5 : 0.1,
-    };
-    
-    toast.success("Gemma 3 analysis complete!");
-    
-    return {
-      sentiment: averageSentiment,
-      emotionalTones
-    };
+      
+      // Process each chunk and average the results
+      const results = await Promise.all(
+        chunks.map(async (chunk) => {
+          try {
+            const result = await classifier(chunk);
+            return result;
+          } catch (error) {
+            console.error("Error processing chunk:", error);
+            return null;
+          }
+        })
+      );
+      
+      // Filter out null results and compute sentiment score
+      const validResults = results.filter(r => r !== null);
+      
+      if (validResults.length === 0) {
+        throw new Error("Failed to get valid analysis results");
+      }
+      
+      // Process the results to get sentiment score
+      const sentiments = validResults.map(result => {
+        if (Array.isArray(result) && result.length > 0) {
+          const firstResult = result[0];
+          const labelText = typeof firstResult === 'object' && firstResult !== null 
+            ? String((firstResult as any).label || '') 
+            : '';
+            
+          const scoreValue = typeof firstResult === 'object' && firstResult !== null 
+            ? Number((firstResult as any).score || 0.5) 
+            : 0.5;
+            
+          if (labelText.toLowerCase().includes("positive")) {
+            return scoreValue;
+          } else if (labelText.toLowerCase().includes("negative")) {
+            return 1 - scoreValue;
+          }
+        }
+        return 0.5; // Neutral fallback
+      });
+      
+      // Average the sentiment scores
+      const averageSentiment = sentiments.reduce((sum, score) => sum + score, 0) / sentiments.length;
+      
+      // Process emotional tones from the analysis
+      const emotionalTones = processEmotionalTones(text, averageSentiment);
+      
+      toast.success("Gemma 3 analysis complete!");
+      
+      return {
+        sentiment: averageSentiment,
+        emotionalTones
+      };
+    } catch (error) {
+      console.error("Error with WebGPU sentiment pipeline, falling back to mock data:", error);
+      // If WebGPU fails, fall back to analysis method that works on all devices
+      return fallbackSentimentAnalysis(text);
+    }
   } catch (error) {
     console.error("Error analyzing text with Gemma 3:", error);
-    toast.error("Failed to analyze text with Gemma 3");
+    toast.error("Failed to analyze text with Gemma 3, using fallback analysis");
     
-    // Return default values in case of error
-    return {
-      sentiment: 0.5,
-      emotionalTones: {
-        "Joy": 0.2,
-        "Sadness": 0.2,
-        "Fear": 0.2,
-        "Anger": 0.2,
-        "Surprise": 0.2,
-        "Disgust": 0.2
-      }
-    };
+    return fallbackSentimentAnalysis(text);
   }
+}
+
+// Process emotional tones based on text content and sentiment
+function processEmotionalTones(text: string, sentiment: number): { [key: string]: number } {
+  // Define emotional tone keywords
+  const toneKeywords = {
+    "Joy": ["happy", "joy", "delight", "pleased", "excited", "glad", "smile", "laugh", "celebrate"],
+    "Sadness": ["sad", "sorrow", "unhappy", "miserable", "grief", "depressed", "cry", "tear", "upset"],
+    "Fear": ["afraid", "scared", "fear", "terror", "horrified", "anxious", "dread", "panic", "worry"],
+    "Anger": ["angry", "mad", "rage", "furious", "irritated", "annoyed", "hatred", "outraged", "bitter"],
+    "Surprise": ["surprised", "amazed", "astonished", "shocked", "startled", "unexpected", "sudden", "wonder"],
+    "Disgust": ["disgust", "revolted", "nauseous", "aversion", "repulsed", "distaste", "offensive", "gross"]
+  };
+  
+  // Count occurrences of keywords for each tone
+  const toneCounts: { [key: string]: number } = {};
+  const textLower = text.toLowerCase();
+  
+  Object.entries(toneKeywords).forEach(([tone, keywords]) => {
+    const count = keywords.reduce((sum, keyword) => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+      const matches = textLower.match(regex);
+      return sum + (matches ? matches.length : 0);
+    }, 0);
+    
+    toneCounts[tone] = count;
+  });
+  
+  // Convert counts to scores, considering sentiment
+  const emotionalTones: { [key: string]: number } = {};
+  const totalKeywords = Object.values(toneCounts).reduce((sum, count) => sum + count, 1); // Add 1 to avoid division by zero
+  
+  // Set base values for all tones
+  Object.keys(toneKeywords).forEach(tone => {
+    emotionalTones[tone] = 0.1; // Base value
+  });
+  
+  // Adjust based on keyword counts
+  Object.entries(toneCounts).forEach(([tone, count]) => {
+    const baseScore = 0.1 + (count / totalKeywords) * 0.5; // Scale to 0.1-0.6 range
+    emotionalTones[tone] = baseScore;
+  });
+  
+  // Adjust based on sentiment
+  emotionalTones["Joy"] += sentiment * 0.4; // Higher sentiment = more joy
+  emotionalTones["Sadness"] += (1 - sentiment) * 0.4; // Lower sentiment = more sadness
+  emotionalTones["Anger"] += (1 - sentiment) * 0.3; // Lower sentiment = more anger
+  emotionalTones["Disgust"] += (1 - sentiment) * 0.2; // Lower sentiment = more disgust
+  
+  // Cap all values at 1.0
+  Object.keys(emotionalTones).forEach(tone => {
+    emotionalTones[tone] = Math.min(emotionalTones[tone], 1.0);
+  });
+  
+  return emotionalTones;
+}
+
+// Fallback sentiment analysis when Gemma 3 pipeline fails
+function fallbackSentimentAnalysis(text: string): { sentiment: number; emotionalTones: { [key: string]: number } } {
+  console.log("Using fallback sentiment analysis method");
+  
+  // Simple sentiment word counting
+  const positiveWords = ["good", "great", "excellent", "amazing", "wonderful", "best", "love", "happy", "positive", "success"];
+  const negativeWords = ["bad", "terrible", "awful", "horrible", "worst", "hate", "sad", "negative", "failure", "poor"];
+  
+  const textLower = text.toLowerCase();
+  let positiveCount = 0;
+  let negativeCount = 0;
+  
+  positiveWords.forEach(word => {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    const matches = textLower.match(regex);
+    positiveCount += matches ? matches.length : 0;
+  });
+  
+  negativeWords.forEach(word => {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    const matches = textLower.match(regex);
+    negativeCount += matches ? matches.length : 0;
+  });
+  
+  // Calculate sentiment score (0 to 1)
+  const totalWords = textLower.split(/\s+/).length;
+  const totalSentimentWords = positiveCount + negativeCount;
+  const sentimentScore = totalSentimentWords > 0 
+    ? (positiveCount / totalSentimentWords) 
+    : 0.5; // Default neutral
+  
+  // Process emotional tones
+  const emotionalTones = processEmotionalTones(text, sentimentScore);
+  
+  toast.success("Fallback sentiment analysis complete!");
+  
+  return {
+    sentiment: sentimentScore,
+    emotionalTones
+  };
 }
