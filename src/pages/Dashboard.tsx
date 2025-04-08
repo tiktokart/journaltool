@@ -562,6 +562,7 @@ const Dashboard = () => {
             </Button>
           </div>
           
+          {/* File Upload Card */}
           <Card className="border border-border shadow-md bg-card">
             <CardHeader>
               <CardTitle>Document Analysis</CardTitle>
@@ -614,6 +615,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
+          {/* PDF Viewer */}
           {pdfUrl && showPdfViewer && (
             <PdfViewer 
               pdfUrl={pdfUrl} 
@@ -621,6 +623,7 @@ const Dashboard = () => {
             />
           )}
 
+          {/* Analysis Results */}
           {sentimentData && (
             <div className="animate-fade-in">
               <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center">
@@ -633,6 +636,7 @@ const Dashboard = () => {
                 </span>
               </div>
               
+              {/* Document Summary */}
               <Card className="mb-6 border border-border shadow-md bg-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -647,6 +651,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
+              {/* Latent Emotional Analysis */}
               <Card className="border border-border shadow-md overflow-hidden bg-card mb-8">
                 <CardHeader className="z-10">
                   <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
@@ -743,6 +748,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
+              {/* Sentiment Tabs */}
               <Tabs defaultValue="overview" className="space-y-4">
                 <div className="overflow-x-auto">
                   <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto">
@@ -786,7 +792,9 @@ const Dashboard = () => {
                 </TabsContent>
               </Tabs>
               
+              {/* Emotional Clusters and Word Comparison */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                {/* Emotional Clusters */}
                 <Card className="border border-border shadow-md bg-card">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -795,108 +803,3 @@ const Dashboard = () => {
                         Emotional Clusters
                       </CardTitle>
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-muted-foreground">Clusters: {visibleClusterCount}</span>
-                        <Slider 
-                          value={[visibleClusterCount]} 
-                          min={1} 
-                          max={10} 
-                          step={1} 
-                          className="w-24"
-                          onValueChange={(value) => setVisibleClusterCount(value[0])}
-                        />
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {emotionalClusters.map((cluster) => (
-                        <div 
-                          key={cluster.id}
-                          className={`border rounded-md overflow-hidden transition-all ${
-                            selectedCluster === cluster.name ? 'ring-2 ring-primary' : ''
-                          }`}
-                        >
-                          <div 
-                            className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50"
-                            onClick={() => toggleClusterExpanded(cluster.name)}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div 
-                                className="w-4 h-4 rounded-full" 
-                                style={{ backgroundColor: cluster.color }}
-                              />
-                              <span className="font-medium">{cluster.name}</span>
-                              <Badge variant="outline" className="ml-2">
-                                {cluster.size} words
-                              </Badge>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 px-2"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSelectCluster(cluster);
-                                }}
-                              >
-                                {selectedCluster === cluster.name ? 'Clear' : 'Focus'}
-                              </Button>
-                              <span className="text-xs">
-                                {clusterExpanded[cluster.name] ? '▼' : '▶'}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          {clusterExpanded[cluster.name] && (
-                            <div className="p-3 border-t bg-muted/30">
-                              <div className="mb-2">
-                                <span className="text-sm font-medium">Sentiment: </span>
-                                <span className="text-sm">
-                                  {cluster.sentiment >= 0.7 ? "Very Positive" : 
-                                    cluster.sentiment >= 0.5 ? "Positive" : 
-                                    cluster.sentiment >= 0.4 ? "Neutral" : 
-                                    cluster.sentiment >= 0.25 ? "Negative" : "Very Negative"}
-                                </span>
-                              </div>
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {(clusterPoints[cluster.name] || []).slice(0, 10).map((point, idx) => (
-                                  <Badge 
-                                    key={idx} 
-                                    variant="secondary"
-                                    className="cursor-pointer"
-                                    onClick={() => handlePointClick(point)}
-                                  >
-                                    {point.word}
-                                  </Badge>
-                                ))}
-                                {(clusterPoints[cluster.name] || []).length > 10 && (
-                                  <Badge variant="outline">
-                                    +{(clusterPoints[cluster.name] || []).length - 10} more
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
-      
-      <DebugPanel 
-        appState={debugState}
-        consoleMessages={consoleMessages}
-        isVisible={showDebugPanel}
-        onToggleVisibility={toggleDebugPanel}
-      />
-    </div>
-  );
-};
-
-export default Dashboard;
