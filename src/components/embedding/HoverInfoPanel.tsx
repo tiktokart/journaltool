@@ -19,8 +19,9 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
   
   // Translate emotional tone
   const getTranslatedEmotion = (emotion: string): string => {
-    const lowerCaseEmotion = emotion?.toLowerCase();
-    if (lowerCaseEmotion && t(lowerCaseEmotion)) {
+    if (!emotion) return t("neutral");
+    const lowerCaseEmotion = emotion.toLowerCase();
+    if (t(lowerCaseEmotion)) {
       return t(lowerCaseEmotion);
     }
     return emotion || t("neutral");

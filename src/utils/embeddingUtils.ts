@@ -1,126 +1,206 @@
 import { Point } from '@/types/embedding';
 
 export const generateMockPoints = (
-  depressedJournalReference: boolean | string,
-  customWordBank?: string[]
+  depressedJournalReference: boolean = false,
+  customWords?: string[] | Record<string, number> | number,
+  sentimentOverride?: number
 ): Point[] => {
-  const points: Point[] = [];
-  const isDepressed = typeof depressedJournalReference === 'boolean' 
-    ? depressedJournalReference 
-    : depressedJournalReference === 'true';
+  // Set a seed for reproducible randomness 
+  Math.seedrandom("embedding-visualization-seed");
   
-  // Define count based on custom word bank if available
-  const count = customWordBank ? Math.min(customWordBank.length, 500) : 150;
+  // Determine how many points to generate
+  let pointCount: number = 150;  // default value
   
-  // Emotional distribution for panic attack scenario
-  const distribution: Record<string, number> = {
-    Joy: isDepressed ? 0.05 : 0.3,
-    Sadness: isDepressed ? 0.2 : 0.1,
-    Fear: isDepressed ? 0.4 : 0.1,
-    Anger: isDepressed ? 0.1 : 0.1,
-    Surprise: isDepressed ? 0.05 : 0.2,
-    Disgust: isDepressed ? 0.05 : 0.1,
-    Trust: isDepressed ? 0.05 : 0.1,
-    Anticipation: isDepressed ? 0.1 : 0.1,
-    Neutral: 0.0
+  // Process customWords parameter based on its type
+  let wordBank: string[] = [];
+  let emotionalDistribution: Record<string, number> = {};
+  
+  if (typeof customWords === 'number') {
+    // If a number is provided, use it as the point count
+    pointCount = customWords;
+  } else if (Array.isArray(customWords)) {
+    // If an array is provided, use it as custom words
+    wordBank = customWords;
+    pointCount = Math.min(wordBank.length, 500); // Use word count or cap at 500
+  } else if (customWords && typeof customWords === 'object') {
+    // If an object is provided, use it as emotional distribution
+    emotionalDistribution = customWords as Record<string, number>;
+  }
+  
+  // Default emotional distribution for general text
+  const defaultDistribution = {
+    Joy: 0.15,
+    Sadness: 0.15, 
+    Anger: 0.1,
+    Fear: 0.1,
+    Surprise: 0.1,
+    Disgust: 0.05,
+    Trust: 0.2,
+    Anticipation: 0.15,
+    Neutral: 0
   };
   
-  // Panic attack related words when isDepressed is true
-  const panicWords = [
-    "heart", "racing", "breath", "struggling", "panic", "attack", "fear", "chest", "tight", "dizzy",
-    "sweating", "shaking", "trembling", "dying", "losing", "control", "overwhelming", "suffocating", 
-    "trapped", "terror", "anxiety", "palpitations", "nausea", "tingling", "hot", "cold", "flashes",
-    "unreality", "detached", "crazy", "public", "escape", "embarrassed", "crowd", "alone", "help"
+  // If this is for a depressed journal reference, shift the emotional tone distribution
+  const depressedDistribution = {
+    Joy: 0.05,
+    Sadness: 0.35,
+    Anger: 0.15,
+    Fear: 0.25,
+    Surprise: 0.05,
+    Disgust: 0.05,
+    Trust: 0.05,
+    Anticipation: 0.05,
+    Neutral: 0
+  };
+  
+  // Sample words related to panic attacks and anxiety
+  const anxietyWords = [
+    "heart", "racing", "breath", "struggling", "panic", "attack", "fear", "chest", 
+    "tight", "dizzy", "lightheaded", "worry", "overwhelmed", "trapped", "control", 
+    "helpless", "terror", "anxiety", "adrenaline", "survival", "suffocating", "hyperventilating",
+    "mind", "racing", "thoughts", "dying", "collapse", "palpitations", "sweat", "trembling",
+    "shaking", "nausea", "detached", "unreal", "faint", "nervous", "stress", "pressure",
+    "mental", "health", "mindfulness", "meditation", "breathing", "techniques", "therapy", 
+    "coping", "strategies", "trigger", "response", "body", "physical", "symptoms"
   ];
   
-  // Generate mock point data
-  for (let i = 0; i < count; i++) {
-    // Choose emotional tone based on distribution
-    let chosenTone = "Neutral";
+  // Choose the appropriate distribution and words based on parameters
+  let finalDistribution = defaultDistribution;
+  if (depressedJournalReference) {
+    finalDistribution = depressedDistribution;
+    if (!wordBank.length) {
+      wordBank = anxietyWords;
+    }
+  }
+  
+  // Use provided distribution if it exists
+  if (Object.keys(emotionalDistribution).length > 0) {
+    finalDistribution = emotionalDistribution;
+  }
+  
+  // Generate the points
+  const points: Point[] = [];
+  
+  for (let i = 0; i < pointCount; i++) {
+    // Determine emotional tone based on distribution
+    let emotionalTone = "Neutral";
     const emotionRoll = Math.random();
     let cumulativeProbability = 0;
     
-    for (const [tone, probability] of Object.entries(distribution)) {
+    for (const [tone, probability] of Object.entries(finalDistribution)) {
       cumulativeProbability += probability;
       if (emotionRoll < cumulativeProbability) {
-        chosenTone = tone;
+        emotionalTone = tone;
         break;
       }
     }
     
-    // Randomize position with some clustering
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
-    const radius = 30 * Math.pow(Math.random(), 1/3);
+    // Generate a point position
+    const position: [number, number, number] = [
+      (Math.random() * 2 - 1) * 15,
+      (Math.random() * 2 - 1) * 15,
+      (Math.random() * 2 - 1) * 15
+    ];
     
-    const x = radius * Math.sin(phi) * Math.cos(theta);
-    const y = radius * Math.sin(phi) * Math.sin(theta);
-    const z = radius * Math.cos(phi);
-    
-    // Add some noise and clustering
-    const position: [number, number, number] = [x, y, z];
-    
-    // Adjusted sentiment based on emotional tone
-    let sentiment = 0.5;
-    if (chosenTone === 'Joy' || chosenTone === 'Trust') {
-      sentiment = 0.7 + (Math.random() * 0.3);
-    } else if (chosenTone === 'Sadness' || chosenTone === 'Fear' || chosenTone === 'Anger' || chosenTone === 'Disgust') {
-      sentiment = Math.random() * 0.4;
-    } else {
-      sentiment = 0.3 + (Math.random() * 0.4);
+    // Choose a word from the bank or generate a generic one
+    let word = `Word${i + 1}`;
+    if (wordBank.length > 0) {
+      const wordIndex = i % wordBank.length;
+      word = wordBank[wordIndex];
     }
     
-    // Colors based on position and sentiment
-    const red = chosenTone === 'Anger' || chosenTone === 'Disgust' ? 0.8 : sentiment < 0.4 ? 0.7 : 0.2;
-    const green = chosenTone === 'Joy' ? 0.8 : (sentiment > 0.6 ? 0.7 : (position[1] + 40) / 80);
-    const blue = chosenTone === 'Sadness' || chosenTone === 'Fear' ? 0.8 : sentiment; 
-    const color: [number, number, number] = [red, green, blue];
-    
-    // Generate a word - use panic attack related words when isDepressed is true
-    let word;
-    if (customWordBank) {
-      word = customWordBank[i % customWordBank.length];
-    } else if (isDepressed && panicWords.length > 0) {
-      word = panicWords[i % panicWords.length];
+    // Generate a sentiment value (0-1) with bias based on emotional tone
+    let sentimentValue: number;
+    if (sentimentOverride !== undefined) {
+      // Use global sentiment override if provided
+      sentimentValue = sentimentOverride;
     } else {
-      word = `Word_${i+1}`;
+      // Otherwise calculate based on emotional tone
+      switch (emotionalTone) {
+        case "Joy":
+        case "Trust":
+        case "Anticipation":
+          sentimentValue = 0.7 + Math.random() * 0.3; // 0.7-1.0
+          break;
+        case "Sadness":
+        case "Fear":
+        case "Anger":
+        case "Disgust":
+          sentimentValue = Math.random() * 0.3; // 0-0.3
+          break;
+        case "Surprise":
+          sentimentValue = 0.3 + Math.random() * 0.4; // 0.3-0.7
+          break;
+        default:
+          sentimentValue = 0.4 + Math.random() * 0.2; // 0.4-0.6
+      }
     }
     
-    // Generate keywords related to panic attacks for isDepressed=true
-    const keywordBank = isDepressed ? 
-      ["anxiety", "breathing", "heart", "fear", "medical", "control", "health", "symptoms", "attack", "panic", "help", "body"] :
-      ["keyword", "general", "common", "word", "topic", "theme", "concept", "idea", "subject", "matter"];
-    
-    points.push({
+    // Create the point
+    const point: Point = {
       id: `point-${i}`,
-      position,
-      color,
-      sentiment,
-      word,
-      emotionalTone: chosenTone,
+      position: position,
+      word: word,
+      color: getColorForEmotionalTone(emotionalTone),
+      size: 0.4 + Math.random() * 0.6, // Random size between 0.4 and 1.0
+      emotionalTone: emotionalTone,
+      sentiment: sentimentValue,
       relationships: [],
-      keywords: [
-        keywordBank[Math.floor(Math.random() * keywordBank.length)],
-        keywordBank[Math.floor(Math.random() * keywordBank.length)],
-        keywordBank[Math.floor(Math.random() * keywordBank.length)]
-      ]
-    });
+      keywords: []
+    };
+    
+    // Add related concepts/keywords
+    const keywordCount = Math.floor(Math.random() * 4);
+    if (keywordCount > 0) {
+      const keywords = [];
+      for (let k = 0; k < keywordCount; k++) {
+        if (wordBank.length > 0) {
+          // Choose a random word from the bank
+          const randomIndex = Math.floor(Math.random() * wordBank.length);
+          keywords.push(wordBank[randomIndex]);
+        } else {
+          keywords.push(`Concept ${k + 1}`);
+        }
+      }
+      point.keywords = keywords;
+    }
+    
+    points.push(point);
   }
   
   // Add relationships between points
-  points.forEach(point => {
+  points.forEach((point, index) => {
+    const relationshipCount = Math.floor(Math.random() * 7) + 3; // 3-10 relationships
     const relationships = [];
-    const relationshipCount = Math.floor(Math.random() * 5) + 1;
     
-    for (let i = 0; i < relationshipCount; i++) {
-      const randomIndex = Math.floor(Math.random() * points.length);
-      const randomPoint = points[randomIndex];
+    // Create a set to keep track of points already used in relationships
+    const usedRelationships = new Set<string>();
+    
+    for (let r = 0; r < relationshipCount; r++) {
+      let targetIndex;
+      let attempts = 0;
+      const maxAttempts = 10;
       
-      if (randomPoint.id !== point.id) {
+      // Find a target that hasn't been used yet, with a maximum number of attempts
+      do {
+        targetIndex = Math.floor(Math.random() * points.length);
+        attempts++;
+        if (attempts > maxAttempts) break;
+      } while (targetIndex === index || usedRelationships.has(points[targetIndex].id));
+      
+      if (attempts <= maxAttempts) {
+        const targetPoint = points[targetIndex];
+        usedRelationships.add(targetPoint.id);
+        
+        // Relationship strength is stronger for points with the same emotional tone
+        const sameEmotionalTone = point.emotionalTone === targetPoint.emotionalTone;
+        const baseStrength = sameEmotionalTone ? 0.7 : 0.3;
+        const strength = baseStrength + Math.random() * 0.3;
+        
         relationships.push({
-          id: randomPoint.id,
-          strength: Math.random(),
-          word: randomPoint.word
+          id: targetPoint.id,
+          word: targetPoint.word,
+          strength: strength
         });
       }
     }
@@ -228,4 +308,30 @@ export const getEmotionalToneDistribution = (points: Point[]): Record<string, nu
 
 export const isPDFFile = (file: File): boolean => {
   return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+};
+
+export const getColorForEmotionalTone = (emotion: string): [number, number, number] => {
+  const colors: Record<string, [number, number, number]> = {
+    "Joy": [0.8, 0.7, 0.2],
+    "Sadness": [0.2, 0.4, 0.8],
+    "Anger": [0.8, 0.2, 0.2],
+    "Fear": [0.2, 0.2, 0.8],
+    "Surprise": [0.8, 0.8, 0.2],
+    "Disgust": [0.2, 0.8, 0.2],
+    "Trust": [0.2, 0.8, 0.8],
+    "Anticipation": [0.8, 0.2, 0.8],
+    "Neutral": [0.5, 0.5, 0.5]
+  };
+
+  // Handle case insensitivity by converting to lowercase for comparison
+  // but maintaining the original casing for the map lookup
+  const normalizedEmotion = emotion.toLowerCase();
+  
+  for (const key in colors) {
+    if (key.toLowerCase() === normalizedEmotion) {
+      return colors[key];
+    }
+  }
+  
+  return [0.5, 0.5, 0.5]; // Default to gray if no matching emotion
 };

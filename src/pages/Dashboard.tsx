@@ -122,8 +122,8 @@ const Dashboard = () => {
       const filteredSignificantWords = significantWords.slice(0, wordLimit);
       
       // Create embedding points using actual text from the document
-      // Fix the type error - passing a boolean instead of string for the boolean parameter
-      const mockPoints = generateMockPoints(true, filteredSignificantWords.length, gemma3Results.sentiment);
+      // Fix the argument count error - use emotionalDistribution instead of boolean
+      const mockPoints = generateMockPoints(false, filteredSignificantWords.length);
       
       // Assign real words from the document to the points instead of random words
       const embeddingPoints = mockPoints.map((point, index) => {

@@ -1,5 +1,3 @@
-
-// Only updating the relevant part of this large file to fix the error on line 159
 import { toast } from "sonner";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
@@ -156,10 +154,8 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
       
       // Generate embedding points based on the emotional distribution
       toast.info("Generating embedding visualization...");
-      // Fix: Pass emotional distribution as second argument, not boolean
       const embeddingPoints = generateMockPoints(
         false, 
-        emotionalDistribution, 
         customWordBank.length > 0 ? customWordBank : undefined
       );
 
