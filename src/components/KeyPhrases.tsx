@@ -9,14 +9,14 @@ interface KeyPhrasesProps {
     sentiment: "positive" | "neutral" | "negative"; 
     count: number 
   }>;
-  sourceDescription?: string; // Add this to show where words came from
-  maxWordsPerCategory?: number; // Add option to control how many words are displayed per category
+  sourceDescription?: string;
+  maxWordsPerCategory?: number | null;
 }
 
 export const KeyPhrases = ({ 
   data, 
   sourceDescription, 
-  maxWordsPerCategory = 30 // Default to showing more words
+  maxWordsPerCategory = null // Changed to null to display all words by default
 }: KeyPhrasesProps) => {
   // Group words by sentiment
   const positiveItems = data.filter(item => item.sentiment === "positive");
@@ -38,14 +38,14 @@ export const KeyPhrases = ({
     }
   };
 
-  // Render word group with limited amount based on maxWordsPerCategory
+  // Render word group - display all words if maxWordsPerCategory is null
   const renderWordGroup = (
     items: typeof data, 
     title: string, 
     sentimentType: "positive" | "neutral" | "negative"
   ) => {
-    // Limit the number of words to display per category
-    const displayItems = items.slice(0, maxWordsPerCategory);
+    // If maxWordsPerCategory is null, display all items, otherwise limit
+    const displayItems = maxWordsPerCategory ? items.slice(0, maxWordsPerCategory) : items;
     
     return (
       <div>
@@ -63,7 +63,7 @@ export const KeyPhrases = ({
                 {item.text} ({item.count})
               </Badge>
             ))}
-            {items.length > maxWordsPerCategory && (
+            {maxWordsPerCategory && items.length > maxWordsPerCategory && (
               <p className="text-xs text-muted-foreground mt-2 w-full">
                 + {items.length - maxWordsPerCategory} more {sentimentType} words not shown
               </p>
@@ -77,7 +77,7 @@ export const KeyPhrases = ({
   return (
     <Card className="border-0 shadow-md w-full">
       <CardHeader>
-        <CardTitle>Common Words by Sentiment</CardTitle>
+        <CardTitle>All Words by Sentiment</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -92,7 +92,7 @@ export const KeyPhrases = ({
               {sourceDescription}
             </div>
           ) : (
-            "All commonly used words in your document, grouped by sentiment and sized by frequency."
+            "All words in your document, grouped by sentiment and sorted by frequency."
           )}
         </div>
       </CardContent>
