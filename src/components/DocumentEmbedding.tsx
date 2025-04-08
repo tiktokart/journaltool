@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -240,7 +239,7 @@ export const DocumentEmbedding = ({
         <span>
           {wordCount ? 
             `${t("showingWords")} ${wordCount} ${t("words")}` : 
-            `${t("showingWords")} ${displayPoints.length} ${showAllPoints ? t("words") : t("emotionalGroups")}`
+            `${t("showingWords")} ${displayPoints.length} ${t("words")}`
           }
         </span>
       </div>
@@ -278,7 +277,7 @@ export const DocumentEmbedding = ({
         selectedEmotionalGroup={selectedEmotionalGroup}
         onResetView={handleResetView}
         visibleClusterCount={visibleClusterCount}
-        showAllPoints={showAllPoints}
+        showAllPoints={true}
       />
       
       {isInteractive && (
