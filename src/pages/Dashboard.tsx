@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,10 +30,16 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import { initBertModel, analyzeSentiment, batchAnalyzeSentiment } from "@/utils/bertSentimentAnalysis";
 
-const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
+const analyzePdfContent = async (file: File, pdfText?: string): Promise<any> => {
+  return new Promise(async (resolve) => {
+    toast.info("Initializing BERT sentiment analysis model...");
+    
+    try {
+      // Initialize the BERT model
+      await initBertModel();
+      
       const fileName = file.name.toLowerCase();
       const seed = fileName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       
@@ -51,6 +56,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         Neutral: 0.0
       };
       
+      // Process PDF text if available
       if (pdfText && pdfText.length > 0) {
         console.log("Processing PDF text of length:", pdfText.length);
         
@@ -62,6 +68,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         
         const stopWords = new Set(['the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'can', 'could', 'may', 'might', 'must', 'shall', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'who', 'whom', 'whose', 'which']);
         
+        // Extract unique words
         customWordBank = cleanText
           .split(' ')
           .filter(word => word.length > 2 && !stopWords.has(word))
@@ -71,39 +78,69 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         console.log("Extracted unique words:", customWordBank.length);
         console.log("Sample words:", customWordBank.slice(0, 20));
         
-        const emotionWords = {
-          Joy: ['happy', 'joy', 'delight', 'pleased', 'glad', 'content', 'satisfied', 'success', 'love', 'enjoy', 'smile', 'laugh', 'enthusiastic', 'excited'],
-          Sadness: ['sad', 'sorrow', 'unhappy', 'depressed', 'gloomy', 'miserable', 'grief', 'sorry', 'regret', 'disappointing', 'melancholy', 'heartbreak'],
-          Anger: ['angry', 'mad', 'furious', 'outraged', 'annoyed', 'irritated', 'frustrated', 'hostile', 'rage', 'hate', 'resent', 'enraged'],
-          Fear: ['afraid', 'scared', 'frightened', 'terrified', 'anxious', 'worried', 'panic', 'dread', 'horror', 'terror', 'stress', 'concern'],
-          Surprise: ['surprised', 'amazed', 'astonished', 'shocked', 'startled', 'unexpected', 'wonder', 'stunned', 'astounded', 'speechless'],
-          Disgust: ['disgusted', 'repulsed', 'revolted', 'appalled', 'distaste', 'nauseated', 'dislike', 'abhor', 'hatred', 'offend'],
-          Trust: ['trust', 'believe', 'faith', 'confidence', 'reliable', 'depend', 'honest', 'loyal', 'sincere', 'integrity', 'assurance'],
-          Anticipation: ['expect', 'anticipate', 'look forward', 'await', 'hope', 'predict', 'forecast', 'ambitious', 'eager', 'prepare']
-        };
+        // Analyze the entire text with BERT
+        toast.info("Analyzing document sentiment with BERT...");
+        const sentimentResult = await analyzeSentiment(pdfText);
+        console.log("BERT sentiment analysis result:", sentimentResult);
         
-        const emotionCounts: Record<string, number> = {
-          Joy: 0, Sadness: 0, Anger: 0, Fear: 0, Surprise: 0, Disgust: 0, Trust: 0, Anticipation: 0
-        };
+        // Adjust emotional distribution based on BERT sentiment
+        if (sentimentResult.normalizedScore >= 0.6) {
+          // More positive sentiment
+          emotionalDistribution.Joy = 0.3;
+          emotionalDistribution.Trust = 0.2;
+          emotionalDistribution.Sadness = 0.1;
+          emotionalDistribution.Fear = 0.1;
+        } else if (sentimentResult.normalizedScore <= 0.4) {
+          // More negative sentiment
+          emotionalDistribution.Sadness = 0.35;
+          emotionalDistribution.Fear = 0.25;
+          emotionalDistribution.Joy = 0.05;
+          emotionalDistribution.Trust = 0.05;
+        }
         
-        const words = cleanText.split(' ');
-        words.forEach(word => {
-          for (const [emotion, keywords] of Object.entries(emotionWords)) {
-            if (keywords.some(keyword => word.includes(keyword))) {
-              emotionCounts[emotion] += 1;
-            }
-          }
-        });
+        // Generate sentences for more granular analysis
+        const sentences = pdfText
+          .replace(/([.!?])\s*/g, "$1|")
+          .split("|")
+          .filter(s => s.trim().length > 10 && s.trim().length < 250)
+          .map(s => s.trim());
         
-        const totalEmotionWords = Object.values(emotionCounts).reduce((sum, count) => sum + count, 0) || 1;
-        
-        for (const emotion in emotionCounts) {
-          if (totalEmotionWords > 0) {
-            emotionalDistribution[emotion as keyof typeof emotionalDistribution] = 
-              0.1 + (emotionCounts[emotion] / totalEmotionWords) * 0.7;
+        // For larger documents, analyze a sample of sentences
+        if (sentences.length > 20) {
+          const sampleSize = Math.min(20, Math.floor(sentences.length / 3));
+          const sampleIndices = Array.from({ length: sentences.length }, (_, i) => i);
+          const shuffled = sampleIndices.sort(() => 0.5 - Math.random());
+          const selected = shuffled.slice(0, sampleSize);
+          
+          const samplesToAnalyze = selected.map(i => sentences[i]);
+          
+          // Batch analyze the selected sentences
+          const sentenceResults = await batchAnalyzeSentiment(samplesToAnalyze);
+          
+          // Count emotion frequencies based on sentence sentiments
+          let joyCount = 0;
+          let sadnessCount = 0;
+          
+          sentenceResults.forEach(result => {
+            if (result.normalizedScore >= 0.7) joyCount++;
+            if (result.normalizedScore <= 0.3) sadnessCount++;
+          });
+          
+          const totalSamples = sentenceResults.length;
+          
+          // Further refine distribution based on sentence analysis
+          if (totalSamples > 0) {
+            const joyRatio = joyCount / totalSamples;
+            const sadnessRatio = sadnessCount / totalSamples;
+            
+            emotionalDistribution.Joy = 0.1 + joyRatio * 0.4;
+            emotionalDistribution.Sadness = 0.1 + sadnessRatio * 0.4;
+            emotionalDistribution.Fear = 0.1 + sadnessRatio * 0.3;
+            emotionalDistribution.Trust = 0.1 + joyRatio * 0.3;
           }
         }
       } else {
+        // Use filename-based sentiment heuristics if no text is available
         if (fileName.includes('happy') || fileName.includes('joy')) {
           emotionalDistribution.Joy = 0.4;
           emotionalDistribution.Sadness = 0.05;
@@ -117,8 +154,21 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
           emotionalDistribution.Fear = 0.4;
           emotionalDistribution.Trust = 0.05;
         }
+        
+        // For files without text, apply a simpler BERT analysis on the filename
+        const fileNameSentiment = await analyzeSentiment(fileName);
+        
+        // Adjust based on filename sentiment
+        if (fileNameSentiment.normalizedScore >= 0.6) {
+          emotionalDistribution.Joy = Math.max(0.25, emotionalDistribution.Joy);
+          emotionalDistribution.Trust = Math.max(0.15, emotionalDistribution.Trust);
+        } else if (fileNameSentiment.normalizedScore <= 0.4) {
+          emotionalDistribution.Sadness = Math.max(0.25, emotionalDistribution.Sadness);
+          emotionalDistribution.Fear = Math.max(0.15, emotionalDistribution.Fear);
+        }
       }
       
+      // Calculate overall sentiment from the emotional distribution
       const overallSentiment = 
         (emotionalDistribution.Joy * 0.9) + 
         (emotionalDistribution.Trust * 0.8) + 
@@ -131,6 +181,8 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
       
       const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
       
+      // Generate embedding points based on the emotional distribution
+      toast.info("Generating embedding visualization...");
       const embeddingPoints = generateMockPoints(
         false, 
         emotionalDistribution, 
@@ -139,11 +191,38 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
 
       console.log("Generated embedding points:", embeddingPoints.length);
       console.log("Sample embedding words:", embeddingPoints.slice(0, 5).map(p => p.word));
+      
+      // If we have enough embedding points with unique words, update their sentiment scores with BERT
+      if (embeddingPoints.length > 0) {
+        const uniqueWords = [...new Set(embeddingPoints.map(p => p.word))];
+        const maxWordsToAnalyze = Math.min(uniqueWords.length, 100); // Limit to avoid performance issues
+        
+        if (maxWordsToAnalyze > 0) {
+          const wordsToAnalyze = uniqueWords.slice(0, maxWordsToAnalyze);
+          const wordSentiments = await batchAnalyzeSentiment(wordsToAnalyze);
+          
+          // Create a mapping of words to their sentiment scores
+          const sentimentMap = new Map();
+          wordsToAnalyze.forEach((word, index) => {
+            sentimentMap.set(word, wordSentiments[index].normalizedScore);
+          });
+          
+          // Update the sentiment scores of the embedding points
+          embeddingPoints.forEach(point => {
+            if (sentimentMap.has(point.word)) {
+              point.sentiment = sentimentMap.get(point.word);
+            }
+          });
+          
+          console.log("Updated embedding points with BERT sentiment scores");
+        }
+      }
 
       const positivePercentage = Math.round(normalizedSentiment * 100);
       const negativePercentage = Math.round((1 - normalizedSentiment) * 0.5 * 100);
       const neutralPercentage = 100 - positivePercentage - negativePercentage;
 
+      // Generate timeline data
       const pageCount = pdfText ? Math.ceil(pdfText.length / 2000) : 5 + Math.floor((seed % 10));
       const timeline = [];
       let prevScore = normalizedSentiment * 0.8;
@@ -159,6 +238,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         prevScore = newScore;
       }
 
+      // Generate themes
       let themeNames = [
         "Work", "Family", "Health", "Relationships", 
         "Future", "Goals", "Education", "Friends",
@@ -205,6 +285,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         });
       }
 
+      // Analyze word frequency and sentiment
       const wordFrequency: Record<string, { count: number, sentiment: number, emotionalTone: string }> = {};
       embeddingPoints.forEach(point => {
         if (point.word) {
@@ -231,6 +312,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
 
       console.log("Top words with frequency:", sortedWords.slice(0, 5).map(([word, data]) => `${word}: ${data.count}`));
 
+      // Create key phrases with sentiments
       const keyPhrases = sortedWords.map(([word, data]) => {
         let sentimentCategory: "positive" | "neutral" | "negative" = "neutral";
         if (data.sentiment >= 0.6) {
@@ -250,8 +332,10 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         };
       });
 
+      // Generate or extract summary
       let summary = "";
       if (pdfText && pdfText.length > 0) {
+        // For real PDFs, try to extract a meaningful summary
         const sentences = pdfText
           .replace(/([.!?])\s*/g, "$1|")
           .split("|")
@@ -261,6 +345,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
         if (sentences.length > 0) {
           const topKeywords = sortedWords.slice(0, 10).map(([word]) => word.toLowerCase());
           
+          // Score sentences based on keywords and position
           const scoredSentences = sentences.map((sentence, index) => {
             const normalizedPosition = 1 - (index / sentences.length);
             const lowerSentence = sentence.toLowerCase();
@@ -286,6 +371,7 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
           
           const topSentences = scoredSentences.slice(0, summaryLength);
           
+          // Reorder sentences to match their original sequence
           topSentences.sort((a, b) => {
             return sentences.indexOf(a.sentence) - sentences.indexOf(b.sentence);
           });
@@ -296,46 +382,30 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
             summary = summary.substring(0, 497) + "...";
           }
         } else {
+          // Fallback if no sentences could be extracted
           const dominantEmotion = Object.entries(emotionalDistribution)
             .sort((a, b) => b[1] - a[1])[0][0];
           
-          const emotionSummaries = {
-            Joy: "This document contains predominantly positive content, expressing optimism and satisfaction. The author appears to convey enthusiasm and positive outlook throughout.",
-            Sadness: "The document expresses significant melancholy and disappointment. Several passages indicate feelings of loss or regret, with an overall somber tone.",
-            Anger: "There are strong expressions of frustration and discontent throughout this document. The author appears to be addressing perceived injustices or grievances.",
-            Fear: "Concerns and anxieties are prominent throughout this text. The author expresses worry about future outcomes and potential threats.",
-            Surprise: "The document contains unexpected revelations and sudden shifts in perspective. The author seems to be processing unexpected information.",
-            Disgust: "There are strong expressions of aversion and disapproval throughout. The author takes a critical stance toward the subject matter.",
-            Trust: "Expressions of confidence and reliability dominate this document. The author establishes credibility and trustworthiness throughout.",
-            Anticipation: "The document focuses on future possibilities and expectations. There's a forward-looking perspective throughout the content.",
-            Neutral: "This document presents information in a balanced, objective manner. The content is primarily factual with minimal emotional expression."
-          };
-          
-          summary = emotionSummaries[dominantEmotion as keyof typeof emotionSummaries];
+          // Use BERT-informed template summaries
+          summary = `This document has a predominant ${dominantEmotion.toLowerCase()} emotional tone with an overall sentiment score of ${normalizedSentiment.toFixed(2)}. BERT analysis indicates that the content is ${normalizedSentiment >= 0.5 ? "generally positive" : "somewhat negative"} in nature.`;
         }
       } else {
+        // For files without text, generate a basic BERT-informed summary
+        const bertSummary = `BERT sentiment analysis of this file indicates a sentiment score of ${normalizedSentiment.toFixed(2)}, which is interpreted as ${normalizedSentiment >= 0.6 ? "positive" : normalizedSentiment >= 0.4 ? "neutral" : "negative"}.`;
+        
         const dominantEmotion = Object.entries(emotionalDistribution)
           .sort((a, b) => b[1] - a[1])[0][0];
         
-        const emotionSummaries = {
-          Joy: "This document contains predominantly positive content, expressing optimism and satisfaction. The author appears to convey enthusiasm and positive outlook throughout.",
-          Sadness: "The document expresses significant melancholy and disappointment. Several passages indicate feelings of loss or regret, with an overall somber tone.",
-          Anger: "There are strong expressions of frustration and discontent throughout this document. The author appears to be addressing perceived injustices or grievances.",
-          Fear: "Concerns and anxieties are prominent throughout this text. The author expresses worry about future outcomes and potential threats.",
-          Surprise: "The document contains unexpected revelations and sudden shifts in perspective. The author seems to be processing unexpected information.",
-          Disgust: "There are strong expressions of aversion and disapproval throughout. The author takes a critical stance toward the subject matter.",
-          Trust: "Expressions of confidence and reliability dominate this document. The author establishes credibility and trustworthiness throughout.",
-          Anticipation: "The document focuses on future possibilities and expectations. There's a forward-looking perspective throughout the content.",
-          Neutral: "This document presents information in a balanced, objective manner. The content is primarily factual with minimal emotional expression."
-        };
+        const emotionSummary = `The dominant emotional tone appears to be ${dominantEmotion}, representing ${Math.round(emotionalDistribution[dominantEmotion as keyof typeof emotionalDistribution] * 100)}% of the emotional content.`;
         
-        summary = emotionSummaries[dominantEmotion as keyof typeof emotionSummaries];
+        summary = `${bertSummary} ${emotionSummary}`;
       }
 
       const sourceDescription = pdfText && pdfText.length > 0 && customWordBank.length > 0
-        ? `Analysis based on ${customWordBank.length} unique words extracted from your PDF`
-        : undefined;
+        ? `Analysis based on ${customWordBank.length} unique words extracted from your PDF using BERT sentiment analysis`
+        : "Analysis generated using BERT sentiment model";
 
+      // Compile all results
       const analysisResults = {
         overallSentiment: {
           score: normalizedSentiment,
@@ -359,7 +429,35 @@ const analyzePdfContent = (file: File, pdfText?: string): Promise<any> => {
       };
 
       resolve(analysisResults);
-    }, 2000);
+    } catch (error) {
+      console.error("Error in analyzePdfContent:", error);
+      toast.error("Error analyzing document with BERT model");
+      
+      // Fallback to basic analysis without BERT
+      const basicResults = {
+        overallSentiment: {
+          score: 0.5,
+          label: "Neutral"
+        },
+        distribution: {
+          positive: 50,
+          neutral: 30,
+          negative: 20
+        },
+        timeline: [{page: 1, score: 0.5}],
+        entities: [{name: "Content", score: 0.5, mentions: 5}],
+        keyPhrases: [{text: "error", sentiment: "neutral" as "neutral", count: 1}],
+        embeddingPoints: generateMockPoints(false),
+        fileName: file.name,
+        fileSize: file.size,
+        wordCount: 0,
+        pdfTextLength: pdfText ? pdfText.length : 0,
+        summary: "An error occurred during BERT analysis. Results shown are approximations.",
+        sourceDescription: "Analysis performed with fallback measures due to BERT model error"
+      };
+      
+      resolve(basicResults);
+    }
   });
 };
 
@@ -486,6 +584,7 @@ const Dashboard = () => {
     setCompareSearchResults([]);
     
     try {
+      toast.info("Starting document analysis with BERT...");
       const results = await analyzePdfContent(file, pdfText);
       console.log("Analysis results:", results); // Debug the results
       setSentimentData(results);
@@ -504,13 +603,13 @@ const Dashboard = () => {
       setCompareSearchResults(results.embeddingPoints.slice(0, 15));
       
       if (results.pdfTextLength > 0) {
-        toast.success(`Analysis completed! Analyzed ${results.pdfTextLength} characters of text from your PDF.`);
+        toast.success(`BERT analysis completed! Analyzed ${results.pdfTextLength} characters of text from your PDF.`);
       } else {
-        toast.success("Document analysis completed! All tabs are now available.");
+        toast.success("BERT document analysis completed! All tabs are now available.");
       }
     } catch (error) {
-      toast.error("Error analyzing document");
-      console.error("Analysis error:", error);
+      toast.error("Error analyzing document with BERT");
+      console.error("BERT analysis error:", error);
     } finally {
       setIsAnalyzing(false);
     }
@@ -734,7 +833,7 @@ const Dashboard = () => {
         <div className="flex flex-col gap-8">
           <Card className="border border-border shadow-md bg-card">
             <CardHeader>
-              <CardTitle>Document Analysis</CardTitle>
+              <CardTitle>Document Analysis with BERT</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-3 gap-6">
@@ -766,9 +865,9 @@ const Dashboard = () => {
                     {isAnalyzing ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Analyzing...
+                        Analyzing with BERT...
                       </>
-                    ) : "Analyze Document"}
+                    ) : "Analyze with BERT"}
                   </Button>
                 </div>
               </div>

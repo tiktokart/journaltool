@@ -1,4 +1,5 @@
 import { Point } from "../types/embedding";
+import { analyzeSentiment, batchAnalyzeSentiment, getSentimentLabel as getBertSentimentLabel } from "./bertSentimentAnalysis";
 
 export const getEmotionColor = (emotion: string): string => {
   switch (emotion) {
@@ -15,11 +16,7 @@ export const getEmotionColor = (emotion: string): string => {
 };
 
 export const getSentimentLabel = (score: number): string => {
-  if (score >= 0.7) return "Very Positive";
-  if (score >= 0.5) return "Positive";
-  if (score >= 0.4) return "Neutral";
-  if (score >= 0.25) return "Negative";
-  return "Very Negative";
+  return getBertSentimentLabel(score);
 };
 
 interface EmotionalDistribution {
