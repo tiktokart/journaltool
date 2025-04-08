@@ -26,6 +26,7 @@ export const DocumentEmbedding = (props: DocumentEmbeddingProps) => {
     if (typeof window !== 'undefined' && props.points.length > 0) {
       // @ts-ignore - Adding custom property to window
       window.documentEmbeddingPoints = props.points;
+      console.log(`Embedding points set: ${props.points.length} points available for visualization`);
     }
   }, [props.points]);
   

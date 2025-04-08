@@ -255,10 +255,12 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (sentimentData) {
+      // Generate mock points based on the text
       const mockPoints = generateMockPoints(pdfText, sentimentData);
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
+      // Extract unique words from the text
       const allWords = pdfText
         .toLowerCase()
         .split(/\s+/)
@@ -271,6 +273,7 @@ const Dashboard = () => {
       
       console.log(`Total unique words found: ${uniqueWordsArray.length}`);
       
+      // Create emotional clusters
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
         return {
@@ -282,18 +285,21 @@ const Dashboard = () => {
       
       setEmotionalClusters(clusters);
       
+      // Create a mapping of cluster names to colors
       const colorMap: Record<string, string> = {};
       clusters.forEach((cluster: any) => {
         colorMap[cluster.name] = cluster.color;
       });
       setClusterColors(colorMap);
       
+      // Initialize cluster expansion state
       const expandedMap: Record<string, boolean> = {};
       clusters.forEach((cluster: any) => {
         expandedMap[cluster.name] = false;
       });
       setClusterExpanded(expandedMap);
       
+      // Assign points to clusters
       const clusterPointsMap: Record<string, Point[]> = {};
       clusters.forEach((cluster: any) => {
         const clusterSize = cluster.size;
@@ -310,7 +316,9 @@ const Dashboard = () => {
       });
       setClusterPoints(clusterPointsMap);
       
+      // Make points available globally for debugging
       if (typeof window !== 'undefined') {
+        // @ts-ignore - Adding custom property to window
         window.documentEmbeddingPoints = mockPoints;
       }
     }
@@ -367,6 +375,9 @@ const Dashboard = () => {
         setPdfText(extractedText);
         const wordCount = extractedText.split(/\s+/).length;
         toast.info(`Extracted ${wordCount} words from PDF for analysis`);
+        
+        // Immediately run analysis on upload
+        analyzeSentiment(file, extractedText);
       } else {
         const fallbackTexts = [
           `This is a simulated text extraction from ${file.name}. In a real application, we would extract the actual content of the PDF file.`,
@@ -374,8 +385,12 @@ const Dashboard = () => {
         ];
         
         const randomIndex = Math.floor(Math.random() * fallbackTexts.length);
-        setPdfText(fallbackTexts[randomIndex]);
+        const fallbackText = fallbackTexts[randomIndex];
+        setPdfText(fallbackText);
         toast.warning("Could not extract text properly, using sample text instead");
+        
+        // Analyze with fallback text
+        analyzeSentiment(file, fallbackText);
       }
     }
   };
@@ -384,17 +399,15 @@ const Dashboard = () => {
     setShowPdfViewer(!showPdfViewer);
   };
 
-  const analyzeSentiment = async () => {
-    if (!file) return;
-    
+  const analyzeSentiment = async (file: File, text: string) => {
     setIsAnalyzing(true);
     try {
-      const results = await analyzePdfContent(pdfText, file.name);
+      const results = await analyzePdfContent(text, file.name);
       setSentimentData({
         ...results,
         fileName: file.name,
         fileSize: file.size,
-        wordCount: pdfText.split(/\s+/).length
+        wordCount: text.split(/\s+/).length
       });
       toast.success("Analysis complete!");
     } catch (error) {
@@ -415,7 +428,7 @@ const Dashboard = () => {
         timeline: Array.from({ length: 10 }, (_, i) => ({
           page: i + 1,
           score: 0.3 + (Math.random() * 0.3),
-          text: pdfText.substring(i * 100, (i + 1) * 100).trim() || "Sample text segment"
+          text: text.substring(i * 100, (i + 1) * 100).trim() || "Sample text segment"
         })),
         entities: [
           { name: "Anxiety", sentiment: 0.2, mentions: 5, contexts: ["Context: Feeling anxious in meetings"] },
@@ -432,7 +445,7 @@ const Dashboard = () => {
         summary: "This is a sample analysis of the document. The analysis shows patterns of anxiety and stress with some coping mechanisms mentioned.",
         fileName: file.name,
         fileSize: file.size,
-        wordCount: pdfText.split(/\s+/).length,
+        wordCount: text.split(/\s+/).length,
         sourceDescription: `PDF Document Analysis - ${file.name}`
       };
       
@@ -622,10 +635,7 @@ const Dashboard = () => {
           </div>
           
           <Card className="border border-border shadow-md bg-card">
-            <CardHeader>
-              <CardTitle>Document Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6 pb-6">
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
                   <FileUploader onFilesAdded={handleFileUpload} />
@@ -648,7 +658,7 @@ const Dashboard = () => {
                     )}
                   </div>
                   <Button 
-                    onClick={analyzeSentiment} 
+                    onClick={() => file && analyzeSentiment(file, pdfText)} 
                     disabled={!file || isAnalyzing}
                     className="w-full"
                   >
@@ -967,6 +977,7 @@ const Dashboard = () => {
                               className="mt-4"
                               onClick={handleAddWordToComparison}
                             >
+                              <Search className="h-4 w-4 mr-2" />
                               Search Words
                             </Button>
                           </PopoverTrigger>

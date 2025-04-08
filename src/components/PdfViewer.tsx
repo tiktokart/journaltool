@@ -43,7 +43,10 @@ export const PdfViewer = ({ pdfUrl, className = '' }: PdfViewerProps) => {
           sandbox="allow-scripts allow-same-origin"
           // Special Chrome settings to prevent conflicts with 3D visualization
           tabIndex={-1}
-          style={{ pointerEvents: 'auto' }} 
+          style={{ 
+            pointerEvents: 'auto',
+            zIndex: 10
+          }} 
         />
       </CardContent>
     </Card>

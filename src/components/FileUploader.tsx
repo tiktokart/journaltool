@@ -1,5 +1,5 @@
+
 import { useState, useRef, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Upload, FileText, AlertCircle } from 'lucide-react';
@@ -245,9 +245,6 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
                 <AlertCircle className="h-4 w-4" />
                 <span>Supported format: PDF</span>
               </div>
-              <Button className="mt-6" onClick={(e) => e.stopPropagation()}>
-                Select File
-              </Button>
             </>
           )}
         </div>
