@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,12 +117,12 @@ const Dashboard = () => {
         .filter(word => word.length > 3)
         .filter((word, i, arr) => arr.indexOf(word) === i);
       
-      // Use a reasonable number of words for visualization
-      const wordLimit = Math.min(150, significantWords.length);
+      // Use all significant words for visualization, with reasonable limit
+      const wordLimit = Math.min(500, significantWords.length);
       const filteredSignificantWords = significantWords.slice(0, wordLimit);
       
       // Create embedding points using actual text from the document
-      // Fix the type error - passing a number instead of string for the boolean parameter
+      // Fix the type error - passing a boolean instead of string for the boolean parameter
       const mockPoints = generateMockPoints(true, filteredSignificantWords.length, gemma3Results.sentiment);
       
       // Assign real words from the document to the points instead of random words
@@ -320,16 +319,16 @@ const Dashboard = () => {
       setFilteredPoints(results.embeddingPoints || []);
       setAnalysisComplete(true);
       
-      const resultWords = results.embeddingPoints
+      const uniqueResultWords = results.embeddingPoints
         .map((point: Point) => point.word)
         .filter((word: string, index: number, self: string[]) => 
           word && self.indexOf(word) === index
         )
         .sort();
       
-      setUniqueWords(resultWords);
+      setUniqueWords(uniqueResultWords);
       
-      toast.success(`Gemma 3 analysis completed! Analyzed ${results.pdfTextLength} characters of text from your PDF.`);
+      toast.success(`Gemma 3 analysis completed! Analyzed ${results.pdfTextLength} characters and found ${filteredSignificantWords.length} unique words.`);
     } catch (error) {
       toast.error("Error analyzing document with Gemma 3");
       console.error("Gemma 3 analysis error:", error);

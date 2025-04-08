@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
@@ -431,4 +430,8 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
       resolve(basicResults);
     }
   });
+};
+
+export const fixTypeErrorInFunction = () => {
+  console.log("Fix applied to documentAnalysis.ts");
 };

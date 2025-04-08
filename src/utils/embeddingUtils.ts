@@ -4,7 +4,7 @@ import { Point } from '@/types/embedding';
 export const generateMockPoints = (
   depressedJournalReference: boolean | string,
   count: number = 150,
-  sentimentScore?: number
+  sentimentScore?: number | { [key: string]: number }
 ): Point[] => {
   const points: Point[] = [];
   const emotionalTones = ['Joy', 'Sadness', 'Fear', 'Anger', 'Surprise', 'Disgust'];
@@ -12,10 +12,19 @@ export const generateMockPoints = (
     ? depressedJournalReference 
     : depressedJournalReference === 'true';
   
-  // Use provided sentiment score or generate based on depression flag
-  const baseSentimentValue = sentimentScore !== undefined 
-    ? sentimentScore 
-    : isDepressed ? 0.3 : 0.7;
+  // Handle different types for sentimentScore
+  let baseSentimentValue: number;
+  
+  if (sentimentScore === undefined) {
+    baseSentimentValue = isDepressed ? 0.3 : 0.7;
+  } else if (typeof sentimentScore === 'number') {
+    baseSentimentValue = sentimentScore;
+  } else {
+    // If an object was passed, calculate the average of numerical values
+    const values = Object.values(sentimentScore).filter(val => typeof val === 'number');
+    const sum = values.reduce((acc, val) => acc + val, 0);
+    baseSentimentValue = values.length > 0 ? sum / values.length : 0.5;
+  }
   
   // Generate mock point data
   for (let i = 0; i < count; i++) {
@@ -31,7 +40,7 @@ export const generateMockPoints = (
     const z = radius * Math.cos(phi);
     
     // Add some noise and clustering
-    const position = [x, y, z];
+    const position: [number, number, number] = [x, y, z];
     
     // Adjusted sentiment for variation
     let sentiment = baseSentimentValue + (Math.random() * 0.4 - 0.2);
@@ -41,7 +50,7 @@ export const generateMockPoints = (
     const red = isDepressedWord ? 0.8 : 0.2;
     const green = (position[1] + 40) / 80;
     const blue = sentiment; 
-    const color = [red, green, blue];
+    const color: [number, number, number] = [red, green, blue];
     
     const emotionalTone = emotionalTones[Math.floor(Math.random() * emotionalTones.length)];
     
@@ -101,6 +110,15 @@ export const getEmotionColor = (emotion: string): string => {
   };
   
   return colors[emotion] || colors['Neutral'];
+};
+
+// Add getSentimentLabel function
+export const getSentimentLabel = (score: number): string => {
+  if (score >= 0.8) return "Very Positive";
+  if (score >= 0.6) return "Positive";
+  if (score >= 0.4) return "Neutral";
+  if (score >= 0.2) return "Negative";
+  return "Very Negative";
 };
 
 // More utility functions can be added here as needed
