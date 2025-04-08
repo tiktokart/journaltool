@@ -11,10 +11,11 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
-import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen, Info, Settings, Heart, Brain } from "lucide-react";
+import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen, Info, Settings, Heart, Brain, Bug } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
 import { WordComparison } from "@/components/WordComparison";
+import { DebugPanel } from "@/components/DebugPanel";
 import { 
   Command,
   CommandEmpty,
@@ -169,6 +170,8 @@ const Dashboard = () => {
   const [wordSearchOpen, setWordSearchOpen] = useState(false);
   const wordSearchRef = useRef<HTMLDivElement | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [consoleMessages, setConsoleMessages] = useState<{ level: string; message: string; timestamp: string }[]>([]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -253,6 +256,43 @@ const Dashboard = () => {
       }
     }
   }, [sentimentData, pdfText]);
+
+  useEffect(() => {
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+    const originalConsoleWarn = console.warn;
+    const originalConsoleInfo = console.info;
+
+    const interceptConsole = (
+      originalFn: any, 
+      level: string
+    ) => (...args: any[]) => {
+      originalFn(...args);
+      
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+      ).join(' ');
+      
+      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      
+      setConsoleMessages(prev => [
+        { level, message, timestamp },
+        ...prev.slice(0, 99) // Keep last 100 messages
+      ]);
+    };
+
+    console.log = interceptConsole(originalConsoleLog, 'log');
+    console.error = interceptConsole(originalConsoleError, 'error');
+    console.warn = interceptConsole(originalConsoleWarn, 'warn');
+    console.info = interceptConsole(originalConsoleInfo, 'info');
+
+    return () => {
+      console.log = originalConsoleLog;
+      console.error = originalConsoleError;
+      console.warn = originalConsoleWarn;
+      console.info = originalConsoleInfo;
+    };
+  }, []);
 
   const handleFileUpload = (files: File[], extractedText?: string, embedUrl?: string) => {
     if (files && files.length > 0) {
@@ -472,12 +512,56 @@ const Dashboard = () => {
     toast.info(`Removed ${point.word} from comparison`);
   };
 
+  const toggleDebugPanel = () => {
+    setShowDebugPanel(!showDebugPanel);
+    if (!showDebugPanel) {
+      toast.info("Debug panel opened");
+    }
+  };
+
+  const debugState = {
+    file: file ? { 
+      name: file.name, 
+      size: file.size, 
+      type: file.type 
+    } : null,
+    pdfInfo: {
+      hasUrl: Boolean(pdfUrl),
+      textLength: pdfText.length,
+      wordCount: pdfText.split(/\s+/).length
+    },
+    visualizationState: {
+      pointsCount: points.length,
+      filteredCount: filteredPoints.length,
+      selectedWord,
+      selectedCluster,
+      visibleClusterCount
+    },
+    analysisStatus: {
+      isAnalyzing,
+      hasData: Boolean(sentimentData)
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold">Document Analysis</h1>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={toggleDebugPanel}
+              className="flex items-center"
+            >
+              <Bug className="h-4 w-4 mr-2 text-red-500" />
+              Debug
+            </Button>
+          </div>
+          
           <Card className="border border-border shadow-md bg-card">
             <CardHeader>
               <CardTitle>Document Analysis</CardTitle>
@@ -804,6 +888,13 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+      
+      <DebugPanel 
+        appState={debugState}
+        consoleMessages={consoleMessages}
+        isVisible={showDebugPanel}
+        onToggleVisibility={toggleDebugPanel}
+      />
     </div>
   );
 };
