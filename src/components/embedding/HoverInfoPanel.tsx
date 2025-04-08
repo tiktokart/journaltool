@@ -19,11 +19,11 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
   
   // Translate emotional tone
   const getTranslatedEmotion = (emotion: string): string => {
-    const lowerCaseEmotion = emotion.toLowerCase();
-    if (t(lowerCaseEmotion)) {
+    const lowerCaseEmotion = emotion?.toLowerCase();
+    if (lowerCaseEmotion && t(lowerCaseEmotion)) {
       return t(lowerCaseEmotion);
     }
-    return emotion;
+    return emotion || t("neutral");
   };
   
   // Translate sentiment label
@@ -73,7 +73,7 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
             {point.relationships.map((rel, idx) => (
               <li key={idx} className="text-xs flex items-center">
                 <div className="w-1 h-1 rounded-full bg-primary mr-1"></div>
-                <span>{rel.word || `Connection ${idx + 1}`}</span>
+                <span>{rel.word || `${t("connection") || "Connection"} ${idx + 1}`}</span>
               </li>
             ))}
           </div>

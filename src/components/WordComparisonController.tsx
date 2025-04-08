@@ -9,6 +9,7 @@ import { Point } from "@/types/embedding";
 import { WordComparison } from "@/components/WordComparison";
 import { toast } from "sonner";
 import { getEmotionColor } from "@/utils/embeddingUtils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface WordComparisonControllerProps {
   points: Point[];
@@ -27,6 +28,7 @@ export const WordComparisonController = ({
   const [compareSearchOpen, setCompareSearchOpen] = useState(false);
   const [compareSearchTerm, setCompareSearchTerm] = useState("");
   const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
+  const { t } = useLanguage();
 
   // Update search results when points change
   useEffect(() => {
@@ -67,28 +69,28 @@ export const WordComparisonController = ({
 
   const handleAddToComparison = (point: Point) => {
     if (compareWords.length >= 4) {
-      toast.error("You can only compare up to 4 words");
+      toast.error(t("maxComparisonWordsError") || "You can only compare up to 4 words");
       return;
     }
     
     if (compareWords.some(p => p.id === point.id)) {
-      toast.info(`"${point.word}" is already in your comparison`);
+      toast.info(`"${point.word}" ${t("alreadyInComparison") || "is already in your comparison"}`);
       return;
     }
     
     setCompareWords([...compareWords, point]);
     setCompareSearchOpen(false);
-    toast.success(`Added "${point.word}" to comparison`);
+    toast.success(`${t("addedToComparison") || "Added"} "${point.word}" ${t("toComparison") || "to comparison"}`);
   };
 
   const handleRemoveFromComparison = (point: Point) => {
     setCompareWords(compareWords.filter(p => p.id !== point.id));
-    toast.info(`Removed "${point.word}" from comparison`);
+    toast.info(`${t("removedFromComparison") || "Removed"} "${point.word}" ${t("fromComparison") || "from comparison"}`);
   };
 
   const handleClearComparison = () => {
     setCompareWords([]);
-    toast.info("Cleared all comparison words");
+    toast.info(t("clearedAllComparisonWords") || "Cleared all comparison words");
   };
 
   return (
@@ -97,7 +99,7 @@ export const WordComparisonController = ({
         <div className="flex justify-between items-center">
           <CardTitle className="flex items-center text-xl">
             <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
-            Word Comparison
+            {t("wordComparison") || "Word Comparison"}
           </CardTitle>
           
           <div className="flex gap-2">
@@ -108,18 +110,18 @@ export const WordComparisonController = ({
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9">
                   <Search className="h-4 w-4 mr-2" />
-                  Add Word
+                  {t("addWord") || "Add Word"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[300px] p-0" align="end">
                 <Command>
                   <CommandInput 
-                    placeholder="Search words..." 
+                    placeholder={t("searchWords") || "Search words..."} 
                     value={compareSearchTerm}
                     onValueChange={handleCompareSearchChange}
                   />
                   <CommandList>
-                    <CommandEmpty>No matching words</CommandEmpty>
+                    <CommandEmpty>{t("noMatchingWords") || "No matching words"}</CommandEmpty>
                     <CommandGroup>
                       {compareSearchResults.map((point) => (
                         <CommandItem 
@@ -138,7 +140,7 @@ export const WordComparisonController = ({
                             <span>{point.word}</span>
                           </div>
                           <span className="ml-auto text-xs text-muted-foreground">
-                            {point.emotionalTone || "Neutral"}
+                            {point.emotionalTone ? t(point.emotionalTone.toLowerCase()) || point.emotionalTone : t("neutral")}
                           </span>
                         </CommandItem>
                       ))}
@@ -156,7 +158,7 @@ export const WordComparisonController = ({
                 onClick={handleClearComparison}
               >
                 <X className="h-4 w-4 mr-2" />
-                Clear All
+                {t("clearAll") || "Clear All"}
               </Button>
             )}
           </div>

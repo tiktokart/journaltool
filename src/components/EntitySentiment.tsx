@@ -54,7 +54,8 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
                 />
                 <Tooltip 
                   formatter={(value: number) => [
-                    `${t("score")}: ${value.toFixed(2)}`, ""
+                    `${t("score")}: ${value.toFixed(2)}`, 
+                    t("sentiment")
                   ]}
                   contentStyle={{ 
                     borderRadius: '0.5rem',
