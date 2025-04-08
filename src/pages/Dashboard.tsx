@@ -317,7 +317,7 @@ const Dashboard = () => {
   const wordSearchRef = useRef<HTMLDivElement | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [consoleMessages, setConsoleMessages] = useState<{ level: string; message: string; timestamp: string }[]>([]);
+  const consoleMessages = useState<{ level: string; message: string; timestamp: string }[]>([]);
 
   useEffect(() => {
     const originalConsoleLog = console.log;
@@ -773,9 +773,11 @@ const Dashboard = () => {
           
           {showDebugPanel && (
             <DebugPanel 
+              appState={debugState}
               consoleMessages={consoleMessages}
               onClose={() => setShowDebugPanel(false)}
               debugState={debugState}
+              isVisible={true}
             />
           )}
           
@@ -833,7 +835,7 @@ const Dashboard = () => {
                       <CardTitle className="text-xl">Entity Analysis</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <EntitySentiment data={sentimentData.entities} />
+                      <EntitySentiment data={sentimentData.entities} sourceDescription={sentimentData.sourceDescription} />
                     </CardContent>
                   </Card>
                 </TabsContent>
