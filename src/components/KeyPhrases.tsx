@@ -10,9 +10,14 @@ interface KeyPhrasesProps {
     count: number 
   }>;
   sourceDescription?: string; // Add this to show where words came from
+  maxWordsPerCategory?: number; // Add option to control how many words are displayed per category
 }
 
-export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
+export const KeyPhrases = ({ 
+  data, 
+  sourceDescription, 
+  maxWordsPerCategory = 30 // Default to showing more words
+}: KeyPhrasesProps) => {
   // Group words by sentiment
   const positiveItems = data.filter(item => item.sentiment === "positive");
   const neutralItems = data.filter(item => item.sentiment === "neutral");
@@ -33,36 +38,46 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
     }
   };
 
-  // Render word group
+  // Render word group with limited amount based on maxWordsPerCategory
   const renderWordGroup = (
     items: typeof data, 
     title: string, 
     sentimentType: "positive" | "neutral" | "negative"
-  ) => (
-    <div>
-      <h3 className="font-medium text-lg mb-3">{title}</h3>
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No {sentimentType} words detected</p>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          {items.map((item, index) => (
-            <Badge 
-              key={index} 
-              className={`text-sm py-1.5 ${getBadgeVariant(item.sentiment)}`}
-              variant="secondary"
-            >
-              {item.text} ({item.count})
-            </Badge>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  ) => {
+    // Limit the number of words to display per category
+    const displayItems = items.slice(0, maxWordsPerCategory);
+    
+    return (
+      <div>
+        <h3 className="font-medium text-lg mb-3">{title} ({items.length})</h3>
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No {sentimentType} words detected</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {displayItems.map((item, index) => (
+              <Badge 
+                key={index} 
+                className={`text-sm py-1.5 ${getBadgeVariant(item.sentiment)}`}
+                variant="secondary"
+              >
+                {item.text} ({item.count})
+              </Badge>
+            ))}
+            {items.length > maxWordsPerCategory && (
+              <p className="text-xs text-muted-foreground mt-2 w-full">
+                + {items.length - maxWordsPerCategory} more {sentimentType} words not shown
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Card className="border-0 shadow-md w-full">
       <CardHeader>
-        <CardTitle>Most Common Words</CardTitle>
+        <CardTitle>Common Words by Sentiment</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
