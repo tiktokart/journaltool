@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -745,4 +746,496 @@ const Dashboard = () => {
                   >
                     {isAnalyzing ? (
                       <>
-                        <
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="h-4 w-4 mr-2" />
+                        Analyze Document
+                      </>
+                    )}
+                  </Button>
+                  
+                  {pdfUrl && (
+                    <Button 
+                      variant="outline" 
+                      onClick={togglePdfViewer}
+                      className="w-full"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      {showPdfViewer ? "Hide PDF" : "View PDF"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {showDebugPanel && (
+            <DebugPanel 
+              state={debugState} 
+              consoleMessages={consoleMessages}
+              onClose={() => setShowDebugPanel(false)}
+            />
+          )}
+          
+          {showPdfViewer && pdfUrl && (
+            <Card className="border border-border shadow-md bg-card">
+              <CardHeader>
+                <CardTitle className="text-xl flex justify-between items-center">
+                  <span>Document Viewer</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={togglePdfViewer}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[500px] w-full">
+                  <PdfViewer url={pdfUrl} />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {sentimentData && (
+            <>
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="overview">Sentiment Overview</TabsTrigger>
+                  <TabsTrigger value="entities">Entity Analysis</TabsTrigger>
+                  <TabsTrigger value="visualization">Latent Emotional Analysis</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="overview" className="space-y-6">
+                  <Card className="border border-border shadow-md bg-card">
+                    <CardHeader>
+                      <CardTitle className="text-xl">Sentiment Analysis Results</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <SentimentOverview data={sentimentData} />
+                        <div className="space-y-6">
+                          <SentimentTimeline data={sentimentData.timeline} />
+                          <KeyPhrases phrases={sentimentData.keyPhrases} />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="entities" className="space-y-6">
+                  <Card className="border border-border shadow-md bg-card">
+                    <CardHeader>
+                      <CardTitle className="text-xl">Entity Analysis</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EntitySentiment entities={sentimentData.entities} />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="visualization" className="space-y-6">
+                  <Card className="border border-border shadow-md bg-card">
+                    <CardHeader>
+                      <CardTitle className="text-xl">Emotional Document Embedding</CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-6">
+                      <div className="flex mb-4 flex-wrap gap-2">
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8">
+                              <Search className="h-3.5 w-3.5 mr-2" />
+                              Find Word
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent 
+                            className="p-0 w-80" 
+                            side="bottom" 
+                            align="start"
+                            ref={searchDropdownRef}
+                          >
+                            <Command>
+                              <CommandInput 
+                                placeholder="Search words..." 
+                                value={searchTerm}
+                                onValueChange={setSearchTerm}
+                              />
+                              {searchTerm && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-2 top-1.5 h-7 w-7 p-0"
+                                  onClick={handleClearSearch}
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              <CommandEmpty>No words found.</CommandEmpty>
+                              <CommandList className="max-h-60">
+                                <CommandGroup>
+                                  {uniqueWords
+                                    .filter(word => word.includes(searchTerm.toLowerCase()))
+                                    .slice(0, 10)
+                                    .map(word => (
+                                      <CommandItem 
+                                        key={word} 
+                                        onSelect={() => handleSelectWord(word)}
+                                      >
+                                        <CircleDot className="h-3.5 w-3.5 mr-2" />
+                                        {word}
+                                      </CommandItem>
+                                    ))
+                                  }
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        
+                        {selectedWord && (
+                          <Badge variant="secondary" className="h-8 px-3">
+                            {selectedWord}
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-5 w-5 p-0 ml-1 hover:bg-transparent"
+                              onClick={() => {
+                                setSelectedWord(null);
+                                setSelectedPoint(null);
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </Badge>
+                        )}
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8"
+                          onClick={handleResetVisualization}
+                        >
+                          <RotateCcw className="h-3.5 w-3.5 mr-2" />
+                          Reset
+                        </Button>
+                        
+                        {selectedWord && !comparisonWord && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8"
+                            onClick={handleCompareWord}
+                          >
+                            <GitCompareArrows className="h-3.5 w-3.5 mr-2" />
+                            Compare
+                          </Button>
+                        )}
+                        
+                        {showComparison && (
+                          <Popover open={comparisonSearchOpen} onOpenChange={setComparisonSearchOpen}>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-8">
+                                <ArrowLeftRight className="h-3.5 w-3.5 mr-2" />
+                                Compare With...
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent 
+                              className="p-0 w-80" 
+                              side="bottom" 
+                              align="start"
+                              ref={comparisonSearchRef}
+                            >
+                              <Command>
+                                <CommandInput 
+                                  placeholder="Search words for comparison..." 
+                                  value={comparisonSearchTerm}
+                                  onValueChange={setComparisonSearchTerm}
+                                />
+                                <CommandEmpty>No words found.</CommandEmpty>
+                                <CommandList className="max-h-60">
+                                  <CommandGroup>
+                                    {uniqueWords
+                                      .filter(word => 
+                                        word.includes(comparisonSearchTerm.toLowerCase()) && 
+                                        word !== selectedWord
+                                      )
+                                      .slice(0, 10)
+                                      .map(word => (
+                                        <CommandItem 
+                                          key={word} 
+                                          onSelect={() => handleSelectComparisonWord(word)}
+                                        >
+                                          <CircleDot className="h-3.5 w-3.5 mr-2" />
+                                          {word}
+                                        </CommandItem>
+                                      ))
+                                    }
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                        
+                        {comparisonWord && (
+                          <Badge variant="outline" className="h-8 px-3">
+                            {comparisonWord}
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-5 w-5 p-0 ml-1 hover:bg-transparent"
+                              onClick={handleClearComparison}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <div className="h-[500px] w-full">
+                        <DocumentEmbedding 
+                          points={filteredPoints} 
+                          onPointClick={handlePointClick}
+                          focusOnWord={selectedWord || undefined}
+                          comparisonWord={comparisonWord || undefined}
+                          visibleClusterCount={visibleClusterCount}
+                          onResetView={handleResetVisualization}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <Card className="border border-border shadow-md bg-card">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Emotional Clusters</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {emotionalClusters.length > 0 ? (
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">Clusters to display:</span>
+                              <div className="w-32">
+                                <Slider
+                                  value={[visibleClusterCount]}
+                                  min={1}
+                                  max={Math.min(10, emotionalClusters.length)}
+                                  step={1}
+                                  onValueChange={(values) => setVisibleClusterCount(values[0])}
+                                />
+                              </div>
+                              <span className="text-sm font-medium">{visibleClusterCount}</span>
+                            </div>
+                            <div className="space-y-3">
+                              {emotionalClusters.slice(0, visibleClusterCount).map((cluster) => (
+                                <div 
+                                  key={cluster.id} 
+                                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                                    selectedCluster === cluster.name ? 'bg-accent' : 'hover:bg-muted'
+                                  }`}
+                                  onClick={() => handleSelectCluster(cluster)}
+                                >
+                                  <div className="flex justify-between items-center mb-1">
+                                    <div className="flex items-center gap-2">
+                                      <div 
+                                        className="w-3 h-3 rounded-full" 
+                                        style={{ backgroundColor: cluster.color }}
+                                      ></div>
+                                      <span className="font-medium">{cluster.name}</span>
+                                    </div>
+                                    <Badge variant="outline" size="sm">
+                                      {cluster.size} words
+                                    </Badge>
+                                  </div>
+                                  <div className="w-full bg-muted rounded-full h-2 mt-2">
+                                    <div 
+                                      className="h-2 rounded-full" 
+                                      style={{ 
+                                        width: `${Math.max(cluster.sentiment * 100, 5)}%`,
+                                        backgroundColor: cluster.color
+                                      }}
+                                    ></div>
+                                  </div>
+                                  {clusterExpanded[cluster.name] && clusterPoints[cluster.name] && (
+                                    <div className="mt-2 grid grid-cols-2 gap-1 pt-2 border-t">
+                                      {clusterPoints[cluster.name].slice(0, 6).map((point) => (
+                                        <span 
+                                          key={point.id} 
+                                          className="text-xs truncate"
+                                          title={point.word}
+                                        >
+                                          {point.word}
+                                        </span>
+                                      ))}
+                                      {clusterPoints[cluster.name].length > 6 && (
+                                        <span className="text-xs text-muted-foreground">
+                                          + {clusterPoints[cluster.name].length - 6} more
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full h-6 mt-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleClusterExpanded(cluster.name);
+                                    }}
+                                  >
+                                    {clusterExpanded[cluster.name] ? 'Less' : 'More'}
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex justify-center items-center h-40">
+                            <p className="text-muted-foreground">No cluster data available</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="border border-border shadow-md bg-card">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Word Comparisons</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex flex-wrap gap-2">
+                            {wordsForComparison.map((point) => (
+                              <Badge 
+                                key={point.id} 
+                                variant="secondary"
+                                className="flex items-center gap-1 py-1"
+                              >
+                                {point.word}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
+                                  onClick={() => handleRemoveWordFromComparison(point)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            ))}
+                            
+                            {wordsForComparison.length < 4 && (
+                              <Popover open={wordSearchOpen} onOpenChange={setWordSearchOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button variant="outline" size="sm" className="h-8">
+                                    <CircleDot className="h-3.5 w-3.5 mr-2" />
+                                    Add Word
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent 
+                                  className="p-0 w-80" 
+                                  side="bottom" 
+                                  align="start"
+                                  ref={wordSearchRef}
+                                >
+                                  <Command>
+                                    <CommandInput 
+                                      placeholder="Search words..." 
+                                      value={wordSearchTerm}
+                                      onValueChange={setWordSearchTerm}
+                                    />
+                                    <CommandEmpty>No words found.</CommandEmpty>
+                                    <CommandList className="max-h-60">
+                                      <CommandGroup>
+                                        {uniqueWords
+                                          .filter(word => word.includes(wordSearchTerm.toLowerCase()))
+                                          .slice(0, 10)
+                                          .map(word => (
+                                            <CommandItem 
+                                              key={word} 
+                                              onSelect={() => handleSelectWordForComparison(word)}
+                                            >
+                                              <CircleDot className="h-3.5 w-3.5 mr-2" />
+                                              {word}
+                                            </CommandItem>
+                                          ))
+                                        }
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </div>
+                          
+                          {wordsForComparison.length >= 2 ? (
+                            <WordComparison words={wordsForComparison} />
+                          ) : (
+                            <div className="py-6 text-center">
+                              <p className="text-muted-foreground">Add at least two words to compare</p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            
+              {showWellbeingSuggestions && (
+                <Card className="border border-border shadow-md bg-card">
+                  <CardHeader>
+                    <CardTitle className="text-xl">Wellbeing Suggestions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {wellbeingSuggestions.map((suggestion, index) => (
+                        <div 
+                          key={index} 
+                          className="p-4 rounded-lg border border-border bg-card hover:bg-accent/10 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            {suggestion.icon}
+                            <h3 className="font-medium">{suggestion.title}</h3>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{suggestion.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-6">
+                      <h3 className="font-medium mb-3 flex items-center gap-2">
+                        <Info className="h-4 w-4 text-blue-500" />
+                        Mental Health Resources
+                      </h3>
+                      <div className="space-y-3">
+                        {mentalHealthResources.map((resource, index) => (
+                          <div key={index} className="text-sm">
+                            <a 
+                              href={resource.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="font-medium hover:underline text-blue-600 dark:text-blue-400"
+                            >
+                              {resource.name}
+                            </a>
+                            <p className="text-muted-foreground">{resource.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
