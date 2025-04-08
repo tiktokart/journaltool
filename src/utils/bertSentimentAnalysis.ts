@@ -1,7 +1,11 @@
+
 import { pipeline } from "@huggingface/transformers";
 
 // Cache for the sentiment analysis pipeline to avoid reloading the model
 let sentimentPipeline: any = null;
+let isModelLoading = false;
+let modelLoadAttempts = 0;
+const MAX_LOAD_ATTEMPTS = 3;
 
 export interface SentimentResult {
   label: string;
@@ -13,19 +17,34 @@ export interface SentimentResult {
  * Initialize the BERT sentiment analysis model
  */
 export const initBertModel = async (): Promise<void> => {
-  if (!sentimentPipeline) {
-    try {
-      console.log("Initializing BERT sentiment analysis model...");
-      // Use a smaller distilled BERT model for faster loading and inference
-      sentimentPipeline = await pipeline(
-        "sentiment-analysis",
-        "distilbert-base-uncased-finetuned-sst-2-english"
-      );
-      console.log("BERT model loaded successfully");
-    } catch (error) {
-      console.error("Error loading BERT model:", error);
-      throw new Error("Failed to load BERT model");
-    }
+  // If model is already loaded or currently loading, don't try to load it again
+  if (sentimentPipeline || isModelLoading) {
+    return;
+  }
+  
+  // If we've already tried to load the model too many times, don't try again
+  if (modelLoadAttempts >= MAX_LOAD_ATTEMPTS) {
+    throw new Error(`Failed to load BERT model after ${MAX_LOAD_ATTEMPTS} attempts`);
+  }
+  
+  isModelLoading = true;
+  modelLoadAttempts++;
+  
+  try {
+    console.log("Initializing BERT sentiment analysis model...");
+    // Use a smaller distilled BERT model for faster loading and inference
+    sentimentPipeline = await pipeline(
+      "sentiment-analysis",
+      "distilbert-base-uncased-finetuned-sst-2-english"
+    );
+    console.log("BERT model loaded successfully");
+    
+    // Reset loading state and attempts after successful load
+    isModelLoading = false;
+  } catch (error) {
+    console.error("Error loading BERT model:", error);
+    isModelLoading = false;
+    throw new Error("Failed to load BERT model");
   }
 };
 
@@ -35,13 +54,34 @@ export const initBertModel = async (): Promise<void> => {
  * @returns Promise resolving to sentiment result
  */
 export const analyzeSentiment = async (text: string): Promise<SentimentResult> => {
+  // Skip empty or very short text
+  if (!text || text.trim().length < 2) {
+    return {
+      label: "NEUTRAL",
+      score: 0.5,
+      normalizedScore: 0.5
+    };
+  }
+  
   if (!sentimentPipeline) {
-    await initBertModel();
+    try {
+      await initBertModel();
+    } catch (error) {
+      console.warn("Falling back to neutral sentiment due to model initialization failure:", error);
+      return {
+        label: "NEUTRAL",
+        score: 0.5,
+        normalizedScore: 0.5
+      };
+    }
   }
 
   try {
+    // Limit text length to avoid memory issues with very long text
+    const truncatedText = text.length > 2000 ? text.substring(0, 2000) : text;
+    
     // Analyze the sentiment using the pipeline
-    const result = await sentimentPipeline(text);
+    const result = await sentimentPipeline(truncatedText);
     
     if (!result || result.length === 0) {
       throw new Error("No result from sentiment analysis");
@@ -77,22 +117,52 @@ export const analyzeSentiment = async (text: string): Promise<SentimentResult> =
  * @returns Promise resolving to array of sentiment results
  */
 export const batchAnalyzeSentiment = async (texts: string[]): Promise<SentimentResult[]> => {
+  // Filter out empty texts
+  const validTexts = texts.filter(text => text && text.trim().length >= 2);
+  
+  if (validTexts.length === 0) {
+    return [];
+  }
+  
   if (!sentimentPipeline) {
-    await initBertModel();
+    try {
+      await initBertModel();
+    } catch (error) {
+      console.warn("Falling back to neutral sentiments due to model initialization failure:", error);
+      return validTexts.map(() => ({
+        label: "NEUTRAL",
+        score: 0.5,
+        normalizedScore: 0.5
+      }));
+    }
   }
 
   // For small batches, process sequentially to avoid memory issues
-  if (texts.length <= 10) {
-    const results: SentimentResult[] = [];
-    for (const text of texts) {
-      results.push(await analyzeSentiment(text));
+  if (validTexts.length <= 10) {
+    try {
+      const results: SentimentResult[] = [];
+      for (const text of validTexts) {
+        results.push(await analyzeSentiment(text));
+      }
+      return results;
+    } catch (error) {
+      console.error("Error in sequential batch sentiment analysis:", error);
+      return validTexts.map(() => ({
+        label: "NEUTRAL",
+        score: 0.5,
+        normalizedScore: 0.5
+      }));
     }
-    return results;
   }
 
   try {
+    // Truncate long texts to avoid memory issues
+    const truncatedTexts = validTexts.map(text => 
+      text.length > 2000 ? text.substring(0, 2000) : text
+    );
+    
     // For larger batches, use the pipeline's native batching
-    const rawResults = await sentimentPipeline(texts);
+    const rawResults = await sentimentPipeline(truncatedTexts);
     
     return rawResults.map((result: any) => {
       const { label, score } = result;
@@ -108,12 +178,23 @@ export const batchAnalyzeSentiment = async (texts: string[]): Promise<SentimentR
     });
   } catch (error) {
     console.error("Error batch analyzing sentiment:", error);
-    // Return neutral sentiments if analysis fails
-    return texts.map(() => ({
-      label: "NEUTRAL",
-      score: 0.5,
-      normalizedScore: 0.5
-    }));
+    // Try sequential processing if batch processing fails
+    try {
+      console.log("Falling back to sequential processing for batch sentiment analysis");
+      const results: SentimentResult[] = [];
+      for (const text of validTexts) {
+        results.push(await analyzeSentiment(text));
+      }
+      return results;
+    } catch (secondError) {
+      console.error("Sequential fallback also failed:", secondError);
+      // Return neutral sentiments if both methods fail
+      return validTexts.map(() => ({
+        label: "NEUTRAL",
+        score: 0.5,
+        normalizedScore: 0.5
+      }));
+    }
   }
 };
 
