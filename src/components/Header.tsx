@@ -1,10 +1,33 @@
 
 import { Link } from "react-router-dom";
-import { FileText, Menu, X } from "lucide-react";
+import { FileText, Menu, X, Globe } from "lucide-react";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+// Supported languages with their display names
+const LANGUAGES = {
+  en: "English",
+  es: "Español",
+  fr: "Français",
+  de: "Deutsch",
+  zh: "中文",
+};
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState("en");
+
+  const handleLanguageChange = (lang: string) => {
+    setCurrentLanguage(lang);
+    // Here we would normally trigger translation of the entire app
+    // For now we just update the state for demonstration
+    console.log(`Language changed to: ${lang}`);
+  };
 
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
@@ -16,14 +39,43 @@ export const Header = () => {
           </Link>
           
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-foreground/80 hover:text-foreground transition-colors">
-              Home
-            </Link>
-            <Link to="/dashboard" className="text-foreground/80 hover:text-foreground transition-colors">
-              Dashboard
-            </Link>
-          </nav>
+          <div className="hidden md:flex items-center space-x-8">
+            <nav className="flex items-center space-x-8">
+              <Link to="/" className="text-foreground/80 hover:text-foreground transition-colors">
+                {currentLanguage === "en" ? "Home" : 
+                 currentLanguage === "es" ? "Inicio" :
+                 currentLanguage === "fr" ? "Accueil" :
+                 currentLanguage === "de" ? "Startseite" :
+                 currentLanguage === "zh" ? "首页" : "Home"}
+              </Link>
+              <Link to="/dashboard" className="text-foreground/80 hover:text-foreground transition-colors">
+                {currentLanguage === "en" ? "Dashboard" : 
+                 currentLanguage === "es" ? "Panel" :
+                 currentLanguage === "fr" ? "Tableau de bord" :
+                 currentLanguage === "de" ? "Dashboard" :
+                 currentLanguage === "zh" ? "仪表板" : "Dashboard"}
+              </Link>
+            </nav>
+            
+            {/* Language Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center text-foreground/80 hover:text-foreground transition-colors">
+                <Globe className="h-5 w-5 mr-1" />
+                <span className="text-sm">{LANGUAGES[currentLanguage as keyof typeof LANGUAGES]}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-background border border-border">
+                {Object.entries(LANGUAGES).map(([code, name]) => (
+                  <DropdownMenuItem 
+                    key={code}
+                    onClick={() => handleLanguageChange(code)}
+                    className={currentLanguage === code ? "bg-accent/50" : ""}
+                  >
+                    {name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           
           {/* Mobile Menu Button */}
           <button 
@@ -47,15 +99,52 @@ export const Header = () => {
                 className="text-foreground/80 hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Home
+                {currentLanguage === "en" ? "Home" : 
+                 currentLanguage === "es" ? "Inicio" :
+                 currentLanguage === "fr" ? "Accueil" :
+                 currentLanguage === "de" ? "Startseite" :
+                 currentLanguage === "zh" ? "首页" : "Home"}
               </Link>
               <Link 
                 to="/dashboard" 
                 className="text-foreground/80 hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Dashboard
+                {currentLanguage === "en" ? "Dashboard" : 
+                 currentLanguage === "es" ? "Panel" :
+                 currentLanguage === "fr" ? "Tableau de bord" :
+                 currentLanguage === "de" ? "Dashboard" :
+                 currentLanguage === "zh" ? "仪表板" : "Dashboard"}
               </Link>
+              
+              {/* Mobile Language Selector */}
+              <div className="border-t border-border pt-4 mt-2">
+                <p className="text-sm text-foreground/60 mb-2">
+                  {currentLanguage === "en" ? "Select Language" : 
+                   currentLanguage === "es" ? "Seleccionar idioma" :
+                   currentLanguage === "fr" ? "Choisir la langue" :
+                   currentLanguage === "de" ? "Sprache auswählen" :
+                   currentLanguage === "zh" ? "选择语言" : "Select Language"}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(LANGUAGES).map(([code, name]) => (
+                    <button
+                      key={code}
+                      onClick={() => {
+                        handleLanguageChange(code);
+                        setIsMenuOpen(false);
+                      }}
+                      className={`py-2 px-3 text-sm rounded-md transition-colors ${
+                        currentLanguage === code 
+                          ? "bg-primary/10 text-primary" 
+                          : "hover:bg-accent/50"
+                      }`}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </nav>
           </div>
         )}
