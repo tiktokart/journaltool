@@ -155,7 +155,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
           </p>
         </div>
         
-        {/* Improved Analysis Method Selection */}
+        {/* Improved Analysis Method Selection - with Gemma 3 on the right side */}
         <div className="flex flex-col w-full max-w-xs gap-3 my-3">
           <p className="text-sm font-medium text-muted-foreground">
             Document Analysis Method
