@@ -783,3 +783,24 @@ const Dashboard = () => {
                                     className="cursor-pointer"
                                     onClick={() => handlePointClick(point)}
                                   >
+                                    {point.word}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
