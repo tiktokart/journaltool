@@ -2,6 +2,7 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, Home, MousePointer } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ZoomControlsProps {
   onZoomIn: () => void;
@@ -14,6 +15,8 @@ export const ZoomControls = ({
   onZoomOut, 
   onResetZoom
 }: ZoomControlsProps) => {
+  const { t } = useLanguage();
+  
   return (
     <div className="absolute bottom-4 left-4 flex flex-col space-y-2">
       <TooltipProvider>
@@ -23,7 +26,7 @@ export const ZoomControls = ({
               <ZoomIn className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Zoom In</TooltipContent>
+          <TooltipContent>{t("zoomIn")}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
       
@@ -34,7 +37,7 @@ export const ZoomControls = ({
               <ZoomOut className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Zoom Out</TooltipContent>
+          <TooltipContent>{t("zoomOut")}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
       
@@ -46,7 +49,7 @@ export const ZoomControls = ({
                 <Home className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Reset View</TooltipContent>
+            <TooltipContent>{t("resetView")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -59,7 +62,7 @@ export const ZoomControls = ({
             </div>
           </TooltipTrigger>
           <TooltipContent className="max-w-[200px]">
-            <p>Hold middle mouse button and move to pan in any direction</p>
+            <p>{t("holdMiddleMouseButton")}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

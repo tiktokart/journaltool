@@ -1,6 +1,8 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Info } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SentimentTimelineProps {
   data: Array<{ page: number; score: number }>;
@@ -8,6 +10,8 @@ interface SentimentTimelineProps {
 }
 
 export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimelineProps) => {
+  const { t } = useLanguage();
+  
   // Determine color for each point based on score
   const getColor = (score: number) => {
     if (score >= 0.6) return "#27AE60";
@@ -23,12 +27,12 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
   return (
     <Card className="border-0 shadow-md w-full">
       <CardHeader>
-        <CardTitle>Sentiment Timeline</CardTitle>
+        <CardTitle>{t("sentimentTimeline")}</CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
           <div className="h-80 w-full flex items-center justify-center">
-            <p className="text-muted-foreground">No timeline data available</p>
+            <p className="text-muted-foreground">{t("noDataAvailable")}</p>
           </div>
         ) : (
           <div className="h-80 w-full">
@@ -46,18 +50,18 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                 <XAxis 
                   dataKey="page" 
-                  label={{ value: 'Page Number', position: 'insideBottom', offset: -10 }} 
+                  label={{ value: t("pageNumber"), position: 'insideBottom', offset: -10 }} 
                 />
                 <YAxis 
                   domain={[0, 1]} 
-                  label={{ value: 'Sentiment Score', angle: -90, position: 'insideLeft', offset: -5 }}
+                  label={{ value: t("sentimentScore"), angle: -90, position: 'insideLeft', offset: -5 }}
                 />
                 <Tooltip 
                   formatter={(value: number) => [
-                    `Score: ${value.toFixed(2)}`,
-                    'Sentiment'
+                    `${t("score")}: ${value.toFixed(2)}`,
+                    t("sentiment")
                   ]}
-                  labelFormatter={(label) => `Page ${label}`}
+                  labelFormatter={(label) => `${t("page")} ${label}`}
                   contentStyle={{ 
                     borderRadius: '0.5rem',
                     border: 'none',
@@ -68,19 +72,19 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   y={averageSentiment} 
                   stroke="#8884d8" 
                   strokeDasharray="3 3" 
-                  label={{ value: `Avg: ${averageSentiment.toFixed(2)}`, position: 'right' }} 
+                  label={{ value: `${t("average")}: ${averageSentiment.toFixed(2)}`, position: 'right' }} 
                 />
                 <ReferenceLine 
                   y={0.6} 
                   stroke="#27AE60" 
                   strokeDasharray="3 3" 
-                  label={{ value: 'Positive', position: 'left', fill: '#27AE60' }} 
+                  label={{ value: t("positive"), position: 'left', fill: '#27AE60' }} 
                 />
                 <ReferenceLine 
                   y={0.4} 
                   stroke="#E74C3C" 
                   strokeDasharray="3 3" 
-                  label={{ value: 'Negative', position: 'left', fill: '#E74C3C' }} 
+                  label={{ value: t("negative"), position: 'left', fill: '#E74C3C' }} 
                 />
                 <Area 
                   type="monotone" 
@@ -113,7 +117,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
               {sourceDescription}
             </div>
           ) : (
-            "This chart shows sentiment fluctuations across the pages of your document."
+            t("timelineDescription")
           )}
         </div>
       </CardContent>

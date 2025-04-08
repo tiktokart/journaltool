@@ -1,4 +1,3 @@
-
 import { Point } from '@/types/embedding';
 
 export const generateMockPoints = (
@@ -112,7 +111,6 @@ export const getEmotionColor = (emotion: string): string => {
   return colors[emotion] || colors['Neutral'];
 };
 
-// Add getSentimentLabel function
 export const getSentimentLabel = (score: number): string => {
   if (score >= 0.8) return "Very Positive";
   if (score >= 0.6) return "Positive";
@@ -120,5 +118,3 @@ export const getSentimentLabel = (score: number): string => {
   if (score >= 0.2) return "Negative";
   return "Very Negative";
 };
-
-// More utility functions can be added here as needed

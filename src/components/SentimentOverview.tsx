@@ -1,7 +1,9 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Info } from "lucide-react"; 
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SentimentOverviewProps {
   data: {
@@ -20,13 +22,14 @@ interface SentimentOverviewProps {
 }
 
 export const SentimentOverview = ({ data, sourceDescription }: SentimentOverviewProps) => {
+  const { t } = useLanguage();
   const { overallSentiment, distribution, fileName } = data;
   
   // Prepare data for pie chart
   const pieData = [
-    { name: "Positive", value: distribution.positive, color: "#27AE60" },
-    { name: "Neutral", value: distribution.neutral, color: "#3498DB" },
-    { name: "Negative", value: distribution.negative, color: "#E74C3C" },
+    { name: t("positive"), value: distribution.positive, color: "#27AE60" },
+    { name: t("neutral"), value: distribution.neutral, color: "#3498DB" },
+    { name: t("negative"), value: distribution.negative, color: "#E74C3C" },
   ];
 
   // Determine sentiment color
@@ -37,12 +40,21 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
   };
 
   const sentimentColor = getSentimentColor(overallSentiment.score);
+  
+  // Translate sentiment label
+  const getTranslatedSentiment = (label: string): string => {
+    const key = label.toLowerCase().replace(/\s+/g, '');
+    if (t(key)) {
+      return t(key);
+    }
+    return label;
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className="border-0 shadow-md md:col-span-1">
         <CardHeader>
-          <CardTitle>Overall Sentiment</CardTitle>
+          <CardTitle>{t("overallSentiment")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center">
           <div className="w-32 h-32 rounded-full border-8 border-muted flex items-center justify-center mb-6">
@@ -53,12 +65,12 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
             </div>
           </div>
 
-          <h3 className="text-2xl font-bold mb-2">{overallSentiment.label}</h3>
+          <h3 className="text-2xl font-bold mb-2">{getTranslatedSentiment(overallSentiment.label)}</h3>
           <p className="text-sm text-muted-foreground text-center">
             {fileName ? (
-              <>Your document <strong>{fileName}</strong> has an overall {overallSentiment.label.toLowerCase()} sentiment</>
+              <>{t("documentWithName")} <strong>{fileName}</strong> {t("hasSentiment")} {getTranslatedSentiment(overallSentiment.label.toLowerCase())} {t("sentiment")}</>
             ) : (
-              <>Your document has an overall {overallSentiment.label.toLowerCase()} sentiment</>
+              <>{t("documentSentiment")} {getTranslatedSentiment(overallSentiment.label.toLowerCase())} {t("sentiment")}</>
             )}
           </p>
         </CardContent>
@@ -66,7 +78,7 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
 
       <Card className="border-0 shadow-md md:col-span-2">
         <CardHeader>
-          <CardTitle>Sentiment Distribution</CardTitle>
+          <CardTitle>{t("sentimentDistribution")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row items-center gap-8">
           <div className="w-full md:w-1/2 h-64">
@@ -86,7 +98,7 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value) => [`${value}%`, 'Sentiment']}
+                  formatter={(value) => [`${value}%`, t("sentiment")]}
                   contentStyle={{ 
                     borderRadius: '0.5rem',
                     border: 'none',
