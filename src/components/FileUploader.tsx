@@ -155,22 +155,29 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
           </p>
         </div>
         
-        {/* Analysis Method Selection */}
-        <div className="flex gap-2 my-2">
-          <Button
-            variant={analysisMethod === "bert" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setAnalysisMethod("bert")}
-          >
-            Analyze with BERT
-          </Button>
-          <Button
-            variant={analysisMethod === "gemma3" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setAnalysisMethod("gemma3")}
-          >
-            Analyze with Gemma 3
-          </Button>
+        {/* Improved Analysis Method Selection */}
+        <div className="flex flex-col w-full max-w-xs gap-3 my-3">
+          <p className="text-sm font-medium text-muted-foreground">
+            Document Analysis Method
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={analysisMethod === "bert" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAnalysisMethod("bert")}
+              className="flex justify-center items-center h-10"
+            >
+              <span className="font-medium">Analyze with BERT</span>
+            </Button>
+            <Button
+              variant={analysisMethod === "gemma3" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAnalysisMethod("gemma3")}
+              className="flex justify-center items-center h-10"
+            >
+              <span className="font-medium">Analyze with Gemma 3</span>
+            </Button>
+          </div>
         </div>
         
         <div className="mt-2">
@@ -178,6 +185,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
             variant="outline"
             onClick={() => document.getElementById("file-upload")?.click()}
             disabled={isExtracting}
+            className="font-medium"
           >
             {isExtracting ? (
               <>{t("analyzingDocument") || "Extracting text..."}</>
