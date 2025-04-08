@@ -39,17 +39,14 @@ const getRGBColorString = (color: number[]): string => {
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
-      // Process the actual text from the PDF for analysis
       console.log(`Analyzing PDF text of length: ${pdfText.length} from file: ${fileName}`);
       
-      // Extract real words from the PDF text
       const words = pdfText
         .toLowerCase()
         .split(/\s+/)
         .map(word => word.replace(/[^\w\s]|_/g, ""))
         .filter(word => word.length > 2);
       
-      // Count word frequencies
       const wordFrequency: Record<string, number> = {};
       words.forEach(word => {
         if (wordFrequency[word]) {
@@ -59,7 +56,6 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
         }
       });
       
-      // Get top words for key phrases
       const topWords = Object.entries(wordFrequency)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 12)
@@ -70,7 +66,6 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
           occurrences: count
         }));
       
-      // Generate entities from the actual text
       const potentialEntities = [
         "Anxiety", "Depression", "Therapy", "Medication", 
         "Doctor", "Family", "Work", "Sleep",
@@ -82,7 +77,6 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
         const matches = pdfText.match(regex);
         const mentions = matches ? matches.length : 0;
         
-        // Only include entities that actually appear in the text
         if (mentions > 0) {
           return {
             name: entity,
@@ -99,7 +93,6 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
         return null;
       }).filter(Boolean) as Array<any>;
       
-      // Calculate an actual sentiment score based on word presence
       const positiveWords = ["good", "better", "improve", "happy", "calm", "relax", "hope", "positive", "therapy", "help"];
       const negativeWords = ["anxiety", "panic", "fear", "nervous", "worried", "stress", "bad", "trouble", "difficult", "overwhelm"];
       
@@ -118,7 +111,6 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
       if (sentimentScore >= 0.6) sentimentLabel = "Positive";
       else if (sentimentScore < 0.4) sentimentLabel = "Negative";
       
-      // Create actual distribution based on word counts
       const positivePercentage = Math.round((positiveCount / totalSentimentWords) * 100);
       const negativePercentage = Math.round((negativeCount / totalSentimentWords) * 100);
       const neutralPercentage = Math.max(0, 100 - positivePercentage - negativePercentage);
@@ -138,7 +130,6 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
           const sectionEnd = Math.floor((i + 1) * pdfText.length / 20);
           const section = pdfText.substring(sectionStart, sectionEnd);
           
-          // Calculate local sentiment for this section
           let localPositive = 0;
           let localNegative = 0;
           section.toLowerCase().split(/\s+/).forEach(word => {
@@ -224,7 +215,7 @@ const sampleData = {
     { name: "Support System", size: 6, sentiment: 0.7 },
     { name: "Coping Strategies", size: 9, sentiment: 0.6 },
   ],
-  summary: "Journal Entry 12: The anxiety symptoms were particularly intense today. Experienced a panic attack during the team meeting with racing heart and shortness of breath. Therapy techniques helped somewhat, but still feeling overwhelmed. The new medication adjustment might be contributing to sleep disturbance. Need to practice more mindfulness and breathing exercises.",
+  summary: "Journal Entry 12: The anxiety symptoms were particularly intense today. Experienced a panic attack during the team meeting with racing heart and shortness of breath. Therapy techniques helped somewhat, but still feeling overwhelmed. The new medication adjustment might be causing these more intense episodes. I've also been having trouble sleeping, which probably isn't helping. My therapist suggested more mindfulness practice and identifying specific triggers. My support system at home has been helpful, but I'm still struggling at work. I need to find better coping mechanisms for these situations.",
   fileName: "Journal Entry 12.pdf",
   fileSize: 1024 * 100, // 100KB mock size
   wordCount: 432, // Mock word count
@@ -317,7 +308,7 @@ const Dashboard = () => {
   const wordSearchRef = useRef<HTMLDivElement | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [consoleMessages, setConsoleMessages] = useState<Array<{ level: string; message: string; timestamp: string }>>([]);
+  const consoleMessages = useState<Array<{ level: string; message: string; timestamp: string }>>([]);
 
   useEffect(() => {
     const originalConsoleLog = console.log;
@@ -456,13 +447,11 @@ const Dashboard = () => {
         toast.info(`Extracted ${wordCount} words from PDF for analysis`);
         console.log(`PDF text extracted with ${wordCount} words. Beginning analysis...`);
         
-        // Pass the actual file and extracted text for analysis
         analyzeSentiment(file, extractedText);
       } else {
         toast.warning("Could not extract text properly, using sample text instead");
         console.warn("PDF text extraction failed, using fallback text");
         
-        // Fallback to sample text in case of extraction failure
         const fallbackText = sampleJournalText;
         setPdfText(fallbackText);
         
@@ -481,7 +470,6 @@ const Dashboard = () => {
       console.log(`Starting sentiment analysis for file: ${file.name}`);
       const results = await analyzePdfContent(text, file.name);
       
-      // Store analysis results
       setSentimentData({
         ...results,
         fileName: file.name,
@@ -495,7 +483,6 @@ const Dashboard = () => {
       console.error("Error analyzing sentiment:", error);
       toast.error("Failed to analyze document");
       
-      // Provide fallback data
       const mockData = {
         overallSentiment: {
           score: 0.3,
@@ -745,3 +732,42 @@ const Dashboard = () => {
                   >
                     {isAnalyzing ? (
                       <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <CircleDot className="h-4 w-4 mr-2" />
+                        Analyze Content
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Rest of the Dashboard component */}
+          {/* ... keep existing code (remainder of the component) */}
+        </div>
+      </main>
+      
+      {showDebugPanel && (
+        <DebugPanel 
+          debugState={debugState}
+          consoleMessages={consoleMessages}
+          onClose={() => setShowDebugPanel(false)}
+        />
+      )}
+      
+      {showPdfViewer && pdfUrl && (
+        <PdfViewer 
+          pdfUrl={pdfUrl}
+          onClose={togglePdfViewer}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Dashboard;
