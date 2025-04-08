@@ -24,6 +24,7 @@ interface DebugPanelProps {
   appState: any;
   consoleMessages?: {level: string; message: string; timestamp: string}[];
   isVisible?: boolean;
+  onClose?: () => void;
   onToggleVisibility?: () => void;
 }
 
@@ -31,6 +32,7 @@ export const DebugPanel = ({
   appState, 
   consoleMessages = [], 
   isVisible = true, 
+  onClose,
   onToggleVisibility 
 }: DebugPanelProps) => {
   const [activeTab, setActiveTab] = useState("state");
@@ -70,7 +72,7 @@ export const DebugPanel = ({
               variant="ghost" 
               size="icon" 
               className="h-7 w-7" 
-              onClick={onToggleVisibility}
+              onClick={onClose || onToggleVisibility}
             >
               <X className="h-4 w-4" />
             </Button>

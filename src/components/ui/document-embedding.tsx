@@ -10,7 +10,7 @@ interface DocumentEmbeddingWrapperProps {
   sourceDescription?: string;
   onResetView?: () => void;
   visibleClusterCount?: number;
-  onComparePoint?: (point: Point) => void;
+  onComparePoint?: (point1: Point, point2: Point) => void;
   onSearchSelect?: (point: Point) => void;
 }
 
