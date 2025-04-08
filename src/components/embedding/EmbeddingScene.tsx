@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -71,6 +72,10 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   useEffect(() => {
     if (!points.length) return;
     
+    // Log point counts for debugging
+    console.log(`EmbeddingScene received ${points.length} points`);
+    console.log(`showAllPoints is set to: ${showAllPoints}`);
+    
     const emotionCounts: Record<string, number> = {};
     points.forEach(point => {
       const emotion = point.emotionalTone || "Neutral";
@@ -84,12 +89,16 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     activeEmotionalGroupsRef.current = sortedEmotions.slice(0, visibleClusterCount);
     
     if (selectedEmotionalGroup) {
+      // Filter for specific emotional group
       filteredPointsRef.current = points.filter(p => 
         (p.emotionalTone || "Neutral") === selectedEmotionalGroup
       );
     } else if (showAllPoints) {
+      // Show all points regardless of group
       filteredPointsRef.current = points;
+      console.log(`Displaying all ${points.length} points`);
     } else {
+      // Show only points from top emotional groups
       filteredPointsRef.current = points.filter(p => 
         activeEmotionalGroupsRef.current.includes(p.emotionalTone || "Neutral")
       );

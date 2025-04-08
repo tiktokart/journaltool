@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -296,6 +295,8 @@ const Index = () => {
                     onComparePoint={handlePointCompare}
                     onSearchSelect={handleVisualSearchSelect}
                     points={points}
+                    wordCount={points.length}
+                    showAllPoints={true}
                   />
                 </div>
               </div>

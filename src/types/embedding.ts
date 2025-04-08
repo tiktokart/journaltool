@@ -22,4 +22,5 @@ export interface DocumentEmbeddingProps {
   onResetView?: () => void;
   visibleClusterCount?: number;  // Controls the number of emotional clusters displayed
   showAllPoints?: boolean;      // Added to control showing all points regardless of cluster
+  wordCount?: number;           // Add a prop to display the total word count
 }

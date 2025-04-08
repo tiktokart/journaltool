@@ -24,7 +24,8 @@ export const DocumentEmbedding = ({
   sourceDescription,
   onResetView,
   visibleClusterCount = 8,
-  showAllPoints = true
+  showAllPoints = true,
+  wordCount
 }: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -233,7 +234,10 @@ export const DocumentEmbedding = ({
       
       <div className="absolute top-3 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md">
         <CircleDot className="h-4 w-4 mr-2" />
-        <span>Hover or click on words to see emotional groupings.</span>
+        <span>
+          {wordCount ? `Showing all ${wordCount} words` : 
+           `Showing ${displayPoints.length} ${showAllPoints ? 'words' : 'emotional groupings'}`}
+        </span>
       </div>
       
       {filterApplied && (
