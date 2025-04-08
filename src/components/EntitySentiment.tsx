@@ -56,7 +56,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
                   formatter={(value: number, name, entry) => {
                     const { payload } = entry as any;
                     return [
-                      `${t("score")}: ${value.toFixed(2)}, ${t("mention", { count: payload.mentions })}`,
+                      `${t("score")}: ${value.toFixed(2)}, ${t("mentions", { count: payload.mentions })}`,
                       payload.name
                     ];
                   }}

@@ -1,9 +1,10 @@
+
 import { Point } from '@/types/embedding';
 
 export const generateMockPoints = (
   depressedJournalReference: boolean | string,
-  count: number = 150,
-  sentimentScore?: number | { [key: string]: number }
+  emotionalDistribution?: { [key: string]: number },
+  customWordBank?: string[]
 ): Point[] => {
   const points: Point[] = [];
   const emotionalTones = ['Joy', 'Sadness', 'Fear', 'Anger', 'Surprise', 'Disgust'];
@@ -11,23 +12,38 @@ export const generateMockPoints = (
     ? depressedJournalReference 
     : depressedJournalReference === 'true';
   
-  // Handle different types for sentimentScore
-  let baseSentimentValue: number;
+  // Define count based on custom word bank if available
+  const count = customWordBank ? Math.min(customWordBank.length, 500) : 150;
   
-  if (sentimentScore === undefined) {
-    baseSentimentValue = isDepressed ? 0.3 : 0.7;
-  } else if (typeof sentimentScore === 'number') {
-    baseSentimentValue = sentimentScore;
-  } else {
-    // If an object was passed, calculate the average of numerical values
-    const values = Object.values(sentimentScore).filter(val => typeof val === 'number');
-    const sum = values.reduce((acc, val) => acc + val, 0);
-    baseSentimentValue = values.length > 0 ? sum / values.length : 0.5;
-  }
+  // Default distribution if none provided
+  const defaultDistribution = {
+    Joy: isDepressed ? 0.1 : 0.3,
+    Sadness: isDepressed ? 0.4 : 0.1,
+    Fear: isDepressed ? 0.3 : 0.1,
+    Anger: isDepressed ? 0.1 : 0.1,
+    Surprise: isDepressed ? 0.05 : 0.2,
+    Disgust: isDepressed ? 0.05 : 0.1,
+    Trust: isDepressed ? 0.0 : 0.1,
+    Anticipation: isDepressed ? 0.0 : 0.1,
+    Neutral: 0.0
+  };
+  
+  const distribution = emotionalDistribution || defaultDistribution;
   
   // Generate mock point data
   for (let i = 0; i < count; i++) {
-    const isDepressedWord = isDepressed && Math.random() < 0.7;
+    // Choose emotional tone based on distribution
+    let chosenTone = "Neutral";
+    const emotionRoll = Math.random();
+    let cumulativeProbability = 0;
+    
+    for (const [tone, probability] of Object.entries(distribution)) {
+      cumulativeProbability += probability;
+      if (emotionRoll < cumulativeProbability) {
+        chosenTone = tone;
+        break;
+      }
+    }
     
     // Randomize position with some clustering
     const theta = Math.random() * Math.PI * 2;
@@ -41,21 +57,24 @@ export const generateMockPoints = (
     // Add some noise and clustering
     const position: [number, number, number] = [x, y, z];
     
-    // Adjusted sentiment for variation
-    let sentiment = baseSentimentValue + (Math.random() * 0.4 - 0.2);
-    sentiment = Math.max(0.1, Math.min(0.9, sentiment)); // Clamp between 0.1 and 0.9
+    // Adjusted sentiment based on emotional tone
+    let sentiment = 0.5;
+    if (chosenTone === 'Joy' || chosenTone === 'Trust') {
+      sentiment = 0.7 + (Math.random() * 0.3);
+    } else if (chosenTone === 'Sadness' || chosenTone === 'Fear' || chosenTone === 'Anger' || chosenTone === 'Disgust') {
+      sentiment = Math.random() * 0.4;
+    } else {
+      sentiment = 0.3 + (Math.random() * 0.4);
+    }
     
     // Colors based on position and sentiment
-    const red = isDepressedWord ? 0.8 : 0.2;
-    const green = (position[1] + 40) / 80;
-    const blue = sentiment; 
+    const red = chosenTone === 'Anger' || chosenTone === 'Disgust' ? 0.8 : sentiment < 0.4 ? 0.7 : 0.2;
+    const green = chosenTone === 'Joy' ? 0.8 : (sentiment > 0.6 ? 0.7 : (position[1] + 40) / 80);
+    const blue = chosenTone === 'Sadness' || chosenTone === 'Fear' ? 0.8 : sentiment; 
     const color: [number, number, number] = [red, green, blue];
     
-    const emotionalTone = emotionalTones[Math.floor(Math.random() * emotionalTones.length)];
-    
-    // Generate a random word when none is provided
-    // This will be replaced with actual words from the document later
-    const word = `Word_${i+1}`;
+    // Generate a word when custom bank is provided
+    const word = customWordBank ? customWordBank[i % customWordBank.length] : `Word_${i+1}`;
     
     points.push({
       id: `point-${i}`,
@@ -63,9 +82,8 @@ export const generateMockPoints = (
       color,
       sentiment,
       word,
-      emotionalTone: isDepressedWord ? (Math.random() < 0.7 ? 'Sadness' : 'Fear') : emotionalTone,
+      emotionalTone: chosenTone,
       relationships: [],
-      size: 1 + Math.random(),
       keywords: [
         `keyword_${Math.floor(Math.random() * 20) + 1}`,
         `keyword_${Math.floor(Math.random() * 20) + 1}`,
@@ -126,55 +144,13 @@ export const getEmotionColor = (emotion: string): string => {
 export const generatePlaceholderPoint = (id: number): Point => {
   return {
     id: id.toString(),
-    x: Math.random() * 100 - 50,
-    y: Math.random() * 100 - 50,
-    z: Math.random() * 100 - 50,
+    position: [Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50],
     word: `Word${id}`,
     sentiment: Math.random(),
     emotionalTone: getRandomEmotion(),
+    color: [Math.random(), Math.random(), Math.random()],
     relationships: []
   };
-};
-
-export const generateMockPoints = (depressedJournalReference: boolean = false): Point[] => {
-  const mockPointsCount = 200;
-  const mockPoints: Point[] = [];
-  
-  for (let i = 0; i < mockPointsCount; i++) {
-    let emotionalTone = getRandomEmotion();
-    // If depressed journal reference, make 40% of the points sad or fearful
-    if (depressedJournalReference && Math.random() < 0.4) {
-      emotionalTone = Math.random() < 0.5 ? "Sadness" : "Fear";
-    }
-    
-    const point: Point = {
-      id: i.toString(),
-      x: Math.random() * 100 - 50,
-      y: Math.random() * 100 - 50,
-      z: Math.random() * 100 - 50,
-      word: `Word${i}`,
-      sentiment: Math.random(),
-      emotionalTone,
-      relationships: []
-    };
-    
-    // Add some relationships for each point (1 to 3 relationships)
-    const relationshipsCount = Math.floor(Math.random() * 3) + 1;
-    for (let j = 0; j < relationshipsCount; j++) {
-      const targetId = Math.floor(Math.random() * mockPointsCount);
-      if (targetId !== i) {
-        point.relationships.push({
-          id: targetId.toString(),
-          word: `Word${targetId}`,
-          strength: Math.random()
-        });
-      }
-    }
-    
-    mockPoints.push(point);
-  }
-  
-  return mockPoints;
 };
 
 export const getRandomEmotion = (): string => {
