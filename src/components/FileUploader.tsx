@@ -4,6 +4,7 @@ import { FileUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Set the PDF.js worker source
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -15,6 +16,8 @@ interface FileUploaderProps {
 export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [analysisMethod, setAnalysisMethod] = useState<"bert" | "gemma3">("bert");
+  const { t } = useLanguage();
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -63,7 +66,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       return fullText;
     } catch (error) {
       console.error("Error extracting text from PDF:", error);
-      toast.error("Failed to extract text from PDF");
+      toast.error(t("extractionError") || "Failed to extract text from PDF");
       return "";
     } finally {
       setIsExtracting(false);
@@ -72,28 +75,28 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
 
   const processPdfFile = async (file: File) => {
     try {
-      toast.info("Extracting text from PDF...");
+      toast.info(t("extractingText") || "Extracting text from PDF...");
       const pdfText = await extractTextFromPdf(file);
       
       if (!pdfText || pdfText.trim().length === 0) {
-        toast.warning("No readable text found in the PDF");
+        toast.warning(t("noTextFound") || "No readable text found in the PDF");
         onFilesAdded([file], "");
       } else {
         const wordCount = pdfText.split(/\s+/).filter(w => w.length > 0).length;
-        toast.success(`Extracted ${wordCount} words from PDF`);
+        toast.success(`${t("extracted") || "Extracted"} ${wordCount} ${t("words") || "words"} ${t("fromPDF") || "from PDF"}`);
         
         // More detailed logging for better debugging
         console.log("PDF text sample:", pdfText.substring(0, 200));
         console.log("PDF text length:", pdfText.length);
         console.log("Words in PDF:", wordCount);
         
-        // Pass the extracted text to the parent component for analysis
-        onFilesAdded([file], pdfText);
+        // Pass the extracted text to the parent component for analysis, along with analysis method
+        onFilesAdded([file], pdfText, analysisMethod);
       }
     } catch (error) {
       console.error("Error processing PDF:", error);
-      toast.error("Error processing PDF file");
-      onFilesAdded([file], "");
+      toast.error(t("processingError") || "Error processing PDF file");
+      onFilesAdded([file], "", analysisMethod);
     }
   };
 
@@ -106,7 +109,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       const pdfFiles = files.filter(file => file.type === 'application/pdf');
       
       if (pdfFiles.length === 0) {
-        toast.error("Only PDF files are supported");
+        toast.error(t("onlyPDFSupported") || "Only PDF files are supported");
         return;
       }
       
@@ -120,7 +123,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
       const pdfFiles = files.filter(file => file.type === 'application/pdf');
       
       if (pdfFiles.length === 0) {
-        toast.error("Only PDF files are supported");
+        toast.error(t("onlyPDFSupported") || "Only PDF files are supported");
         return;
       }
       
@@ -142,11 +145,30 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
           <FileUp className="h-8 w-8 text-primary" />
         </div>
         <div>
-          <h3 className="font-medium text-lg">Upload your PDF document</h3>
+          <h3 className="font-medium text-lg">{t("uploadTitle") || "Upload your PDF document"}</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Drag and drop your file here, or click to browse
+            {t("uploadDescription") || "Drag and drop your file here, or click to browse"}
           </p>
         </div>
+        
+        {/* Analysis Method Selection */}
+        <div className="flex gap-2 my-2">
+          <Button
+            variant={analysisMethod === "bert" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setAnalysisMethod("bert")}
+          >
+            Analyze with BERT
+          </Button>
+          <Button
+            variant={analysisMethod === "gemma3" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setAnalysisMethod("gemma3")}
+          >
+            Analyze with Gemma 3
+          </Button>
+        </div>
+        
         <div className="mt-2">
           <Button
             variant="outline"
@@ -154,9 +176,9 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
             disabled={isExtracting}
           >
             {isExtracting ? (
-              <>Extracting text...</>
+              <>{t("analyzingDocument") || "Extracting text..."}</>
             ) : (
-              <>Choose File</>
+              <>{t("chooseFile") || "Choose File"}</>
             )}
           </Button>
           <input
@@ -169,7 +191,7 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
           />
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Maximum file size: 10MB
+          {t("maxFileSize") || "Maximum file size: 10MB"}
         </p>
       </div>
     </div>
