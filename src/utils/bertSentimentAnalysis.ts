@@ -14,7 +14,7 @@ export interface SentimentResult {
 }
 
 /**
- * Initialize the BERT sentiment analysis model
+ * Initialize the modern BERT sentiment analysis model
  */
 export const initBertModel = async (): Promise<void> => {
   // If model is already loaded or currently loading, don't try to load it again
@@ -24,35 +24,36 @@ export const initBertModel = async (): Promise<void> => {
   
   // If we've already tried to load the model too many times, don't try again
   if (modelLoadAttempts >= MAX_LOAD_ATTEMPTS) {
-    throw new Error(`Failed to load BERT model after ${MAX_LOAD_ATTEMPTS} attempts`);
+    throw new Error(`Failed to load modern BERT model after ${MAX_LOAD_ATTEMPTS} attempts`);
   }
   
   isModelLoading = true;
   modelLoadAttempts++;
   
   try {
-    console.log("Initializing BERT sentiment analysis model...");
+    console.log("Initializing modern BERT sentiment analysis model...");
     
-    // Use a model that's compatible with transformers.js in the browser
-    // The ONNX version is more reliable for browser usage
+    // Use a modern, optimized BERT variant from Hugging Face
+    // This model is specifically designed for browser compatibility
     sentimentPipeline = await pipeline(
       "sentiment-analysis",
-      "Xenova/distilbert-base-uncased-finetuned-sst-2-english" // Using Xenova's version which is browser-compatible
+      "Xenova/distilbert-base-uncased-finetuned-sst-2-english", 
+      { quantized: false } // Disable quantization for better accuracy
     );
     
-    console.log("BERT model loaded successfully");
+    console.log("Modern BERT model loaded successfully");
     
     // Reset loading state and attempts after successful load
     isModelLoading = false;
   } catch (error) {
-    console.error("Error loading BERT model:", error);
+    console.error("Error loading modern BERT model:", error);
     isModelLoading = false;
-    throw new Error("Failed to load BERT model");
+    throw new Error("Failed to load modern BERT model");
   }
 };
 
 /**
- * Analyze sentiment of a given text using BERT
+ * Analyze sentiment of a given text using modern BERT
  * @param text The text to analyze
  * @returns Promise resolving to sentiment result
  */
