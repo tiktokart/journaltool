@@ -172,7 +172,7 @@ const Dashboard = () => {
                 <div className="md:col-span-2">
                   <FileUploader onFilesAdded={handleFileUpload} />
                 </div>
-                <div className="flex flex-col justify-center space-y-4">
+                <div className="flex flex-col justify-between space-y-4">
                   <div className="p-4 bg-muted rounded-lg">
                     <h3 className="font-medium mb-2">Selected File</h3>
                     <p className="text-sm text-muted-foreground">
@@ -189,18 +189,30 @@ const Dashboard = () => {
                       </p>
                     )}
                   </div>
-                  <Button 
-                    onClick={analyzeSentiment} 
-                    disabled={!file || isAnalyzing}
-                    className="w-full"
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Analyzing with BERT...
-                      </>
-                    ) : "Analyze with BERT"}
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button 
+                      onClick={analyzeSentiment} 
+                      disabled={!file || isAnalyzing}
+                      className="w-full"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Analyzing with BERT...
+                        </>
+                      ) : "Analyze with BERT"}
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        toast.info("Gemma 3 analysis will be implemented in a future update");
+                      }} 
+                      disabled={!file || isAnalyzing}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Analyze with Gemma 3
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
