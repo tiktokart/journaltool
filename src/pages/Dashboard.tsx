@@ -788,3 +788,24 @@ const Dashboard = () => {
                                 ))}
                                 {(clusterPoints[cluster.name] || []).length > 10 && (
                                   <Badge variant="outline">
+                                    +{(clusterPoints[cluster.name] || []).length - 10} more
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
