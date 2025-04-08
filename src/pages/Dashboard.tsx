@@ -193,7 +193,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (sentimentData) {
-      const mockPoints = generateMockPoints(pdfText, sentimentData);
+      const mockPoints = generateMockPoints(pdfText ? pdfText : "", sentimentData);
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
@@ -210,11 +210,11 @@ const Dashboard = () => {
       console.log(`Total unique words found: ${uniqueWordsArray.length}`);
       
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
-        const color = getEmotionColor(cluster.sentiment);
+        const colorArray = getEmotionColor(cluster.sentiment);
         return {
           ...cluster,
           id: index,
-          color: getRGBColorString(color),
+          color: getRGBColorString(colorArray),
         };
       });
       
