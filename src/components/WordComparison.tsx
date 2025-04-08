@@ -236,7 +236,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                       </div>
                       
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">{t("emotionalGroup")}</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t("emotionalGroupType")}</p>
                         <p className="text-sm font-medium">
                           {sameEmotionalGroup 
                             ? `${t("bothIn")} "${getTranslatedEmotion(word1.emotionalTone)}" ${t("group")}` 
