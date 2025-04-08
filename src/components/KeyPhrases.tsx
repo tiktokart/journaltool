@@ -15,23 +15,23 @@ interface KeyPhrasesProps {
 
 export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
   // Group words by sentiment
-  const positiveItems = data.filter(item => item.sentiment >= 0.6).map(item => ({
+  const positiveItems = data ? data.filter(item => item.sentiment >= 0.6).map(item => ({
     text: item.phrase,
     sentiment: "positive" as const,
     count: item.occurrences
-  }));
+  })) : [];
   
-  const neutralItems = data.filter(item => item.sentiment < 0.6 && item.sentiment >= 0.4).map(item => ({
+  const neutralItems = data ? data.filter(item => item.sentiment < 0.6 && item.sentiment >= 0.4).map(item => ({
     text: item.phrase,
     sentiment: "neutral" as const,
     count: item.occurrences
-  }));
+  })) : [];
   
-  const negativeItems = data.filter(item => item.sentiment < 0.4).map(item => ({
+  const negativeItems = data ? data.filter(item => item.sentiment < 0.4).map(item => ({
     text: item.phrase,
     sentiment: "negative" as const,
     count: item.occurrences
-  }));
+  })) : [];
 
   // Sort by count (frequency) within each category
   const sortByCount = (a: {text: string, sentiment: string, count: number}, b: {text: string, sentiment: string, count: number}) => b.count - a.count;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -774,9 +773,9 @@ const Dashboard = () => {
           
           {showDebugPanel && (
             <DebugPanel 
-              state={debugState} 
               consoleMessages={consoleMessages}
               onClose={() => setShowDebugPanel(false)}
+              debugState={debugState}
             />
           )}
           
@@ -796,7 +795,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="h-[500px] w-full">
-                  <PdfViewer url={pdfUrl} />
+                  <PdfViewer pdfUrl={pdfUrl} />
                 </div>
               </CardContent>
             </Card>
@@ -821,7 +820,7 @@ const Dashboard = () => {
                         <SentimentOverview data={sentimentData} />
                         <div className="space-y-6">
                           <SentimentTimeline data={sentimentData.timeline} />
-                          <KeyPhrases phrases={sentimentData.keyPhrases} />
+                          <KeyPhrases data={sentimentData.keyPhrases} sourceDescription={sentimentData.sourceDescription} />
                         </div>
                       </div>
                     </CardContent>
@@ -834,7 +833,7 @@ const Dashboard = () => {
                       <CardTitle className="text-xl">Entity Analysis</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <EntitySentiment entities={sentimentData.entities} />
+                      <EntitySentiment data={sentimentData.entities} />
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -1048,7 +1047,7 @@ const Dashboard = () => {
                                       ></div>
                                       <span className="font-medium">{cluster.name}</span>
                                     </div>
-                                    <Badge variant="outline" size="sm">
+                                    <Badge variant="outline">
                                       {cluster.size} words
                                     </Badge>
                                   </div>
