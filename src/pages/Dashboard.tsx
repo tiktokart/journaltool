@@ -1,533 +1,20 @@
-import { useState, useEffect, useRef } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { FileUploader } from "@/components/FileUploader";
-import { SentimentOverview } from "@/components/SentimentOverview";
-import { SentimentTimeline } from "@/components/SentimentTimeline";
-import { EntitySentiment } from "@/components/EntitySentiment";
-import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
-import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { toast } from "sonner";
-import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen, Info, Settings, Heart, Brain } from "lucide-react";
+import { Loader2, FileText } from "lucide-react";
 import { Point } from "@/types/embedding";
-import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
-import { WordComparison } from "@/components/WordComparison";
-import { 
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
-import { initBertModel, analyzeSentiment, batchAnalyzeSentiment } from "@/utils/bertSentimentAnalysis";
-
-const analyzePdfContent = async (file: File, pdfText?: string): Promise<any> => {
-  return new Promise(async (resolve) => {
-    toast.info("Initializing BERT sentiment analysis model...");
-    
-    try {
-      // Initialize the BERT model
-      await initBertModel();
-      
-      const fileName = file.name.toLowerCase();
-      const seed = fileName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      
-      let customWordBank: string[] = [];
-      let emotionalDistribution = {
-        Joy: 0.15,
-        Sadness: 0.25,
-        Anger: 0.1,
-        Fear: 0.2,
-        Surprise: 0.05,
-        Disgust: 0.05,
-        Trust: 0.1,
-        Anticipation: 0.1,
-        Neutral: 0.0
-      };
-      
-      // Process PDF text if available
-      if (pdfText && pdfText.length > 0) {
-        console.log("Processing PDF text of length:", pdfText.length);
-        
-        const cleanText = pdfText
-          .toLowerCase()
-          .replace(/[^\w\s]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-        
-        const stopWords = new Set(['the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'can', 'could', 'may', 'might', 'must', 'shall', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'who', 'whom', 'whose', 'which']);
-        
-        // Extract unique words
-        customWordBank = cleanText
-          .split(' ')
-          .filter(word => word.length > 2 && !stopWords.has(word))
-          .filter((word, index, self) => self.indexOf(word) === index)
-          .slice(0, 500);
-          
-        console.log("Extracted unique words:", customWordBank.length);
-        console.log("Sample words:", customWordBank.slice(0, 20));
-        
-        // Analyze the entire text with BERT
-        toast.info("Analyzing document sentiment with BERT...");
-        const sentimentResult = await analyzeSentiment(pdfText);
-        console.log("BERT sentiment analysis result:", sentimentResult);
-        
-        // Adjust emotional distribution based on BERT sentiment
-        if (sentimentResult.normalizedScore >= 0.6) {
-          // More positive sentiment
-          emotionalDistribution.Joy = 0.3;
-          emotionalDistribution.Trust = 0.2;
-          emotionalDistribution.Sadness = 0.1;
-          emotionalDistribution.Fear = 0.1;
-        } else if (sentimentResult.normalizedScore <= 0.4) {
-          // More negative sentiment
-          emotionalDistribution.Sadness = 0.35;
-          emotionalDistribution.Fear = 0.25;
-          emotionalDistribution.Joy = 0.05;
-          emotionalDistribution.Trust = 0.05;
-        }
-        
-        // Generate sentences for more granular analysis
-        const sentences = pdfText
-          .replace(/([.!?])\s*/g, "$1|")
-          .split("|")
-          .filter(s => s.trim().length > 10 && s.trim().length < 250)
-          .map(s => s.trim());
-        
-        // For larger documents, analyze a sample of sentences
-        if (sentences.length > 20) {
-          const sampleSize = Math.min(20, Math.floor(sentences.length / 3));
-          const sampleIndices = Array.from({ length: sentences.length }, (_, i) => i);
-          const shuffled = sampleIndices.sort(() => 0.5 - Math.random());
-          const selected = shuffled.slice(0, sampleSize);
-          
-          const samplesToAnalyze = selected.map(i => sentences[i]);
-          
-          // Batch analyze the selected sentences
-          const sentenceResults = await batchAnalyzeSentiment(samplesToAnalyze);
-          
-          // Count emotion frequencies based on sentence sentiments
-          let joyCount = 0;
-          let sadnessCount = 0;
-          
-          sentenceResults.forEach(result => {
-            if (result.normalizedScore >= 0.7) joyCount++;
-            if (result.normalizedScore <= 0.3) sadnessCount++;
-          });
-          
-          const totalSamples = sentenceResults.length;
-          
-          // Further refine distribution based on sentence analysis
-          if (totalSamples > 0) {
-            const joyRatio = joyCount / totalSamples;
-            const sadnessRatio = sadnessCount / totalSamples;
-            
-            emotionalDistribution.Joy = 0.1 + joyRatio * 0.4;
-            emotionalDistribution.Sadness = 0.1 + sadnessRatio * 0.4;
-            emotionalDistribution.Fear = 0.1 + sadnessRatio * 0.3;
-            emotionalDistribution.Trust = 0.1 + joyRatio * 0.3;
-          }
-        }
-      } else {
-        // Use filename-based sentiment heuristics if no text is available
-        if (fileName.includes('happy') || fileName.includes('joy')) {
-          emotionalDistribution.Joy = 0.4;
-          emotionalDistribution.Sadness = 0.05;
-        } else if (fileName.includes('sad') || fileName.includes('depress')) {
-          emotionalDistribution.Sadness = 0.5;
-          emotionalDistribution.Joy = 0.05;
-        } else if (fileName.includes('anger') || fileName.includes('mad')) {
-          emotionalDistribution.Anger = 0.4;
-          emotionalDistribution.Trust = 0.05;
-        } else if (fileName.includes('fear') || fileName.includes('anxiety')) {
-          emotionalDistribution.Fear = 0.4;
-          emotionalDistribution.Trust = 0.05;
-        }
-        
-        // For files without text, apply a simpler BERT analysis on the filename
-        const fileNameSentiment = await analyzeSentiment(fileName);
-        
-        // Adjust based on filename sentiment
-        if (fileNameSentiment.normalizedScore >= 0.6) {
-          emotionalDistribution.Joy = Math.max(0.25, emotionalDistribution.Joy);
-          emotionalDistribution.Trust = Math.max(0.15, emotionalDistribution.Trust);
-        } else if (fileNameSentiment.normalizedScore <= 0.4) {
-          emotionalDistribution.Sadness = Math.max(0.25, emotionalDistribution.Sadness);
-          emotionalDistribution.Fear = Math.max(0.15, emotionalDistribution.Fear);
-        }
-      }
-      
-      // Calculate overall sentiment from the emotional distribution
-      const overallSentiment = 
-        (emotionalDistribution.Joy * 0.9) + 
-        (emotionalDistribution.Trust * 0.8) + 
-        (emotionalDistribution.Anticipation * 0.6) + 
-        (emotionalDistribution.Surprise * 0.5) - 
-        (emotionalDistribution.Sadness * 0.3) - 
-        (emotionalDistribution.Fear * 0.3) - 
-        (emotionalDistribution.Anger * 0.3) - 
-        (emotionalDistribution.Disgust * 0.3);
-      
-      const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
-      
-      // Generate embedding points based on the emotional distribution
-      toast.info("Generating embedding visualization...");
-      const embeddingPoints = generateMockPoints(
-        false, 
-        emotionalDistribution, 
-        customWordBank.length > 0 ? customWordBank : undefined
-      );
-
-      console.log("Generated embedding points:", embeddingPoints.length);
-      console.log("Sample embedding words:", embeddingPoints.slice(0, 5).map(p => p.word));
-      
-      // If we have enough embedding points with unique words, update their sentiment scores with BERT
-      if (embeddingPoints.length > 0) {
-        const uniqueWords = [...new Set(embeddingPoints.map(p => p.word))];
-        const maxWordsToAnalyze = Math.min(uniqueWords.length, 100); // Limit to avoid performance issues
-        
-        if (maxWordsToAnalyze > 0) {
-          const wordsToAnalyze = uniqueWords.slice(0, maxWordsToAnalyze);
-          const wordSentiments = await batchAnalyzeSentiment(wordsToAnalyze);
-          
-          // Create a mapping of words to their sentiment scores
-          const sentimentMap = new Map();
-          wordsToAnalyze.forEach((word, index) => {
-            sentimentMap.set(word, wordSentiments[index].normalizedScore);
-          });
-          
-          // Update the sentiment scores of the embedding points
-          embeddingPoints.forEach(point => {
-            if (sentimentMap.has(point.word)) {
-              point.sentiment = sentimentMap.get(point.word);
-            }
-          });
-          
-          console.log("Updated embedding points with BERT sentiment scores");
-        }
-      }
-
-      const positivePercentage = Math.round(normalizedSentiment * 100);
-      const negativePercentage = Math.round((1 - normalizedSentiment) * 0.5 * 100);
-      const neutralPercentage = 100 - positivePercentage - negativePercentage;
-
-      // Generate timeline data
-      const pageCount = pdfText ? Math.ceil(pdfText.length / 2000) : 5 + Math.floor((seed % 10));
-      const timeline = [];
-      let prevScore = normalizedSentiment * 0.8;
-
-      for (let i = 1; i <= pageCount; i++) {
-        const volatility = pdfText ? 0.1 : 0.15;
-        const trend = (normalizedSentiment - prevScore) * 0.3;
-        const randomChange = (Math.random() * 2 - 1) * volatility;
-        let newScore = prevScore + randomChange + trend;
-        newScore = Math.min(1, Math.max(0, newScore));
-
-        timeline.push({ page: i, score: newScore });
-        prevScore = newScore;
-      }
-
-      // Generate themes
-      let themeNames = [
-        "Work", "Family", "Health", "Relationships", 
-        "Future", "Goals", "Education", "Friends",
-        "Hobbies", "Travel", "Home", "Money"
-      ];
-
-      if (customWordBank.length > 20) {
-        const potentialThemes = customWordBank.slice(0, 20);
-        const selectedThemes = [];
-        const themeCount = 4 + Math.floor(Math.random() * 3);
-        for (let i = 0; i < themeCount && i < potentialThemes.length; i++) {
-          const randomIndex = Math.floor(Math.random() * potentialThemes.length);
-          selectedThemes.push(potentialThemes[randomIndex]);
-          potentialThemes.splice(randomIndex, 1);
-        }
-
-        themeNames = selectedThemes.map(theme => 
-          theme.charAt(0).toUpperCase() + theme.slice(1)
-        );
-        
-        console.log("Using custom themes from PDF:", themeNames);
-      }
-
-      const themes = [];
-      const themeCount = Math.min(themeNames.length, 4 + Math.floor(Math.random() * 4));
-
-      const usedThemeIndices = new Set();
-      for (let i = 0; i < themeCount; i++) {
-        let themeIndex;
-        do {
-          themeIndex = Math.floor(Math.random() * themeNames.length);
-        } while (usedThemeIndices.has(themeIndex) && usedThemeIndices.size < themeNames.length);
-
-        if (usedThemeIndices.size >= themeNames.length) break;
-        usedThemeIndices.add(themeIndex);
-
-        const variation = Math.random() * 0.4 - 0.2;
-        const themeSentiment = Math.min(1, Math.max(0, normalizedSentiment + variation));
-
-        themes.push({
-          name: themeNames[themeIndex],
-          score: themeSentiment,
-          mentions: 5 + Math.floor(Math.random() * 20)
-        });
-      }
-
-      // Analyze word frequency and sentiment
-      const wordFrequency: Record<string, { count: number, sentiment: number, emotionalTone: string }> = {};
-      embeddingPoints.forEach(point => {
-        if (point.word) {
-          if (!wordFrequency[point.word]) {
-            wordFrequency[point.word] = { 
-              count: 0, 
-              sentiment: 0, 
-              emotionalTone: point.emotionalTone || "Neutral" 
-            };
-          }
-          wordFrequency[point.word].count += 1;
-          wordFrequency[point.word].sentiment += point.sentiment;
-        }
-      });
-
-      Object.keys(wordFrequency).forEach(word => {
-        const entry = wordFrequency[word];
-        entry.sentiment = entry.sentiment / entry.count;
-      });
-
-      const sortedWords = Object.entries(wordFrequency)
-        .sort((a, b) => b[1].count - a[1].count)
-        .slice(0, 30);
-
-      console.log("Top words with frequency:", sortedWords.slice(0, 5).map(([word, data]) => `${word}: ${data.count}`));
-
-      // Create key phrases with sentiments
-      const keyPhrases = sortedWords.map(([word, data]) => {
-        let sentimentCategory: "positive" | "neutral" | "negative" = "neutral";
-        if (data.sentiment >= 0.6) {
-          sentimentCategory = "positive";
-        } else if (data.sentiment <= 0.4) {
-          sentimentCategory = "negative";
-        }
-
-        if (data.emotionalTone === "Neutral") {
-          sentimentCategory = "neutral";
-        }
-
-        return {
-          text: word,
-          sentiment: sentimentCategory,
-          count: data.count
-        };
-      });
-
-      // Generate or extract summary
-      let summary = "";
-      if (pdfText && pdfText.length > 0) {
-        // For real PDFs, try to extract a meaningful summary
-        const sentences = pdfText
-          .replace(/([.!?])\s*/g, "$1|")
-          .split("|")
-          .filter(s => s.trim().length > 10 && s.trim().length < 250)
-          .map(s => s.trim());
-        
-        if (sentences.length > 0) {
-          const topKeywords = sortedWords.slice(0, 10).map(([word]) => word.toLowerCase());
-          
-          // Score sentences based on keywords and position
-          const scoredSentences = sentences.map((sentence, index) => {
-            const normalizedPosition = 1 - (index / sentences.length);
-            const lowerSentence = sentence.toLowerCase();
-            
-            let keywordScore = 0;
-            topKeywords.forEach(keyword => {
-              if (lowerSentence.includes(keyword.toLowerCase())) {
-                keywordScore += 1;
-              }
-            });
-            
-            const score = (keywordScore * 0.7) + (normalizedPosition * 0.3);
-            
-            return { sentence, score };
-          });
-          
-          scoredSentences.sort((a, b) => b.score - a.score);
-          
-          const summaryLength = Math.min(
-            5, 
-            Math.max(2, Math.floor(sentences.length / 10))
-          );
-          
-          const topSentences = scoredSentences.slice(0, summaryLength);
-          
-          // Reorder sentences to match their original sequence
-          topSentences.sort((a, b) => {
-            return sentences.indexOf(a.sentence) - sentences.indexOf(b.sentence);
-          });
-          
-          summary = topSentences.map(s => s.sentence).join(" ");
-          
-          if (summary.length > 500) {
-            summary = summary.substring(0, 497) + "...";
-          }
-        } else {
-          // Fallback if no sentences could be extracted
-          const dominantEmotion = Object.entries(emotionalDistribution)
-            .sort((a, b) => b[1] - a[1])[0][0];
-          
-          // Use BERT-informed template summaries
-          summary = `This document has a predominant ${dominantEmotion.toLowerCase()} emotional tone with an overall sentiment score of ${normalizedSentiment.toFixed(2)}. BERT analysis indicates that the content is ${normalizedSentiment >= 0.5 ? "generally positive" : "somewhat negative"} in nature.`;
-        }
-      } else {
-        // For files without text, generate a basic BERT-informed summary
-        const bertSummary = `BERT sentiment analysis of this file indicates a sentiment score of ${normalizedSentiment.toFixed(2)}, which is interpreted as ${normalizedSentiment >= 0.6 ? "positive" : normalizedSentiment >= 0.4 ? "neutral" : "negative"}.`;
-        
-        const dominantEmotion = Object.entries(emotionalDistribution)
-          .sort((a, b) => b[1] - a[1])[0][0];
-        
-        const emotionSummary = `The dominant emotional tone appears to be ${dominantEmotion}, representing ${Math.round(emotionalDistribution[dominantEmotion as keyof typeof emotionalDistribution] * 100)}% of the emotional content.`;
-        
-        summary = `${bertSummary} ${emotionSummary}`;
-      }
-
-      const sourceDescription = pdfText && pdfText.length > 0 && customWordBank.length > 0
-        ? `Analysis based on ${customWordBank.length} unique words extracted from your PDF using BERT sentiment analysis`
-        : "Analysis generated using BERT sentiment model";
-
-      // Compile all results
-      const analysisResults = {
-        overallSentiment: {
-          score: normalizedSentiment,
-          label: normalizedSentiment >= 0.6 ? "Positive" : normalizedSentiment >= 0.4 ? "Neutral" : "Negative"
-        },
-        distribution: {
-          positive: positivePercentage,
-          neutral: neutralPercentage,
-          negative: negativePercentage
-        },
-        timeline: timeline,
-        entities: themes,
-        keyPhrases: keyPhrases,
-        embeddingPoints: embeddingPoints,
-        fileName: file.name,
-        fileSize: file.size,
-        wordCount: customWordBank.length,
-        pdfTextLength: pdfText ? pdfText.length : 0,
-        summary: summary,
-        sourceDescription: sourceDescription
-      };
-
-      resolve(analysisResults);
-    } catch (error) {
-      console.error("Error in analyzePdfContent:", error);
-      toast.error("Error analyzing document with BERT model");
-      
-      // Fallback to basic analysis without BERT
-      const basicResults = {
-        overallSentiment: {
-          score: 0.5,
-          label: "Neutral"
-        },
-        distribution: {
-          positive: 50,
-          neutral: 30,
-          negative: 20
-        },
-        timeline: [{page: 1, score: 0.5}],
-        entities: [{name: "Content", score: 0.5, mentions: 5}],
-        keyPhrases: [{text: "error", sentiment: "neutral" as "neutral", count: 1}],
-        embeddingPoints: generateMockPoints(false),
-        fileName: file.name,
-        fileSize: file.size,
-        wordCount: 0,
-        pdfTextLength: pdfText ? pdfText.length : 0,
-        summary: "An error occurred during BERT analysis. Results shown are approximations.",
-        sourceDescription: "Analysis performed with fallback measures due to BERT model error"
-      };
-      
-      resolve(basicResults);
-    }
-  });
-};
-
-const wellbeingSuggestions = [
-  {
-    title: "Practice Mindfulness",
-    description: "Spend 5-10 minutes each day focusing on your breath and being present in the moment.",
-    category: "Meditation",
-    benefit: "Reduces stress and anxiety, improves focus and emotional regulation."
-  },
-  {
-    title: "Connect with Others",
-    description: "Reach out to a friend or family member you haven't spoken to in a while.",
-    category: "Social Connection",
-    benefit: "Strengthens relationships, reduces feelings of isolation."
-  },
-  {
-    title: "Physical Activity",
-    description: "Take a 20-minute walk outdoors or do a short home workout.",
-    category: "Exercise",
-    benefit: "Boosts mood, improves energy levels and overall health."
-  },
-  {
-    title: "Digital Detox",
-    description: "Set aside 1-2 hours before bed as screen-free time.",
-    category: "Lifestyle",
-    benefit: "Improves sleep quality and reduces mental fatigue."
-  },
-  {
-    title: "Gratitude Practice",
-    description: "Write down three things you're grateful for before going to sleep.",
-    category: "Reflection",
-    benefit: "Shifts focus to positive aspects of life, improves outlook."
-  }
-];
-
-const mentalHealthResources = [
-  {
-    name: "Crisis Text Line",
-    description: "Text HOME to 741741 to connect with a Crisis Counselor",
-    category: "Crisis Support",
-    contact: "Text 741741",
-    website: "crisistextline.org"
-  },
-  {
-    name: "National Suicide Prevention Lifeline",
-    description: "24/7, free and confidential support for people in distress",
-    category: "Crisis Support",
-    contact: "1-800-273-8255",
-    website: "suicidepreventionlifeline.org"
-  },
-  {
-    name: "Psychology Today Therapist Finder",
-    description: "Find therapists and counselors near you",
-    category: "Professional Help",
-    website: "psychologytoday.com/us/therapists"
-  },
-  {
-    name: "Headspace",
-    description: "Guided meditation and mindfulness app",
-    category: "Self-help Apps",
-    website: "headspace.com"
-  },
-  {
-    name: "MoodTools",
-    description: "Free app designed to help you combat depression and alleviate your negative moods",
-    category: "Self-help Apps",
-    website: "moodtools.org"
-  }
-];
+import { generateMockPoints } from "@/utils/embeddingUtils";
+import { analyzePdfContent } from "@/utils/documentAnalysis";
+import { WellbeingResources } from "@/components/WellbeingResources";
+import { WordComparisonController } from "@/components/WordComparisonController";
+import { DocumentSummary } from "@/components/DocumentSummary";
+import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
+import { FileInfoDisplay } from "@/components/FileInfoDisplay";
+import { AnalysisTabs } from "@/components/AnalysisTabs";
 
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -538,18 +25,11 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
   const [analysisComplete, setAnalysisComplete] = useState(false);
-  const [open, setOpen] = useState(false);
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
   const [pdfText, setPdfText] = useState<string>(""); 
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
-  const [compareWords, setCompareWords] = useState<Point[]>([]);
-  const [compareSearchOpen, setCompareSearchOpen] = useState(false);
-  const [compareSearchTerm, setCompareSearchTerm] = useState("");
-  const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
-  const [resourcesTab, setResourcesTab] = useState("wellbeing");
   const [visibleClusterCount, setVisibleClusterCount] = useState(8);
-  const searchDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleFileUpload = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
@@ -566,8 +46,6 @@ const Dashboard = () => {
         setSentimentData(null);
         setSelectedPoint(null);
         setAnalysisComplete(false);
-        setCompareWords([]);
-        setCompareSearchResults([]);
       }
     }
   };
@@ -580,8 +58,6 @@ const Dashboard = () => {
 
     setIsAnalyzing(true);
     setAnalysisComplete(false);
-    setCompareWords([]);
-    setCompareSearchResults([]);
     
     try {
       toast.info("Starting document analysis with BERT...");
@@ -600,8 +76,6 @@ const Dashboard = () => {
       
       setUniqueWords(words);
       
-      setCompareSearchResults(results.embeddingPoints.slice(0, 15));
-      
       if (results.pdfTextLength > 0) {
         toast.success(`BERT analysis completed! Analyzed ${results.pdfTextLength} characters of text from your PDF.`);
       } else {
@@ -615,7 +89,7 @@ const Dashboard = () => {
     }
   };
 
-  const handlePointClick = (point: Point) => {
+  const handlePointClick = (point: Point | null) => {
     if (!point) {
       setSelectedPoint(null);
       setSelectedWord(null);
@@ -641,91 +115,17 @@ const Dashboard = () => {
     
     toast(`Selected: "${point.word}" (${point.emotionalTone || 'Neutral'})`);
   };
-  
-  const handleSelectWord = (word: string) => {
-    setSearchTerm(word);
-    setSelectedWord(word);
-    setOpen(false);
-    
-    if (sentimentData && sentimentData.embeddingPoints) {
-      const selectedPoint = sentimentData.embeddingPoints.find(
-        (point: Point) => point.word === word
-      );
-      
-      if (selectedPoint) {
-        setSelectedPoint(selectedPoint);
-        
-        if (selectedPoint.relationships && selectedPoint.relationships.length > 0) {
-          const sortedRelationships = [...selectedPoint.relationships]
-            .sort((a, b) => b.strength - a.strength)
-            .slice(0, 3);
-            
-          const connected = sentimentData.embeddingPoints
-            .filter((p: Point) => sortedRelationships.some(rel => rel.id === p.id));
-          
-          setConnectedPoints(connected);
-          toast(`Selected: "${selectedPoint.word}" (${selectedPoint.emotionalTone || 'Neutral'})`);
-        } else {
-          setConnectedPoints([]);
-        }
-      }
+
+  const handleResetVisualization = () => {
+    if (window.documentEmbeddingActions && window.documentEmbeddingActions.resetView) {
+      window.documentEmbeddingActions.resetView();
+      toast.info("Visualization reset to default view");
     }
-  };
-  
-  const handleCompareSearchChange = (value: string) => {
-    setCompareSearchTerm(value);
-    
-    if (!value.trim()) {
-      setCompareSearchResults([]);
-      return;
-    }
-    
-    if (!sentimentData || !sentimentData.embeddingPoints) return;
-    
-    const results = sentimentData.embeddingPoints.filter((point: Point) => 
-      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
-      point.word.toLowerCase().includes(value.toLowerCase()) ||
-      (point.keywords && point.keywords.some(keyword => 
-        keyword.toLowerCase().includes(value.toLowerCase())
-      ))
-    );
-    
-    results.sort((a: Point, b: Point) => {
-      const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
-      const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
-      
-      if (aEmotionMatch && !bEmotionMatch) return -1;
-      if (!aEmotionMatch && bEmotionMatch) return 1;
-      return 0;
-    });
-    
-    setCompareSearchResults(results);
   };
 
-  const handleAddToComparison = (point: Point) => {
-    if (compareWords.length >= 4) {
-      toast.error("You can only compare up to 4 words");
-      return;
-    }
-    
-    if (compareWords.some(p => p.id === point.id)) {
-      toast.info(`"${point.word}" is already in your comparison`);
-      return;
-    }
-    
-    setCompareWords([...compareWords, point]);
-    setCompareSearchOpen(false);
-    toast.success(`Added "${point.word}" to comparison`);
-  };
-
-  const handleRemoveFromComparison = (point: Point) => {
-    setCompareWords(compareWords.filter(p => p.id !== point.id));
-    toast.info(`Removed "${point.word}" from comparison`);
-  };
-
-  const handleClearComparison = () => {
-    setCompareWords([]);
-    toast.info("Cleared all comparison words");
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setSelectedWord(null);
   };
 
   const calculateRelationship = (point1: Point, point2: Point) => {
@@ -757,74 +157,6 @@ const Dashboard = () => {
     };
   };
 
-  const handleResetVisualization = () => {
-    if (window.documentEmbeddingActions && window.documentEmbeddingActions.resetView) {
-      window.documentEmbeddingActions.resetView();
-      toast.info("Visualization reset to default view");
-    }
-  };
-
-  useEffect(() => {
-    if (!sentimentData) return;
-    
-    const term = searchTerm.toLowerCase().trim();
-    if (!term) {
-      setFilteredPoints(sentimentData.embeddingPoints || []);
-      return;
-    }
-    
-    const filtered = sentimentData.embeddingPoints.filter((point: Point) => {
-      return point.word.toLowerCase().includes(term) || 
-             (point.emotionalTone && point.emotionalTone.toLowerCase().includes(term));
-    });
-    
-    setFilteredPoints(filtered);
-  }, [searchTerm, sentimentData]);
-
-  useEffect(() => {
-    if (sentimentData && sentimentData.embeddingPoints) {
-      setCompareSearchResults(sentimentData.embeddingPoints.slice(0, 15));
-    }
-  }, [sentimentData]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if ((event.target as HTMLElement).closest('[data-radix-popper-content-wrapper]') === null &&
-          !(event.target as HTMLElement).closest('button')?.contains(document.querySelector('[aria-haspopup="dialog"]'))) {
-        setCompareSearchOpen(false);
-      }
-    }
-
-    if (compareSearchOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [compareSearchOpen]);
-
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    setSelectedWord(null);
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -833,7 +165,7 @@ const Dashboard = () => {
         <div className="flex flex-col gap-8">
           <Card className="border border-border shadow-md bg-card">
             <CardHeader>
-              <CardTitle>Document Analysis with BERT</CardTitle>
+              <CardTitle>Document Analysis with Data Models</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-3 gap-6">
@@ -876,368 +208,54 @@ const Dashboard = () => {
 
           {sentimentData && (
             <div className="animate-fade-in">
-              <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-primary" />
-                <span className="text-sm">
-                  <span className="font-medium">Currently analyzing:</span> {sentimentData.fileName} ({(sentimentData.fileSize / 1024 / 1024).toFixed(2)} MB)
-                  {sentimentData.wordCount > 0 && (
-                    <> • <span className="font-medium">{sentimentData.wordCount}</span> unique words extracted</>
-                  )}
-                </span>
-              </div>
+              <FileInfoDisplay 
+                fileName={sentimentData.fileName}
+                fileSize={sentimentData.fileSize}
+                wordCount={sentimentData.wordCount}
+              />
               
-              <Card className="mb-6 border border-border shadow-md bg-card">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center">
-                    <BookOpen className="h-5 w-5 mr-2 text-primary" />
-                    <CardTitle className="text-xl">Document Summary</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                    {sentimentData.summary || "No summary available for this document."}
-                  </div>
-                </CardContent>
-              </Card>
+              <DocumentSummary summary={sentimentData.summary} />
               
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <div className="overflow-x-auto">
-                  <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto">
-                    <TabsTrigger value="embedding" className="min-w-max">Latent Emotional Analysis</TabsTrigger>
-                    <TabsTrigger value="overview" className="min-w-max">Overview</TabsTrigger>
-                    <TabsTrigger value="timeline" className="min-w-max">Timeline</TabsTrigger>
-                    <TabsTrigger value="themes" className="min-w-max">Themes</TabsTrigger>
-                    <TabsTrigger value="keyphrases" className="min-w-max">Key Words</TabsTrigger>
-                  </TabsList>
-                </div>
-                
-                <TabsContent value="embedding" className="mt-6">
-                  <Card className="border border-border shadow-md overflow-hidden bg-card">
-                    <CardHeader className="z-10">
-                      <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-                        <CardTitle className="flex items-center">
-                          <span>Latent Emotional Analysis</span>
-                        </CardTitle>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={handleResetVisualization}
-                            className="h-9"
-                          >
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Reset View
-                          </Button>
-                          
-                          <div className="relative w-full md:w-64">
-                            <div className="relative w-full">
-                              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input 
-                                placeholder="Search words or emotions..." 
-                                className="pl-8 w-full pr-8"
-                                value={searchTerm}
-                                onChange={(e) => {
-                                  setSearchTerm(e.target.value);
-                                }}
-                                onFocus={() => {
-                                  if (uniqueWords.length > 0) {
-                                    setOpen(true);
-                                  }
-                                }}
-                              />
-                              {searchTerm && (
-                                <button 
-                                  className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                                  onClick={handleClearSearch}
-                                >
-                                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                                </button>
-                              )}
-                            </div>
-                            {uniqueWords.length > 0 && open && (
-                              <div 
-                                ref={searchDropdownRef}
-                                className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
-                              >
-                                <Command>
-                                  <CommandInput 
-                                    placeholder="Search words..." 
-                                    value={searchTerm}
-                                    onValueChange={setSearchTerm}
-                                  />
-                                  <CommandList>
-                                    <CommandEmpty>No results found</CommandEmpty>
-                                    <CommandGroup>
-                                      {uniqueWords
-                                        .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
-                                        .slice(0, 100)
-                                        .map((word) => (
-                                          <CommandItem 
-                                            key={word} 
-                                            value={word}
-                                            onSelect={handleSelectWord}
-                                          >
-                                            {word}
-                                          </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                  </CommandList>
-                                </Command>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-sm font-normal flex items-center text-muted-foreground">
-                        <CircleDot className="h-4 w-4 mr-2" />
-                        <span>
-                          Hover or click on words to see emotional relationships. Use the Reset View button when needed.
-                        </span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="h-[500px] relative">
-                        <DocumentEmbedding 
-                          points={filteredPoints}
-                          onPointClick={handlePointClick}
-                          isInteractive={true}
-                          focusOnWord={selectedWord || null}
-                          sourceDescription={sentimentData.sourceDescription}
-                          onResetView={handleResetVisualization}
-                          visibleClusterCount={visibleClusterCount}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                
-                <TabsContent value="overview" className="mt-6">
-                  <SentimentOverview 
-                    data={{
-                      overallSentiment: sentimentData.overallSentiment,
-                      distribution: sentimentData.distribution,
-                      fileName: sentimentData.fileName
-                    }}
-                    sourceDescription={sentimentData.sourceDescription}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="timeline" className="mt-6">
-                  <SentimentTimeline 
-                    data={sentimentData.timeline}
-                    sourceDescription={sentimentData.sourceDescription}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="themes" className="mt-6">
-                  <EntitySentiment 
-                    data={sentimentData.entities}
-                    sourceDescription={sentimentData.sourceDescription}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="keyphrases" className="mt-6">
-                  <KeyPhrases 
-                    data={sentimentData.keyPhrases}
-                    sourceDescription={sentimentData.sourceDescription}
-                  />
-                </TabsContent>
-              </Tabs>
+              <AnalysisTabs 
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                sentimentData={sentimentData}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                selectedPoint={selectedPoint}
+                setSelectedPoint={setSelectedPoint}
+                selectedWord={selectedWord}
+                setSelectedWord={setSelectedWord}
+                filteredPoints={filteredPoints}
+                setFilteredPoints={setFilteredPoints}
+                uniqueWords={uniqueWords}
+                connectedPoints={connectedPoints}
+                setConnectedPoints={setConnectedPoints}
+                visibleClusterCount={visibleClusterCount}
+                handlePointClick={handlePointClick}
+                handleResetVisualization={handleResetVisualization}
+                handleClearSearch={handleClearSearch}
+              />
               
               <div className="mt-8 mb-4">
-                <Card className="border border-border shadow-md bg-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-xl">
-                      <Brain className="h-5 w-5 mr-2 text-primary" />
-                      Emotional Clusters
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-6">
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Adjust the number of emotional clusters visible in the visualization:
-                      </p>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm font-medium">4</span>
-                        <Slider 
-                          value={[visibleClusterCount]} 
-                          min={4}
-                          max={12}
-                          step={1}
-                          onValueChange={(value) => {
-                            setVisibleClusterCount(value[0]);
-                            if (activeTab === "embedding") {
-                              toast.info(`Visualization updated to show ${value[0]} emotional clusters`);
-                            }
-                          }}
-                          className="flex-1"
-                        />
-                        <span className="text-sm font-medium">12</span>
-                        <span className="bg-primary/10 text-primary px-2 py-1 rounded-md text-sm font-medium ml-2">
-                          {visibleClusterCount}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EmotionalClustersControl 
+                  visibleClusterCount={visibleClusterCount}
+                  setVisibleClusterCount={setVisibleClusterCount}
+                  activeTab={activeTab}
+                />
               </div>
               
               <div className="mt-8 mb-4">
-                <Card className="border border-border shadow-md bg-card">
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="flex items-center text-xl">
-                        <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
-                        Word Comparison
-                      </CardTitle>
-                      
-                      <div className="flex gap-2">
-                        <Popover 
-                          open={compareSearchOpen} 
-                          onOpenChange={setCompareSearchOpen}
-                        >
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-9">
-                              <Search className="h-4 w-4 mr-2" />
-                              Add Word
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[300px] p-0" align="end">
-                            <Command>
-                              <CommandInput 
-                                placeholder="Search words..." 
-                                value={compareSearchTerm}
-                                onValueChange={handleCompareSearchChange}
-                              />
-                              <CommandList>
-                                <CommandEmpty>No matching words</CommandEmpty>
-                                <CommandGroup>
-                                  {compareSearchResults.map((point) => (
-                                    <CommandItem 
-                                      key={point.id} 
-                                      onSelect={() => handleAddToComparison(point)}
-                                    >
-                                      <div className="flex items-center">
-                                        <div 
-                                          className="w-3 h-3 rounded-full mr-2" 
-                                          style={{ 
-                                            backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
-                                          }} 
-                                        />
-                                        <span>{point.word}</span>
-                                      </div>
-                                      <span className="ml-auto text-xs text-muted-foreground">
-                                        {point.emotionalTone || "Neutral"}
-                                      </span>
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                        
-                        {compareWords.length > 0 && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-9"
-                            onClick={handleClearComparison}
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Clear All
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <WordComparison 
-                      words={compareWords}
-                      onRemoveWord={handleRemoveFromComparison}
-                      calculateRelationship={calculateRelationship}
-                      onAddWordClick={() => setCompareSearchOpen(true)}
-                      sourceDescription={sentimentData.sourceDescription}
-                    />
-                  </CardContent>
-                </Card>
+                <WordComparisonController 
+                  points={sentimentData.embeddingPoints}
+                  selectedPoint={selectedPoint}
+                  sourceDescription={sentimentData.sourceDescription}
+                  calculateRelationship={calculateRelationship}
+                />
               </div>
               
               <div className="mt-8">
-                <Card className="border border-border shadow-md bg-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-xl">
-                      <Heart className="h-5 w-5 mr-2 text-primary" />
-                      Resources & Support
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs value={resourcesTab} onValueChange={setResourcesTab} className="space-y-4">
-                      <TabsList>
-                        <TabsTrigger value="wellbeing">Wellbeing Suggestions</TabsTrigger>
-                        <TabsTrigger value="resources">Mental Health Resources</TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="wellbeing">
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                          {wellbeingSuggestions.map((suggestion, index) => (
-                            <div 
-                              key={index} 
-                              className="border rounded-lg p-4 bg-card/50"
-                            >
-                              <div className="flex items-center mb-2">
-                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                                  {suggestion.category}
-                                </Badge>
-                              </div>
-                              <h3 className="font-medium text-lg">{suggestion.title}</h3>
-                              <p className="text-sm text-muted-foreground mt-1 mb-3">{suggestion.description}</p>
-                              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                                <strong>Benefit:</strong> {suggestion.benefit}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="resources">
-                        <div className="grid md:grid-cols-2 gap-4 mt-2">
-                          {mentalHealthResources.map((resource, index) => (
-                            <div 
-                              key={index} 
-                              className="border rounded-lg p-4 bg-card/50"
-                            >
-                              <div className="flex items-center mb-2">
-                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                                  {resource.category}
-                                </Badge>
-                              </div>
-                              <h3 className="font-medium text-lg">{resource.name}</h3>
-                              <p className="text-sm text-muted-foreground mt-1 mb-3">{resource.description}</p>
-                              {resource.contact && (
-                                <p className="text-sm mt-2">
-                                  <strong>Contact:</strong> {resource.contact}
-                                </p>
-                              )}
-                              <p className="text-sm mt-2">
-                                <strong>Website:</strong> {resource.website}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        <div className="mt-6 text-sm text-center text-muted-foreground">
-                          <div className="flex items-center justify-center">
-                            <Info className="h-4 w-4 mr-1" />
-                            These resources are provided for informational purposes only. 
-                            Please consult with healthcare professionals for personalized advice.
-                          </div>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </CardContent>
-                </Card>
+                <WellbeingResources />
               </div>
             </div>
           )}
