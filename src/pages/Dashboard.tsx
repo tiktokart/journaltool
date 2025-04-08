@@ -710,7 +710,7 @@ const Dashboard = () => {
                         <span>Latent Emotional Analysis</span>
                       </CardTitle>
                       <p className="text-sm text-muted-foreground mt-1">
-                        This is data analyzed from a made up experience of a Panic Attack
+                        Emotional analysis from {sentimentData.fileName || "your document"}
                       </p>
                     </div>
                     
@@ -1066,8 +1066,10 @@ const Dashboard = () => {
       
       {showDebugPanel && (
         <DebugPanel 
-          isOpen={showDebugPanel}
+          appState={sentimentData || {}}
+          isVisible={showDebugPanel}
           onClose={() => setShowDebugPanel(false)}
+          onToggleVisibility={() => setShowDebugPanel(!showDebugPanel)}
           debugState={debugState}
           consoleMessages={consoleMessages}
         />

@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { DocumentEmbeddingWrapper as OriginalDocumentEmbedding } from '@/components/ui/document-embedding';
 import { Point, DocumentEmbeddingProps } from '@/types/embedding';
 import EmbeddingScene from '@/components/embedding/EmbeddingScene';
 import * as THREE from 'three';
