@@ -251,8 +251,8 @@ const Dashboard = () => {
       });
       setClusterPoints(clusterPointsMap);
       
-      if (typeof window !== 'undefined' && window.documentEmbeddingPoints !== undefined) {
-        window.documentEmbeddingPoints = mockPoints;
+      if (typeof window !== 'undefined' && (window as any).documentEmbeddingPoints !== undefined) {
+        (window as any).documentEmbeddingPoints = mockPoints;
       }
     }
   }, [sentimentData, pdfText]);
@@ -738,6 +738,13 @@ const Dashboard = () => {
                       sourceDescription={sentimentData.sourceDescription}
                       onResetView={handleResetVisualization}
                       visibleClusterCount={visibleClusterCount}
+                      onComparePoint={(point) => {
+                        console.log("Compare point:", point);
+                        // Implement comparison logic if needed
+                      }}
+                      onSearchSelect={(point) => {
+                        handlePointClick(point);
+                      }}
                     />
                   </div>
                 </CardContent>
