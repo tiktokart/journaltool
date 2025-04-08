@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,9 +10,9 @@ import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { EntitySentiment } from "@/components/EntitySentiment";
 import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
-import { DocumentEmbedding } from "@/components/DocumentEmbedding";
+import { LatentEmotionalAnalysis } from "@/components/LatentEmotionalAnalysis";
 import { toast } from "sonner";
-import { Loader2, CircleDot, Search, FileText, X, GitCompareArrows, ArrowLeftRight, RotateCcw, BookOpen, Info, Settings, Heart, Brain, Bug } from "lucide-react";
+import { Loader2, FileText, BookOpen, Info, Settings, Heart, Brain, Bug } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
 import { WordComparison } from "@/components/WordComparison";
@@ -30,7 +31,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
 
 const getRGBColorString = (color: number[]): string => {
   return `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`;
@@ -451,70 +451,11 @@ const Dashboard = () => {
     }
   };
 
-  const handleSelectWord = (word: string) => {
-    const point = points.find(p => p.word === word);
-    if (point) {
-      setSelectedWord(word);
-      setSelectedPoint(point);
-      setOpen(false);
-      toast.info(`Selected: ${word}`);
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    setOpen(false);
-  };
-
-  const handleResetVisualization = () => {
-    setSelectedWord(null);
-    setSelectedPoint(null);
-    setComparisonWord(null);
-    setComparisonPoint(null);
-    setSelectedCluster(null);
-    setFilteredPoints(points);
-    toast.info("Visualization reset");
-  };
-
-  const handleCompareWord = () => {
-    setShowComparison(true);
-  };
-
-  const handleSelectComparisonWord = (word: string) => {
-    const point = points.find(p => p.word === word);
-    if (point) {
-      setComparisonWord(word);
-      setComparisonPoint(point);
-      setComparisonSearchOpen(false);
-      toast.info(`Comparing with: ${word}`);
-    }
-  };
-
-  const handleClearComparison = () => {
-    setComparisonWord(null);
-    setComparisonPoint(null);
-    setComparisonSearchTerm("");
-    setShowComparison(false);
-  };
-
   const toggleClusterExpanded = (clusterName: string) => {
     setClusterExpanded(prev => ({
       ...prev,
       [clusterName]: !prev[clusterName]
     }));
-  };
-
-  const handleSelectCluster = (cluster: any) => {
-    if (selectedCluster === cluster.name) {
-      setSelectedCluster(null);
-      setFilteredPoints(points);
-      toast.info(`Showing all words`);
-    } else {
-      setSelectedCluster(cluster.name);
-      const clusterWords = clusterPoints[cluster.name] || [];
-      setFilteredPoints(clusterWords);
-      toast.info(`Filtered to cluster: ${cluster.name}`);
-    }
   };
 
   const calculateRelationship = (point1: Point, point2: Point) => {
@@ -702,103 +643,17 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
-              <Card className="border border-border shadow-md overflow-hidden bg-card mb-8">
-                <CardHeader className="z-10">
-                  <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-                    <div>
-                      <CardTitle className="flex items-center">
-                        <span>Latent Emotional Analysis</span>
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        This is data analyzed from a made up experience of a Panic Attack
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleResetVisualization}
-                        className="h-9"
-                      >
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Reset View
-                      </Button>
-                    
-                      <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-9 w-full md:w-64">
-                            <Search className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span className="text-muted-foreground">
-                              {searchTerm || "Search words or emotions..."}
-                            </span>
-                            {searchTerm && (
-                              <X 
-                                className="h-4 w-4 ml-2 text-muted-foreground hover:text-foreground"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleClearSearch();
-                                }}
-                              />
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent 
-                          className="p-0 w-full md:w-64 max-h-[300px] overflow-y-auto"
-                          ref={searchDropdownRef}
-                        >
-                          <Command>
-                            <CommandInput 
-                              placeholder="Search words..." 
-                              value={searchTerm}
-                              onValueChange={setSearchTerm}
-                            />
-                            <CommandList>
-                              <CommandEmpty>No results found</CommandEmpty>
-                              <CommandGroup>
-                                {uniqueWords
-                                  .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
-                                  .slice(0, 100)
-                                  .map((word) => (
-                                    <CommandItem 
-                                      key={word} 
-                                      value={word}
-                                      onSelect={handleSelectWord}
-                                    >
-                                      {word}
-                                    </CommandItem>
-                                  ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
-                  <div className="text-sm font-normal flex items-center text-muted-foreground">
-                    <CircleDot className="h-4 w-4 mr-2" />
-                    <span>
-                      Hover or click on words to see emotional relationships. Use the Reset View button when needed.
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="h-[500px] relative">
-                    <DocumentEmbedding 
-                      points={filteredPoints}
-                      onPointClick={handlePointClick}
-                      isInteractive={true}
-                      depressedJournalReference={false}
-                      focusOnWord={selectedWord}
-                      sourceDescription={sentimentData.sourceDescription}
-                      onResetView={handleResetVisualization}
-                      visibleClusterCount={visibleClusterCount}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <LatentEmotionalAnalysis 
+                points={points}
+                uniqueWords={uniqueWords}
+                emotionalClusters={emotionalClusters}
+                clusterPoints={clusterPoints}
+                clusterColors={clusterColors}
+                clusterExpanded={clusterExpanded}
+                sourceDescription={sentimentData.sourceDescription}
+              />
               
-              <Tabs defaultValue="overview" className="space-y-4">
+              <Tabs defaultValue="overview" className="space-y-4 mt-8">
                 <div className="overflow-x-auto">
                   <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto">
                     <TabsTrigger value="overview" className="min-w-max">Overview</TabsTrigger>
@@ -841,100 +696,12 @@ const Dashboard = () => {
                 </TabsContent>
               </Tabs>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mt-8">
                 <Card className="border border-border shadow-md bg-card">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg flex items-center">
                         <Settings className="h-5 w-5 mr-2 text-primary" />
-                        Emotional Clusters
-                      </CardTitle>
-                      <div className="flex items-center space-x-2">
-                        <Slider 
-                          value={[visibleClusterCount]}
-                          min={1}
-                          max={10}
-                          step={1}
-                          onValueChange={(values) => setVisibleClusterCount(values[0])}
-                          className="w-32"
-                        />
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          Show: {visibleClusterCount}
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {emotionalClusters.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No emotional clusters detected</p>
-                      ) : (
-                        emotionalClusters.map((cluster) => (
-                          <div key={cluster.id} className="border border-border rounded-lg overflow-hidden">
-                            <div 
-                              className={`flex items-center justify-between p-3 cursor-pointer ${
-                                selectedCluster === cluster.name ? 'bg-accent' : 'bg-card'
-                              }`}
-                              onClick={() => handleSelectCluster(cluster)}
-                            >
-                              <div className="flex items-center">
-                                <div 
-                                  className="w-3 h-3 rounded-full mr-3"
-                                  style={{ backgroundColor: cluster.color }}
-                                />
-                                <span className="font-medium">{cluster.name}</span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {cluster.size} words
-                                </Badge>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleClusterExpanded(cluster.name);
-                                  }}
-                                >
-                                  <Info className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            {clusterExpanded[cluster.name] && (
-                              <div className="p-3 bg-muted/30 text-sm">
-                                <p className="text-muted-foreground mb-2">
-                                  Sentiment: {(cluster.sentiment * 100).toFixed(0)}%
-                                </p>
-                                <div className="flex flex-wrap gap-1">
-                                  {(clusterPoints[cluster.name] || []).slice(0, 5).map((point) => (
-                                    <Badge 
-                                      key={point.id} 
-                                      className="bg-primary/10 text-primary hover:bg-primary/20"
-                                    >
-                                      {point.word}
-                                    </Badge>
-                                  ))}
-                                  {(clusterPoints[cluster.name] || []).length > 5 && (
-                                    <Badge variant="outline">
-                                      +{(clusterPoints[cluster.name] || []).length - 5} more
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border border-border shadow-md bg-card">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center">
-                        <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
                         Word Comparison
                       </CardTitle>
                       <div>
