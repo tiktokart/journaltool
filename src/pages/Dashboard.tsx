@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,7 +88,6 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
   });
 };
 
-// Sample preloaded data for the app's main page
 const sampleData = {
   overallSentiment: {
     score: 0.35,
@@ -143,7 +141,6 @@ const sampleData = {
   sourceDescription: "Journal Entry 12 - Personal anxiety log"
 };
 
-// Sample text for the journal entry
 const sampleJournalText = "Today I experienced another panic attack during our team meeting. My heart started racing suddenly, and I felt that familiar shortness of breath. I tried to use the breathing techniques my therapist taught me, but I still felt overwhelmed. The physical symptoms lasted about 10 minutes, but the anxious feeling stayed with me for hours afterward. I wonder if the recent medication adjustment is causing these more intense episodes. I've also been having trouble sleeping, which probably isn't helping. My therapist suggested more mindfulness practice and identifying specific triggers. My support system at home has been helpful, but I'm still struggling at work. I need to find better coping mechanisms for these situations.";
 
 const wellbeingSuggestions = [
@@ -199,10 +196,10 @@ const mentalHealthResources = [
 
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [pdfText, setPdfText] = useState(sampleJournalText); // Preload with sample text
+  const [pdfText, setPdfText] = useState(sampleJournalText);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [sentimentData, setSentimentData] = useState<any>(sampleData); // Preload with sample data
+  const [sentimentData, setSentimentData] = useState<any>(sampleData);
   const [points, setPoints] = useState<Point[]>([]);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
@@ -230,7 +227,7 @@ const Dashboard = () => {
   const wordSearchRef = useRef<HTMLDivElement | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [consoleMessages, setConsoleMessages] = useState<{ level: string; message: string; timestamp: string }[]>([]);
+  const consoleMessages = useState<{ level: string; message: string; timestamp: string }[]>([]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -255,12 +252,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (sentimentData) {
-      // Generate mock points based on the text
       const mockPoints = generateMockPoints(pdfText, sentimentData);
       setPoints(mockPoints);
       setFilteredPoints(mockPoints);
       
-      // Extract unique words from the text
       const allWords = pdfText
         .toLowerCase()
         .split(/\s+/)
@@ -273,7 +268,6 @@ const Dashboard = () => {
       
       console.log(`Total unique words found: ${uniqueWordsArray.length}`);
       
-      // Create emotional clusters
       const clusters = sentimentData.clusters.map((cluster: any, index: number) => {
         const color = getEmotionColor(cluster.sentiment);
         return {
@@ -285,21 +279,18 @@ const Dashboard = () => {
       
       setEmotionalClusters(clusters);
       
-      // Create a mapping of cluster names to colors
       const colorMap: Record<string, string> = {};
       clusters.forEach((cluster: any) => {
         colorMap[cluster.name] = cluster.color;
       });
       setClusterColors(colorMap);
       
-      // Initialize cluster expansion state
       const expandedMap: Record<string, boolean> = {};
       clusters.forEach((cluster: any) => {
         expandedMap[cluster.name] = false;
       });
       setClusterExpanded(expandedMap);
       
-      // Assign points to clusters
       const clusterPointsMap: Record<string, Point[]> = {};
       clusters.forEach((cluster: any) => {
         const clusterSize = cluster.size;
@@ -316,9 +307,7 @@ const Dashboard = () => {
       });
       setClusterPoints(clusterPointsMap);
       
-      // Make points available globally for debugging
       if (typeof window !== 'undefined') {
-        // @ts-ignore - Adding custom property to window
         window.documentEmbeddingPoints = mockPoints;
       }
     }
@@ -344,7 +333,7 @@ const Dashboard = () => {
       
       setConsoleMessages(prev => [
         { level, message, timestamp },
-        ...prev.slice(0, 99) // Keep last 100 messages
+        ...prev.slice(0, 99)
       ]);
     };
 
@@ -376,7 +365,6 @@ const Dashboard = () => {
         const wordCount = extractedText.split(/\s+/).length;
         toast.info(`Extracted ${wordCount} words from PDF for analysis`);
         
-        // Immediately run analysis on upload
         analyzeSentiment(file, extractedText);
       } else {
         const fallbackTexts = [
@@ -389,7 +377,6 @@ const Dashboard = () => {
         setPdfText(fallbackText);
         toast.warning("Could not extract text properly, using sample text instead");
         
-        // Analyze with fallback text
         analyzeSentiment(file, fallbackText);
       }
     }
@@ -414,7 +401,6 @@ const Dashboard = () => {
       console.error("Error analyzing sentiment:", error);
       toast.error("Failed to analyze document");
       
-      // Provide fallback mock data on error
       const mockData = {
         overallSentiment: {
           score: 0.3,
@@ -592,7 +578,6 @@ const Dashboard = () => {
     }
   };
 
-  // Fix TypeScript error by ensuring the debugState property types match
   const debugState = {
     file: file ? { 
       name: file.name, 
@@ -1045,7 +1030,7 @@ const Dashboard = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {wellbeingSuggestions.map((suggestion, index) => (
                         <div 
                           key={index} 
