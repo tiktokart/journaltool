@@ -1,4 +1,3 @@
-
 import { ChangeEvent, useState, useEffect } from "react";
 import { FileUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -143,12 +142,6 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
     }
   };
 
-  const handleAnalysisMethodChange = (method: "bert" | "gemma3") => {
-    setAnalysisMethod(method);
-    localStorage.setItem("analysisMethod", method);
-    toast.info(`Analysis method switched to ${method === "bert" ? "BERT" : "Gemma 3"}`);
-  };
-
   return (
     <div className="flex flex-col gap-6">
       <div
@@ -195,31 +188,6 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
           <p className="text-xs text-muted-foreground mt-2">
             {t("maxFileSize") || "Maximum file size: 10MB"}
           </p>
-        </div>
-      </div>
-      
-      {/* Separate Analysis Method Selection - outside the upload area */}
-      <div className="flex flex-col w-full gap-3">
-        <p className="text-sm font-medium text-muted-foreground">
-          Document Analysis with Data Models
-        </p>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button
-            variant={analysisMethod === "bert" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleAnalysisMethodChange("bert")}
-            className="flex justify-center items-center"
-          >
-            <span className="font-medium">Analyze with BERT</span>
-          </Button>
-          <Button
-            variant={analysisMethod === "gemma3" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleAnalysisMethodChange("gemma3")}
-            className="flex justify-center items-center"
-          >
-            <span className="font-medium">Analyze with Gemma 3</span>
-          </Button>
         </div>
       </div>
     </div>

@@ -237,7 +237,7 @@ const Dashboard = () => {
   useEffect(() => {
     const storedMethod = localStorage.getItem("analysisMethod");
     if (storedMethod === "gemma3" || storedMethod === "bert") {
-      setAnalysisMethod(storedMethod);
+      setAnalysisMethod(storedMethod as "bert" | "gemma3");
     }
   }, []);
 
