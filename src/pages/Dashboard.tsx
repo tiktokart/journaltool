@@ -39,7 +39,6 @@ const getRGBColorString = (color: number[]): string => {
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
-      // Generate mock sentiment data
       const mockData = {
         overallSentiment: {
           score: Math.random() * 0.5 + 0.25,
@@ -227,7 +226,7 @@ const Dashboard = () => {
   const wordSearchRef = useRef<HTMLDivElement | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const consoleMessages = useState<{ level: string; message: string; timestamp: string }[]>([]);
+  const [consoleMessages, setConsoleMessages] = useState<{ level: string; message: string; timestamp: string }[]>([]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
