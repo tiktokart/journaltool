@@ -69,15 +69,15 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
         <div className="mb-3 p-4 rounded-full bg-muted/50">
           <GitCompareArrows className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-medium">{t("noWordsSelected") || "No words selected"}</h3>
+        <h3 className="text-lg font-medium">{t("noWordsSelected")}</h3>
         <p className="text-sm text-muted-foreground mt-1 max-w-md">
           {sourceDescription ? (
             <>
-              {t("addWordsFromDocument") || "Add words from your document to see how they relate to each other. You can add up to 4 words to compare."}
+              {t("addWordsFromDocument")}
             </>
           ) : (
             <>
-              {t("addWordsToCompare") || "Add words to see how they relate to each other. You can add up to 4 words to compare."}
+              {t("addWordsToCompare")}
             </>
           )}
         </p>
@@ -87,7 +87,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
           onClick={onAddWordClick}
         >
           <Search className="h-4 w-4 mr-2" />
-          {t("searchWords") || "Search Words"}
+          {t("searchWords")}
         </Button>
         
         {sourceDescription && (
@@ -125,11 +125,11 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
               <h3 className="font-bold truncate">{word.word}</h3>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">{t("emotionalTone") || "Emotional Tone"}</p>
+              <p className="text-xs text-muted-foreground mb-1">{t("emotionalTone")}</p>
               <p className="text-sm font-medium">{getTranslatedEmotion(word.emotionalTone)}</p>
             </div>
             <div className="mt-2">
-              <p className="text-xs text-muted-foreground mb-1">{t("sentiment") || "Sentiment"}</p>
+              <p className="text-xs text-muted-foreground mb-1">{t("sentiment")}</p>
               <p className="text-sm font-medium">
                 {word.sentiment.toFixed(2)}{" "}
                 {getTranslatedSentiment(
@@ -146,7 +146,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
       
       {words.length > 1 && (
         <div>
-          <h3 className="text-lg font-medium mb-4">{t("relationshipAnalysis") || "Relationship Analysis"}</h3>
+          <h3 className="text-lg font-medium mb-4">{t("relationshipAnalysis")}</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {words.flatMap((word1, i) => 
               words.slice(i+1).map((word2, j) => {
@@ -199,7 +199,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                     
                     <div className="space-y-2">
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">{t("overallRelationship") || "Overall Relationship"}</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t("overallRelationship")}</p>
                         <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-primary rounded-full" 
@@ -212,12 +212,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                             overallSimilarity >= 0.6 ? "related" :
                             overallSimilarity >= 0.4 ? "moderatelyRelated" :
                             overallSimilarity >= 0.2 ? "weaklyRelated" : "barelyRelated"
-                          ) || 
-                          (overallSimilarity >= 0.8 ? "Strongly Related" :
-                           overallSimilarity >= 0.6 ? "Related" :
-                           overallSimilarity >= 0.4 ? "Moderately Related" :
-                           overallSimilarity >= 0.2 ? "Weakly Related" : "Barely Related")
-                          }
+                          )}
                           {" "}
                           ({Math.round(overallSimilarity * 100)}%)
                         </p>
@@ -225,27 +220,27 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                       
                       <div className="grid grid-cols-2 gap-3 pt-2">
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">{t("contextualSimilarity") || "Contextual Similarity"}</p>
+                          <p className="text-xs text-muted-foreground mb-1">{t("contextualSimilarity")}</p>
                           <p className="text-sm font-medium">{Math.round(spatialSimilarity * 100)}%</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">{t("emotionalAlignment") || "Emotional Alignment"}</p>
+                          <p className="text-xs text-muted-foreground mb-1">{t("emotionalAlignment")}</p>
                           <p className="text-sm font-medium">{Math.round(sentimentSimilarity * 100)}%</p>
                         </div>
                       </div>
                       
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">{t("emotionalGroup") || "Emotional Group"}</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t("emotionalGroup")}</p>
                         <p className="text-sm font-medium">
                           {sameEmotionalGroup 
-                            ? `${t("bothIn") || "Both in"} "${getTranslatedEmotion(word1.emotionalTone)}" ${t("group") || "group"}` 
-                            : `${t("differentGroups") || "Different groups"} (${getTranslatedEmotion(word1.emotionalTone)} ${t("vs") || "vs"} ${getTranslatedEmotion(word2.emotionalTone)})`}
+                            ? `${t("bothIn")} "${getTranslatedEmotion(word1.emotionalTone)}" ${t("group")}` 
+                            : `${t("differentGroups")} (${getTranslatedEmotion(word1.emotionalTone)} ${t("vs")} ${getTranslatedEmotion(word2.emotionalTone)})`}
                         </p>
                       </div>
                       
                       {sharedKeywords && sharedKeywords.length > 0 && (
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">{t("sharedConcepts") || "Shared Concepts"}</p>
+                          <p className="text-xs text-muted-foreground mb-1">{t("sharedConcepts")}</p>
                           <div className="flex flex-wrap gap-1">
                             {sharedKeywords.map((keyword, index) => (
                               <Badge key={index} variant="outline" className="text-xs">

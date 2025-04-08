@@ -69,28 +69,28 @@ export const WordComparisonController = ({
 
   const handleAddToComparison = (point: Point) => {
     if (compareWords.length >= 4) {
-      toast.error(t("maxComparisonWordsError") || "You can only compare up to 4 words");
+      toast.error(t("maxComparisonWordsError"));
       return;
     }
     
     if (compareWords.some(p => p.id === point.id)) {
-      toast.info(`"${point.word}" ${t("alreadyInComparison") || "is already in your comparison"}`);
+      toast.info(`"${point.word}" ${t("alreadyInComparison")}`);
       return;
     }
     
     setCompareWords([...compareWords, point]);
     setCompareSearchOpen(false);
-    toast.success(`${t("addedToComparison") || "Added"} "${point.word}" ${t("toComparison") || "to comparison"}`);
+    toast.success(`${t("addedToComparison")} "${point.word}" ${t("toComparison")}`);
   };
 
   const handleRemoveFromComparison = (point: Point) => {
     setCompareWords(compareWords.filter(p => p.id !== point.id));
-    toast.info(`${t("removedFromComparison") || "Removed"} "${point.word}" ${t("fromComparison") || "from comparison"}`);
+    toast.info(`${t("removedFromComparison")} "${point.word}" ${t("fromComparison")}`);
   };
 
   const handleClearComparison = () => {
     setCompareWords([]);
-    toast.info(t("clearedAllComparisonWords") || "Cleared all comparison words");
+    toast.info(t("clearedAllComparisonWords"));
   };
 
   return (
@@ -99,7 +99,7 @@ export const WordComparisonController = ({
         <div className="flex justify-between items-center">
           <CardTitle className="flex items-center text-xl">
             <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
-            {t("wordComparison") || "Word Comparison"}
+            {t("wordComparison")}
           </CardTitle>
           
           <div className="flex gap-2">
@@ -110,18 +110,18 @@ export const WordComparisonController = ({
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9">
                   <Search className="h-4 w-4 mr-2" />
-                  {t("addWord") || "Add Word"}
+                  {t("addWord")}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[300px] p-0" align="end">
                 <Command>
                   <CommandInput 
-                    placeholder={t("searchWords") || "Search words..."} 
+                    placeholder={t("searchWords")} 
                     value={compareSearchTerm}
                     onValueChange={handleCompareSearchChange}
                   />
                   <CommandList>
-                    <CommandEmpty>{t("noMatchingWords") || "No matching words"}</CommandEmpty>
+                    <CommandEmpty>{t("noMatchingWords")}</CommandEmpty>
                     <CommandGroup>
                       {compareSearchResults.map((point) => (
                         <CommandItem 
@@ -158,7 +158,7 @@ export const WordComparisonController = ({
                 onClick={handleClearComparison}
               >
                 <X className="h-4 w-4 mr-2" />
-                {t("clearAll") || "Clear All"}
+                {t("clearAll")}
               </Button>
             )}
           </div>

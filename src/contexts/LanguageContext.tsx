@@ -117,6 +117,30 @@ export const translations: Translations = {
     de: "Dashboard anzeigen",
     zh: "查看仪表板",
   },
+  
+  // Journal Entry Example translations
+  journalEntryExample: {
+    en: "Journal Entry Example",
+    es: "Ejemplo de Entrada de Diario",
+    fr: "Exemple d'Entrée de Journal",
+    de: "Tagebucheintrag Beispiel",
+    zh: "日志条目示例",
+  },
+  journalEntryContent: {
+    en: "Today I spent some time in the garden. The fresh air and sunlight helped me feel more energized. I noticed the roses are starting to bloom, which always brings me joy. Later, I had a difficult conversation with a colleague that left me feeling a bit anxious, but I'm trying to remain positive. Tomorrow I plan to start that new book I've been wanting to read.",
+    es: "Hoy pasé un tiempo en el jardín. El aire fresco y la luz del sol me ayudaron a sentirme con más energía. Noté que las rosas están comenzando a florecer, lo que siempre me da alegría. Más tarde, tuve una conversación difícil con un colega que me dejó un poco ansioso, pero estoy tratando de mantenerme positivo. Mañana planeo comenzar ese nuevo libro que he querido leer.",
+    fr: "Aujourd'hui, j'ai passé du temps dans le jardin. L'air frais et la lumière du soleil m'ont aidé à me sentir plus énergique. J'ai remarqué que les roses commencent à fleurir, ce qui me donne toujours de la joie. Plus tard, j'ai eu une conversation difficile avec un collègue qui m'a laissé un peu anxieux, mais j'essaie de rester positif. Demain, je prévois de commencer ce nouveau livre que je voulais lire.",
+    de: "Heute habe ich einige Zeit im Garten verbracht. Die frische Luft und das Sonnenlicht halfen mir, mich energiegeladener zu fühlen. Ich bemerkte, dass die Rosen zu blühen beginnen, was mir immer Freude bereitet. Später hatte ich ein schwieriges Gespräch mit einem Kollegen, das mich etwas ängstlich zurückließ, aber ich versuche, positiv zu bleiben. Morgen plane ich, mit diesem neuen Buch zu beginnen, das ich schon lange lesen wollte.",
+    zh: "今天我在花园里度过了一些时间。新鲜的空气和阳光帮助我感到更有活力。我注意到玫瑰开始绽放，这总是给我带来喜悦。后来，我与一位同事进行了一次困难的谈话，这让我感到有些焦虑，但我试图保持积极。明天我计划开始阅读那本我一直想读的新书。",
+  },
+  analyzeThisExample: {
+    en: "Analyze this example",
+    es: "Analizar este ejemplo",
+    fr: "Analyser cet exemple",
+    de: "Dieses Beispiel analysieren",
+    zh: "分析此示例",
+  },
+  
   // Additional translations for other components
   resetView: {
     en: "Reset View",
@@ -269,7 +293,7 @@ export const translations: Translations = {
   viewReset: {
     en: "View reset to default",
     es: "Vista restablecida a predeterminada",
-    fr: "Vue réinitialisée par défault",
+    fr: "Vue réinitialisée par défaut",
     de: "Ansicht auf Standard zurückgesetzt",
     zh: "视图重置为默认值",
   },
@@ -532,6 +556,7 @@ export const translations: Translations = {
     de: "Stimmung",
     zh: "情感",
   },
+  
   // New translations for tabs and section titles
   latentEmotionalAnalysisTab: {
     en: "Latent Emotional Analysis",
@@ -606,7 +631,7 @@ export const translations: Translations = {
   positiveWords: {
     en: "Positive Words",
     es: "Palabras Positivas",
-    fr: "Mots Positivos",
+    fr: "Mots Positifs",
     de: "Positive Wörter",
     zh: "积极词汇",
   },
@@ -769,8 +794,9 @@ export const translations: Translations = {
     es: "Pase el cursor o haga clic en las palabras para ver las relaciones emocionales. Use el botón Restablecer Vista cuando sea necesario.",
     fr: "Survolez ou cliquez sur les mots pour voir les relations émotionnelles. Utilisez le bouton Réinitialiser la Vue si nécessaire.",
     de: "Bewegen Sie den Mauszeiger über Wörter oder klicken Sie darauf, um emotionale Beziehungen zu sehen. Verwenden Sie bei Bedarf die Schaltfläche Ansicht zurücksetzen.",
-    zh: "悬停或点击单词以查看情感关系。需要时使���重置视图按钮。",
+    zh: "悬停或点击单词以查看情感关系。需要时使用重置视图按钮。",
   },
+  
   // Word Comparison Component translations
   wordComparison: {
     en: "Word Comparison",
@@ -926,6 +952,7 @@ export const translations: Translations = {
     de: "vs",
     zh: "对比",
   },
+  
   // Toast messages
   maxComparisonWordsError: {
     en: "You can only compare up to 4 words",
