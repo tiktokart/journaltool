@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -256,7 +257,7 @@ const Dashboard = () => {
                 <div className="md:col-span-2">
                   <FileUploader onFilesAdded={handleFileUpload} />
                 </div>
-                <div className="flex flex-col justify-between space-y-4">
+                <div className="flex flex-col gap-4">
                   <div className="p-4 bg-muted rounded-lg">
                     <h3 className="font-medium mb-2">Selected File</h3>
                     <p className="text-sm text-muted-foreground">
