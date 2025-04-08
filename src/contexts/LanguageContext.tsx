@@ -899,6 +899,13 @@ export const translations: Translations = {
     de: "Emotionale Ausrichtung",
     zh: "情感一致性",
   },
+  emotionalGroup: {
+    en: "Emotional Group",
+    es: "Grupo Emocional",
+    fr: "Groupe Émotionnel",
+    de: "Emotionale Gruppe",
+    zh: "情感组",
+  },
   sharedConcepts: {
     en: "Shared Concepts",
     es: "Conceptos Compartidos",
