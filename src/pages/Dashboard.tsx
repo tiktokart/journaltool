@@ -171,7 +171,7 @@ const Dashboard = () => {
   const wordSearchRef = useRef<HTMLDivElement | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const consoleMessages = useState<{ level: string; message: string; timestamp: string }[]>([]);
+  const [consoleMessages, setConsoleMessages] = useState<{ level: string; message: string; timestamp: string }[]>([]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -562,7 +562,6 @@ const Dashboard = () => {
             </Button>
           </div>
           
-          {/* File Upload Card */}
           <Card className="border border-border shadow-md bg-card">
             <CardHeader>
               <CardTitle>Document Analysis</CardTitle>
@@ -615,7 +614,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* PDF Viewer */}
           {pdfUrl && showPdfViewer && (
             <PdfViewer 
               pdfUrl={pdfUrl} 
@@ -623,7 +621,6 @@ const Dashboard = () => {
             />
           )}
 
-          {/* Analysis Results */}
           {sentimentData && (
             <div className="animate-fade-in">
               <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center">
@@ -636,7 +633,6 @@ const Dashboard = () => {
                 </span>
               </div>
               
-              {/* Document Summary */}
               <Card className="mb-6 border border-border shadow-md bg-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -651,7 +647,6 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
-              {/* Latent Emotional Analysis */}
               <Card className="border border-border shadow-md overflow-hidden bg-card mb-8">
                 <CardHeader className="z-10">
                   <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
@@ -748,7 +743,6 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
-              {/* Sentiment Tabs */}
               <Tabs defaultValue="overview" className="space-y-4">
                 <div className="overflow-x-auto">
                   <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto">
@@ -792,9 +786,7 @@ const Dashboard = () => {
                 </TabsContent>
               </Tabs>
               
-              {/* Emotional Clusters and Word Comparison */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                {/* Emotional Clusters */}
                 <Card className="border border-border shadow-md bg-card">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -883,7 +875,6 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Word Comparison */}
                 <Card className="border border-border shadow-md bg-card">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -960,7 +951,6 @@ const Dashboard = () => {
                 </Card>
               </div>
               
-              {/* Wellbeing Suggestions */}
               {showWellbeingSuggestions && (
                 <Card className="mt-8 border border-border shadow-md bg-card">
                   <CardHeader className="pb-3">
@@ -1005,7 +995,6 @@ const Dashboard = () => {
                 </Card>
               )}
               
-              {/* Mental Health Resources */}
               <Card className="mt-8 mb-8 border border-border shadow-md bg-card">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center">
@@ -1043,11 +1032,13 @@ const Dashboard = () => {
         </div>
       </main>
       
-      {/* Debug Panel */}
       {showDebugPanel && (
         <DebugPanel 
-          debugState={debugState}
+          appState={debugState}
+          consoleMessages={consoleMessages}
+          isVisible={showDebugPanel}
           onClose={() => setShowDebugPanel(false)}
+          onToggleVisibility={() => setShowDebugPanel(!showDebugPanel)}
         />
       )}
     </div>
