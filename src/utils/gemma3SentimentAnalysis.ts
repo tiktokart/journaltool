@@ -48,17 +48,26 @@ export async function analyzeTextWithGemma3(text: string): Promise<{
     // Process the results to get sentiment score
     const sentiments = validResults.map(result => {
       if (Array.isArray(result) && result.length > 0) {
+        // Check if it's an array and access the first element safely
+        const firstResult = result[0];
+        // Safely check if the label property exists and contains "positive"
+        const labelText = typeof firstResult === 'object' && firstResult !== null 
+          ? String((firstResult as any).label || '') 
+          : '';
+          
+        // Safely get the score value with fallback
+        const scoreValue = typeof firstResult === 'object' && firstResult !== null 
+          ? Number((firstResult as any).score || 0.5) 
+          : 0.5;
+          
         // Normalize label to positive/negative
-        const label = result[0].label.toLowerCase();
-        if (label.includes("positive")) {
-          return result[0].score;
-        } else if (label.includes("negative")) {
-          return 1 - result[0].score;
-        } else {
-          return 0.5; // Neutral
+        if (labelText.toLowerCase().includes("positive")) {
+          return scoreValue;
+        } else if (labelText.toLowerCase().includes("negative")) {
+          return 1 - scoreValue;
         }
       }
-      return 0.5;
+      return 0.5; // Neutral fallback
     });
     
     // Average the sentiment scores
