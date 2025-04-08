@@ -80,15 +80,15 @@ export async function analyzeTextWithGemma3(text: string): Promise<{
         emotionalTones
       };
     } catch (error) {
-      console.error("Error with WebGPU sentiment pipeline, falling back to mock data:", error);
+      console.error("Error with WebGPU sentiment pipeline, falling back to text analysis:", error);
       // If WebGPU fails, fall back to analysis method that works on all devices
-      return fallbackSentimentAnalysis(text);
+      return textBasedSentimentAnalysis(text);
     }
   } catch (error) {
     console.error("Error analyzing text with Gemma 3:", error);
     toast.error("Failed to analyze text with Gemma 3, using fallback analysis");
     
-    return fallbackSentimentAnalysis(text);
+    return textBasedSentimentAnalysis(text);
   }
 }
 
@@ -147,15 +147,25 @@ function processEmotionalTones(text: string, sentiment: number): { [key: string]
   return emotionalTones;
 }
 
-// Fallback sentiment analysis when Gemma 3 pipeline fails
-function fallbackSentimentAnalysis(text: string): { sentiment: number; emotionalTones: { [key: string]: number } } {
-  console.log("Using fallback sentiment analysis method");
+// More sophisticated text-based sentiment analysis using the actual content
+function textBasedSentimentAnalysis(text: string): { sentiment: number; emotionalTones: { [key: string]: number } } {
+  console.log("Using text-based sentiment analysis on actual content");
   
-  // Simple sentiment word counting
-  const positiveWords = ["good", "great", "excellent", "amazing", "wonderful", "best", "love", "happy", "positive", "success"];
-  const negativeWords = ["bad", "terrible", "awful", "horrible", "worst", "hate", "sad", "negative", "failure", "poor"];
+  // Define more comprehensive word lists
+  const positiveWords = [
+    "good", "great", "excellent", "amazing", "wonderful", "best", "love", "happy", "positive", "success",
+    "beautiful", "perfect", "fantastic", "awesome", "brilliant", "delightful", "joy", "triumph", "pleased",
+    "grateful", "appreciate", "fortunate", "proud", "achieve", "benefit", "enjoy", "confident", "outstanding"
+  ];
+  const negativeWords = [
+    "bad", "terrible", "awful", "horrible", "worst", "hate", "sad", "negative", "failure", "poor",
+    "disappointed", "frustrating", "annoying", "miserable", "unpleasant", "ugly", "painful", "angry",
+    "fear", "stress", "worry", "difficult", "trouble", "problem", "tragedy", "regret", "suffer", "disaster"
+  ];
   
   const textLower = text.toLowerCase();
+  
+  // More sophisticated word counting - consider word boundaries
   let positiveCount = 0;
   let negativeCount = 0;
   
@@ -171,20 +181,50 @@ function fallbackSentimentAnalysis(text: string): { sentiment: number; emotional
     negativeCount += matches ? matches.length : 0;
   });
   
-  // Calculate sentiment score (0 to 1)
-  const totalWords = textLower.split(/\s+/).length;
-  const totalSentimentWords = positiveCount + negativeCount;
-  const sentimentScore = totalSentimentWords > 0 
-    ? (positiveCount / totalSentimentWords) 
-    : 0.5; // Default neutral
+  // Extract sentences for more context-aware analysis
+  const sentences = text.replace(/([.!?])\s*/g, "$1|").split("|");
+  let positiveSentences = 0;
+  let negativeSentences = 0;
+  
+  sentences.forEach(sentence => {
+    if (sentence.trim().length === 0) return;
+    const lowerSentence = sentence.toLowerCase();
+    
+    let sentencePositiveScore = 0;
+    let sentenceNegativeScore = 0;
+    
+    positiveWords.forEach(word => {
+      if (lowerSentence.includes(word)) sentencePositiveScore++;
+    });
+    
+    negativeWords.forEach(word => {
+      if (lowerSentence.includes(word)) sentenceNegativeScore++;
+    });
+    
+    if (sentencePositiveScore > sentenceNegativeScore) positiveSentences++;
+    else if (sentenceNegativeScore > sentencePositiveScore) negativeSentences++;
+  });
+  
+  // Combine word-level and sentence-level analysis
+  const totalSentences = sentences.filter(s => s.trim().length > 0).length;
+  const sentenceSentiment = totalSentences > 0 
+    ? (positiveSentences - negativeSentences) / totalSentences 
+    : 0;
+  
+  const totalWords = Math.max(1, positiveCount + negativeCount);
+  const wordSentiment = (positiveCount - negativeCount) / totalWords;
+  
+  // Combined sentiment (normalized to 0-1)
+  const rawSentiment = (wordSentiment * 0.7) + (sentenceSentiment * 0.3);
+  const normalizedSentiment = Math.min(1, Math.max(0, (rawSentiment + 1) / 2));
   
   // Process emotional tones
-  const emotionalTones = processEmotionalTones(text, sentimentScore);
+  const emotionalTones = processEmotionalTones(text, normalizedSentiment);
   
-  toast.success("Fallback sentiment analysis complete!");
+  toast.success("Text-based sentiment analysis complete!");
   
   return {
-    sentiment: sentimentScore,
+    sentiment: normalizedSentiment,
     emotionalTones
   };
 }
