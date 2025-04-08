@@ -199,7 +199,7 @@ const sampleData = {
     { name: "Breathing", sentiment: 0.45, mentions: 4, contexts: ["Context: Difficulty breathing while anxious"] },
     { name: "Panic", sentiment: 0.15, mentions: 6, contexts: ["Context: Panic attack symptoms described"] },
     { name: "Therapy", sentiment: 0.65, mentions: 3, contexts: ["Context: Discussion of therapy techniques"] },
-    { name: "Sleep", sentiment: 0.35, mentions: 4, contexts: ["Context: Difficulty sleeping due to anxiety"] },
+    { name: "Sleep", sentiment: 0.35, mentions: 4, contexts: [["Context: Difficulty sleeping due to anxiety"]] },
     { name: "Medication", sentiment: 0.55, mentions: 2, contexts: ["Context: Starting new anxiety medication"] },
     { name: "Work", sentiment: 0.25, mentions: 5, contexts: ["Context: Anxiety triggered at work"] },
   ],
@@ -744,4 +744,4 @@ const Dashboard = () => {
                     disabled={!file || isAnalyzing}
                     className="w-full"
                   >
-                    {isAnalyzing
+                    {is
