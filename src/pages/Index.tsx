@@ -115,15 +115,9 @@ const Index = () => {
     toast(`Selected: "${point.word}" (${point.emotionalTone || 'Neutral'})`);
   };
   
-  const handlePointCompare = (point: Point) => {
-    if (selectedPoint) {
-      setComparisonPoint(point);
-      toast.info(`Comparing "${selectedPoint.word}" with "${point.word}"`);
-    } else {
-      setSelectedPoint(point);
-      setFocusWord(point.word);
-      toast.info(`Selected: "${point.word}"`);
-    }
+  const handlePointCompare = (point1: Point, point2: Point) => {
+    setComparisonPoint(point2);
+    toast.info(`Comparing "${point1.word}" with "${point2.word}"`);
   };
 
   const handleSearchChange = (value: string) => {

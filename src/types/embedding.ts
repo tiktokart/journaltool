@@ -16,9 +16,9 @@ export interface DocumentEmbeddingProps {
   isInteractive?: boolean;
   depressedJournalReference?: boolean;  
   focusOnWord?: string | null;         
-  onComparePoint?: (point: Point) => void;  // Fixed to take a single point parameter
+  onComparePoint?: (point1: Point, point2: Point) => void;  
   onSearchSelect?: (point: Point) => void;  
   sourceDescription?: string;
   onResetView?: () => void;
-  visibleClusterCount?: number;  
+  visibleClusterCount?: number;  // Added to control the number of emotional clusters displayed
 }
