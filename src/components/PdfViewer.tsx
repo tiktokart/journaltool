@@ -5,9 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 interface PdfViewerProps {
   pdfUrl: string;
   className?: string;
+  onClose?: () => void;
 }
 
-export const PdfViewer = ({ pdfUrl, className = '' }: PdfViewerProps) => {
+export const PdfViewer = ({ pdfUrl, className = '', onClose }: PdfViewerProps) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {

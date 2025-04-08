@@ -308,7 +308,7 @@ const Dashboard = () => {
   const wordSearchRef = useRef<HTMLDivElement | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const consoleMessages = useState<Array<{ level: string; message: string; timestamp: string }>>([]);
+  const [consoleMessages, setConsoleMessages] = useState<Array<{ level: string; message: string; timestamp: string }>>([]);
 
   useEffect(() => {
     const originalConsoleLog = console.log;

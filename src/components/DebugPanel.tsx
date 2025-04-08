@@ -21,8 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface DebugPanelProps {
-  appState: any;
-  consoleMessages?: {level: string; message: string; timestamp: string}[];
+  appState?: any;
+  consoleMessages?: Array<{ level: string; message: string; timestamp: string }>;
   isVisible?: boolean;
   onClose?: () => void;
   onToggleVisibility?: () => void;
@@ -104,7 +104,7 @@ export const DebugPanel = ({
                 
                 <TabsContent value="state" className="mt-3">
                   <div className="rounded bg-black/70 p-3 text-xs font-mono text-green-400 overflow-x-auto whitespace-pre">
-                    {JSON.stringify(appState, null, 2)}
+                    {JSON.stringify(stateToDisplay, null, 2)}
                   </div>
                   <Button 
                     variant="outline" 
