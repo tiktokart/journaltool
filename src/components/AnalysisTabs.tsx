@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, CircleDot, RotateCcw } from "lucide-react";
+import { Search, X, CircleDot, RotateCcw, AlertTriangle } from "lucide-react";
 import { 
   Command,
   CommandEmpty,
@@ -64,6 +64,13 @@ export const AnalysisTabs = ({
 }: AnalysisTabsProps) => {
   const [open, setOpen] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check if the required data for each tab is available
+  const hasEmbeddingData = sentimentData?.embeddingPoints && sentimentData.embeddingPoints.length > 0;
+  const hasOverviewData = sentimentData?.overallSentiment && sentimentData?.distribution;
+  const hasTimelineData = sentimentData?.timeline && sentimentData.timeline.length > 0;
+  const hasEntitiesData = sentimentData?.entities && sentimentData.entities.length > 0;
+  const hasKeyPhrasesData = sentimentData?.keyPhrases && sentimentData.keyPhrases.length > 0;
 
   useEffect(() => {
     if (!sentimentData) return;
@@ -128,6 +135,20 @@ export const AnalysisTabs = ({
     }
   };
 
+  // Fallback component when data is missing
+  const DataMissingFallback = ({ tabName }: { tabName: string }) => (
+    <Card className="border border-border shadow-md mt-4">
+      <CardContent className="flex flex-col items-center justify-center py-16">
+        <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-medium mb-2">No {tabName} Data Available</h3>
+        <p className="text-sm text-muted-foreground text-center max-w-md">
+          The required data for this view couldn't be loaded. This may happen when analysis is incomplete 
+          or when the document doesn't contain enough information.
+        </p>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
       <div className="overflow-x-auto">
@@ -141,136 +162,156 @@ export const AnalysisTabs = ({
       </div>
       
       <TabsContent value="embedding" className="mt-6">
-        <Card className="border border-border shadow-md overflow-hidden bg-card">
-          <CardHeader className="z-10">
-            <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-              <CardTitle className="flex items-center">
-                <span>Latent Emotional Analysis</span>
-              </CardTitle>
-              
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleResetVisualization}
-                  className="h-9"
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Reset View
-                </Button>
+        {!hasEmbeddingData ? (
+          <DataMissingFallback tabName="Embedding" />
+        ) : (
+          <Card className="border border-border shadow-md overflow-hidden bg-card">
+            <CardHeader className="z-10">
+              <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
+                <CardTitle className="flex items-center">
+                  <span>Latent Emotional Analysis</span>
+                </CardTitle>
                 
-                <div className="relative w-full md:w-64">
-                  <div className="relative w-full">
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Search words or emotions..." 
-                      className="pl-8 w-full pr-8"
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                      }}
-                      onFocus={() => {
-                        if (uniqueWords.length > 0) {
-                          setOpen(true);
-                        }
-                      }}
-                    />
-                    {searchTerm && (
-                      <button 
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                        onClick={handleClearSearch}
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleResetVisualization}
+                    className="h-9"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset View
+                  </Button>
+                  
+                  <div className="relative w-full md:w-64">
+                    <div className="relative w-full">
+                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Search words or emotions..." 
+                        className="pl-8 w-full pr-8"
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                        }}
+                        onFocus={() => {
+                          if (uniqueWords.length > 0) {
+                            setOpen(true);
+                          }
+                        }}
+                      />
+                      {searchTerm && (
+                        <button 
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                          onClick={handleClearSearch}
+                        >
+                          <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                        </button>
+                      )}
+                    </div>
+                    {uniqueWords.length > 0 && open && (
+                      <div 
+                        ref={searchDropdownRef}
+                        className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
                       >
-                        <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                      </button>
+                        <Command>
+                          <CommandInput 
+                            placeholder="Search words..." 
+                            value={searchTerm}
+                            onValueChange={setSearchTerm}
+                          />
+                          <CommandList>
+                            <CommandEmpty>No results found</CommandEmpty>
+                            <CommandGroup>
+                              {uniqueWords
+                                .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
+                                .slice(0, 100)
+                                .map((word) => (
+                                  <CommandItem 
+                                    key={word} 
+                                    value={word}
+                                    onSelect={handleSelectWord}
+                                  >
+                                    {word}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </div>
                     )}
                   </div>
-                  {uniqueWords.length > 0 && open && (
-                    <div 
-                      ref={searchDropdownRef}
-                      className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
-                    >
-                      <Command>
-                        <CommandInput 
-                          placeholder="Search words..." 
-                          value={searchTerm}
-                          onValueChange={setSearchTerm}
-                        />
-                        <CommandList>
-                          <CommandEmpty>No results found</CommandEmpty>
-                          <CommandGroup>
-                            {uniqueWords
-                              .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
-                              .slice(0, 100)
-                              .map((word) => (
-                                <CommandItem 
-                                  key={word} 
-                                  value={word}
-                                  onSelect={handleSelectWord}
-                                >
-                                  {word}
-                                </CommandItem>
-                              ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </div>
-                  )}
                 </div>
               </div>
-            </div>
-            <div className="text-sm font-normal flex items-center text-muted-foreground">
-              <CircleDot className="h-4 w-4 mr-2" />
-              <span>
-                Hover or click on words to see emotional relationships. Use the Reset View button when needed.
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="h-[500px] relative">
-              <DocumentEmbedding 
-                points={filteredPoints}
-                onPointClick={handlePointClick}
-                isInteractive={true}
-                focusOnWord={selectedWord || null}
-                sourceDescription={sentimentData.sourceDescription}
-                onResetView={handleResetVisualization}
-                visibleClusterCount={visibleClusterCount}
-              />
-            </div>
-          </CardContent>
-        </Card>
+              <div className="text-sm font-normal flex items-center text-muted-foreground">
+                <CircleDot className="h-4 w-4 mr-2" />
+                <span>
+                  Hover or click on words to see emotional relationships. Use the Reset View button when needed.
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-[500px] relative">
+                <DocumentEmbedding 
+                  points={filteredPoints}
+                  onPointClick={handlePointClick}
+                  isInteractive={true}
+                  focusOnWord={selectedWord || null}
+                  sourceDescription={sentimentData.sourceDescription}
+                  onResetView={handleResetVisualization}
+                  visibleClusterCount={visibleClusterCount}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </TabsContent>
       
       <TabsContent value="overview" className="mt-6">
-        <SentimentOverview 
-          data={{
-            overallSentiment: sentimentData.overallSentiment,
-            distribution: sentimentData.distribution,
-            fileName: sentimentData.fileName
-          }}
-          sourceDescription={sentimentData.sourceDescription}
-        />
+        {!hasOverviewData ? (
+          <DataMissingFallback tabName="Overview" />
+        ) : (
+          <SentimentOverview 
+            data={{
+              overallSentiment: sentimentData.overallSentiment,
+              distribution: sentimentData.distribution,
+              fileName: sentimentData.fileName
+            }}
+            sourceDescription={sentimentData.sourceDescription}
+          />
+        )}
       </TabsContent>
       
       <TabsContent value="timeline" className="mt-6">
-        <SentimentTimeline 
-          data={sentimentData.timeline}
-          sourceDescription={sentimentData.sourceDescription}
-        />
+        {!hasTimelineData ? (
+          <DataMissingFallback tabName="Timeline" />
+        ) : (
+          <SentimentTimeline 
+            data={sentimentData.timeline}
+            sourceDescription={sentimentData.sourceDescription}
+          />
+        )}
       </TabsContent>
       
       <TabsContent value="themes" className="mt-6">
-        <EntitySentiment 
-          data={sentimentData.entities}
-          sourceDescription={sentimentData.sourceDescription}
-        />
+        {!hasEntitiesData ? (
+          <DataMissingFallback tabName="Themes" />
+        ) : (
+          <EntitySentiment 
+            data={sentimentData.entities}
+            sourceDescription={sentimentData.sourceDescription}
+          />
+        )}
       </TabsContent>
       
       <TabsContent value="keyphrases" className="mt-6">
-        <KeyPhrases 
-          data={sentimentData.keyPhrases}
-          sourceDescription={sentimentData.sourceDescription}
-        />
+        {!hasKeyPhrasesData ? (
+          <DataMissingFallback tabName="Key Words" />
+        ) : (
+          <KeyPhrases 
+            data={sentimentData.keyPhrases}
+            sourceDescription={sentimentData.sourceDescription}
+          />
+        )}
       </TabsContent>
     </Tabs>
   );
