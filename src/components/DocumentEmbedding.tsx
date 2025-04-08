@@ -30,15 +30,6 @@ export const DocumentEmbedding = (props: DocumentEmbeddingProps) => {
     }
   }, [props.points]);
   
-  // Convert types to match what the original component expects
-  const convertedProps = {
-    ...props,
-    points: props.points || [], // Ensure points is never undefined
-    isInteractive: props.isInteractive === undefined ? true : props.isInteractive,
-    depressedJournalReference: props.depressedJournalReference === undefined ? false : props.depressedJournalReference,
-    visibleClusterCount: props.visibleClusterCount || 5, // Default to 5 if undefined
-  };
-
   if (props.points.length === 0) {
     return (
       <div className="w-full h-full bg-muted/30 flex items-center justify-center">
