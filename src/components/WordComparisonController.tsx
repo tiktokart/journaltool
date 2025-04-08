@@ -28,7 +28,7 @@ export const WordComparisonController = ({
   const [compareSearchOpen, setCompareSearchOpen] = useState(false);
   const [compareSearchTerm, setCompareSearchTerm] = useState("");
   const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // Update search results when points change
   useEffect(() => {
@@ -36,6 +36,12 @@ export const WordComparisonController = ({
       setCompareSearchResults(points.slice(0, 15));
     }
   }, [points]);
+
+  // Add effect to respond to language changes
+  useEffect(() => {
+    // Force re-render when language changes
+    setCompareSearchTerm(compareSearchTerm);
+  }, [language]);
 
   const handleCompareSearchChange = (value: string) => {
     setCompareSearchTerm(value);

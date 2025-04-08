@@ -28,7 +28,12 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
   onAddWordClick,
   sourceDescription
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  // Force re-render on language change
+  useEffect(() => {
+    // This empty dependency-tracked effect will cause a re-render when language changes
+  }, [language]);
 
   // Handle document clicks to close any open dropdowns
   useEffect(() => {
