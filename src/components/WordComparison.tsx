@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,10 +29,11 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
   sourceDescription
 }) => {
   const { t, language } = useLanguage();
+  const [forceUpdate, setForceUpdate] = useState<number>(0);
 
   // Force re-render on language change
   useEffect(() => {
-    // This empty dependency-tracked effect will cause a re-render when language changes
+    setForceUpdate(prev => prev + 1);
   }, [language]);
 
   // Handle document clicks to close any open dropdowns
@@ -109,7 +110,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {words.map((word) => (
-          <div key={word.id} className="border rounded-md p-4 relative">
+          <div key={`${word.id}-${forceUpdate}`} className="border rounded-md p-4 relative">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -173,7 +174,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                 
                 return (
                   <div 
-                    key={`${word1.id}-${word2.id}`} 
+                    key={`${word1.id}-${word2.id}-${forceUpdate}`} 
                     className="border rounded-md p-4"
                   >
                     <div className="flex justify-between items-center mb-3">

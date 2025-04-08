@@ -37,10 +37,17 @@ export const WordComparisonController = ({
     }
   }, [points]);
 
-  // Add effect to respond to language changes
+  // Force re-render when language changes - this is important for translations to take effect
   useEffect(() => {
-    // Force re-render when language changes
-    setCompareSearchTerm(compareSearchTerm);
+    // Setting the state forces a re-render
+    setCompareSearchResults(prev => [...prev]);
+    
+    // Also reset search term to force the search component to update
+    if (compareSearchTerm) {
+      const currentTerm = compareSearchTerm;
+      setCompareSearchTerm("");
+      setTimeout(() => setCompareSearchTerm(currentTerm), 0);
+    }
   }, [language]);
 
   const handleCompareSearchChange = (value: string) => {
