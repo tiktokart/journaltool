@@ -20,5 +20,6 @@ export interface DocumentEmbeddingProps {
   onSearchSelect?: (point: Point) => void;  
   sourceDescription?: string;
   onResetView?: () => void;
-  visibleClusterCount?: number;  // Added to control the number of emotional clusters displayed
+  visibleClusterCount?: number;  // Controls the number of emotional clusters displayed
+  showAllPoints?: boolean;      // Added to control showing all points regardless of cluster
 }

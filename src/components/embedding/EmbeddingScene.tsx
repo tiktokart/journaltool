@@ -22,6 +22,7 @@ interface EmbeddingSceneProps {
   selectedEmotionalGroup?: string | null;
   onResetView?: () => void;
   visibleClusterCount?: number;
+  showAllPoints?: boolean;
 }
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
@@ -40,7 +41,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   onFocusEmotionalGroup,
   selectedEmotionalGroup,
   onResetView,
-  visibleClusterCount = 8
+  visibleClusterCount = 8,
+  showAllPoints = true
 }) => {
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = externalContainerRef || internalContainerRef;
@@ -85,6 +87,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       filteredPointsRef.current = points.filter(p => 
         (p.emotionalTone || "Neutral") === selectedEmotionalGroup
       );
+    } else if (showAllPoints) {
+      filteredPointsRef.current = points;
     } else {
       filteredPointsRef.current = points.filter(p => 
         activeEmotionalGroupsRef.current.includes(p.emotionalTone || "Neutral")
@@ -94,7 +98,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     if (spheresGroupRef.current) {
       updateSpheres();
     }
-  }, [points, visibleClusterCount, selectedEmotionalGroup]);
+  }, [points, visibleClusterCount, selectedEmotionalGroup, showAllPoints]);
 
   useEffect(() => {
     const scene = sceneRef.current;

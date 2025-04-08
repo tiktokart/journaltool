@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -24,7 +23,8 @@ export const DocumentEmbedding = ({
   onSearchSelect,
   sourceDescription,
   onResetView,
-  visibleClusterCount = 8
+  visibleClusterCount = 8,
+  showAllPoints = true
 }: DocumentEmbeddingProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -269,6 +269,7 @@ export const DocumentEmbedding = ({
         selectedEmotionalGroup={selectedEmotionalGroup}
         onResetView={handleResetView}
         visibleClusterCount={visibleClusterCount}
+        showAllPoints={showAllPoints}
       />
       
       {isInteractive && (
