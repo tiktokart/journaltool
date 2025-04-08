@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeftRight, X, Search, GitCompareArrows, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getEmotionColor } from '@/utils/embeddingUtils';
 
 interface WordComparisonProps {
   words: Point[];
@@ -95,7 +96,9 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
               <div 
                 className="w-4 h-4 rounded-full" 
                 style={{ 
-                  backgroundColor: `rgb(${word.color[0] * 255}, ${word.color[1] * 255}, ${word.color[2] * 255})` 
+                  backgroundColor: word.emotionalTone 
+                    ? getEmotionColor(word.emotionalTone)
+                    : `rgb(${word.color[0] * 255}, ${word.color[1] * 255}, ${word.color[2] * 255})` 
                 }} 
               />
               <h3 className="font-bold truncate">{word.word}</h3>
@@ -150,7 +153,9 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                         <div 
                           className="w-3 h-3 rounded-full" 
                           style={{ 
-                            backgroundColor: `rgb(${word1.color[0] * 255}, ${word1.color[1] * 255}, ${word1.color[2] * 255})` 
+                            backgroundColor: word1.emotionalTone 
+                              ? getEmotionColor(word1.emotionalTone)
+                              : `rgb(${word1.color[0] * 255}, ${word1.color[1] * 255}, ${word1.color[2] * 255})` 
                           }} 
                         />
                         <span className="font-bold">{word1.word}</span>
@@ -160,7 +165,9 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                         <div 
                           className="w-3 h-3 rounded-full" 
                           style={{ 
-                            backgroundColor: `rgb(${word2.color[0] * 255}, ${word2.color[1] * 255}, ${word2.color[2] * 255})` 
+                            backgroundColor: word2.emotionalTone 
+                              ? getEmotionColor(word2.emotionalTone)
+                              : `rgb(${word2.color[0] * 255}, ${word2.color[1] * 255}, ${word2.color[2] * 255})` 
                           }} 
                         />
                         <span className="font-bold">{word2.word}</span>

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -8,6 +8,7 @@ import { GitCompareArrows, Search, X } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { WordComparison } from "@/components/WordComparison";
 import { toast } from "sonner";
+import { getEmotionColor } from "@/utils/embeddingUtils";
 
 interface WordComparisonControllerProps {
   points: Point[];
@@ -26,6 +27,13 @@ export const WordComparisonController = ({
   const [compareSearchOpen, setCompareSearchOpen] = useState(false);
   const [compareSearchTerm, setCompareSearchTerm] = useState("");
   const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
+
+  // Update search results when points change
+  useEffect(() => {
+    if (points && points.length > 0) {
+      setCompareSearchResults(points.slice(0, 15));
+    }
+  }, [points]);
 
   const handleCompareSearchChange = (value: string) => {
     setCompareSearchTerm(value);
@@ -82,13 +90,6 @@ export const WordComparisonController = ({
     setCompareWords([]);
     toast.info("Cleared all comparison words");
   };
-  
-  // Initialize comparison results when points change
-  useState(() => {
-    if (points.length > 0) {
-      setCompareSearchResults(points.slice(0, 15));
-    }
-  });
 
   return (
     <Card className="border border-border shadow-md bg-card">
@@ -129,7 +130,9 @@ export const WordComparisonController = ({
                             <div 
                               className="w-3 h-3 rounded-full mr-2" 
                               style={{ 
-                                backgroundColor: `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
+                                backgroundColor: point.emotionalTone 
+                                  ? getEmotionColor(point.emotionalTone)
+                                  : `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
                               }} 
                             />
                             <span>{point.word}</span>

@@ -123,7 +123,8 @@ const Dashboard = () => {
       const filteredSignificantWords = significantWords.slice(0, wordLimit);
       
       // Create embedding points using actual text from the document
-      const mockPoints = generateMockPoints(pdfText, filteredSignificantWords.length, gemma3Results.sentiment);
+      // Fix the type error - passing a number instead of string for the boolean parameter
+      const mockPoints = generateMockPoints(true, filteredSignificantWords.length, gemma3Results.sentiment);
       
       // Assign real words from the document to the points instead of random words
       const embeddingPoints = mockPoints.map((point, index) => {
@@ -297,7 +298,7 @@ const Dashboard = () => {
         wordCount: pdfText.split(/\s+/).length,
         pdfTextLength: pdfText.length,
         sentiment: gemma3Results.sentiment,
-        summary,
+        summary: summary,
         embeddingPoints,
         sourceDescription: "Analyzed with Gemma 3 Model",
         overallSentiment: {
