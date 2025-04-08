@@ -1,13 +1,10 @@
-
 import { Point } from '@/types/embedding';
 
 export const generateMockPoints = (
   depressedJournalReference: boolean | string,
-  emotionalDistribution?: { [key: string]: number },
   customWordBank?: string[]
 ): Point[] => {
   const points: Point[] = [];
-  const emotionalTones = ['Joy', 'Sadness', 'Fear', 'Anger', 'Surprise', 'Disgust'];
   const isDepressed = typeof depressedJournalReference === 'boolean' 
     ? depressedJournalReference 
     : depressedJournalReference === 'true';
@@ -15,20 +12,26 @@ export const generateMockPoints = (
   // Define count based on custom word bank if available
   const count = customWordBank ? Math.min(customWordBank.length, 500) : 150;
   
-  // Default distribution if none provided
-  const defaultDistribution = {
-    Joy: isDepressed ? 0.1 : 0.3,
-    Sadness: isDepressed ? 0.4 : 0.1,
-    Fear: isDepressed ? 0.3 : 0.1,
+  // Emotional distribution for panic attack scenario
+  const distribution: Record<string, number> = {
+    Joy: isDepressed ? 0.05 : 0.3,
+    Sadness: isDepressed ? 0.2 : 0.1,
+    Fear: isDepressed ? 0.4 : 0.1,
     Anger: isDepressed ? 0.1 : 0.1,
     Surprise: isDepressed ? 0.05 : 0.2,
     Disgust: isDepressed ? 0.05 : 0.1,
-    Trust: isDepressed ? 0.0 : 0.1,
-    Anticipation: isDepressed ? 0.0 : 0.1,
+    Trust: isDepressed ? 0.05 : 0.1,
+    Anticipation: isDepressed ? 0.1 : 0.1,
     Neutral: 0.0
   };
   
-  const distribution = emotionalDistribution || defaultDistribution;
+  // Panic attack related words when isDepressed is true
+  const panicWords = [
+    "heart", "racing", "breath", "struggling", "panic", "attack", "fear", "chest", "tight", "dizzy",
+    "sweating", "shaking", "trembling", "dying", "losing", "control", "overwhelming", "suffocating", 
+    "trapped", "terror", "anxiety", "palpitations", "nausea", "tingling", "hot", "cold", "flashes",
+    "unreality", "detached", "crazy", "public", "escape", "embarrassed", "crowd", "alone", "help"
+  ];
   
   // Generate mock point data
   for (let i = 0; i < count; i++) {
@@ -73,8 +76,20 @@ export const generateMockPoints = (
     const blue = chosenTone === 'Sadness' || chosenTone === 'Fear' ? 0.8 : sentiment; 
     const color: [number, number, number] = [red, green, blue];
     
-    // Generate a word when custom bank is provided
-    const word = customWordBank ? customWordBank[i % customWordBank.length] : `Word_${i+1}`;
+    // Generate a word - use panic attack related words when isDepressed is true
+    let word;
+    if (customWordBank) {
+      word = customWordBank[i % customWordBank.length];
+    } else if (isDepressed && panicWords.length > 0) {
+      word = panicWords[i % panicWords.length];
+    } else {
+      word = `Word_${i+1}`;
+    }
+    
+    // Generate keywords related to panic attacks for isDepressed=true
+    const keywordBank = isDepressed ? 
+      ["anxiety", "breathing", "heart", "fear", "medical", "control", "health", "symptoms", "attack", "panic", "help", "body"] :
+      ["keyword", "general", "common", "word", "topic", "theme", "concept", "idea", "subject", "matter"];
     
     points.push({
       id: `point-${i}`,
@@ -85,9 +100,9 @@ export const generateMockPoints = (
       emotionalTone: chosenTone,
       relationships: [],
       keywords: [
-        `keyword_${Math.floor(Math.random() * 20) + 1}`,
-        `keyword_${Math.floor(Math.random() * 20) + 1}`,
-        `keyword_${Math.floor(Math.random() * 20) + 1}`,
+        keywordBank[Math.floor(Math.random() * keywordBank.length)],
+        keywordBank[Math.floor(Math.random() * keywordBank.length)],
+        keywordBank[Math.floor(Math.random() * keywordBank.length)]
       ]
     });
   }
@@ -104,7 +119,8 @@ export const generateMockPoints = (
       if (randomPoint.id !== point.id) {
         relationships.push({
           id: randomPoint.id,
-          strength: Math.random()
+          strength: Math.random(),
+          word: randomPoint.word
         });
       }
     }

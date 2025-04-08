@@ -53,13 +53,9 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
                   tick={{ fontSize: 12 }}
                 />
                 <Tooltip 
-                  formatter={(value: number, name, entry) => {
-                    const { payload } = entry as any;
-                    return [
-                      `${t("score")}: ${value.toFixed(2)}, ${t("mentions", { count: payload.mentions })}`,
-                      payload.name
-                    ];
-                  }}
+                  formatter={(value: number) => [
+                    `${t("score")}: ${value.toFixed(2)}`, ""
+                  ]}
                   contentStyle={{ 
                     borderRadius: '0.5rem',
                     border: 'none',

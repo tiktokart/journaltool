@@ -297,6 +297,7 @@ const Index = () => {
                     points={points}
                     wordCount={points.length}
                     showAllPoints={true}
+                    sourceDescription="Visualization of panic attack journal entry"
                   />
                 </div>
               </div>
