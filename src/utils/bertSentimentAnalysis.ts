@@ -14,7 +14,7 @@ export interface SentimentResult {
 }
 
 /**
- * Initialize the modern BERT sentiment analysis model
+ * Initialize the ModernBERT sentiment analysis model
  */
 export const initBertModel = async (): Promise<void> => {
   // If model is already loaded or currently loading, don't try to load it again
@@ -24,36 +24,36 @@ export const initBertModel = async (): Promise<void> => {
   
   // If we've already tried to load the model too many times, don't try again
   if (modelLoadAttempts >= MAX_LOAD_ATTEMPTS) {
-    throw new Error(`Failed to load modern BERT model after ${MAX_LOAD_ATTEMPTS} attempts`);
+    throw new Error(`Failed to load ModernBERT model after ${MAX_LOAD_ATTEMPTS} attempts`);
   }
   
   isModelLoading = true;
   modelLoadAttempts++;
   
   try {
-    console.log("Initializing modern BERT sentiment analysis model...");
+    console.log("Initializing ModernBERT sentiment analysis model...");
     
-    // Use a modern, optimized BERT variant from Hugging Face
-    // This model is specifically designed for browser compatibility
+    // Use ModernBERT from answerdotai
+    // This is a more modern model with better performance
     sentimentPipeline = await pipeline(
       "sentiment-analysis",
-      "Xenova/distilbert-base-uncased-finetuned-sst-2-english", 
-      { quantized: false } // Disable quantization for better accuracy
+      "answerdotai/ModernBERT-large"
+      // Removed the quantized option as it's causing a TypeScript error
     );
     
-    console.log("Modern BERT model loaded successfully");
+    console.log("ModernBERT model loaded successfully");
     
     // Reset loading state and attempts after successful load
     isModelLoading = false;
   } catch (error) {
-    console.error("Error loading modern BERT model:", error);
+    console.error("Error loading ModernBERT model:", error);
     isModelLoading = false;
-    throw new Error("Failed to load modern BERT model");
+    throw new Error("Failed to load ModernBERT model");
   }
 };
 
 /**
- * Analyze sentiment of a given text using modern BERT
+ * Analyze sentiment of a given text using ModernBERT
  * @param text The text to analyze
  * @returns Promise resolving to sentiment result
  */
@@ -93,7 +93,7 @@ export const analyzeSentiment = async (text: string): Promise<SentimentResult> =
 
     const { label, score } = result[0];
     
-    // Convert the BERT sentiment result to a normalized score between 0 and 1
+    // Convert the ModernBERT sentiment result to a normalized score between 0 and 1
     // where 1 is the most positive
     const normalizedScore = label.toLowerCase() === "positive" 
       ? score 
