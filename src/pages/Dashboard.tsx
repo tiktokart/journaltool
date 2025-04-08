@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -744,3 +745,29 @@ const Dashboard = () => {
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+          
+          {/* Add the rest of the dashboard content here */}
+          {showPdfViewer && pdfUrl && (
+            <PdfViewer 
+              pdfUrl={pdfUrl} 
+              onClose={togglePdfViewer} 
+              className="z-50"
+            />
+          )}
+          
+          {showDebugPanel && (
+            <DebugPanel 
+              state={debugState}
+              consoleMessages={consoleMessages}
+              onClose={() => setShowDebugPanel(false)}
+            />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
