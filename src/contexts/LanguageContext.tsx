@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 // Define all supported languages
@@ -845,4 +846,167 @@ export const translations: Translations = {
     es: "Agregue palabras para ver cómo se relacionan entre sí. Puede agregar hasta 4 palabras para comparar.",
     fr: "Ajoutez des mots pour voir comment ils sont liés. Vous pouvez ajouter jusqu'à 4 mots à comparer.",
     de: "Fügen Sie Wörter hinzu, um zu sehen, wie sie miteinander in Beziehung stehen. Sie können bis zu 4 Wörter zum Vergleichen hinzufügen.",
-    zh: "添加词语
+    zh: "添加词语以查看它们之间的关系。您最多可以添加4个词语进行比较。",
+  },
+  addedToComparison: {
+    en: "Added",
+    es: "Añadido",
+    fr: "Ajouté",
+    de: "Hinzugefügt",
+    zh: "已添加",
+  },
+  toComparison: {
+    en: "to comparison",
+    es: "a la comparación",
+    fr: "à la comparaison",
+    de: "zum Vergleich",
+    zh: "到比较",
+  },
+  removedFromComparison: {
+    en: "Removed",
+    es: "Eliminado",
+    fr: "Supprimé",
+    de: "Entfernt",
+    zh: "已移除",
+  },
+  fromComparison: {
+    en: "from comparison",
+    es: "de la comparación",
+    fr: "de la comparaison",
+    de: "vom Vergleich",
+    zh: "从比较",
+  },
+  clearedAllComparisonWords: {
+    en: "Cleared all comparison words",
+    es: "Se borraron todas las palabras de comparación",
+    fr: "Toutes les mots de comparaison ont été effacés",
+    de: "Alle Vergleichswörter gelöscht",
+    zh: "已清除所有比较词语",
+  },
+  maxComparisonWordsError: {
+    en: "You can only compare up to 4 words at a time",
+    es: "Solo puede comparar hasta 4 palabras a la vez",
+    fr: "Vous ne pouvez comparer que jusqu'à 4 mots à la fois",
+    de: "Sie können nur bis zu 4 Wörter gleichzeitig vergleichen",
+    zh: "您一次最多只能比较4个词语",
+  },
+  alreadyInComparison: {
+    en: "is already in the comparison",
+    es: "ya está en la comparación",
+    fr: "est déjà dans la comparaison",
+    de: "ist bereits im Vergleich",
+    zh: "已在比较中",
+  },
+  relationship: {
+    en: "Relationship",
+    es: "Relación",
+    fr: "Relation",
+    de: "Beziehung",
+    zh: "关系",
+  },
+  similarityScore: {
+    en: "Similarity Score",
+    es: "Puntuación de Similitud",
+    fr: "Score de Similarité",
+    de: "Ähnlichkeitswert",
+    zh: "相似度分数",
+  },
+  stronglySimilar: {
+    en: "Strongly Similar",
+    es: "Fuertemente Similar",
+    fr: "Très Similaire",
+    de: "Stark Ähnlich",
+    zh: "高度相似",
+  },
+  moderatelySimilar: {
+    en: "Moderately Similar",
+    es: "Moderadamente Similar",
+    fr: "Modérément Similaire",
+    de: "Mäßig Ähnlich",
+    zh: "中度相似",
+  },
+  somewhatSimilar: {
+    en: "Somewhat Similar",
+    es: "Algo Similar",
+    fr: "Quelque Peu Similaire",
+    de: "Etwas Ähnlich",
+    zh: "有些相似",
+  },
+  slightlySimilar: {
+    en: "Slightly Similar",
+    es: "Ligeramente Similar",
+    fr: "Légèrement Similaire",
+    de: "Leicht Ähnlich",
+    zh: "略微相似",
+  },
+  notSimilar: {
+    en: "Not Similar",
+    es: "No Similar",
+    fr: "Pas Similaire",
+    de: "Nicht Ähnlich",
+    zh: "不相似",
+  },
+  emotionallyOpposite: {
+    en: "Emotionally Opposite",
+    es: "Emocionalmente Opuesto",
+    fr: "Émotionnellement Opposé",
+    de: "Emotional Entgegengesetzt",
+    zh: "情感相反",
+  },
+  sentiment: {
+    en: "sentiment",
+    es: "sentimiento",
+    fr: "sentiment",
+    de: "Stimmung",
+    zh: "情感",
+  }
+};
+
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}
+
+const defaultLanguage: Language = "en";
+
+const LanguageContext = createContext<LanguageContextType>({
+  language: defaultLanguage,
+  setLanguage: () => {},
+  t: (key) => key,
+});
+
+export const LanguageProvider = ({ children }: { children: ReactNode }) => {
+  const [language, setLanguage] = useState<Language>(defaultLanguage);
+
+  const translate = (key: string, params?: Record<string, string | number>): string => {
+    if (!translations[key]) {
+      console.warn(`Translation key "${key}" not found.`);
+      return key;
+    }
+
+    let translation = translations[key][language] || translations[key]["en"] || key;
+    
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        translation = translation.replace(`{${paramKey}}`, String(paramValue));
+      });
+    }
+    
+    return translation;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t: translate }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error("useLanguage must be used within a LanguageProvider");
+  }
+  return context;
+};
