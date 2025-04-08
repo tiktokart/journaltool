@@ -20,6 +20,14 @@ export const DocumentEmbedding = (props: DocumentEmbeddingProps) => {
       props.onPointClick(point);
     }
   };
+
+  // Share the points with window object for global access (useful for debugging and data sharing)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && props.points.length > 0) {
+      // @ts-ignore - Adding custom property to window
+      window.documentEmbeddingPoints = props.points;
+    }
+  }, [props.points]);
   
   // Convert types to match what the original component expects
   const convertedProps = {
@@ -29,14 +37,6 @@ export const DocumentEmbedding = (props: DocumentEmbeddingProps) => {
     depressedJournalReference: props.depressedJournalReference === undefined ? false : props.depressedJournalReference,
     visibleClusterCount: props.visibleClusterCount || 5, // Default to 5 if undefined
   };
-
-  // Share the points with window object for global access (useful for debugging and data sharing)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && props.points.length > 0) {
-      // @ts-ignore - Adding custom property to window
-      window.documentEmbeddingPoints = props.points;
-    }
-  }, [props.points]);
 
   if (props.points.length === 0) {
     return (

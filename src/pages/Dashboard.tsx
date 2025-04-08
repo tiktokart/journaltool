@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ const getRGBColorString = (color: number[]): string => {
 const analyzePdfContent = async (pdfText: string, fileName: string) => {
   return new Promise<any>((resolve) => {
     setTimeout(() => {
+      // Generate mock sentiment data
       const mockData = {
         overallSentiment: {
           score: Math.random() * 0.5 + 0.25,
@@ -86,6 +88,63 @@ const analyzePdfContent = async (pdfText: string, fileName: string) => {
     }, 2000);
   });
 };
+
+// Sample preloaded data for the app's main page
+const sampleData = {
+  overallSentiment: {
+    score: 0.35,
+    label: "Negative"
+  },
+  distribution: {
+    positive: 25,
+    neutral: 15,
+    negative: 60
+  },
+  timeline: Array.from({ length: 20 }, (_, i) => ({
+    page: i + 1,
+    score: 0.3 + (i % 3 === 0 ? 0.1 : i % 2 === 0 ? -0.1 : 0),
+    text: "Journal entry excerpt (sample data)"
+  })),
+  entities: [
+    { name: "Anxiety", sentiment: 0.2, mentions: 8, contexts: ["Context: Experienced anxiety during team meeting"] },
+    { name: "Heart", sentiment: 0.25, mentions: 5, contexts: ["Context: Heart racing during panic attack"] },
+    { name: "Breathing", sentiment: 0.45, mentions: 4, contexts: ["Context: Difficulty breathing while anxious"] },
+    { name: "Panic", sentiment: 0.15, mentions: 6, contexts: ["Context: Panic attack symptoms described"] },
+    { name: "Therapy", sentiment: 0.65, mentions: 3, contexts: ["Context: Discussion of therapy techniques"] },
+    { name: "Sleep", sentiment: 0.35, mentions: 4, contexts: ["Context: Difficulty sleeping due to anxiety"] },
+    { name: "Medication", sentiment: 0.55, mentions: 2, contexts: ["Context: Starting new anxiety medication"] },
+    { name: "Work", sentiment: 0.25, mentions: 5, contexts: ["Context: Anxiety triggered at work"] },
+  ],
+  keyPhrases: [
+    { phrase: "panic attack", relevance: 0.9, sentiment: 0.2, occurrences: 6 },
+    { phrase: "heart racing", relevance: 0.85, sentiment: 0.25, occurrences: 5 },
+    { phrase: "shortness of breath", relevance: 0.8, sentiment: 0.3, occurrences: 4 },
+    { phrase: "feeling overwhelmed", relevance: 0.75, sentiment: 0.2, occurrences: 5 },
+    { phrase: "therapy session", relevance: 0.7, sentiment: 0.65, occurrences: 3 },
+    { phrase: "coping mechanisms", relevance: 0.75, sentiment: 0.7, occurrences: 2 },
+    { phrase: "deep breathing", relevance: 0.7, sentiment: 0.6, occurrences: 3 },
+    { phrase: "medication adjustment", relevance: 0.65, sentiment: 0.55, occurrences: 2 },
+    { phrase: "sleep disturbance", relevance: 0.6, sentiment: 0.3, occurrences: 4 },
+    { phrase: "support system", relevance: 0.65, sentiment: 0.75, occurrences: 2 },
+    { phrase: "trigger identification", relevance: 0.7, sentiment: 0.6, occurrences: 2 },
+    { phrase: "mindfulness practice", relevance: 0.75, sentiment: 0.8, occurrences: 2 },
+  ],
+  clusters: [
+    { name: "Anxiety Symptoms", size: 12, sentiment: 0.2 },
+    { name: "Treatment", size: 8, sentiment: 0.65 },
+    { name: "Daily Life", size: 10, sentiment: 0.4 },
+    { name: "Support System", size: 6, sentiment: 0.7 },
+    { name: "Coping Strategies", size: 9, sentiment: 0.6 },
+  ],
+  summary: "Journal Entry 12: The anxiety symptoms were particularly intense today. Experienced a panic attack during the team meeting with racing heart and shortness of breath. Therapy techniques helped somewhat, but still feeling overwhelmed. The new medication adjustment might be contributing to sleep disturbance. Need to practice more mindfulness and breathing exercises.",
+  fileName: "Journal Entry 12.pdf",
+  fileSize: 1024 * 100, // 100KB mock size
+  wordCount: 432, // Mock word count
+  sourceDescription: "Journal Entry 12 - Personal anxiety log"
+};
+
+// Sample text for the journal entry
+const sampleJournalText = "Today I experienced another panic attack during our team meeting. My heart started racing suddenly, and I felt that familiar shortness of breath. I tried to use the breathing techniques my therapist taught me, but I still felt overwhelmed. The physical symptoms lasted about 10 minutes, but the anxious feeling stayed with me for hours afterward. I wonder if the recent medication adjustment is causing these more intense episodes. I've also been having trouble sleeping, which probably isn't helping. My therapist suggested more mindfulness practice and identifying specific triggers. My support system at home has been helpful, but I'm still struggling at work. I need to find better coping mechanisms for these situations.";
 
 const wellbeingSuggestions = [
   {
@@ -140,10 +199,10 @@ const mentalHealthResources = [
 
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [pdfText, setPdfText] = useState("");
+  const [pdfText, setPdfText] = useState(sampleJournalText); // Preload with sample text
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [sentimentData, setSentimentData] = useState<any>(null);
+  const [sentimentData, setSentimentData] = useState<any>(sampleData); // Preload with sample data
   const [points, setPoints] = useState<Point[]>([]);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
@@ -342,6 +401,7 @@ const Dashboard = () => {
       console.error("Error analyzing sentiment:", error);
       toast.error("Failed to analyze document");
       
+      // Provide fallback mock data on error
       const mockData = {
         overallSentiment: {
           score: 0.3,
@@ -550,12 +610,11 @@ const Dashboard = () => {
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Document Analysis</h1>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={toggleDebugPanel}
-              className="flex items-center"
+              className="flex items-center ml-auto"
             >
               <Bug className="h-4 w-4 mr-2 text-red-500" />
               Debug
@@ -908,7 +967,7 @@ const Dashboard = () => {
                               className="mt-4"
                               onClick={handleAddWordToComparison}
                             >
-                              Add First Word
+                              Search Words
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent 
@@ -946,6 +1005,10 @@ const Dashboard = () => {
                       <WordComparison 
                         words={wordsForComparison}
                         onRemoveWord={handleRemoveWordFromComparison}
+                        calculateRelationship={calculateRelationship}
+                        onAddWordClick={handleAddWordToComparison}
+                        onSelectWord={handlePointClick}
+                        sourceDescription={sentimentData.sourceDescription}
                       />
                     )}
                   </CardContent>
