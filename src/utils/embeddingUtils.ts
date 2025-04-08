@@ -1,4 +1,5 @@
 import { Point } from '@/types/embedding';
+import seedrandom from 'seedrandom';
 
 export const generateMockPoints = (
   depressedJournalReference: boolean = false,
@@ -6,7 +7,7 @@ export const generateMockPoints = (
   sentimentOverride?: number
 ): Point[] => {
   // Set a seed for reproducible randomness 
-  Math.seedrandom("embedding-visualization-seed");
+  const rng = seedrandom("embedding-visualization-seed");
   
   // Determine how many points to generate
   let pointCount: number = 150;  // default value
@@ -73,9 +74,21 @@ export const generateMockPoints = (
     }
   }
   
-  // Use provided distribution if it exists
+  // Use provided distribution if it exists, making sure to include all required properties
   if (Object.keys(emotionalDistribution).length > 0) {
-    finalDistribution = emotionalDistribution;
+    // Create a complete distribution object with all required properties
+    const completedDistribution = {
+      Joy: emotionalDistribution.Joy || 0,
+      Sadness: emotionalDistribution.Sadness || 0,
+      Anger: emotionalDistribution.Anger || 0,
+      Fear: emotionalDistribution.Fear || 0,
+      Surprise: emotionalDistribution.Surprise || 0,
+      Disgust: emotionalDistribution.Disgust || 0,
+      Trust: emotionalDistribution.Trust || 0,
+      Anticipation: emotionalDistribution.Anticipation || 0,
+      Neutral: emotionalDistribution.Neutral || 0
+    };
+    finalDistribution = completedDistribution;
   }
   
   // Generate the points
@@ -84,7 +97,7 @@ export const generateMockPoints = (
   for (let i = 0; i < pointCount; i++) {
     // Determine emotional tone based on distribution
     let emotionalTone = "Neutral";
-    const emotionRoll = Math.random();
+    const emotionRoll = rng(); // Use our seeded random number generator
     let cumulativeProbability = 0;
     
     for (const [tone, probability] of Object.entries(finalDistribution)) {
@@ -97,9 +110,9 @@ export const generateMockPoints = (
     
     // Generate a point position
     const position: [number, number, number] = [
-      (Math.random() * 2 - 1) * 15,
-      (Math.random() * 2 - 1) * 15,
-      (Math.random() * 2 - 1) * 15
+      (rng() * 2 - 1) * 15,
+      (rng() * 2 - 1) * 15,
+      (rng() * 2 - 1) * 15
     ];
     
     // Choose a word from the bank or generate a generic one
@@ -120,29 +133,28 @@ export const generateMockPoints = (
         case "Joy":
         case "Trust":
         case "Anticipation":
-          sentimentValue = 0.7 + Math.random() * 0.3; // 0.7-1.0
+          sentimentValue = 0.7 + rng() * 0.3; // 0.7-1.0
           break;
         case "Sadness":
         case "Fear":
         case "Anger":
         case "Disgust":
-          sentimentValue = Math.random() * 0.3; // 0-0.3
+          sentimentValue = rng() * 0.3; // 0-0.3
           break;
         case "Surprise":
-          sentimentValue = 0.3 + Math.random() * 0.4; // 0.3-0.7
+          sentimentValue = 0.3 + rng() * 0.4; // 0.3-0.7
           break;
         default:
-          sentimentValue = 0.4 + Math.random() * 0.2; // 0.4-0.6
+          sentimentValue = 0.4 + rng() * 0.2; // 0.4-0.6
       }
     }
     
-    // Create the point
+    // Create the point - removed 'size' property which is not in Point interface
     const point: Point = {
       id: `point-${i}`,
       position: position,
       word: word,
       color: getColorForEmotionalTone(emotionalTone),
-      size: 0.4 + Math.random() * 0.6, // Random size between 0.4 and 1.0
       emotionalTone: emotionalTone,
       sentiment: sentimentValue,
       relationships: [],
@@ -150,13 +162,13 @@ export const generateMockPoints = (
     };
     
     // Add related concepts/keywords
-    const keywordCount = Math.floor(Math.random() * 4);
+    const keywordCount = Math.floor(rng() * 4);
     if (keywordCount > 0) {
       const keywords = [];
       for (let k = 0; k < keywordCount; k++) {
         if (wordBank.length > 0) {
           // Choose a random word from the bank
-          const randomIndex = Math.floor(Math.random() * wordBank.length);
+          const randomIndex = Math.floor(rng() * wordBank.length);
           keywords.push(wordBank[randomIndex]);
         } else {
           keywords.push(`Concept ${k + 1}`);
@@ -170,7 +182,7 @@ export const generateMockPoints = (
   
   // Add relationships between points
   points.forEach((point, index) => {
-    const relationshipCount = Math.floor(Math.random() * 7) + 3; // 3-10 relationships
+    const relationshipCount = Math.floor(rng() * 7) + 3; // 3-10 relationships
     const relationships = [];
     
     // Create a set to keep track of points already used in relationships
@@ -183,7 +195,7 @@ export const generateMockPoints = (
       
       // Find a target that hasn't been used yet, with a maximum number of attempts
       do {
-        targetIndex = Math.floor(Math.random() * points.length);
+        targetIndex = Math.floor(rng() * points.length);
         attempts++;
         if (attempts > maxAttempts) break;
       } while (targetIndex === index || usedRelationships.has(points[targetIndex].id));
@@ -195,7 +207,7 @@ export const generateMockPoints = (
         // Relationship strength is stronger for points with the same emotional tone
         const sameEmotionalTone = point.emotionalTone === targetPoint.emotionalTone;
         const baseStrength = sameEmotionalTone ? 0.7 : 0.3;
-        const strength = baseStrength + Math.random() * 0.3;
+        const strength = baseStrength + rng() * 0.3;
         
         relationships.push({
           id: targetPoint.id,
