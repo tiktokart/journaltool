@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,7 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { Header } from "@/components/Header";
 import { LatentEmotionalAnalysis } from "@/components/LatentEmotionalAnalysis";
 import { toast } from "sonner";
-import { Loader2, FileText, BookOpen, Info, Settings, Heart, Brain, Bug } from "lucide-react";
+import { Loader2, FileText, BookOpen, Info, Settings, Heart, Brain, Bug, Search, X } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
 import { WordComparison } from "@/components/WordComparison";
@@ -312,42 +311,41 @@ const Dashboard = () => {
     }
   }, [sentimentData, pdfText]);
 
-  useEffect(() => {
-    const originalConsoleLog = console.log;
-    const originalConsoleError = console.error;
-    const originalConsoleWarn = console.warn;
-    const originalConsoleInfo = console.info;
+  const originalConsoleLog = console.log;
+  const originalConsoleError = console.error;
+  const originalConsoleWarn = console.warn;
+  const originalConsoleInfo = console.info;
 
-    const interceptConsole = (
-      originalFn: any, 
-      level: string
-    ) => (...args: any[]) => {
-      originalFn(...args);
-      
-      const message = args.map(arg => 
-        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-      ).join(' ');
-      
-      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-      
-      setConsoleMessages(prev => [
-        { level, message, timestamp },
-        ...prev.slice(0, 99)
-      ]);
-    };
+  const interceptConsole = (
+    originalFn: any, 
+    level: string
+  ) => (...args: any[]) => {
+    originalFn(...args);
+    
+    const message = args.map(arg => 
+      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+    
+    const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+    
+    setConsoleMessages(prev => [
+      { level, message, timestamp },
+      ...prev.slice(0, 99)
+    ]);
+  };
 
-    console.log = interceptConsole(originalConsoleLog, 'log');
-    console.error = interceptConsole(originalConsoleError, 'error');
-    console.warn = interceptConsole(originalConsoleWarn, 'warn');
-    console.info = interceptConsole(originalConsoleInfo, 'info');
+  console.log = interceptConsole(originalConsoleLog, 'log');
+  console.error = interceptConsole(originalConsoleError, 'error');
+  console.warn = interceptConsole(originalConsoleWarn, 'warn');
+  console.info = interceptConsole(originalConsoleInfo, 'info');
 
-    return () => {
-      console.log = originalConsoleLog;
-      console.error = originalConsoleError;
-      console.warn = originalConsoleWarn;
-      console.info = originalConsoleInfo;
-    };
-  }, []);
+  return () => {
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+    console.warn = originalConsoleWarn;
+    console.info = originalConsoleInfo;
+  };
+}, []);
 
   const handleFileUpload = (files: File[], extractedText?: string, embedUrl?: string) => {
     if (files && files.length > 0) {
@@ -722,154 +720,3 @@ const Dashboard = () => {
                         <p className="text-sm text-muted-foreground">
                           Add words to compare emotional and semantic relationships
                         </p>
-                        <Popover open={wordSearchOpen} onOpenChange={setWordSearchOpen}>
-                          <PopoverTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              className="mt-4"
-                              onClick={handleAddWordToComparison}
-                            >
-                              <Search className="h-4 w-4 mr-2" />
-                              Search Words
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent 
-                            className="p-0 w-full md:w-64 max-h-[300px] overflow-y-auto"
-                            ref={wordSearchRef}
-                          >
-                            <Command>
-                              <CommandInput 
-                                placeholder="Search words..." 
-                                value={wordSearchTerm}
-                                onValueChange={setWordSearchTerm}
-                              />
-                              <CommandList>
-                                <CommandEmpty>No results found</CommandEmpty>
-                                <CommandGroup>
-                                  {uniqueWords
-                                    .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
-                                    .slice(0, 50)
-                                    .map((word) => (
-                                      <CommandItem 
-                                        key={word} 
-                                        value={word}
-                                        onSelect={handleSelectWordForComparison}
-                                      >
-                                        {word}
-                                      </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    ) : (
-                      <WordComparison 
-                        words={wordsForComparison}
-                        onRemoveWord={handleRemoveWordFromComparison}
-                        calculateRelationship={calculateRelationship}
-                        onAddWordClick={handleAddWordToComparison}
-                        onSelectWord={handlePointClick}
-                        sourceDescription={sentimentData.sourceDescription}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-              
-              {showWellbeingSuggestions && (
-                <Card className="mt-8 border border-border shadow-md bg-card">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center">
-                        <Heart className="h-5 w-5 mr-2 text-red-500" />
-                        Wellbeing Suggestions
-                      </CardTitle>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setShowWellbeingSuggestions(false)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {wellbeingSuggestions.map((suggestion, index) => (
-                        <div 
-                          key={index} 
-                          className="p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer"
-                        >
-                          <div className="flex items-center mb-2">
-                            {suggestion.icon}
-                            <h3 className="font-medium ml-2">{suggestion.title}</h3>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {suggestion.description}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 text-center">
-                      <p className="text-sm text-muted-foreground">
-                        These are general wellbeing suggestions based on common practices.
-                        <br />Always consult with a healthcare professional for personalized advice.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              <Card className="mt-8 mb-8 border border-border shadow-md bg-card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center">
-                    <Info className="h-5 w-5 mr-2 text-primary" />
-                    Mental Health Resources
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {mentalHealthResources.map((resource, index) => (
-                      <a 
-                        key={index} 
-                        href={resource.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors"
-                      >
-                        <h3 className="font-medium mb-1">{resource.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {resource.description}
-                        </p>
-                      </a>
-                    ))}
-                  </div>
-                  <div className="mt-4 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      If you're experiencing a mental health crisis, please reach out to a professional immediately.
-                      <br />These resources are available to help.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      </main>
-      
-      {showDebugPanel && (
-        <DebugPanel 
-          appState={debugState}
-          consoleMessages={consoleMessages}
-          isVisible={showDebugPanel}
-          onClose={() => setShowDebugPanel(false)}
-          onToggleVisibility={() => setShowDebugPanel(!showDebugPanel)}
-        />
-      )}
-    </div>
-  );
-};
-
-export default Dashboard;
