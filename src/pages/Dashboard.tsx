@@ -111,7 +111,7 @@ const Dashboard = () => {
       const gemma3Results = await analyzeTextWithGemma3(pdfText);
       
       // Extract significant words from the PDF text for visualization
-      const words = pdfText
+      const significantWords = pdfText
         .toLowerCase()
         .replace(/[^\w\s]/g, ' ')
         .split(/\s+/)
@@ -119,11 +119,11 @@ const Dashboard = () => {
         .filter((word, i, arr) => arr.indexOf(word) === i);
       
       // Use a reasonable number of words for visualization
-      const wordLimit = Math.min(150, words.length);
-      const significantWords = words.slice(0, wordLimit);
+      const wordLimit = Math.min(150, significantWords.length);
+      const filteredSignificantWords = significantWords.slice(0, wordLimit);
       
       // Create embedding points using actual text from the document
-      const mockPoints = generateMockPoints(pdfText, significantWords.length, gemma3Results.sentiment);
+      const mockPoints = generateMockPoints(pdfText, filteredSignificantWords.length, gemma3Results.sentiment);
       
       // Assign real words from the document to the points instead of random words
       const embeddingPoints = mockPoints.map((point, index) => {
@@ -145,11 +145,11 @@ const Dashboard = () => {
         }
         
         // Assign the actual word from the document
-        const wordIndex = index % significantWords.length;
+        const wordIndex = index % filteredSignificantWords.length;
         
         return {
           ...point,
-          word: significantWords[wordIndex],
+          word: filteredSignificantWords[wordIndex],
           emotionalTone,
           relationships: mockPoints
             .filter(p => p.id !== point.id)
@@ -319,14 +319,14 @@ const Dashboard = () => {
       setFilteredPoints(results.embeddingPoints || []);
       setAnalysisComplete(true);
       
-      const words = results.embeddingPoints
+      const resultWords = results.embeddingPoints
         .map((point: Point) => point.word)
         .filter((word: string, index: number, self: string[]) => 
           word && self.indexOf(word) === index
         )
         .sort();
       
-      setUniqueWords(words);
+      setUniqueWords(resultWords);
       
       toast.success(`Gemma 3 analysis completed! Analyzed ${results.pdfTextLength} characters of text from your PDF.`);
     } catch (error) {
