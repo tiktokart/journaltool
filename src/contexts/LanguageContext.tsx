@@ -654,7 +654,7 @@ export const translations: Translations = {
   positiveWords: {
     en: "Positive Words",
     es: "Palabras Positivas",
-    fr: "Mots Positifs",
+    fr: "Mots Positivos",
     de: "Positive Wörter",
     zh: "积极词汇",
   },
@@ -740,7 +740,7 @@ export const translations: Translations = {
     es: "Visualización actualizada para mostrar {count} grupos emocionales",
     fr: "Visualisation mise à jour pour afficher {count} groupes émotionnels",
     de: "Visualisierung aktualisiert, um {count} emotionale Cluster anzuzeigen",
-    zh: "已更新可视化以显示 {count} 个情感集群",
+    zh: "已��新可视化以显示 {count} 个情感集群",
   },
   benefit: {
     en: "Benefit",
@@ -854,3 +854,247 @@ export const translations: Translations = {
     es: "No hay palabras seleccionadas",
     fr: "Aucun mot sélectionné",
     de: "Keine Wörter ausgewählt",
+    zh: "未选择词语",
+  },
+  addWordsToCompare: {
+    en: "Add words to compare their emotional relationship",
+    es: "Añade palabras para comparar su relación emocional",
+    fr: "Ajoutez des mots pour comparer leur relation émotionnelle",
+    de: "Fügen Sie Wörter hinzu, um ihre emotionale Beziehung zu vergleichen",
+    zh: "添加词语以比较它们的情感关系",
+  },
+  addWordsFromDocument: {
+    en: "Add words from your document to compare",
+    es: "Añade palabras de tu documento para comparar",
+    fr: "Ajoutez des mots de votre document pour comparer",
+    de: "Fügen Sie Wörter aus Ihrem Dokument zum Vergleich hinzu",
+    zh: "从您的文档中添加词语进行比较",
+  },
+  searchWords: {
+    en: "Search Words",
+    es: "Buscar Palabras",
+    fr: "Rechercher des Mots",
+    de: "Wörter Suchen",
+    zh: "搜索词语",
+  },
+  relationshipAnalysis: {
+    en: "Relationship Analysis",
+    es: "Análisis de Relación",
+    fr: "Analyse de Relation",
+    de: "Beziehungsanalyse",
+    zh: "关系分析",
+  },
+  overallRelationship: {
+    en: "Overall Relationship",
+    es: "Relación General",
+    fr: "Relation Globale",
+    de: "Gesamtbeziehung",
+    zh: "整体关系",
+  },
+  contextualSimilarity: {
+    en: "Contextual Similarity",
+    es: "Similitud Contextual",
+    fr: "Similarité Contextuelle",
+    de: "Kontextuelle Ähnlichkeit",
+    zh: "上下文相似性",
+  },
+  emotionalAlignment: {
+    en: "Emotional Alignment",
+    es: "Alineación Emocional",
+    fr: "Alignement Émotionnel",
+    de: "Emotionale Ausrichtung",
+    zh: "情感一致性",
+  },
+  emotionalGroupType: {
+    en: "Emotional Group Type",
+    es: "Tipo de Grupo Emocional",
+    fr: "Type de Groupe Émotionnel",
+    de: "Emotionaler Gruppentyp",
+    zh: "情感组类型",
+  },
+  sharedConcepts: {
+    en: "Shared Concepts",
+    es: "Conceptos Compartidos",
+    fr: "Concepts Partagés",
+    de: "Gemeinsame Konzepte",
+    zh: "共享概念",
+  },
+  bothIn: {
+    en: "Both in",
+    es: "Ambos en",
+    fr: "Les deux dans",
+    de: "Beide in",
+    zh: "两者都在",
+  },
+  group: {
+    en: "group",
+    es: "grupo",
+    fr: "groupe",
+    de: "Gruppe",
+    zh: "组",
+  },
+  differentGroups: {
+    en: "Different groups",
+    es: "Grupos diferentes",
+    fr: "Groupes différents",
+    de: "Verschiedene Gruppen",
+    zh: "不同组",
+  },
+  vs: {
+    en: "vs",
+    es: "vs",
+    fr: "vs",
+    de: "vs",
+    zh: "对比",
+  },
+  sentiment: {
+    en: "Sentiment",
+    es: "Sentimiento",
+    fr: "Sentiment",
+    de: "Stimmung",
+    zh: "情感",
+  },
+  stronglyRelated: {
+    en: "Strongly related",
+    es: "Fuertemente relacionados",
+    fr: "Fortement liés",
+    de: "Stark verbunden",
+    zh: "强相关",
+  },
+  related: {
+    en: "Related",
+    es: "Relacionados",
+    fr: "Liés",
+    de: "Verbunden",
+    zh: "相关",
+  },
+  moderatelyRelated: {
+    en: "Moderately related",
+    es: "Moderadamente relacionados",
+    fr: "Modérément liés",
+    de: "Mäßig verbunden",
+    zh: "中度相关",
+  },
+  weaklyRelated: {
+    en: "Weakly related",
+    es: "Débilmente relacionados",
+    fr: "Faiblement liés",
+    de: "Schwach verbunden",
+    zh: "弱相关",
+  },
+  barelyRelated: {
+    en: "Barely related",
+    es: "Apenas relacionados",
+    fr: "À peine liés",
+    de: "Kaum verbunden",
+    zh: "几乎不相关",
+  },
+  maxComparisonWordsError: {
+    en: "Maximum of 4 words can be compared",
+    es: "Se puede comparar un máximo de 4 palabras",
+    fr: "Un maximum de 4 mots peut être comparé",
+    de: "Maximal 4 Wörter können verglichen werden",
+    zh: "最多可比较4个词语",
+  },
+  alreadyInComparison: {
+    en: "is already in comparison",
+    es: "ya está en comparación",
+    fr: "est déjà en comparaison",
+    de: "ist bereits im Vergleich",
+    zh: "已经在比较中",
+  },
+  addedToComparison: {
+    en: "Added",
+    es: "Añadido",
+    fr: "Ajouté",
+    de: "Hinzugefügt",
+    zh: "已添加",
+  },
+  toComparison: {
+    en: "to comparison",
+    es: "a la comparación",
+    fr: "à la comparaison",
+    de: "zum Vergleich",
+    zh: "至比较",
+  },
+  removedFromComparison: {
+    en: "Removed",
+    es: "Eliminado",
+    fr: "Supprimé",
+    de: "Entfernt",
+    zh: "已移除",
+  },
+  fromComparison: {
+    en: "from comparison",
+    es: "de la comparación",
+    fr: "de la comparaison",
+    de: "aus dem Vergleich",
+    zh: "从比较中",
+  },
+  clearedAllComparisonWords: {
+    en: "Cleared all comparison words",
+    es: "Se eliminaron todas las palabras de comparación",
+    fr: "Toutes les mots de comparaison ont été effacés",
+    de: "Alle Vergleichswörter gelöscht",
+    zh: "已清除所有比较词语",
+  }
+};
+
+// Create context 
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (language: Language) => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+// Create provider component
+export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [language, setLanguage] = useState<Language>("en");
+
+  // Translation function
+  const t = (key: string, params?: Record<string, string | number>): string => {
+    // Check if the key exists in translations
+    if (!translations[key]) {
+      console.warn(`Translation key "${key}" not found`);
+      return key;
+    }
+
+    // Get translation string for current language or fallback to English
+    let translatedText = translations[key][language] || translations[key].en || key;
+
+    // Process any parameters for dynamic values
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        translatedText = translatedText.replace(
+          new RegExp(`{${paramKey}}`, 'g'), 
+          String(paramValue)
+        );
+      });
+    }
+
+    return translatedText;
+  };
+
+  const contextValue = {
+    language,
+    setLanguage,
+    t
+  };
+
+  return (
+    <LanguageContext.Provider value={contextValue}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+// Custom hook to use the language context
+export const useLanguage = (): LanguageContextType => {
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};
