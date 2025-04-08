@@ -1,6 +1,8 @@
 
 import { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface PdfViewerProps {
   pdfUrl: string;
@@ -34,12 +36,22 @@ export const PdfViewer = ({ pdfUrl, className = '', onClose }: PdfViewerProps) =
   }
 
   return (
-    <Card className={`border border-border overflow-hidden ${className}`}>
-      <CardContent className="p-0">
+    <Card className={`border border-border overflow-hidden ${className} fixed top-0 left-0 right-0 bottom-0 z-50 m-4`}>
+      {onClose && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+      <CardContent className="p-0 h-full">
         <iframe
           ref={iframeRef}
           src={pdfUrl}
-          className="w-full h-[500px]"
+          className="w-full h-full"
           title={iframeTitle}
           sandbox="allow-scripts allow-same-origin"
           // Chrome settings to prevent conflicts with 3D visualization

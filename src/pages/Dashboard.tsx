@@ -744,30 +744,4 @@ const Dashboard = () => {
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-          
-          {/* Rest of the Dashboard component */}
-          {/* ... keep existing code (remainder of the component) */}
-        </div>
-      </main>
-      
-      {showDebugPanel && (
-        <DebugPanel 
-          debugState={debugState}
-          consoleMessages={consoleMessages}
-          onClose={() => setShowDebugPanel(false)}
-        />
-      )}
-      
-      {showPdfViewer && pdfUrl && (
-        <PdfViewer 
-          pdfUrl={pdfUrl}
-          onClose={togglePdfViewer}
-        />
-      )}
-    </div>
-  );
-};
-
-export default Dashboard;
+            </
