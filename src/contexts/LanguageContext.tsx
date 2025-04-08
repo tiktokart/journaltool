@@ -269,7 +269,7 @@ export const translations: Translations = {
   viewReset: {
     en: "View reset to default",
     es: "Vista restablecida a predeterminada",
-    fr: "Vue réinitialisée par défaut",
+    fr: "Vue réinitialisée par défault",
     de: "Ansicht auf Standard zurückgesetzt",
     zh: "视图重置为默认值",
   },
@@ -606,7 +606,7 @@ export const translations: Translations = {
   positiveWords: {
     en: "Positive Words",
     es: "Palabras Positivas",
-    fr: "Mots Positifs",
+    fr: "Mots Positivos",
     de: "Positive Wörter",
     zh: "积极词汇",
   },
@@ -769,7 +769,7 @@ export const translations: Translations = {
     es: "Pase el cursor o haga clic en las palabras para ver las relaciones emocionales. Use el botón Restablecer Vista cuando sea necesario.",
     fr: "Survolez ou cliquez sur les mots pour voir les relations émotionnelles. Utilisez le bouton Réinitialiser la Vue si nécessaire.",
     de: "Bewegen Sie den Mauszeiger über Wörter oder klicken Sie darauf, um emotionale Beziehungen zu sehen. Verwenden Sie bei Bedarf die Schaltfläche Ansicht zurücksetzen.",
-    zh: "悬停或点击单词以查看情感关系。需要时使用重置视图按钮。",
+    zh: "悬停或点击单词以查看情感关系。需要时使���重置视图按钮。",
   },
   // Word Comparison Component translations
   wordComparison: {
@@ -975,6 +975,20 @@ export const translations: Translations = {
     fr: "Tous les mots de comparaison ont été effacés",
     de: "Alle Vergleichswörter wurden gelöscht",
     zh: "已清除所有比较词语",
+  },
+  documentSummary: {
+    en: "Document Summary",
+    es: "Resumen del Documento",
+    fr: "Résumé du Document",
+    de: "Dokumentzusammenfassung",
+    zh: "文档摘要",
+  },
+  noSummaryAvailable: {
+    en: "No summary available for this document.",
+    es: "No hay resumen disponible para este documento.",
+    fr: "Aucun résumé disponible pour ce document.",
+    de: "Für dieses Dokument ist keine Zusammenfassung verfügbar.",
+    zh: "此文档没有可用的摘要。",
   },
 };
 
