@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,27 +7,32 @@ import { Button } from '@/components/ui/button';
 
 interface WordComparisonProps {
   words: Point[];
-  onSelectWord?: (point: Point) => void; // Make this optional
-  onRemoveWord?: (point: Point) => void; // Make this optional
+  onSelectWord?: (point: Point) => void;
+  onRemoveWord?: (point: Point) => void;
   calculateRelationship?: (point1: Point, point2: Point) => {
     spatialSimilarity: number;
     sentimentSimilarity: number;
     sameEmotionalGroup: boolean;
     sharedKeywords: string[];
   } | null;
-  onAddWordClick?: () => void; // Make this optional
+  onAddWordClick?: () => void;
   sourceDescription?: string;
 }
 
-export const WordComparison: React.FC<WordComparisonProps> = ({ 
-  words, 
-  onRemoveWord, 
-  calculateRelationship,
-  onAddWordClick,
-  sourceDescription,
-  onSelectWord
-}) => {
-  // Handle document clicks to close any open dropdowns
+interface LegacyWordComparisonProps {
+  word1?: string;
+  word2?: string;
+  point1?: Point;
+  point2?: Point;
+  relationship?: {
+    spatialSimilarity: number;
+    sentimentSimilarity: number;
+    sameEmotionalGroup: boolean;
+    sharedKeywords: string[];
+  } | null;
+}
+
+export const WordComparison: React.FC<WordComparisonProps | LegacyWordComparisonProps> = (props) => {
   useEffect(() => {
     const handleDocumentClick = (e: MouseEvent) => {
       // This component doesn't have any dropdowns of its own,
@@ -42,6 +46,90 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
       document.removeEventListener('mousedown', handleDocumentClick);
     };
   }, []);
+
+  if ('word1' in props && 'word2' in props && props.point1 && props.point2 && props.relationship) {
+    const words = [props.point1, props.point2];
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2">
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ 
+                backgroundColor: `rgb(${props.point1.color[0] * 255}, ${props.point1.color[1] * 255}, ${props.point1.color[2] * 255})` 
+              }} 
+            />
+            <span className="font-bold">{props.word1}</span>
+          </div>
+          <ArrowLeftRight className="h-4 w-4 text-muted-foreground mx-2" />
+          <div className="flex items-center gap-2">
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ 
+                backgroundColor: `rgb(${props.point2.color[0] * 255}, ${props.point2.color[1] * 255}, ${props.point2.color[2] * 255})` 
+              }} 
+            />
+            <span className="font-bold">{props.word2}</span>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Overall Relationship</p>
+            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary rounded-full" 
+                style={{ width: `${props.relationship.spatialSimilarity * 100}%` }}
+              />
+            </div>
+            <p className="text-sm mt-1">
+              {props.relationship.spatialSimilarity >= 0.8 ? "Strongly Related" :
+                props.relationship.spatialSimilarity >= 0.6 ? "Related" :
+                props.relationship.spatialSimilarity >= 0.4 ? "Moderately Related" :
+                props.relationship.spatialSimilarity >= 0.2 ? "Weakly Related" : "Barely Related"}
+              {" "}
+              ({Math.round(props.relationship.spatialSimilarity * 100)}%)
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Contextual Similarity</p>
+              <p className="text-sm font-medium">{Math.round(props.relationship.spatialSimilarity * 100)}%</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Emotional Alignment</p>
+              <p className="text-sm font-medium">{Math.round(props.relationship.sentimentSimilarity * 100)}%</p>
+            </div>
+          </div>
+          
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Emotional Group</p>
+            <p className="text-sm font-medium">
+              {props.relationship.sameEmotionalGroup 
+                ? `Both in "${props.point1.emotionalTone || 'Neutral'}" group` 
+                : `Different groups (${props.point1.emotionalTone || 'Neutral'} vs ${props.point2.emotionalTone || 'Neutral'})`}
+            </p>
+          </div>
+          
+          {props.relationship.sharedKeywords && props.relationship.sharedKeywords.length > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Shared Concepts</p>
+              <div className="flex flex-wrap gap-1">
+                {props.relationship.sharedKeywords.map((keyword, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {keyword}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const { words = [], onRemoveWord, calculateRelationship, onAddWordClick, sourceDescription, onSelectWord } = props as WordComparisonProps;
 
   if (words.length === 0) {
     return (

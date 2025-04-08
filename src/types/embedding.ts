@@ -15,7 +15,8 @@ export interface DocumentEmbeddingProps {
   onPointClick?: (point: Point | null) => void;
   isInteractive?: boolean;
   depressedJournalReference?: boolean;  
-  focusOnWord?: string | null;         
+  focusOnWord?: string | null;
+  comparisonWord?: string | null;         
   onComparePoint?: (point1: Point, point2: Point) => void;  
   onSearchSelect?: (point: Point) => void;  
   sourceDescription?: string;

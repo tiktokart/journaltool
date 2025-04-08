@@ -7,6 +7,7 @@ interface DocumentEmbeddingWrapperProps {
   isInteractive?: boolean;
   depressedJournalReference?: boolean;
   focusOnWord?: string | null;
+  comparisonWord?: string | null;
   sourceDescription?: string;
   onResetView?: () => void;
   visibleClusterCount?: number;
@@ -25,6 +26,7 @@ export const DocumentEmbeddingWrapper = (props: DocumentEmbeddingWrapperProps) =
         <p className="text-sm text-muted-foreground mt-2">
           {props.points.length} points loaded
           {props.focusOnWord && ` • Focus: ${props.focusOnWord}`}
+          {props.comparisonWord && ` • Comparing with: ${props.comparisonWord}`}
         </p>
         {props.sourceDescription && (
           <p className="text-xs text-muted-foreground mt-1">{props.sourceDescription}</p>

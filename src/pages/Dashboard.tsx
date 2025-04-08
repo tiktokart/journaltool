@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -853,7 +852,8 @@ const Dashboard = () => {
                           focusOnWord={selectedWord}
                           comparisonWord={comparisonWord}
                           visibleClusterCount={visibleClusterCount}
-                          onResetView={() => {}} // Placeholder
+                          onResetView={handleResetVisualization}
+                          sourceDescription={sentimentData.sourceDescription}
                         />
                       </div>
                     </div>
@@ -906,11 +906,9 @@ const Dashboard = () => {
                           </CardHeader>
                           <CardContent>
                             <WordComparison 
-                              word1={selectedWord || ''} 
-                              word2={comparisonWord}
-                              point1={selectedPoint}
-                              point2={comparisonPoint}
-                              relationship={calculateRelationship(selectedPoint, comparisonPoint)}
+                              words={[selectedPoint, comparisonPoint]} 
+                              calculateRelationship={calculateRelationship}
+                              sourceDescription={sentimentData.sourceDescription}
                             />
                           </CardContent>
                         </Card>
@@ -986,11 +984,17 @@ const Dashboard = () => {
                 </TabsList>
                 
                 <TabsContent value="overview">
-                  <SentimentOverview data={sentimentData} />
+                  <SentimentOverview 
+                    data={sentimentData} 
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="timeline">
-                  <SentimentTimeline data={sentimentData.timeline} />
+                  <SentimentTimeline 
+                    data={sentimentData.timeline} 
+                    sourceDescription={sentimentData.sourceDescription}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="entities">

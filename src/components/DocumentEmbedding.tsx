@@ -51,6 +51,7 @@ export const DocumentEmbedding = (props: DocumentEmbeddingProps) => {
         isInteractive={props.isInteractive !== undefined ? props.isInteractive : true}
         onPointSelect={handlePointSelect}
         focusOnWord={props.focusOnWord}
+        comparisonWord={props.comparisonWord}
         selectedPoint={selectedPoint}
         comparisonPoint={comparisonPoint}
         depressedJournalReference={props.depressedJournalReference !== undefined ? props.depressedJournalReference : false}
