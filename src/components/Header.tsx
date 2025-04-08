@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLanguage, Language } from "@/contexts/LanguageContext";
 
 // Supported languages with their display names
 const LANGUAGES = {
@@ -20,12 +21,10 @@ const LANGUAGES = {
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState("en");
+  const { language, setLanguage, t } = useLanguage();
 
-  const handleLanguageChange = (lang: string) => {
-    setCurrentLanguage(lang);
-    // Here we would normally trigger translation of the entire app
-    // For now we just update the state for demonstration
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang);
     console.log(`Language changed to: ${lang}`);
   };
 
@@ -42,18 +41,10 @@ export const Header = () => {
           <div className="hidden md:flex items-center space-x-8">
             <nav className="flex items-center space-x-8">
               <Link to="/" className="text-foreground/80 hover:text-foreground transition-colors">
-                {currentLanguage === "en" ? "Home" : 
-                 currentLanguage === "es" ? "Inicio" :
-                 currentLanguage === "fr" ? "Accueil" :
-                 currentLanguage === "de" ? "Startseite" :
-                 currentLanguage === "zh" ? "首页" : "Home"}
+                {t("home")}
               </Link>
               <Link to="/dashboard" className="text-foreground/80 hover:text-foreground transition-colors">
-                {currentLanguage === "en" ? "Dashboard" : 
-                 currentLanguage === "es" ? "Panel" :
-                 currentLanguage === "fr" ? "Tableau de bord" :
-                 currentLanguage === "de" ? "Dashboard" :
-                 currentLanguage === "zh" ? "仪表板" : "Dashboard"}
+                {t("dashboard")}
               </Link>
             </nav>
             
@@ -61,14 +52,14 @@ export const Header = () => {
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center text-foreground/80 hover:text-foreground transition-colors">
                 <Globe className="h-5 w-5 mr-1" />
-                <span className="text-sm">{LANGUAGES[currentLanguage as keyof typeof LANGUAGES]}</span>
+                <span className="text-sm">{LANGUAGES[language as keyof typeof LANGUAGES]}</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-background border border-border">
                 {Object.entries(LANGUAGES).map(([code, name]) => (
                   <DropdownMenuItem 
                     key={code}
-                    onClick={() => handleLanguageChange(code)}
-                    className={currentLanguage === code ? "bg-accent/50" : ""}
+                    onClick={() => handleLanguageChange(code as Language)}
+                    className={language === code ? "bg-accent/50" : ""}
                   >
                     {name}
                   </DropdownMenuItem>
@@ -99,43 +90,31 @@ export const Header = () => {
                 className="text-foreground/80 hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {currentLanguage === "en" ? "Home" : 
-                 currentLanguage === "es" ? "Inicio" :
-                 currentLanguage === "fr" ? "Accueil" :
-                 currentLanguage === "de" ? "Startseite" :
-                 currentLanguage === "zh" ? "首页" : "Home"}
+                {t("home")}
               </Link>
               <Link 
                 to="/dashboard" 
                 className="text-foreground/80 hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {currentLanguage === "en" ? "Dashboard" : 
-                 currentLanguage === "es" ? "Panel" :
-                 currentLanguage === "fr" ? "Tableau de bord" :
-                 currentLanguage === "de" ? "Dashboard" :
-                 currentLanguage === "zh" ? "仪表板" : "Dashboard"}
+                {t("dashboard")}
               </Link>
               
               {/* Mobile Language Selector */}
               <div className="border-t border-border pt-4 mt-2">
                 <p className="text-sm text-foreground/60 mb-2">
-                  {currentLanguage === "en" ? "Select Language" : 
-                   currentLanguage === "es" ? "Seleccionar idioma" :
-                   currentLanguage === "fr" ? "Choisir la langue" :
-                   currentLanguage === "de" ? "Sprache auswählen" :
-                   currentLanguage === "zh" ? "选择语言" : "Select Language"}
+                  {t("selectLanguage")}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(LANGUAGES).map(([code, name]) => (
                     <button
                       key={code}
                       onClick={() => {
-                        handleLanguageChange(code);
+                        handleLanguageChange(code as Language);
                         setIsMenuOpen(false);
                       }}
                       className={`py-2 px-3 text-sm rounded-md transition-colors ${
-                        currentLanguage === code 
+                        language === code 
                           ? "bg-primary/10 text-primary" 
                           : "hover:bg-accent/50"
                       }`}
