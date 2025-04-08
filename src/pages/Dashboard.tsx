@@ -308,7 +308,7 @@ const Dashboard = () => {
   const wordSearchRef = useRef<HTMLDivElement | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [consoleMessages, setConsoleMessages] = useState<Array<{ level: string; message: string; timestamp: string }>>([]);
+  const consoleMessages = useState<Array<{ level: string; message: string; timestamp: string }>>([]);
 
   useEffect(() => {
     const originalConsoleLog = console.log;
@@ -744,3 +744,28 @@ const Dashboard = () => {
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+          
+          {showPdfViewer && pdfUrl && (
+            <PdfViewer 
+              pdfUrl={pdfUrl} 
+              onClose={togglePdfViewer} 
+              className="z-50"
+            />
+          )}
+          
+          {showDebugPanel && (
+            <DebugPanel 
+              debugState={debugState}
+              consoleMessages={consoleMessages}
+              onClose={() => setShowDebugPanel(false)}
+            />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
