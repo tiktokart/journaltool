@@ -1,11 +1,9 @@
 
-// This is a read-only file, so we'll create a wrapper component to handle the prop type conversion correctly
-
 import { useState, useEffect } from 'react';
-import { DocumentEmbedding as OriginalDocumentEmbedding } from '@/components/DocumentEmbedding';
+import { DocumentEmbeddingWrapper as OriginalDocumentEmbedding } from '@/components/ui/document-embedding';
 import { Point } from '@/types/embedding';
 
-interface DocumentEmbeddingWrapperProps {
+interface DocumentEmbeddingProps {
   points: Point[];
   onPointClick?: (point: Point | null) => void;
   isInteractive?: boolean;
@@ -14,9 +12,11 @@ interface DocumentEmbeddingWrapperProps {
   sourceDescription?: string;
   onResetView?: () => void;
   visibleClusterCount?: number;
+  onComparePoint?: (point: Point) => void;
+  onSearchSelect?: (point: Point) => void;
 }
 
-export const DocumentEmbeddingWrapper = (props: DocumentEmbeddingWrapperProps) => {
+export const DocumentEmbedding = (props: DocumentEmbeddingProps) => {
   // Convert types to match what the original component expects
   const convertedProps = {
     ...props,
