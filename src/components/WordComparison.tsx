@@ -17,9 +17,6 @@ interface WordComparisonProps {
   } | null;
   onAddWordClick?: () => void;
   sourceDescription?: string;
-}
-
-interface LegacyWordComparisonProps {
   word1?: string;
   word2?: string;
   point1?: Point;
@@ -32,7 +29,7 @@ interface LegacyWordComparisonProps {
   } | null;
 }
 
-export const WordComparison: React.FC<WordComparisonProps | LegacyWordComparisonProps> = (props) => {
+export const WordComparison: React.FC<WordComparisonProps> = (props) => {
   useEffect(() => {
     const handleDocumentClick = (e: MouseEvent) => {
       // This component doesn't have any dropdowns of its own,
@@ -129,7 +126,7 @@ export const WordComparison: React.FC<WordComparisonProps | LegacyWordComparison
     );
   }
 
-  const { words = [], onRemoveWord, calculateRelationship, onAddWordClick, sourceDescription, onSelectWord } = props as WordComparisonProps;
+  const { words = [], onRemoveWord, calculateRelationship, onAddWordClick, sourceDescription, onSelectWord } = props;
 
   if (words.length === 0) {
     return (

@@ -26,6 +26,7 @@ interface DebugPanelProps {
   isVisible?: boolean;
   onClose?: () => void;
   onToggleVisibility?: () => void;
+  debugState?: any;
 }
 
 export const DebugPanel = ({ 
@@ -33,14 +34,17 @@ export const DebugPanel = ({
   consoleMessages = [], 
   isVisible = true, 
   onClose,
-  onToggleVisibility 
+  onToggleVisibility,
+  debugState
 }: DebugPanelProps) => {
   const [activeTab, setActiveTab] = useState("state");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showTimestamps, setShowTimestamps] = useState(true);
   
+  const stateToDisplay = debugState || appState;
+  
   const handleCopyState = () => {
-    navigator.clipboard.writeText(JSON.stringify(appState, null, 2));
+    navigator.clipboard.writeText(JSON.stringify(stateToDisplay, null, 2));
     toast.success("Application state copied to clipboard");
   };
   

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -13,6 +14,7 @@ interface EmbeddingSceneProps {
   onPointHover?: (point: Point | null) => void;
   onPointSelect?: (point: Point | null) => void;
   focusOnWord?: string | null;
+  comparisonWord?: string | null;
   connectedPoints?: Point[];
   selectedPoint?: Point | null;
   comparisonPoint?: Point | null;
