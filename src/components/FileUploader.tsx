@@ -1,5 +1,5 @@
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useState, useEffect } from "react";
 import { FileUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -18,6 +18,14 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [analysisMethod, setAnalysisMethod] = useState<"bert" | "gemma3">("bert");
   const { t } = useLanguage();
+
+  // Load the saved analysis method on component mount
+  useEffect(() => {
+    const savedMethod = localStorage.getItem("analysisMethod");
+    if (savedMethod === "bert" || savedMethod === "gemma3") {
+      setAnalysisMethod(savedMethod as "bert" | "gemma3");
+    }
+  }, []);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();

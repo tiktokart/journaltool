@@ -234,6 +234,13 @@ const Dashboard = () => {
     };
   };
 
+  useEffect(() => {
+    const storedMethod = localStorage.getItem("analysisMethod");
+    if (storedMethod === "gemma3" || storedMethod === "bert") {
+      setAnalysisMethod(storedMethod);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
