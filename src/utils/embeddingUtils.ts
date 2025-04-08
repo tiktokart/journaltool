@@ -173,8 +173,7 @@ export const generatePointsFromText = (): Point[] => {
   });
   
   const commonWords = uniqueWords
-    .filter(word => !significantWords.includes(word) && word.length > 3)
-    .slice(0, 150);
+    .filter(word => !significantWords.includes(word) && word.length > 3);
   
   commonWords.forEach((word, idx) => {
     const weights = Object.entries(depressedDistribution).map(([emotion, weight]) => ({ emotion, weight }));
@@ -320,7 +319,7 @@ export const generateMockPoints = (
   }
   
   const mockPoints: Point[] = [];
-  const particleCount = depressedJournalReference ? 300 : 200;
+  const particleCount = depressedJournalReference ? 500 : 400;
   
   const emotionalTones = [
     "Joy", "Sadness", "Anger", "Fear", "Surprise", "Disgust", "Trust", "Anticipation", "Neutral"
