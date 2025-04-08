@@ -48,19 +48,13 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
   // Translate sentiment label
   const getTranslatedSentiment = (sentiment: string): string => {
     const key = sentiment.toLowerCase().replace(/\s+/g, '');
-    if (t(key)) {
-      return t(key);
-    }
-    return sentiment;
+    return t(key) || sentiment;
   };
 
   // Translate emotional tone
   const getTranslatedEmotion = (emotion: string): string => {
     const lowerCaseEmotion = emotion?.toLowerCase();
-    if (lowerCaseEmotion && t(lowerCaseEmotion)) {
-      return t(lowerCaseEmotion);
-    }
-    return emotion || t("neutral");
+    return (lowerCaseEmotion && t(lowerCaseEmotion)) || emotion || t("neutral");
   };
 
   if (words.length === 0) {

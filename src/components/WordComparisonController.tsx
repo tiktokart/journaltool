@@ -37,6 +37,13 @@ export const WordComparisonController = ({
     }
   }, [points]);
 
+  // If selectedPoint changes and it's not null, add it to the comparison
+  useEffect(() => {
+    if (selectedPoint && !compareWords.some(p => p.id === selectedPoint.id)) {
+      handleAddToComparison(selectedPoint);
+    }
+  }, [selectedPoint]);
+
   const handleCompareSearchChange = (value: string) => {
     setCompareSearchTerm(value);
     
