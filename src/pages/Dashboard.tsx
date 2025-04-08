@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -744,4 +745,440 @@ const Dashboard = () => {
                     disabled={!file || isAnalyzing}
                     className="w-full"
                   >
-                    {is
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>Analyze Document</>
+                    )}
+                  </Button>
+                  {pdfUrl && (
+                    <Button 
+                      onClick={togglePdfViewer} 
+                      variant="outline" 
+                      className="w-full"
+                    >
+                      {showPdfViewer ? (
+                        <>
+                          <X className="mr-2 h-4 w-4" />
+                          Hide PDF
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="mr-2 h-4 w-4" />
+                          View PDF
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {showPdfViewer && pdfUrl && (
+            <PdfViewer pdfUrl={pdfUrl} className="h-[600px]" />
+          )}
+          
+          <Tabs defaultValue="sentiment" className="w-full">
+            <TabsList className="grid grid-cols-4 mb-4">
+              <TabsTrigger value="sentiment">Sentiment Analysis</TabsTrigger>
+              <TabsTrigger value="entities">Entities & Key Phrases</TabsTrigger>
+              <TabsTrigger value="embedding">Latent Emotional Analysis</TabsTrigger>
+              <TabsTrigger value="wellbeing">Emotional Clusters</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="sentiment" className="space-y-6">
+              <SentimentOverview data={sentimentData} sourceDescription={sentimentData.sourceDescription} />
+              <SentimentTimeline data={sentimentData.timeline} sourceDescription={sentimentData.sourceDescription} />
+            </TabsContent>
+            
+            <TabsContent value="entities" className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <EntitySentiment data={sentimentData.entities} sourceDescription={sentimentData.sourceDescription} />
+                <KeyPhrases data={sentimentData.keyPhrases} sourceDescription={sentimentData.sourceDescription} />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="embedding" className="space-y-6">
+              <Card className="border-0 shadow-md">
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Semantic Embedding Visualization</CardTitle>
+                    <div className="flex space-x-2">
+                      <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8">
+                            <Search className="h-3.5 w-3.5 mr-1.5" />
+                            Search Word
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0" align="end" side="bottom" ref={searchDropdownRef}>
+                          <Command>
+                            <CommandInput 
+                              placeholder="Type a word..." 
+                              value={searchTerm} 
+                              onValueChange={setSearchTerm}
+                            />
+                            <CommandList>
+                              <CommandEmpty>No results found.</CommandEmpty>
+                              <CommandGroup>
+                                {uniqueWords
+                                  .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
+                                  .slice(0, 8)
+                                  .map(word => (
+                                    <CommandItem 
+                                      key={word}
+                                      onSelect={() => handleSelectWord(word)}
+                                    >
+                                      {word}
+                                    </CommandItem>
+                                  ))
+                                }
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      
+                      {selectedWord && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8" 
+                          onClick={handleCompareWord}
+                        >
+                          <GitCompareArrows className="h-3.5 w-3.5 mr-1.5" />
+                          Compare
+                        </Button>
+                      )}
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8" 
+                        onClick={handleResetVisualization}
+                      >
+                        <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                        Reset
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="h-[600px] p-0 relative">
+                  <DocumentEmbedding 
+                    points={filteredPoints}
+                    onPointClick={handlePointClick}
+                    focusOnWord={selectedWord}
+                    comparisonWord={comparisonWord}
+                    visibleClusterCount={visibleClusterCount}
+                  />
+                </CardContent>
+              </Card>
+              
+              {showComparison && (
+                <Card className="border-0 shadow-md">
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="flex items-center">
+                        <ArrowLeftRight className="h-4 w-4 mr-2" />
+                        Word Comparison
+                      </CardTitle>
+                      <div className="flex space-x-2">
+                        <Popover open={comparisonSearchOpen} onOpenChange={setComparisonSearchOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8">
+                              <Search className="h-3.5 w-3.5 mr-1.5" />
+                              Compare With
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="p-0" align="end" side="bottom" ref={comparisonSearchRef}>
+                            <Command>
+                              <CommandInput 
+                                placeholder="Type a word..." 
+                                value={comparisonSearchTerm} 
+                                onValueChange={setComparisonSearchTerm}
+                              />
+                              <CommandList>
+                                <CommandEmpty>No results found.</CommandEmpty>
+                                <CommandGroup>
+                                  {uniqueWords
+                                    .filter(word => word.toLowerCase().includes(comparisonSearchTerm.toLowerCase()))
+                                    .filter(word => word !== selectedWord)
+                                    .slice(0, 8)
+                                    .map(word => (
+                                      <CommandItem 
+                                        key={word}
+                                        onSelect={() => handleSelectComparisonWord(word)}
+                                      >
+                                        {word}
+                                      </CommandItem>
+                                    ))
+                                  }
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8" 
+                          onClick={handleClearComparison}
+                        >
+                          <X className="h-3.5 w-3.5 mr-1.5" />
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedPoint && comparisonPoint ? (
+                      <WordComparison 
+                        word1={selectedPoint} 
+                        word2={comparisonPoint}
+                        relationship={calculateRelationship(selectedPoint, comparisonPoint)}
+                      />
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <p>Select two words to compare their semantic relationship</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="wellbeing" className="space-y-6">
+              <Card className="border-0 shadow-md">
+                <CardHeader>
+                  <CardTitle>Emotional Clusters</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Emotional Groupings</h3>
+                      <div className="space-y-3">
+                        {emotionalClusters.map((cluster) => (
+                          <div 
+                            key={cluster.id} 
+                            className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                              selectedCluster === cluster.name 
+                                ? 'bg-primary/10 border-primary' 
+                                : 'hover:bg-muted border-border'
+                            }`}
+                            onClick={() => handleSelectCluster(cluster)}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center">
+                                <div 
+                                  className="w-3 h-3 rounded-full mr-2" 
+                                  style={{ backgroundColor: cluster.color }}
+                                />
+                                <h4 className="font-medium">{cluster.name}</h4>
+                              </div>
+                              <Badge variant="outline">
+                                {cluster.size} words
+                              </Badge>
+                            </div>
+                            <div className="flex items-center mt-2">
+                              <div className="flex-1">
+                                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                  <div 
+                                    className="h-full rounded-full" 
+                                    style={{ 
+                                      width: `${cluster.sentiment * 100}%`,
+                                      backgroundColor: cluster.color
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <span className="text-xs ml-2 text-muted-foreground">
+                                {Math.round(cluster.sentiment * 100)}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Visualization Controls</h3>
+                      <div className="space-y-6 p-4 bg-muted/30 rounded-lg">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium">Visible Clusters</label>
+                            <span className="text-sm text-muted-foreground">{visibleClusterCount}</span>
+                          </div>
+                          <Slider 
+                            value={[visibleClusterCount]} 
+                            onValueChange={(value) => setVisibleClusterCount(value[0])}
+                            min={1}
+                            max={emotionalClusters.length}
+                            step={1}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium mb-2">Multi-Word Comparison</h4>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {wordsForComparison.map(point => (
+                              <Badge 
+                                key={point.id} 
+                                variant="secondary"
+                                className="pl-2 pr-1 py-1 flex items-center gap-1"
+                              >
+                                {point.word}
+                                <Button
+                                  variant="ghost"
+                                  size="sm" 
+                                  className="h-4 w-4 p-0 ml-1 text-muted-foreground hover:text-foreground"
+                                  onClick={() => handleRemoveWordFromComparison(point)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            ))}
+                            
+                            {wordsForComparison.length < 4 && (
+                              <Popover open={wordSearchOpen} onOpenChange={setWordSearchOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-7 text-xs"
+                                    onClick={handleAddWordToComparison}
+                                  >
+                                    Add Word
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="p-0" align="start" side="bottom" ref={wordSearchRef}>
+                                  <Command>
+                                    <CommandInput 
+                                      placeholder="Add word to compare..." 
+                                      value={wordSearchTerm} 
+                                      onValueChange={setWordSearchTerm}
+                                    />
+                                    <CommandList>
+                                      <CommandEmpty>No results found.</CommandEmpty>
+                                      <CommandGroup>
+                                        {uniqueWords
+                                          .filter(word => word.toLowerCase().includes(wordSearchTerm.toLowerCase()))
+                                          .filter(word => !wordsForComparison.some(p => p.word === word))
+                                          .slice(0, 8)
+                                          .map(word => (
+                                            <CommandItem 
+                                              key={word}
+                                              onSelect={() => handleSelectWordForComparison(word)}
+                                            >
+                                              {word}
+                                            </CommandItem>
+                                          ))
+                                        }
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </div>
+                          
+                          {wordsForComparison.length > 1 && (
+                            <div className="grid grid-cols-2 gap-2 mt-4">
+                              {/* Word comparison matrix would go here */}
+                              <div className="col-span-2 text-center text-xs text-muted-foreground">
+                                Comparing {wordsForComparison.length} words
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="h-[400px] relative">
+                    <DocumentEmbedding 
+                      points={filteredPoints}
+                      onPointClick={handlePointClick}
+                      depressedJournalReference={true}
+                      focusOnWord={selectedWord}
+                      visibleClusterCount={visibleClusterCount}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {showWellbeingSuggestions && (
+                <Card className="border-0 shadow-md">
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle>Wellbeing Suggestions</CardTitle>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowWellbeingSuggestions(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {wellbeingSuggestions.map((suggestion, index) => (
+                        <Card key={index} className="border border-border">
+                          <CardContent className="p-4 flex flex-col items-center text-center">
+                            <div className="bg-muted rounded-full p-3 mb-4 mt-4">
+                              {suggestion.icon}
+                            </div>
+                            <h4 className="font-medium mb-2">{suggestion.title}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {suggestion.description}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-6 border-t pt-4">
+                      <h4 className="font-medium mb-3 flex items-center">
+                        <Info className="h-4 w-4 mr-2 text-blue-500" />
+                        Mental Health Resources
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {mentalHealthResources.map((resource, index) => (
+                          <a 
+                            key={index} 
+                            href={resource.url} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-3 border border-border rounded-lg hover:bg-muted transition-colors flex flex-col"
+                          >
+                            <span className="font-medium">{resource.name}</span>
+                            <span className="text-sm text-muted-foreground">{resource.description}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
+      
+      {showDebugPanel && (
+        <DebugPanel 
+          appState={debugState}
+          consoleMessages={consoleMessages}
+          onClose={toggleDebugPanel}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Dashboard;
