@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 // Define all supported languages
@@ -854,3 +855,230 @@ export const translations: Translations = {
     es: "No hay palabras seleccionadas",
     fr: "Aucun mot sélectionné",
     de: "Keine Wörter ausgewählt",
+    zh: "未选择任何词语",
+  },
+  addWordsFromDocument: {
+    en: "Add words from the document to start comparing them",
+    es: "Añade palabras del documento para empezar a compararlas",
+    fr: "Ajoutez des mots du document pour commencer à les comparer",
+    de: "Fügen Sie Wörter aus dem Dokument hinzu, um sie zu vergleichen",
+    zh: "从文档中添加词语以开始比较",
+  },
+  addWordsToCompare: {
+    en: "Add words to compare their emotional relationships",
+    es: "Añade palabras para comparar sus relaciones emocionales",
+    fr: "Ajoutez des mots pour comparer leurs relations émotionnelles",
+    de: "Fügen Sie Wörter hinzu, um ihre emotionalen Beziehungen zu vergleichen",
+    zh: "添加词语以比较它们的情感关系",
+  },
+  relationshipAnalysis: {
+    en: "Relationship Analysis",
+    es: "Análisis de Relaciones",
+    fr: "Analyse des Relations",
+    de: "Beziehungsanalyse",
+    zh: "关系分析",
+  },
+  overallRelationship: {
+    en: "Overall Relationship",
+    es: "Relación General",
+    fr: "Relation Globale",
+    de: "Gesamtbeziehung",
+    zh: "整体关系",
+  },
+  contextualSimilarity: {
+    en: "Contextual Similarity",
+    es: "Similitud Contextual",
+    fr: "Similarité Contextuelle",
+    de: "Kontextuelle Ähnlichkeit",
+    zh: "上下文相似度",
+  },
+  emotionalAlignment: {
+    en: "Emotional Alignment",
+    es: "Alineación Emocional",
+    fr: "Alignement Émotionnel",
+    de: "Emotionale Ausrichtung",
+    zh: "情感一致性",
+  },
+  sharedConcepts: {
+    en: "Shared Concepts",
+    es: "Conceptos Compartidos",
+    fr: "Concepts Partagés",
+    de: "Gemeinsame Konzepte",
+    zh: "共享概念",
+  },
+  stronglyRelated: {
+    en: "Strongly Related",
+    es: "Fuertemente Relacionados",
+    fr: "Fortement Liés",
+    de: "Stark verwandt",
+    zh: "强烈相关",
+  },
+  related: {
+    en: "Related",
+    es: "Relacionados",
+    fr: "Liés",
+    de: "Verwandt",
+    zh: "相关",
+  },
+  moderatelyRelated: {
+    en: "Moderately Related",
+    es: "Moderadamente Relacionados",
+    fr: "Modérément Liés",
+    de: "Mäßig verwandt",
+    zh: "中度相关",
+  },
+  weaklyRelated: {
+    en: "Weakly Related",
+    es: "Débilmente Relacionados",
+    fr: "Faiblement Liés",
+    de: "Schwach verwandt",
+    zh: "弱相关",
+  },
+  barelyRelated: {
+    en: "Barely Related",
+    es: "Apenas Relacionados",
+    fr: "À peine Liés",
+    de: "Kaum verwandt",
+    zh: "几乎不相关",
+  },
+  bothIn: {
+    en: "Both in",
+    es: "Ambos en",
+    fr: "Les deux dans",
+    de: "Beide in",
+    zh: "两者都在",
+  },
+  group: {
+    en: "group",
+    es: "grupo",
+    fr: "groupe",
+    de: "Gruppe",
+    zh: "组",
+  },
+  differentGroups: {
+    en: "Different groups",
+    es: "Grupos diferentes",
+    fr: "Groupes différents",
+    de: "Verschiedene Gruppen",
+    zh: "不同组",
+  },
+  vs: {
+    en: "vs",
+    es: "vs",
+    fr: "vs",
+    de: "vs",
+    zh: "对比",
+  },
+  maxComparisonWordsError: {
+    en: "You can compare up to 4 words at once",
+    es: "Puedes comparar hasta 4 palabras a la vez",
+    fr: "Vous pouvez comparer jusqu'à 4 mots à la fois",
+    de: "Sie können bis zu 4 Wörter gleichzeitig vergleichen",
+    zh: "您最多可以同时比较4个词语",
+  },
+  alreadyInComparison: {
+    en: "is already in your comparison",
+    es: "ya está en tu comparación",
+    fr: "est déjà dans votre comparaison",
+    de: "ist bereits in Ihrem Vergleich",
+    zh: "已在您的比较中",
+  },
+  addedToComparison: {
+    en: "Added",
+    es: "Añadido",
+    fr: "Ajouté",
+    de: "Hinzugefügt",
+    zh: "已添加",
+  },
+  toComparison: {
+    en: "to comparison",
+    es: "a la comparación",
+    fr: "à la comparaison",
+    de: "zum Vergleich",
+    zh: "到比较",
+  },
+  removedFromComparison: {
+    en: "Removed",
+    es: "Eliminado",
+    fr: "Supprimé",
+    de: "Entfernt",
+    zh: "已移除",
+  },
+  fromComparison: {
+    en: "from comparison",
+    es: "de la comparación",
+    fr: "de la comparaison",
+    de: "aus dem Vergleich",
+    zh: "从比较中",
+  },
+  clearedAllComparisonWords: {
+    en: "Cleared all comparison words",
+    es: "Se han borrado todas las palabras de comparación",
+    fr: "Tous les mots de comparaison ont été effacés",
+    de: "Alle Vergleichswörter wurden gelöscht",
+    zh: "已清除所有比较词语",
+  },
+  sentiment: {
+    en: "Sentiment",
+    es: "Sentimiento",
+    fr: "Sentiment",
+    de: "Stimmung",
+    zh: "情感",
+  },
+};
+
+// Create the language context
+interface LanguageContextProps {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}
+
+const LanguageContext = createContext<LanguageContextProps>({
+  language: "en",
+  setLanguage: () => {},
+  t: () => "",
+});
+
+interface LanguageProviderProps {
+  children: ReactNode;
+}
+
+export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
+  const [language, setLanguage] = useState<Language>("en");
+
+  // Function to get translations with parameter substitution
+  const t = (key: string, params?: Record<string, string | number>): string => {
+    // Check if the key exists in our translations
+    if (translations[key] && translations[key][language]) {
+      let translated = translations[key][language];
+      
+      // If we have parameters, replace placeholders in the string
+      if (params) {
+        Object.entries(params).forEach(([param, value]) => {
+          translated = translated.replace(`{${param}}`, String(value));
+        });
+      }
+      
+      return translated;
+    }
+    
+    // If the key doesn't exist, return the key itself
+    return key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+// Custom hook to use the language context
+export const useLanguage = (): LanguageContextProps => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error("useLanguage must be used within a LanguageProvider");
+  }
+  return context;
+};
