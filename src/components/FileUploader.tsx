@@ -135,76 +135,84 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
     }
   };
 
+  const handleAnalysisMethodChange = (method: "bert" | "gemma3") => {
+    setAnalysisMethod(method);
+    localStorage.setItem("analysisMethod", method);
+    toast.info(`Analysis method switched to ${method === "bert" ? "BERT" : "Gemma 3"}`);
+  };
+
   return (
-    <div
-      className={`border-2 border-dashed rounded-lg p-8 text-center ${
-        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
-      } transition-colors`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <div className="flex flex-col items-center justify-center gap-4">
-        <div className="p-4 bg-primary/10 rounded-full">
-          <FileUp className="h-8 w-8 text-primary" />
-        </div>
-        <div>
-          <h3 className="font-medium text-lg">{t("uploadTitle") || "Upload your PDF document"}</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t("uploadDescription") || "Drag and drop your file here, or click to browse"}
-          </p>
-        </div>
-        
-        {/* Improved Analysis Method Selection - with Gemma 3 on the right side */}
-        <div className="flex flex-col w-full max-w-xs gap-3 my-3">
-          <p className="text-sm font-medium text-muted-foreground">
-            Document Analysis with Data Models
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant={analysisMethod === "bert" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setAnalysisMethod("bert")}
-              className="flex justify-center items-center h-10"
-            >
-              <span className="font-medium">Analyze with BERT</span>
-            </Button>
-            <Button
-              variant={analysisMethod === "gemma3" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setAnalysisMethod("gemma3")}
-              className="flex justify-center items-center h-10"
-            >
-              <span className="font-medium">Analyze with Gemma 3</span>
-            </Button>
+    <div className="flex flex-col gap-6">
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center ${
+          isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+        } transition-colors`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className="flex flex-col items-center justify-center gap-4">
+          <div className="p-4 bg-primary/10 rounded-full">
+            <FileUp className="h-8 w-8 text-primary" />
           </div>
+          <div>
+            <h3 className="font-medium text-lg">{t("uploadTitle") || "Upload your PDF document"}</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t("uploadDescription") || "Drag and drop your file here, or click to browse"}
+            </p>
+          </div>
+          
+          <div className="mt-2">
+            <Button
+              variant="outline"
+              onClick={() => document.getElementById("file-upload")?.click()}
+              disabled={isExtracting}
+              className="font-medium"
+            >
+              {isExtracting ? (
+                <>{t("analyzingDocument") || "Extracting text..."}</>
+              ) : (
+                <>{t("chooseFile") || "Choose File"}</>
+              )}
+            </Button>
+            <input
+              id="file-upload"
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={isExtracting}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {t("maxFileSize") || "Maximum file size: 10MB"}
+          </p>
         </div>
-        
-        <div className="mt-2">
-          <Button
-            variant="outline"
-            onClick={() => document.getElementById("file-upload")?.click()}
-            disabled={isExtracting}
-            className="font-medium"
-          >
-            {isExtracting ? (
-              <>{t("analyzingDocument") || "Extracting text..."}</>
-            ) : (
-              <>{t("chooseFile") || "Choose File"}</>
-            )}
-          </Button>
-          <input
-            id="file-upload"
-            type="file"
-            accept=".pdf"
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={isExtracting}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          {t("maxFileSize") || "Maximum file size: 10MB"}
+      </div>
+      
+      {/* Separate Analysis Method Selection - outside the upload area */}
+      <div className="flex flex-col w-full gap-3">
+        <p className="text-sm font-medium text-muted-foreground">
+          Document Analysis with Data Models
         </p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            variant={analysisMethod === "bert" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleAnalysisMethodChange("bert")}
+            className="flex justify-center items-center"
+          >
+            <span className="font-medium">Analyze with BERT</span>
+          </Button>
+          <Button
+            variant={analysisMethod === "gemma3" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleAnalysisMethodChange("gemma3")}
+            className="flex justify-center items-center"
+          >
+            <span className="font-medium">Analyze with Gemma 3</span>
+          </Button>
+        </div>
       </div>
     </div>
   );
