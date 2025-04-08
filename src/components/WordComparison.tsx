@@ -131,7 +131,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
               <h3 className="font-bold truncate">{word.word}</h3>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">{t("emotionalTone")}</p>
+              <p className="text-xs text-muted-foreground mb-1">{t("emotionalTones")}</p>
               <p className="text-sm font-medium">{getTranslatedEmotion(word.emotionalTone)}</p>
             </div>
             <div className="mt-2">

@@ -29,6 +29,7 @@ export const WordComparisonController = ({
   const [compareSearchTerm, setCompareSearchTerm] = useState("");
   const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
   const { t, language } = useLanguage();
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   // Update search results when points change
   useEffect(() => {
@@ -39,8 +40,8 @@ export const WordComparisonController = ({
 
   // Force re-render when language changes - this is important for translations to take effect
   useEffect(() => {
-    // Setting the state forces a re-render
-    setCompareSearchResults(prev => [...prev]);
+    // Force component update
+    setForceUpdate(prev => prev + 1);
     
     // Also reset search term to force the search component to update
     if (compareSearchTerm) {
@@ -107,7 +108,7 @@ export const WordComparisonController = ({
   };
 
   return (
-    <Card className="border border-border shadow-md bg-card">
+    <Card className="border border-border shadow-md bg-card" key={`word-comparison-card-${forceUpdate}`}>
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle className="flex items-center text-xl">
@@ -138,7 +139,7 @@ export const WordComparisonController = ({
                     <CommandGroup>
                       {compareSearchResults.map((point) => (
                         <CommandItem 
-                          key={point.id} 
+                          key={`${point.id}-${language}`} 
                           onSelect={() => handleAddToComparison(point)}
                         >
                           <div className="flex items-center">
