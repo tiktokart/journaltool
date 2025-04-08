@@ -89,14 +89,18 @@ export const FileUploader = ({ onFilesAdded }: FileUploaderProps) => {
         console.log("PDF text sample:", pdfText.substring(0, 200));
         console.log("PDF text length:", pdfText.length);
         console.log("Words in PDF:", wordCount);
+        console.log("Using analysis method:", analysisMethod);
         
-        // Pass the extracted text to the parent component for analysis, along with analysis method
-        onFilesAdded([file], pdfText, analysisMethod);
+        // Store the analysis method in localStorage for other components to use
+        localStorage.setItem("analysisMethod", analysisMethod);
+        
+        // Pass the extracted text to the parent component for analysis
+        onFilesAdded([file], pdfText);
       }
     } catch (error) {
       console.error("Error processing PDF:", error);
       toast.error(t("processingError") || "Error processing PDF file");
-      onFilesAdded([file], "", analysisMethod);
+      onFilesAdded([file], "");
     }
   };
 
