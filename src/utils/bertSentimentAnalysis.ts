@@ -32,11 +32,14 @@ export const initBertModel = async (): Promise<void> => {
   
   try {
     console.log("Initializing BERT sentiment analysis model...");
-    // Use a smaller distilled BERT model for faster loading and inference
+    
+    // Use a model that's compatible with transformers.js in the browser
+    // The ONNX version is more reliable for browser usage
     sentimentPipeline = await pipeline(
       "sentiment-analysis",
-      "distilbert-base-uncased-finetuned-sst-2-english"
+      "Xenova/distilbert-base-uncased-finetuned-sst-2-english" // Using Xenova's version which is browser-compatible
     );
+    
     console.log("BERT model loaded successfully");
     
     // Reset loading state and attempts after successful load
