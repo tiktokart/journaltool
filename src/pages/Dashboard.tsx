@@ -592,6 +592,7 @@ const Dashboard = () => {
     }
   };
 
+  // Fix TypeScript error by ensuring the debugState property types match
   const debugState = {
     file: file ? { 
       name: file.name, 

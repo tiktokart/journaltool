@@ -57,12 +57,12 @@ export const DocumentEmbedding = (props: DocumentEmbeddingProps) => {
         containerRef={containerRef}
         cameraRef={cameraRef}
         controlsRef={controlsRef}
-        isInteractive={Boolean(props.isInteractive)}
+        isInteractive={props.isInteractive !== undefined ? props.isInteractive : true}
         onPointSelect={handlePointSelect}
         focusOnWord={props.focusOnWord}
         selectedPoint={selectedPoint}
         comparisonPoint={comparisonPoint}
-        depressedJournalReference={Boolean(props.depressedJournalReference)}
+        depressedJournalReference={props.depressedJournalReference !== undefined ? props.depressedJournalReference : false}
         onResetView={props.onResetView}
         visibleClusterCount={props.visibleClusterCount || 5}
       />

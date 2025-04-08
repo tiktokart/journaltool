@@ -41,11 +41,14 @@ export const PdfViewer = ({ pdfUrl, className = '' }: PdfViewerProps) => {
           className="w-full h-[500px]"
           title={iframeTitle}
           sandbox="allow-scripts allow-same-origin"
-          // Special Chrome settings to prevent conflicts with 3D visualization
+          // Chrome settings to prevent conflicts with 3D visualization
           tabIndex={-1}
           style={{ 
             pointerEvents: 'auto',
-            zIndex: 10
+            zIndex: 10,
+            willChange: 'transform',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden'
           }} 
         />
       </CardContent>
