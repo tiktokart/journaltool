@@ -19,6 +19,9 @@ export const PdfViewer = ({ pdfUrl, className = '' }: PdfViewerProps) => {
     };
   }, [pdfUrl]);
 
+  // Ensure the iframe has a unique title to avoid conflicts
+  const iframeTitle = `pdf-viewer-${Date.now()}`;
+
   if (!pdfUrl) {
     return (
       <Card className={`border border-border ${className}`}>
@@ -36,7 +39,10 @@ export const PdfViewer = ({ pdfUrl, className = '' }: PdfViewerProps) => {
           ref={iframeRef}
           src={pdfUrl}
           className="w-full h-[500px]"
-          title="PDF Viewer"
+          title={iframeTitle}
+          sandbox="allow-scripts allow-same-origin"
+          // Prevent iframe from capturing focus events that might interfere with 3D canvas
+          tabIndex={-1}
         />
       </CardContent>
     </Card>

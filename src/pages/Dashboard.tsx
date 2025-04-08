@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -172,7 +171,7 @@ const Dashboard = () => {
   const wordSearchRef = useRef<HTMLDivElement | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [consoleMessages, setConsoleMessages] = useState<{ level: string; message: string; timestamp: string }[]>([]);
+  const consoleMessages = useState<{ level: string; message: string; timestamp: string }[]>([]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1047,7 +1046,6 @@ const Dashboard = () => {
       {/* Debug Panel */}
       {showDebugPanel && (
         <DebugPanel 
-          messages={consoleMessages}
           debugState={debugState}
           onClose={() => setShowDebugPanel(false)}
         />
