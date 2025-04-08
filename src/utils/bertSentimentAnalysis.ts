@@ -1,4 +1,3 @@
-
 import { pipeline } from "@huggingface/transformers";
 
 // Cache for the sentiment analysis pipeline to avoid reloading the model
@@ -20,8 +19,7 @@ export const initBertModel = async (): Promise<void> => {
       // Use a smaller distilled BERT model for faster loading and inference
       sentimentPipeline = await pipeline(
         "sentiment-analysis",
-        "distilbert-base-uncased-finetuned-sst-2-english",
-        { quantized: true }
+        "distilbert-base-uncased-finetuned-sst-2-english"
       );
       console.log("BERT model loaded successfully");
     } catch (error) {
