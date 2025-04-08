@@ -45,7 +45,7 @@ export const KeyPhrases = ({
     sentimentType: "positive" | "neutral" | "negative"
   ) => {
     // Limit the number of words to display per category
-    const displayItems = items.slice(0, maxWordsPerCategory as number);
+    const displayItems = items.slice(0, maxWordsPerCategory || 30);
     
     return (
       <div>
@@ -63,9 +63,9 @@ export const KeyPhrases = ({
                 {item.text} ({item.count})
               </Badge>
             ))}
-            {items.length > (maxWordsPerCategory as number) && (
+            {items.length > (maxWordsPerCategory || 30) && (
               <p className="text-xs text-muted-foreground mt-2 w-full">
-                + {items.length - (maxWordsPerCategory as number)} more {sentimentType} words not shown
+                + {items.length - (maxWordsPerCategory || 30)} more {sentimentType} words not shown
               </p>
             )}
           </div>

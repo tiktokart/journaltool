@@ -157,7 +157,7 @@ const Dashboard = () => {
         return { page: i + 1, score };
       });
       
-      // Mock entities data
+      // Mock entities data - Fix the structure to match what EntitySentiment expects
       const entities = pdfText
         .split(/\s+/)
         .filter(word => word.length > 5 && /^[A-Z]/.test(word))
@@ -165,20 +165,34 @@ const Dashboard = () => {
         .slice(0, 8)
         .map(entity => ({
           name: entity.replace(/[^a-zA-Z]/g, ''),
-          sentiment: Math.random() * 0.5 + (gemma3Results.sentiment > 0.5 ? 0.3 : 0.1),
+          score: Math.random() * 0.5 + (gemma3Results.sentiment > 0.5 ? 0.3 : 0.1), // Use 'score' instead of 'sentiment'
           mentions: Math.floor(Math.random() * 10) + 1
         }));
       
-      // Mock key phrases data
+      // Mock key phrases data - Fix structure to match what KeyPhrases expects
       const keyPhrases = pdfText
-        .split(/[.!?]/)
-        .filter(phrase => phrase.length > 10 && phrase.length < 100)
-        .slice(0, 10)
-        .map(phrase => ({
-          text: phrase.trim(),
-          score: Math.random() * 0.5 + (gemma3Results.sentiment > 0.5 ? 0.3 : 0.1),
-          type: Math.random() > 0.5 ? 'positive' : (Math.random() > 0.5 ? 'neutral' : 'negative')
-        }));
+        .split(/\s+/)
+        .filter(word => word.length > 3)
+        .filter((word, i, arr) => arr.indexOf(word) === i)
+        .slice(0, 30)
+        .map(word => {
+          const sentimentValue = Math.random();
+          let sentiment;
+          
+          if (sentimentValue > 0.65) {
+            sentiment = "positive";
+          } else if (sentimentValue > 0.35) {
+            sentiment = "neutral";
+          } else {
+            sentiment = "negative";
+          }
+          
+          return {
+            text: word,
+            sentiment, // Use the correct enum values: "positive", "neutral", "negative"
+            count: Math.floor(Math.random() * 10) + 1 // Use 'count' instead of 'score'
+          };
+        });
       
       const results = {
         fileName: file.name,
