@@ -1,8 +1,7 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DocumentEmbeddingWrapper as OriginalDocumentEmbedding } from '@/components/ui/document-embedding';
 import { Point, DocumentEmbeddingProps } from '@/types/embedding';
-import { useRef } from 'react';
 import EmbeddingScene from '@/components/embedding/EmbeddingScene';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -28,8 +27,16 @@ export const DocumentEmbedding = (props: DocumentEmbeddingProps) => {
     points: props.points || [], // Ensure points is never undefined
     isInteractive: props.isInteractive === undefined ? true : props.isInteractive,
     depressedJournalReference: props.depressedJournalReference === undefined ? false : props.depressedJournalReference,
-    visibleClusterCount: props.visibleClusterCount === undefined ? 5 : props.visibleClusterCount,
+    visibleClusterCount: props.visibleClusterCount || 5, // Default to 5 if undefined
   };
+
+  // Share the points with window object for global access (useful for debugging and data sharing)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && props.points.length > 0) {
+      // @ts-ignore - Adding custom property to window
+      window.documentEmbeddingPoints = props.points;
+    }
+  }, [props.points]);
 
   if (props.points.length === 0) {
     return (
@@ -49,14 +56,14 @@ export const DocumentEmbedding = (props: DocumentEmbeddingProps) => {
         containerRef={containerRef}
         cameraRef={cameraRef}
         controlsRef={controlsRef}
-        isInteractive={props.isInteractive}
+        isInteractive={Boolean(props.isInteractive)}
         onPointSelect={handlePointSelect}
         focusOnWord={props.focusOnWord}
         selectedPoint={selectedPoint}
         comparisonPoint={comparisonPoint}
-        depressedJournalReference={props.depressedJournalReference}
+        depressedJournalReference={Boolean(props.depressedJournalReference)}
         onResetView={props.onResetView}
-        visibleClusterCount={props.visibleClusterCount}
+        visibleClusterCount={props.visibleClusterCount || 5}
       />
     </div>
   );

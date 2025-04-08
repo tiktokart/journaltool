@@ -41,8 +41,9 @@ export const PdfViewer = ({ pdfUrl, className = '' }: PdfViewerProps) => {
           className="w-full h-[500px]"
           title={iframeTitle}
           sandbox="allow-scripts allow-same-origin"
-          // Prevent iframe from capturing focus events that might interfere with 3D canvas
+          // Prevent iframe from capturing keyboard/mouse events that might interfere with 3D canvas
           tabIndex={-1}
+          style={{ pointerEvents: 'auto' }}
         />
       </CardContent>
     </Card>

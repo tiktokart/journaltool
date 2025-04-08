@@ -251,7 +251,7 @@ const Dashboard = () => {
       });
       setClusterPoints(clusterPointsMap);
       
-      if (typeof window !== 'undefined' && window.documentEmbeddingPoints !== undefined) {
+      if (typeof window !== 'undefined') {
         window.documentEmbeddingPoints = mockPoints;
       }
     }
@@ -616,6 +616,7 @@ const Dashboard = () => {
 
           {pdfUrl && showPdfViewer && (
             <PdfViewer 
+              key={`pdf-viewer-${pdfUrl}`}
               pdfUrl={pdfUrl} 
               className="mb-6 animate-fade-in"
             />

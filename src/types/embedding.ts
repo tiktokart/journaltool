@@ -11,7 +11,7 @@ export interface Point {
 }
 
 export interface DocumentEmbeddingProps {
-  points: Point[]; // Make points required to match DocumentEmbeddingWrapperProps
+  points: Point[]; 
   onPointClick?: (point: Point | null) => void;
   isInteractive?: boolean;
   depressedJournalReference?: boolean;  
