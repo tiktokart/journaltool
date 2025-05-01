@@ -3,10 +3,11 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Text, Highlighter } from "lucide-react";
+import { Text, Highlighter, Eye, EyeOff } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Point } from "@/types/embedding";
 import { getEmotionColor } from "@/utils/embeddingUtils";
+import { Toggle } from "@/components/ui/toggle";
 
 interface TextEmotionViewerProps {
   pdfText: string;
@@ -22,6 +23,7 @@ export const TextEmotionViewer = ({
   const { t } = useLanguage();
   const [highlightedText, setHighlightedText] = useState<React.ReactNode[]>([]);
   const [showHighlights, setShowHighlights] = useState(true);
+  const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
 
   useEffect(() => {
     if (!pdfText || pdfText.length === 0 || embeddingPoints.length === 0) {
@@ -31,7 +33,7 @@ export const TextEmotionViewer = ({
 
     // Process text with emotion highlighting
     processTextWithEmotions();
-  }, [pdfText, embeddingPoints, showHighlights]);
+  }, [pdfText, embeddingPoints, showHighlights, hideNonHighlighted]);
 
   const processTextWithEmotions = () => {
     if (!showHighlights) {
@@ -79,6 +81,12 @@ export const TextEmotionViewer = ({
 
     // Convert segments to React nodes with appropriate styling
     const nodes = textSegments.map((segment, index) => {
+      // If hideNonHighlighted is true, only show segments with emotions
+      if (hideNonHighlighted && !segment.emotion) {
+        // Use a space to maintain some word separation
+        return segment.text.match(/\s+/) ? " " : "";
+      }
+
       if (!segment.emotion) {
         return segment.text;
       }
@@ -125,14 +133,32 @@ export const TextEmotionViewer = ({
             <Highlighter className="h-5 w-5 mr-2 text-primary" />
             {t("documentTextVisualization")}
           </CardTitle>
-          <Button
-            variant={showHighlights ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowHighlights(!showHighlights)}
-            className="self-start"
-          >
-            {showHighlights ? t("hideEmotionalHighlights") : t("showEmotionalHighlights")}
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              variant={showHighlights ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowHighlights(!showHighlights)}
+              className="self-start"
+            >
+              {showHighlights ? t("hideEmotionalHighlights") : t("showEmotionalHighlights")}
+            </Button>
+            {showHighlights && (
+              <Toggle
+                pressed={hideNonHighlighted}
+                onPressedChange={setHideNonHighlighted}
+                size="sm"
+                aria-label="Toggle non-highlighted words visibility"
+                className="self-start"
+              >
+                {hideNonHighlighted ? (
+                  <EyeOff className="h-4 w-4 mr-1" />
+                ) : (
+                  <Eye className="h-4 w-4 mr-1" />
+                )}
+                {hideNonHighlighted ? t("showAllText") : t("hideNonHighlighted")}
+              </Toggle>
+            )}
+          </div>
         </div>
         {sourceDescription && (
           <p className="text-sm text-muted-foreground mt-1">{sourceDescription}</p>
