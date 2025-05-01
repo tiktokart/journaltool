@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { Point } from "@/types/embedding";
+import { getEmotionColor } from "@/utils/embeddingUtils";
 
 interface PdfExportProps {
   sentimentData: any;
@@ -154,6 +156,92 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
         }
       }
       
+      // Add document text with emotional highlights
+      if (sentimentData.embeddingPoints && sentimentData.embeddingPoints.length > 0 && sentimentData.pdfTextLength > 0) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text(t("documentTextVisualization"), 14, 20);
+        doc.setFontSize(12);
+        
+        // Add a legend for emotional tones
+        doc.text(t("emotionColorLegend"), 14, 30);
+        
+        // Get unique emotional tones
+        const uniqueTones = Array.from(new Set(
+          sentimentData.embeddingPoints
+            .filter((point: Point) => point.emotionalTone)
+            .map((point: Point) => point.emotionalTone)
+        )).slice(0, 8); // Limit to top 8 emotions
+        
+        // Draw the color legend
+        uniqueTones.forEach((tone, index) => {
+          const color = getEmotionColor(tone as string, 1);
+          // Convert color from rgba to rgb format for jsPDF
+          const rgbColor = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)?.slice(1).map(Number);
+          
+          if (rgbColor) {
+            // Draw colored rectangle
+            doc.setFillColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+            doc.rect(14, 34 + index * 7, 5, 5, 'F');
+            
+            // Add emotion label
+            doc.text(tone as string, 24, 38 + index * 7);
+          }
+        });
+        
+        // Create word emotion map
+        const wordEmotionMap = new Map();
+        sentimentData.embeddingPoints.forEach((point: Point) => {
+          if (point.word && point.emotionalTone) {
+            wordEmotionMap.set(point.word.toLowerCase(), point.emotionalTone);
+          }
+        });
+        
+        // Process the text content for the PDF
+        const pdfText = sentimentData.pdfText || "";
+        const pageMaxHeight = doc.internal.pageSize.getHeight() - 20; // Bottom margin
+        const maxWidth = pageWidth - 30; // Left and right margins
+        let startY = 50; // Start position after the legend
+        
+        // Split text into chunks that will fit on pages
+        const words = pdfText.split(/\s+/);
+        let currentLine = "";
+        let currentLineWords = [];
+        
+        for (let i = 0; i < words.length; i++) {
+          const word = words[i];
+          const emotion = wordEmotionMap.get(word.toLowerCase());
+          
+          // If adding this word would make the line too long, start a new line
+          if (doc.getStringUnitWidth(currentLine + " " + word) * doc.internal.getFontSize() / doc.internal.scaleFactor > maxWidth) {
+            // If we need a new page
+            if (startY > pageMaxHeight) {
+              doc.addPage();
+              startY = 20; // Reset to top of new page
+            }
+            
+            // Print current line with emotional highlighting
+            printLineWithEmotions(doc, currentLineWords, wordEmotionMap, 14, startY, maxWidth);
+            
+            currentLine = word;
+            currentLineWords = [word];
+            startY += 7; // Line height
+          } else {
+            currentLine += (currentLine ? " " : "") + word;
+            currentLineWords.push(word);
+          }
+        }
+        
+        // Print the last line if there's anything left
+        if (currentLineWords.length > 0) {
+          if (startY > pageMaxHeight) {
+            doc.addPage();
+            startY = 20;
+          }
+          printLineWithEmotions(doc, currentLineWords, wordEmotionMap, 14, startY, maxWidth);
+        }
+      }
+      
       // Add source information in footer
       const totalPages = doc.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
@@ -181,6 +269,56 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
       console.error("PDF export error:", error);
       toast.error(t("exportError"));
     }
+  };
+  
+  // Helper function to print a line with emotional highlighting
+  const printLineWithEmotions = (
+    doc: jsPDF, 
+    words: string[], 
+    wordEmotionMap: Map<string, string>,
+    x: number,
+    y: number,
+    maxWidth: number
+  ) => {
+    let currentX = x;
+    const fontSize = doc.internal.getFontSize();
+    
+    words.forEach((word, index) => {
+      const emotion = wordEmotionMap.get(word.toLowerCase());
+      const spaceWidth = doc.getStringUnitWidth(" ") * fontSize / doc.internal.scaleFactor;
+      const wordWidth = doc.getStringUnitWidth(word) * fontSize / doc.internal.scaleFactor;
+      
+      // Add space before words (except first word)
+      if (index > 0) {
+        currentX += spaceWidth;
+      }
+      
+      // Check if word would go beyond page width and wrap if needed
+      if (currentX + wordWidth > x + maxWidth) {
+        y += 7; // Move to next line
+        currentX = x; // Reset x position
+      }
+      
+      // If word has an emotion, highlight it
+      if (emotion) {
+        const color = getEmotionColor(emotion, 0.3);
+        const rgbColor = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)?.slice(1).map(Number);
+        
+        if (rgbColor) {
+          // Add highlight
+          doc.setFillColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+          // Add padding around text
+          const padding = 1;
+          doc.rect(currentX - padding, y - fontSize + padding, wordWidth + (padding * 2), fontSize + (padding * 2), 'F');
+        }
+      }
+      
+      // Add word text
+      doc.text(word, currentX, y);
+      
+      // Move position forward
+      currentX += wordWidth;
+    });
   };
 
   return (

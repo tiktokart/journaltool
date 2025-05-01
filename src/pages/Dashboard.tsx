@@ -66,7 +66,14 @@ const Dashboard = () => {
       toast.info("Starting document analysis with BERT...");
       const results = await analyzePdfContent(file, pdfText);
       console.log("Analysis results:", results); // Debug the results
-      setSentimentData(results);
+      
+      // Add pdfText to the results object for PDF export
+      const resultsWithText = {
+        ...results,
+        pdfText: pdfText
+      };
+      
+      setSentimentData(resultsWithText);
       setFilteredPoints(results.embeddingPoints || []);
       setAnalysisComplete(true);
       
@@ -298,6 +305,7 @@ const Dashboard = () => {
         fileSize: file.size,
         wordCount: pdfText.split(/\s+/).length,
         pdfTextLength: pdfText.length,
+        pdfText: pdfText, // Add pdfText to the results for PDF export
         sentiment: gemma3Results.sentiment,
         summary: summary,
         embeddingPoints,
