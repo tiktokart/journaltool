@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Text, HighlightTextIcon } from "lucide-react";
+import { Text, Highlighter } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Point } from "@/types/embedding";
 import { getEmotionColor } from "@/utils/embeddingUtils";
@@ -122,7 +122,7 @@ export const TextEmotionViewer = ({
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
           <CardTitle className="flex items-center text-xl">
-            <HighlightTextIcon className="h-5 w-5 mr-2 text-primary" />
+            <Highlighter className="h-5 w-5 mr-2 text-primary" />
             {t("documentTextVisualization")}
           </CardTitle>
           <Button

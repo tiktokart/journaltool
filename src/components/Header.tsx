@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useLanguage, Language } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Supported languages with their display names
 const LANGUAGES = {
@@ -23,7 +23,7 @@ export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
 
-  const handleLanguageChange = (lang: Language) => {
+  const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
     console.log(`Language changed to: ${lang}`);
   };
@@ -58,7 +58,7 @@ export const Header = () => {
                 {Object.entries(LANGUAGES).map(([code, name]) => (
                   <DropdownMenuItem 
                     key={code}
-                    onClick={() => handleLanguageChange(code as Language)}
+                    onClick={() => handleLanguageChange(code)}
                     className={language === code ? "bg-accent/50" : ""}
                   >
                     {name}
@@ -110,7 +110,7 @@ export const Header = () => {
                     <button
                       key={code}
                       onClick={() => {
-                        handleLanguageChange(code as Language);
+                        handleLanguageChange(code);
                         setIsMenuOpen(false);
                       }}
                       className={`py-2 px-3 text-sm rounded-md transition-colors ${
