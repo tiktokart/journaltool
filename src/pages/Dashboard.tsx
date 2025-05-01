@@ -15,6 +15,7 @@ import { EmotionalClustersControl } from "@/components/EmotionalClustersControl"
 import { FileInfoDisplay } from "@/components/FileInfoDisplay";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
 import { PdfExport } from "@/components/PdfExport";
+import { TextEmotionViewer } from "@/components/TextEmotionViewer";
 import { analyzeTextWithGemma3 } from "@/utils/gemma3SentimentAnalysis";
 
 const Dashboard = () => {
@@ -513,6 +514,14 @@ const Dashboard = () => {
                   visibleClusterCount={visibleClusterCount}
                   setVisibleClusterCount={setVisibleClusterCount}
                   activeTab={activeTab}
+                />
+              </div>
+              
+              <div className="mt-8 mb-4">
+                <TextEmotionViewer 
+                  pdfText={pdfText}
+                  embeddingPoints={sentimentData.embeddingPoints}
+                  sourceDescription={sentimentData.sourceDescription}
                 />
               </div>
               
