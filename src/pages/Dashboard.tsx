@@ -14,6 +14,7 @@ import { DocumentSummary } from "@/components/DocumentSummary";
 import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
 import { FileInfoDisplay } from "@/components/FileInfoDisplay";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
+import { PdfExport } from "@/components/PdfExport";
 import { analyzeTextWithGemma3 } from "@/utils/gemma3SentimentAnalysis";
 
 const Dashboard = () => {
@@ -527,6 +528,8 @@ const Dashboard = () => {
               <div className="mt-8">
                 <WellbeingResources />
               </div>
+              
+              <PdfExport sentimentData={sentimentData} />
             </div>
           )}
         </div>

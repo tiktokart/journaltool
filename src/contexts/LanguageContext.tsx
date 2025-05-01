@@ -185,7 +185,7 @@ export const translations: Translations = {
     es: "No se encontró texto legible en el PDF",
     fr: "Aucun texte lisible trouvé dans le PDF",
     de: "Kein lesbarer Text in der PDF gefunden",
-    zh: "在PDF中未找到可读文本",
+    zh: "在PDF中未���到可读文本",
   },
   extracted: {
     en: "Extracted",
@@ -994,14 +994,14 @@ export const translations: Translations = {
     es: "Se puede comparar un máximo de 4 palabras",
     fr: "Un maximum de 4 mots peut être comparé",
     de: "Maximal 4 Wörter können verglichen werden",
-    zh: "最多可比较4个词语",
+    zh: "一次最多只能比较4个词语",
   },
   alreadyInComparison: {
-    en: "is already in comparison",
-    es: "ya está en comparación",
-    fr: "est déjà en comparaison",
+    en: "is already in the comparison",
+    es: "ya está en la comparación",
+    fr: "est déjà dans la comparaison",
     de: "ist bereits im Vergleich",
-    zh: "已经在比较中",
+    zh: "已在比较中",
   },
   addedToComparison: {
     en: "Added",
@@ -1015,7 +1015,7 @@ export const translations: Translations = {
     es: "a la comparación",
     fr: "à la comparaison",
     de: "zum Vergleich",
-    zh: "至比较",
+    zh: "到比较",
   },
   removedFromComparison: {
     en: "Removed",
@@ -1027,74 +1027,250 @@ export const translations: Translations = {
   fromComparison: {
     en: "from comparison",
     es: "de la comparación",
-    fr: "de la comparaison",
+    fr: "de la comparación",
     de: "aus dem Vergleich",
     zh: "从比较中",
   },
   clearedAllComparisonWords: {
     en: "Cleared all comparison words",
-    es: "Se eliminaron todas las palabras de comparación",
-    fr: "Toutes les mots de comparaison ont été effacés",
-    de: "Alle Vergleichswörter gelöscht",
+    es: "Se han borrado todas las palabras de comparación",
+    fr: "Tous les mots de comparaison ont été effacés",
+    de: "Alle Vergleichswörter wurden gelöscht",
     zh: "已清除所有比较词语",
-  }
+  },
+  emotionalRelationships: {
+    en: "Emotional Relationships",
+    es: "Relaciones Emocionales",
+    fr: "Relations Émotionnelles",
+    de: "Emotionale Beziehungen",
+    zh: "情感关系",
+  },
+  spacialProximity: {
+    en: "Spatial Proximity",
+    es: "Proximidad Espacial",
+    fr: "Proximité Spatiale",
+    de: "Räumliche Nähe",
+    zh: "空间邻近度",
+  },
+  sentimentSimilarity: {
+    en: "Sentiment Similarity",
+    es: "Similitud de Sentimiento",
+    fr: "Similarité de Sentiment",
+    de: "Stimmungsähnlichkeit",
+    zh: "情感相似度",
+  },
+  selected: {
+    en: "Selected",
+    es: "Seleccionado",
+    fr: "Sélectionné",
+    de: "Ausgewählt",
+    zh: "已选择",
+  },
+  
+  // PDF Export related translations
+  exportAnalysis: {
+    en: "Export Analysis",
+    es: "Exportar Análisis",
+    fr: "Exporter l'Analyse",
+    de: "Analyse Exportieren",
+    zh: "导出分析",
+  },
+  exportDescription: {
+    en: "Download a PDF report with the complete analysis of your document.",
+    es: "Descargue un informe PDF con el análisis completo de su documento.",
+    fr: "Téléchargez un rapport PDF avec l'analyse complète de votre document.",
+    de: "Laden Sie einen PDF-Bericht mit der vollständigen Analyse Ihres Dokuments herunter.",
+    zh: "下载包含文档完整分析的PDF报告。",
+  },
+  exportToPdf: {
+    en: "Export to PDF",
+    es: "Exportar a PDF",
+    fr: "Exporter en PDF",
+    de: "Als PDF exportieren",
+    zh: "导出为PDF",
+  },
+  exportSuccess: {
+    en: "Analysis report exported successfully",
+    es: "Informe de análisis exportado exitosamente",
+    fr: "Rapport d'analyse exporté avec succès",
+    de: "Analysebericht erfolgreich exportiert",
+    zh: "分析报告成功导出",
+  },
+  exportError: {
+    en: "Error exporting analysis report",
+    es: "Error al exportar el informe de análisis",
+    fr: "Erreur lors de l'exportation du rapport d'analyse",
+    de: "Fehler beim Exportieren des Analyseberichts",
+    zh: "导出分析报告时出错",
+  },
+  noDataToExport: {
+    en: "No analysis data to export",
+    es: "No hay datos de análisis para exportar",
+    fr: "Aucune donnée d'analyse à exporter",
+    de: "Keine Analysedaten zum Exportieren",
+    zh: "没有可供导出的分析数据",
+  },
+  documentAnalysisReport: {
+    en: "Document Analysis Report",
+    es: "Informe de Análisis de Documento",
+    fr: "Rapport d'Analyse de Document",
+    de: "Dokumentanalyse-Bericht",
+    zh: "文档分析报告",
+  },
+  fileInformation: {
+    en: "File Information",
+    es: "Información del Archivo",
+    fr: "Information sur le Fichier",
+    de: "Datei-Information",
+    zh: "文件信息",
+  },
+  fileName: {
+    en: "File Name",
+    es: "Nombre del Archivo",
+    fr: "Nom du Fichier",
+    de: "Dateiname",
+    zh: "文件名",
+  },
+  fileSize: {
+    en: "File Size",
+    es: "Tamaño del Archivo",
+    fr: "Taille du Fichier",
+    de: "Dateigröße",
+    zh: "文件大小",
+  },
+  sentimentAnalysis: {
+    en: "Sentiment Analysis",
+    es: "Análisis de Sentimiento",
+    fr: "Analyse de Sentiment",
+    de: "Stimmungsanalyse",
+    zh: "情感分析",
+  },
+  generatedOn: {
+    en: "Generated on",
+    es: "Generado el",
+    fr: "Généré le",
+    de: "Erstellt am",
+    zh: "生成于",
+  },
+  of: {
+    en: "of",
+    es: "de",
+    fr: "de",
+    de: "von",
+    zh: "共",
+  },
+  phrase: {
+    en: "Phrase",
+    es: "Frase",
+    fr: "Phrase",
+    de: "Phrase",
+    zh: "短语",
+  },
+  frequency: {
+    en: "Frequency",
+    es: "Frecuencia",
+    fr: "Fréquence",
+    de: "Häufigkeit",
+    zh: "频率",
+  },
+  theme: {
+    en: "Theme",
+    es: "Tema",
+    fr: "Thème",
+    de: "Thema",
+    zh: "主题",
+  },
+  occurrences: {
+    en: "Occurrences",
+    es: "Ocurrencias",
+    fr: "Occurrences",
+    de: "Vorkommen",
+    zh: "出现次数",
+  },
+  emotion: {
+    en: "Emotion",
+    es: "Emoción",
+    fr: "Émotion",
+    de: "Emotion",
+    zh: "情感",
+  },
+  mentions: {
+    en: "Mentions",
+    es: "Menciones",
+    fr: "Mentions",
+    de: "Erwähnungen",
+    zh: "提及",
+  },
+  documentAnalysis: {
+    en: "Document Analysis",
+    es: "Análisis de Documento",
+    fr: "Analyse de Document",
+    de: "Dokumentanalyse",
+    zh: "文档分析",
+  },
 };
 
-// Create context 
+// Create the language context
 interface LanguageContextType {
   language: Language;
-  setLanguage: (language: Language) => void;
-  t: (key: string, params?: Record<string, string | number>) => string;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextType>({
+  language: "en",
+  setLanguage: () => {},
+  t: (key) => key,
+});
 
-// Create provider component
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>("en");
+// Language provider component
+interface LanguageProviderProps {
+  children: ReactNode;
+}
 
-  // Translation function
-  const t = (key: string, params?: Record<string, string | number>): string => {
-    // Check if the key exists in translations
-    if (!translations[key]) {
-      console.warn(`Translation key "${key}" not found`);
-      return key;
+export const LanguageProvider = ({ children }: LanguageProviderProps) => {
+  // Try to get language preference from localStorage
+  const getInitialLanguage = (): Language => {
+    if (typeof window !== "undefined") {
+      const savedLang = localStorage.getItem("language");
+      if (savedLang && ["en", "es", "fr", "de", "zh"].includes(savedLang)) {
+        return savedLang as Language;
+      }
     }
-
-    // Get translation string for current language or fallback to English
-    let translatedText = translations[key][language] || translations[key].en || key;
-
-    // Process any parameters for dynamic values
-    if (params) {
-      Object.entries(params).forEach(([paramKey, paramValue]) => {
-        translatedText = translatedText.replace(
-          new RegExp(`{${paramKey}}`, 'g'), 
-          String(paramValue)
-        );
-      });
-    }
-
-    return translatedText;
+    return "en";
   };
 
-  const contextValue = {
-    language,
-    setLanguage,
-    t
+  const [language, setLanguageState] = useState<Language>(getInitialLanguage());
+
+  // Update language and save to localStorage
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("language", lang);
+    }
+  };
+
+  // Translation function
+  const t = (key: string): string => {
+    if (!translations[key]) {
+      console.warn(`Translation key not found: ${key}`);
+      return key;
+    }
+    return translations[key][language] || translations[key].en || key;
   };
 
   return (
-    <LanguageContext.Provider value={contextValue}>
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );
 };
 
 // Custom hook to use the language context
-export const useLanguage = (): LanguageContextType => {
+export const useLanguage = () => {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+  if (!context) {
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
 };
