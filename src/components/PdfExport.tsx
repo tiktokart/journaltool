@@ -5,7 +5,7 @@ import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 interface PdfExportProps {
   sentimentData: any;
@@ -77,8 +77,7 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
         doc.setFontSize(12);
         
         // Create table for key phrases
-        // @ts-ignore
-        doc.autoTable({
+        autoTable(doc, {
           startY: 30,
           head: [[t("phrase"), t("sentiment"), t("frequency")]],
           body: sentimentData.keyPhrases.slice(0, 20).map((phrase: any) => [
@@ -102,8 +101,7 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
         doc.setFontSize(12);
         
         // Create table for entities/themes
-        // @ts-ignore
-        doc.autoTable({
+        autoTable(doc, {
           startY: 30,
           head: [[t("theme"), t("score"), t("mentions")]],
           body: sentimentData.entities.map((entity: any) => [
@@ -140,8 +138,7 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
           doc.setFontSize(12);
           
           // Create table for emotional tones
-          // @ts-ignore
-          doc.autoTable({
+          autoTable(doc, {
             startY: 30,
             head: [[t("emotion"), t("occurrences")]],
             body: sortedTones.map(([tone, count]) => [
