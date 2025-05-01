@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FilePdf } from "lucide-react";
+import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import jsPDF from "jspdf";
@@ -190,7 +190,7 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
     <Card className="border border-border shadow-md bg-card mt-8">
       <CardHeader>
         <CardTitle className="flex items-center text-xl">
-          <FilePdf className="h-5 w-5 mr-2 text-primary" />
+          <FileText className="h-5 w-5 mr-2 text-primary" />
           {t("exportAnalysis")}
         </CardTitle>
       </CardHeader>
@@ -203,7 +203,7 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
             onClick={exportToPdf} 
             className="self-start"
           >
-            <FilePdf className="h-4 w-4 mr-2" />
+            <FileText className="h-4 w-4 mr-2" />
             {t("exportToPdf")}
           </Button>
         </div>
