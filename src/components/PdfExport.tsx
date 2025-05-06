@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
@@ -175,7 +174,8 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
         
         // Draw the color legend
         uniqueTones.forEach((tone, index) => {
-          const color = getEmotionColor(tone as string, 1);
+          // Fix here: Only pass the emotion to getEmotionColor
+          const color = getEmotionColor(tone as string);
           // Convert color from rgba to rgb format for jsPDF
           const rgbColor = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)?.slice(1).map(Number);
           
@@ -203,17 +203,24 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
         const maxWidth = pageWidth - 30; // Left and right margins
         let startY = 50; // Start position after the legend
         
+        // Helper function to calculate text width using the font size from fontSize property
+        const getTextWidth = (text: string, fontSize: number) => {
+          // Use getStringUnitWidth and multiply by current font size
+          return doc.getStringUnitWidth(text) * fontSize / doc.internal.scaleFactor;
+        };
+        
         // Split text into chunks that will fit on pages
         const words = pdfText.split(/\s+/);
         let currentLine = "";
         let currentLineWords = [];
+        const fontSize = doc.getFontSize ? doc.getFontSize() : 12; // Fallback to 12 if getFontSize doesn't exist
         
         for (let i = 0; i < words.length; i++) {
           const word = words[i];
           const emotion = wordEmotionMap.get(word.toLowerCase());
           
           // If adding this word would make the line too long, start a new line
-          if (doc.getStringUnitWidth(currentLine + " " + word) * doc.internal.getFontSize() / doc.internal.scaleFactor > maxWidth) {
+          if (getTextWidth(currentLine + " " + word, fontSize) > maxWidth) {
             // If we need a new page
             if (startY > pageMaxHeight) {
               doc.addPage();
@@ -281,10 +288,12 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
     maxWidth: number
   ) => {
     let currentX = x;
-    const fontSize = doc.internal.getFontSize();
+    // Fix for getFontSize issue - use the safer approach with fallback
+    const fontSize = doc.getFontSize ? doc.getFontSize() : 12; // Default to 12pt if method not available
     
     words.forEach((word, index) => {
       const emotion = wordEmotionMap.get(word.toLowerCase());
+      // Calculate widths with our custom function
       const spaceWidth = doc.getStringUnitWidth(" ") * fontSize / doc.internal.scaleFactor;
       const wordWidth = doc.getStringUnitWidth(word) * fontSize / doc.internal.scaleFactor;
       
@@ -301,7 +310,8 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
       
       // If word has an emotion, highlight it
       if (emotion) {
-        const color = getEmotionColor(emotion, 0.3);
+        // Fix here: Only pass one argument to getEmotionColor
+        const color = getEmotionColor(emotion);
         const rgbColor = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)?.slice(1).map(Number);
         
         if (rgbColor) {
