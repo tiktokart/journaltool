@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
@@ -233,6 +234,8 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
           
           // Assign emotional tones based on sentiment scores and keywords
           embeddingPoints.forEach(point => {
+            if (!point.word) return;
+            
             const word = point.word.toLowerCase();
             
             // Check if the word directly matches any emotional keywords

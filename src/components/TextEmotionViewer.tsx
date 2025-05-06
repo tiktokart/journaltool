@@ -92,7 +92,7 @@ export const TextEmotionViewer = ({
         return segment.text;
       }
 
-      // Fix here: getEmotionColor should receive only one argument (the emotion string)
+      // Fixed: getEmotionColor should receive only one argument (the emotion string)
       const backgroundColor = getEmotionColor(segment.emotion);
       const color = "inherit";
 
