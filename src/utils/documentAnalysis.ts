@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
@@ -79,7 +78,7 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
         
         // Enhanced emotion detection in sentences
         // Look for specific emotional indicators in the text
-        const emotionKeywords = {
+        const emotionKeywords: Record<string, string[]> = {
           Anger: ["angry", "mad", "furious", "rage", "outraged", "irritated", "annoyed", "frustrated"],
           Sadness: ["sad", "depressed", "unhappy", "miserable", "grief", "despair", "heartbroken", "disappointed"],
           Fear: ["afraid", "scared", "terrified", "fearful", "anxious", "worried", "panicked", "nervous"],
