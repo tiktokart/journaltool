@@ -116,11 +116,11 @@ export const TextEmotionViewer = ({
         <CardHeader>
           <CardTitle className="flex items-center text-xl">
             <Text className="h-5 w-5 mr-2 text-primary" />
-            {t("documentTextVisualization")}
+            {t("Document Text Visualization")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-10">
-          <p className="text-muted-foreground">{t("noTextAvailableFromPdf")}</p>
+          <p className="text-muted-foreground">{t("No text available from PDF")}</p>
         </CardContent>
       </Card>
     );
@@ -132,7 +132,7 @@ export const TextEmotionViewer = ({
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
           <CardTitle className="flex items-center text-xl">
             <Highlighter className="h-5 w-5 mr-2 text-primary" />
-            {t("documentTextVisualization")}
+            {t("Document Text Visualization")}
           </CardTitle>
           <div className="flex space-x-2">
             <Button
@@ -141,7 +141,7 @@ export const TextEmotionViewer = ({
               onClick={() => setShowHighlights(!showHighlights)}
               className="self-start"
             >
-              {showHighlights ? t("hideEmotionalHighlights") : t("showEmotionalHighlights")}
+              {showHighlights ? t("Hide Emotional Highlights") : t("Show Emotional Highlights")}
             </Button>
             {showHighlights && (
               <Toggle
@@ -156,7 +156,7 @@ export const TextEmotionViewer = ({
                 ) : (
                   <Eye className="h-4 w-4 mr-1" />
                 )}
-                {hideNonHighlighted ? t("showAllText") : t("hideNonHighlighted")}
+                {hideNonHighlighted ? t("Show All Text") : t("Hide Non-Highlighted")}
               </Toggle>
             )}
           </div>

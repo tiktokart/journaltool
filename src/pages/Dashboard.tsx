@@ -424,6 +424,13 @@ const Dashboard = () => {
     }
   }, []);
 
+  // Save the current analysis method to localStorage when it changes
+  useEffect(() => {
+    if (analysisMethod) {
+      localStorage.setItem("analysisMethod", analysisMethod);
+    }
+  }, [analysisMethod]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
