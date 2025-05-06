@@ -232,6 +232,18 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
             sentimentMap.set(word, wordSentiments[index].normalizedScore);
           });
           
+          // Define the emotion keywords again for this scope
+          const pointEmotionKeywords: Record<string, string[]> = {
+            Anger: ["angry", "mad", "furious", "rage", "outraged", "irritated", "annoyed", "frustrated"],
+            Sadness: ["sad", "depressed", "unhappy", "miserable", "grief", "despair", "heartbroken", "disappointed"],
+            Fear: ["afraid", "scared", "terrified", "fearful", "anxious", "worried", "panicked", "nervous"],
+            Disgust: ["disgusted", "revolted", "repulsed", "nauseated", "sickened", "distaste", "aversion", "loathing"],
+            Joy: ["happy", "joyful", "delighted", "elated", "excited", "pleased", "glad", "content"],
+            Surprise: ["surprised", "shocked", "astonished", "amazed", "startled", "unexpected", "sudden", "wonder"],
+            Trust: ["trust", "believe", "confident", "faith", "rely", "dependable", "loyal", "authentic"],
+            Anticipation: ["anticipate", "expect", "await", "hope", "foresee", "look forward", "predict", "prospect"]
+          };
+          
           // Assign emotional tones based on sentiment scores and keywords
           embeddingPoints.forEach(point => {
             if (!point.word) return;
@@ -241,9 +253,8 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
             // Check if the word directly matches any emotional keywords
             let matchedEmotion = null;
             
-            // Fix: Use the defined emotionKeywords from above
-            Object.entries(emotionKeywords).forEach(([emotion, keywords]) => {
-              if (keywords.includes(word) || keywords.some(keyword => word.includes(keyword))) {
+            Object.entries(pointEmotionKeywords).forEach(([emotion, keywords]) => {
+              if (keywords.includes(word) || keywords.some(kw => word.includes(kw))) {
                 matchedEmotion = emotion;
               }
             });

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,6 @@ import { Loader2, FileText } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
-import { WellbeingResources } from "@/components/WellbeingResources";
 import { WordComparisonController } from "@/components/WordComparisonController";
 import { DocumentSummary } from "@/components/DocumentSummary";
 import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
@@ -17,6 +17,7 @@ import { AnalysisTabs } from "@/components/AnalysisTabs";
 import { PdfExport } from "@/components/PdfExport";
 import { TextEmotionViewer } from "@/components/TextEmotionViewer";
 import { analyzeTextWithGemma3 } from "@/utils/gemma3SentimentAnalysis";
+import { WellbeingResources } from "@/components/WellbeingResources";
 
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -61,6 +62,7 @@ const Dashboard = () => {
 
     setIsAnalyzing(true);
     setAnalysisComplete(false);
+    setAnalysisMethod("bert");
     
     try {
       toast.info("Starting document analysis with BERT...");
@@ -112,6 +114,7 @@ const Dashboard = () => {
 
     setIsAnalyzing(true);
     setAnalysisComplete(false);
+    setAnalysisMethod("gemma3");
     
     try {
       toast.info("Starting document analysis with Gemma 3...");
@@ -131,7 +134,6 @@ const Dashboard = () => {
       const filteredSignificantWords = significantWords.slice(0, wordLimit);
       
       // Create embedding points using actual text from the document
-      // Fix the argument count error - use emotionalDistribution instead of boolean
       const mockPoints = generateMockPoints(false, filteredSignificantWords.length);
       
       // Assign real words from the document to the points instead of random words
@@ -543,7 +545,7 @@ const Dashboard = () => {
               </div>
               
               <div className="mt-8">
-                <WellbeingResources />
+                <WellbeingResources embeddingPoints={sentimentData.embeddingPoints} />
               </div>
               
               <PdfExport sentimentData={sentimentData} />
