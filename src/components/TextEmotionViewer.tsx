@@ -8,6 +8,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Point } from "@/types/embedding";
 import { getEmotionColor } from "@/utils/embeddingUtils";
 import { Toggle } from "@/components/ui/toggle";
+import { WellbeingResources } from "@/components/WellbeingResources";
 
 interface TextEmotionViewerProps {
   pdfText: string;
@@ -127,51 +128,58 @@ export const TextEmotionViewer = ({
   }
 
   return (
-    <Card className="border border-border shadow-md">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <CardTitle className="flex items-center text-xl">
-            <Highlighter className="h-5 w-5 mr-2 text-primary" />
-            {t("documentTextVisualization")}
-          </CardTitle>
-          <div className="flex space-x-2">
-            <Button
-              variant={showHighlights ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowHighlights(!showHighlights)}
-              className="self-start"
-            >
-              {showHighlights ? t("hideEmotionalHighlights") : t("showEmotionalHighlights")}
-            </Button>
-            {showHighlights && (
-              <Toggle
-                pressed={hideNonHighlighted}
-                onPressedChange={setHideNonHighlighted}
+    <>
+      <Card className="border border-border shadow-md">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <CardTitle className="flex items-center text-xl">
+              <Highlighter className="h-5 w-5 mr-2 text-primary" />
+              {t("documentTextVisualization")}
+            </CardTitle>
+            <div className="flex space-x-2">
+              <Button
+                variant={showHighlights ? "default" : "outline"}
                 size="sm"
-                aria-label="Toggle non-highlighted words visibility"
+                onClick={() => setShowHighlights(!showHighlights)}
                 className="self-start"
               >
-                {hideNonHighlighted ? (
-                  <EyeOff className="h-4 w-4 mr-1" />
-                ) : (
-                  <Eye className="h-4 w-4 mr-1" />
-                )}
-                {hideNonHighlighted ? t("showAllText") : t("hideNonHighlighted")}
-              </Toggle>
-            )}
+                {showHighlights ? t("hideEmotionalHighlights") : t("showEmotionalHighlights")}
+              </Button>
+              {showHighlights && (
+                <Toggle
+                  pressed={hideNonHighlighted}
+                  onPressedChange={setHideNonHighlighted}
+                  size="sm"
+                  aria-label="Toggle non-highlighted words visibility"
+                  className="self-start"
+                >
+                  {hideNonHighlighted ? (
+                    <EyeOff className="h-4 w-4 mr-1" />
+                  ) : (
+                    <Eye className="h-4 w-4 mr-1" />
+                  )}
+                  {hideNonHighlighted ? t("showAllText") : t("hideNonHighlighted")}
+                </Toggle>
+              )}
+            </div>
           </div>
-        </div>
-        {sourceDescription && (
-          <p className="text-sm text-muted-foreground mt-1">{sourceDescription}</p>
-        )}
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[350px] rounded border border-border p-4">
-          <div className="text-sm whitespace-pre-wrap">
-            {highlightedText}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+          {sourceDescription && (
+            <p className="text-sm text-muted-foreground mt-1">{sourceDescription}</p>
+          )}
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[350px] rounded border border-border p-4">
+            <div className="text-sm whitespace-pre-wrap">
+              {highlightedText}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+      
+      {/* Display personalized wellbeing resources based on emotional analysis */}
+      <div className="mt-6">
+        <WellbeingResources embeddingPoints={embeddingPoints} />
+      </div>
+    </>
   );
 };

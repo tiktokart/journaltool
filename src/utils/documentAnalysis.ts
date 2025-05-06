@@ -76,6 +76,59 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
           .filter(s => s.trim().length > 10 && s.trim().length < 250)
           .map(s => s.trim());
         
+        // Enhanced emotion detection in sentences
+        // Look for specific emotional indicators in the text
+        const emotionKeywords = {
+          Anger: ["angry", "mad", "furious", "rage", "outraged", "irritated", "annoyed", "frustrated"],
+          Sadness: ["sad", "depressed", "unhappy", "miserable", "grief", "despair", "heartbroken", "disappointed"],
+          Fear: ["afraid", "scared", "terrified", "fearful", "anxious", "worried", "panicked", "nervous"],
+          Disgust: ["disgusted", "revolted", "repulsed", "nauseated", "sickened", "distaste", "aversion", "loathing"],
+          Joy: ["happy", "joyful", "delighted", "elated", "excited", "pleased", "glad", "content"],
+          Surprise: ["surprised", "shocked", "astonished", "amazed", "startled", "unexpected", "sudden", "wonder"],
+          Trust: ["trust", "believe", "confident", "faith", "rely", "dependable", "loyal", "authentic"],
+          Anticipation: ["anticipate", "expect", "await", "hope", "foresee", "look forward", "predict", "prospect"]
+        };
+        
+        // Count emotional keywords in text
+        const emotionKeywordCounts: Record<string, number> = {
+          Anger: 0, Sadness: 0, Fear: 0, Disgust: 0, Joy: 0, Surprise: 0, Trust: 0, Anticipation: 0
+        };
+        
+        // Check for emotion keywords in the text
+        const textLower = pdfText.toLowerCase();
+        Object.entries(emotionKeywords).forEach(([emotion, keywords]) => {
+          keywords.forEach(keyword => {
+            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+            const matches = textLower.match(regex);
+            if (matches) {
+              emotionKeywordCounts[emotion] += matches.length;
+            }
+          });
+        });
+        
+        console.log("Emotion keyword counts:", emotionKeywordCounts);
+        
+        // Adjust emotional distribution based on keyword counts
+        const totalKeywordMatches = Object.values(emotionKeywordCounts).reduce((sum, count) => sum + count, 0);
+        if (totalKeywordMatches > 0) {
+          Object.entries(emotionKeywordCounts).forEach(([emotion, count]) => {
+            // Calculate the percentage and use it to influence the distribution
+            const percentage = count / totalKeywordMatches;
+            emotionalDistribution[emotion as keyof typeof emotionalDistribution] = 
+              0.1 + (percentage * 0.9); // Base 0.1 + up to 0.9 based on percentage
+          });
+          
+          // Normalize the distribution to ensure it adds up to 1
+          const totalDistribution = Object.values(emotionalDistribution).reduce((sum, val) => sum + val, 0);
+          if (totalDistribution > 0) {
+            Object.keys(emotionalDistribution).forEach(key => {
+              emotionalDistribution[key as keyof typeof emotionalDistribution] /= totalDistribution;
+            });
+          }
+          
+          console.log("Adjusted emotional distribution based on keywords:", emotionalDistribution);
+        }
+        
         // For larger documents, analyze a sample of sentences
         if (sentences.length > 20) {
           const sampleSize = Math.min(20, Math.floor(sentences.length / 3));
@@ -152,7 +205,7 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
       
       const normalizedSentiment = Math.min(1, Math.max(0, (overallSentiment + 1) / 2));
       
-      // Generate embedding points based on the emotional distribution
+      // Generate embedding points with enhanced emotional tagging
       toast.info("Generating embedding visualization...");
       const embeddingPoints = generateMockPoints(
         false, 
@@ -162,10 +215,11 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
       console.log("Generated embedding points:", embeddingPoints.length);
       console.log("Sample embedding words:", embeddingPoints.slice(0, 5).map(p => p.word));
       
-      // If we have enough embedding points with unique words, update their sentiment scores with BERT
+      // Enhanced emotional tagging for embedding points
+      // Assign emotional tones based on both sentiment scores and emotional keywords
       if (embeddingPoints.length > 0) {
         const uniqueWords = [...new Set(embeddingPoints.map(p => p.word))];
-        const maxWordsToAnalyze = Math.min(uniqueWords.length, 100); // Limit to avoid performance issues
+        const maxWordsToAnalyze = Math.min(uniqueWords.length, 100);
         
         if (maxWordsToAnalyze > 0) {
           const wordsToAnalyze = uniqueWords.slice(0, maxWordsToAnalyze);
@@ -177,14 +231,68 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
             sentimentMap.set(word, wordSentiments[index].normalizedScore);
           });
           
-          // Update the sentiment scores of the embedding points
+          // Assign emotional tones based on sentiment scores and keywords
           embeddingPoints.forEach(point => {
-            if (sentimentMap.has(point.word)) {
-              point.sentiment = sentimentMap.get(point.word);
+            const word = point.word.toLowerCase();
+            
+            // Check if the word directly matches any emotional keywords
+            let matchedEmotion = null;
+            Object.entries(emotionKeywords).forEach(([emotion, keywords]) => {
+              if (keywords.includes(word) || keywords.some(keyword => word.includes(keyword))) {
+                matchedEmotion = emotion;
+              }
+            });
+            
+            if (matchedEmotion) {
+              // If word directly matches an emotion keyword, assign that emotion
+              point.emotionalTone = matchedEmotion;
+            } else if (sentimentMap && sentimentMap.has(word)) {
+              // Otherwise, assign emotion based on sentiment score
+              const score = sentimentMap.get(word);
+              if (score >= 0.8) {
+                point.emotionalTone = "Joy";
+              } else if (score >= 0.6) {
+                point.emotionalTone = "Trust";
+              } else if (score <= 0.2) {
+                point.emotionalTone = "Sadness";
+              } else if (score <= 0.3) {
+                point.emotionalTone = "Fear";
+              } else if (score <= 0.4) {
+                point.emotionalTone = "Anger";
+              } else {
+                // Distribute remaining points among emotions based on overall distribution
+                const emotions = Object.keys(emotionalDistribution);
+                emotions.sort((a, b) => 
+                  emotionalDistribution[b as keyof typeof emotionalDistribution] - 
+                  emotionalDistribution[a as keyof typeof emotionalDistribution]
+                );
+                
+                // Assign based on probability distribution (more likely to get dominant emotions)
+                const rand = Math.random();
+                let cumulativeProbability = 0;
+                
+                for (const emotion of emotions) {
+                  cumulativeProbability += emotionalDistribution[emotion as keyof typeof emotionalDistribution];
+                  if (rand <= cumulativeProbability) {
+                    point.emotionalTone = emotion;
+                    break;
+                  }
+                }
+                
+                // Fallback if no emotion was assigned
+                if (!point.emotionalTone) {
+                  point.emotionalTone = "Neutral";
+                }
+              }
+            }
+            
+            // If the sentiment is very neutral, label it as such
+            if (point.sentiment >= 0.45 && point.sentiment <= 0.55) {
+              point.emotionalTone = "Neutral";
             }
           });
           
-          console.log("Updated embedding points with BERT sentiment scores");
+          console.log("Enhanced embedding points with emotional tones");
         }
       }
 
@@ -395,7 +503,8 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
         wordCount: customWordBank.length,
         pdfTextLength: pdfText ? pdfText.length : 0,
         summary: summary,
-        sourceDescription: sourceDescription
+        sourceDescription: sourceDescription,
+        emotionalDistribution: emotionalDistribution
       };
 
       resolve(analysisResults);
