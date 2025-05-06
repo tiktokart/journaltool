@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { Point } from "@/types/embedding";
 import { generateMockPoints, getEmotionColor } from "@/utils/embeddingUtils";
@@ -239,6 +240,8 @@ export const analyzePdfContent = async (file: File, pdfText?: string): Promise<a
             
             // Check if the word directly matches any emotional keywords
             let matchedEmotion = null;
+            
+            // Fix: Use the defined emotionKeywords from above
             Object.entries(emotionKeywords).forEach(([emotion, keywords]) => {
               if (keywords.includes(word) || keywords.some(keyword => word.includes(keyword))) {
                 matchedEmotion = emotion;
