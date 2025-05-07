@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUploader } from "@/components/FileUploader";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
-import { Loader2, FileText, Save } from "lucide-react";
+import { Loader2, FileText } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
@@ -376,32 +376,6 @@ const Dashboard = () => {
     }
   };
 
-  // New function to save the current journal entry
-  const saveCurrentJournal = () => {
-    if (!pdfText || pdfText.trim().length === 0) {
-      toast.error("No journal content to save");
-      return;
-    }
-    
-    try {
-      const entry = {
-        id: uuidv4(),
-        text: pdfText,
-        date: new Date().toISOString()
-      };
-      
-      const storedEntries = localStorage.getItem('journalEntries');
-      const entries = storedEntries ? JSON.parse(storedEntries) : [];
-      entries.push(entry);
-      
-      localStorage.setItem('journalEntries', JSON.stringify(entries));
-      toast.success("Journal entry saved to your collection");
-    } catch (error) {
-      console.error('Error saving journal entry:', error);
-      toast.error("Failed to save journal entry");
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-lavender">
       <Header />
@@ -409,15 +383,21 @@ const Dashboard = () => {
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
           {/* Life Plan Section - Moved above Journal Input */}
-          <LifePlanSection journalText={journalText} />
+          <div className="bg-light-lavender p-4 rounded-lg">
+            <LifePlanSection journalText={journalText} />
+          </div>
           
           {/* Journal Input Section */}
           <div className="grid md:grid-cols-2 gap-6">
-            <JournalInput 
-              onJournalEntrySubmit={handleJournalEntrySubmit} 
-              onAddToLifePlan={handleAddToLifePlan}
-            />
-            <JournalCache onSelectEntry={handleCachedEntrySelect} />
+            <div className="bg-light-lavender p-4 rounded-lg">
+              <JournalInput 
+                onJournalEntrySubmit={handleJournalEntrySubmit} 
+                onAddToLifePlan={handleAddToLifePlan}
+              />
+            </div>
+            <div className="bg-light-lavender p-4 rounded-lg">
+              <JournalCache onSelectEntry={handleCachedEntrySelect} />
+            </div>
           </div>
           
           {/* Document Analysis Section - With light lavender background */}
@@ -482,34 +462,40 @@ const Dashboard = () => {
           {/* Analysis Results Section */}
           {sentimentData && (
             <div className="animate-fade-in">
-              <FileInfoDisplay 
-                fileName={sentimentData.fileName}
-                fileSize={sentimentData.fileSize}
-                wordCount={sentimentData.wordCount}
-              />
+              <div className="bg-light-lavender p-4 rounded-lg mb-4">
+                <FileInfoDisplay 
+                  fileName={sentimentData.fileName}
+                  fileSize={sentimentData.fileSize}
+                  wordCount={sentimentData.wordCount}
+                />
+              </div>
               
-              <DocumentSummary summary={sentimentData.summary || "Analysis complete."} />
+              <div className="bg-light-lavender p-4 rounded-lg mb-4">
+                <DocumentSummary summary={sentimentData.summary || "Analysis complete."} />
+              </div>
               
-              <AnalysisTabs 
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                sentimentData={sentimentData}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                selectedPoint={selectedPoint}
-                setSelectedPoint={setSelectedPoint}
-                selectedWord={selectedWord}
-                setSelectedWord={setSelectedWord}
-                filteredPoints={filteredPoints}
-                setFilteredPoints={setFilteredPoints}
-                uniqueWords={uniqueWords}
-                connectedPoints={connectedPoints}
-                setConnectedPoints={setConnectedPoints}
-                visibleClusterCount={visibleClusterCount}
-                handlePointClick={handlePointClick}
-                handleResetVisualization={handleResetVisualization}
-                handleClearSearch={handleClearSearch}
-              />
+              <div className="bg-light-lavender p-4 rounded-lg mb-4">
+                <AnalysisTabs 
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  sentimentData={sentimentData}
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  selectedPoint={selectedPoint}
+                  setSelectedPoint={setSelectedPoint}
+                  selectedWord={selectedWord}
+                  setSelectedWord={setSelectedWord}
+                  filteredPoints={filteredPoints}
+                  setFilteredPoints={setFilteredPoints}
+                  uniqueWords={uniqueWords}
+                  connectedPoints={connectedPoints}
+                  setConnectedPoints={setConnectedPoints}
+                  visibleClusterCount={visibleClusterCount}
+                  handlePointClick={handlePointClick}
+                  handleResetVisualization={handleResetVisualization}
+                  handleClearSearch={handleClearSearch}
+                />
+              </div>
               
               <div className="mt-8 mb-4">
                 <EmotionalClustersControl 
@@ -542,17 +528,8 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="flex items-center gap-3 mt-8">
+              <div className="mt-8">
                 <PdfExport sentimentData={sentimentData} />
-                
-                <Button 
-                  onClick={saveCurrentJournal}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  Save to Journal Collection
-                </Button>
               </div>
             </div>
           )}

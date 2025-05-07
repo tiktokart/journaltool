@@ -270,12 +270,14 @@ export default function Index() {
             <GitCompareArrows className="h-6 w-6 mr-2 text-purple" />
             Word Comparison
           </h2>
-          <WordComparisonController 
-            points={points}
-            selectedPoint={selectedPoint}
-            calculateRelationship={calculateRelationship}
-            sourceDescription="Demo comparison using sample data"
-          />
+          <div className="bg-light-lavender p-4 rounded-lg">
+            <WordComparisonController 
+              points={points}
+              selectedPoint={selectedPoint}
+              calculateRelationship={calculateRelationship}
+              sourceDescription="Demo comparison using sample data"
+            />
+          </div>
         </div>
       </div>
     </div>
