@@ -1,156 +1,239 @@
+
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Header } from "@/components/Header";
 import { Link } from "react-router-dom";
+import { Header } from "@/components/Header";
+import { Flower, Target, Book, BarChart, GitCompareArrows } from "lucide-react";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
-import { generateMockPoints } from "@/utils/embeddingUtils";
+import { SentimentOverview } from "@/components/SentimentOverview";
 import { WordComparisonController } from "@/components/WordComparisonController";
-import { useState } from "react";
+import { generateMockPoints } from "@/utils/embeddingUtils";
+import { useState, useEffect } from "react";
 import { Point } from "@/types/embedding";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { BarChart as RecBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 
 export default function Index() {
+  const { theme, setTheme } = useTheme();
   const { t } = useLanguage();
-  const [demoPoints] = useState(() => generateMockPoints(true));
+  const [points, setPoints] = useState<Point[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
-  
-  const handlePointClick = (point: Point | null) => {
-    setSelectedPoint(point);
+  const [showMHAStats, setShowMHAStats] = useState(true); // Set to true to show MHA stats by default
+
+  useEffect(() => {
+    // Generate mock data for the visualization
+    const mockPoints = generateMockPoints(true);
+    setPoints(mockPoints);
+  }, []);
+
+  // Updated mental health statistics data
+  const mentalHealthStatistics = {
+    overallSentiment: {
+      score: 0.48,
+      label: "Neutral",
+    },
+    distribution: {
+      positive: 34,
+      neutral: 42,
+      negative: 24,
+    },
   };
-  
+
+  // More comprehensive mental health data
+  const mentalHealthData = [
+    { category: "Adults with Mental Illness", value: 21, description: "1 in 5 adults experience mental illness each year" },
+    { category: "Youth with Depression", value: 15, description: "15% of youth experienced a major depressive episode in the past year" },
+    { category: "Treatment Access", value: 55, description: "Only 55% of adults with mental illness receive treatment" },
+    { category: "Serious Mental Illness", value: 5.6, description: "5.6% of adults live with serious mental illness" },
+    { category: "Suicide", value: 12.3, description: "Suicide is the 2nd leading cause of death among people aged 10-34" }
+  ];
+
+  // Function to calculate relationship between points for demonstration
   const calculateRelationship = (point1: Point, point2: Point) => {
-    const distance = Math.sqrt(
-      Math.pow(point1.position[0] - point2.position[0], 2) +
-      Math.pow(point1.position[1] - point2.position[1], 2) +
-      Math.pow(point1.position[2] - point2.position[2], 2)
-    );
-    
-    const spatialSimilarity = Math.max(0, 1 - (distance / 40));
-    
-    const sentimentDiff = Math.abs(point1.sentiment - point2.sentiment);
-    const sentimentSimilarity = 1 - sentimentDiff;
-    
-    const sameEmotionalGroup = 
-      (point1.emotionalTone || "Neutral") === (point2.emotionalTone || "Neutral");
-    
-    const point1Keywords = point1.keywords || [];
-    const point2Keywords = point2.keywords || [];
-    const sharedKeywords = point1Keywords.filter(k => point2Keywords.includes(k));
-    
     return {
-      spatialSimilarity,
-      sentimentSimilarity,
-      sameEmotionalGroup,
-      sharedKeywords
+      spatialSimilarity: Math.random() * 0.6 + 0.2, // Random value between 0.2 and 0.8
+      sentimentSimilarity: Math.abs(point1.sentiment - point2.sentiment) > 0.3 ? 0.3 : 0.7,
+      sameEmotionalGroup: point1.emotionalTone === point2.emotionalTone,
+      sharedKeywords: ['writing', 'analysis'],
     };
   };
-  
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-yellow">
       <Header />
-      
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto space-y-12">
-          {/* Hero Section */}
-          <section className="text-center space-y-6 py-12">
-            <h1 className="text-4xl md:text-6xl font-bold text-black">
-              {t("heroTitle")}
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-black max-w-3xl mx-auto">
-              {t("heroSubtitle")}
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-              <Link to="/dashboard">
-                <Button size="lg" className="bg-orange hover:bg-orange/90 text-white px-8">
-                  {t("getStarted")}
-                </Button>
-              </Link>
-              <Button variant="outline" size="lg" className="border-orange text-orange hover:bg-orange/10">
-                {t("learnMore")}
-              </Button>
-            </div>
-          </section>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <h1 className="text-5xl font-bold mb-6 text-black">Welcome to Your Life Planner</h1>
+          <p className="text-xl mb-8 text-black">
+            Plan your perfect life, analyze your thoughts, and track your emotional well-being.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <Button asChild size="lg" className="bg-orange hover:bg-orange-dark text-black">
+              <Link to="/dashboard">Go to Dashboard</Link>
+            </Button>
+          </div>
+        </div>
+
+        {/* Feature highlights with icons */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <Card className="border-0 shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-xl text-black">
+                <Target className="h-5 w-5 mr-2 text-purple" />
+                Emotional Insights
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-black">
+                Gain deep insights into your emotional patterns and understand what drives your feelings.
+              </p>
+            </CardContent>
+          </Card>
           
-          {/* Feature Section */}
-          <section className="grid md:grid-cols-2 gap-8 py-12">
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold text-black">{t("interactiveVisualization")}</h2>
-              <p className="text-lg text-black">{t("interactiveDescription")}</p>
-              <p className="text-md text-black">This is a generated text about a recount of someone having a panic attack.</p>
-            </div>
-            <Card className="overflow-hidden border border-lavender bg-lavender">
-              <div className="h-[400px] w-full">
+          <Card className="border-0 shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-xl text-black">
+                <Book className="h-5 w-5 mr-2 text-purple" />
+                Journal Tracker
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-black">
+                Track and analyze your daily thoughts through journaling to identify patterns and trends.
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-0 shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-xl text-black">
+                <BarChart className="h-5 w-5 mr-2 text-purple" />
+                Sentiment Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-black">
+                Understand the sentiment behind your thoughts and track your emotional well-being over time.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Mental Health Statistics */}
+        <div className="mb-12">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-black">
+              Mental Health Insights
+            </h2>
+          </div>
+          
+          <Card className="border-0 shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+            <CardHeader>
+              <CardTitle className="text-black">Mental Health Statistics</CardTitle>
+              <p className="text-sm text-black">Key facts about mental health prevalence and impact on daily life</p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="h-80 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RecBarChart
+                      data={mentalHealthData}
+                      layout="vertical"
+                      margin={{ top: 20, right: 30, left: 120, bottom: 20 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} horizontal={false} />
+                      <XAxis type="number" domain={[0, 100]} />
+                      <YAxis 
+                        dataKey="category" 
+                        type="category" 
+                        width={110}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip 
+                        formatter={(value: number) => [`${value}%`]}
+                        labelFormatter={(label) => `${label}`}
+                        contentStyle={{ 
+                          borderRadius: '0.5rem',
+                          border: 'none',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          backgroundColor: '#f8f9fa'
+                        }}
+                      />
+                      <Bar dataKey="value" fill="#a45fbf">
+                        {mentalHealthData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#f6df60" : "#e7ce57"} />
+                        ))}
+                      </Bar>
+                    </RecBarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-col justify-center">
+                  <h3 className="text-xl font-semibold mb-4 text-black">Impact on Daily Life</h3>
+                  <ul className="space-y-3">
+                    {mentalHealthData.map((item, index) => (
+                      <li key={index} className="flex items-start">
+                        <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: index % 2 === 0 ? "#f6df60" : "#e7ce57" }}></div>
+                        <p className="text-sm text-black">{item.description}</p>
+                      </li>
+                    ))}
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: "#f6df60" }}></div>
+                      <p className="text-sm text-black">Mental health conditions can reduce life expectancy by 10-20 years</p>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: "#e7ce57" }}></div>
+                      <p className="text-sm text-black">Depression is a leading cause of disability worldwide</p>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-4 text-sm text-center text-black">
+                <p>Data from Mental Health America's State and County Dashboard and NIMH</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 3D Visualization */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold mb-6 text-center text-black">
+            Interactive Visualization
+          </h2>
+          <Card className="border-0 shadow-md overflow-hidden">
+            <CardContent className="p-0">
+              <div className="h-[500px] w-full" style={{ backgroundColor: "#DFC5FE" }}>
                 <DocumentEmbedding 
-                  points={demoPoints} 
+                  points={points}
+                  onPointClick={setSelectedPoint}
                   isInteractive={true}
-                  onPointClick={handlePointClick}
-                  depressedJournalReference={true}
+                  depressedJournalReference={false}
+                  sourceDescription="Demo visualization using sample data"
                 />
               </div>
-            </Card>
-          </section>
-          
-          {/* Word Comparison Demo */}
-          <section className="py-12">
-            <h2 className="text-3xl font-bold mb-8 text-black">{t("wordComparisonTitle")}</h2>
+            </CardContent>
+          </Card>
+          <p className="text-center mt-4 text-black">
+            This is a short analysis and visualization of a person's recounting of his experience in a panic attack.
+          </p>
+        </div>
+
+        {/* Word Comparison */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold mb-6 text-center text-black flex items-center justify-center">
+            <GitCompareArrows className="h-6 w-6 mr-2 text-purple" />
+            Word Comparison
+          </h2>
+          <div className="bg-light-lavender p-4 rounded-lg shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
             <WordComparisonController 
-              points={demoPoints}
+              points={points}
               selectedPoint={selectedPoint}
               calculateRelationship={calculateRelationship}
-              sourceDescription={t("demoData")}
+              sourceDescription="Demo comparison using sample data"
             />
-          </section>
-          
-          {/* Benefits Cards */}
-          <section className="py-12">
-            <h2 className="text-3xl font-bold mb-8 text-center text-black">{t("benefitsTitle")}</h2>
-            <div className="grid md:grid-cols-3 gap-6 mt-8">
-              <Card className="bg-lavender border-lavender">
-                <CardHeader>
-                  <CardTitle className="text-black">{t("benefit1Title")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-black">{t("benefit1Description")}</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-lavender border-lavender">
-                <CardHeader>
-                  <CardTitle className="text-black">{t("benefit2Title")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-black">{t("benefit2Description")}</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-lavender border-lavender">
-                <CardHeader>
-                  <CardTitle className="text-black">{t("benefit3Title")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-black">{t("benefit3Description")}</p>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-          
-          {/* CTA Section */}
-          <section className="bg-lavender rounded-2xl p-8 text-center space-y-6">
-            <h2 className="text-3xl font-bold text-black">{t("ctaTitle")}</h2>
-            <p className="text-xl text-black">{t("ctaDescription")}</p>
-            
-            <div className="mt-6">
-              <Link to="/dashboard">
-                <Button size="lg" className="bg-orange hover:bg-orange/90 text-white px-8">
-                  {t("startAnalyzing")}
-                </Button>
-              </Link>
-            </div>
-          </section>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

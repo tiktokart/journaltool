@@ -2,61 +2,22 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Point } from '@/types/embedding';
-import { getEmotionColor } from '@/utils/embeddingUtils';
 import gsap from 'gsap';
 
-export const zoomIn = (camera: THREE.PerspectiveCamera | null) => {
-  if (!camera) return;
-  
-  gsap.to(camera.position, {
-    z: Math.max(camera.position.z - 2, 1),
-    duration: 0.5,
-    ease: "power2.out"
-  });
-};
-
-export const zoomOut = (camera: THREE.PerspectiveCamera | null) => {
-  if (!camera) return;
-  
-  gsap.to(camera.position, {
-    z: Math.min(camera.position.z + 3, 50),
-    duration: 0.5,
-    ease: "power2.out"
-  });
-};
-
-export const resetZoom = (camera: THREE.PerspectiveCamera | null, controls: OrbitControls | null) => {
-  if (!camera || !controls) return;
-  
-  gsap.to(camera.position, {
-    x: 0,
-    y: 0,
-    z: 20,
-    duration: 1,
-    ease: "power2.inOut",
-    onUpdate: () => {
-      if (controls) {
-        controls.target.set(0, 0, 0);
-        controls.update();
-      }
-    }
-  });
-};
-
 interface EmbeddingSceneProps {
-  containerRef: React.RefObject<HTMLDivElement>;
-  cameraRef: React.RefObject<THREE.PerspectiveCamera | null>;
-  controlsRef: React.RefObject<OrbitControls | null>;
   points: Point[];
-  onPointHover: (point: Point | null) => void;
-  onPointSelect: (point: Point | null) => void;
+  containerRef?: React.RefObject<HTMLDivElement>;
+  cameraRef?: React.MutableRefObject<THREE.PerspectiveCamera | null>;
+  controlsRef?: React.MutableRefObject<OrbitControls | null>;
   isInteractive?: boolean;
-  depressedJournalReference?: boolean;
+  onPointHover?: (point: Point | null) => void;
+  onPointSelect?: (point: Point | null) => void;
   focusOnWord?: string | null;
   connectedPoints?: Point[];
   selectedPoint?: Point | null;
   comparisonPoint?: Point | null;
   isCompareMode?: boolean;
+  depressedJournalReference?: boolean;
   onFocusEmotionalGroup?: (tone: string) => void;
   selectedEmotionalGroup?: string | null;
   onResetView?: () => void;
@@ -64,16 +25,15 @@ interface EmbeddingSceneProps {
   showAllPoints?: boolean;
 }
 
-function EmbeddingScene({ 
-  containerRef, 
-  cameraRef, 
-  controlsRef, 
+const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
   points, 
-  onPointHover, 
-  onPointSelect, 
+  containerRef: externalContainerRef,
+  cameraRef: externalCameraRef,
+  controlsRef: externalControlsRef,
   isInteractive = true, 
-  depressedJournalReference, 
-  focusOnWord, 
+  onPointHover,
+  onPointSelect,
+  focusOnWord,
   connectedPoints = [],
   selectedPoint,
   comparisonPoint,
@@ -83,15 +43,15 @@ function EmbeddingScene({
   onResetView,
   visibleClusterCount = 8,
   showAllPoints = true
-}) {
+}) => {
   const internalContainerRef = useRef<HTMLDivElement>(null);
-  const containerRef = containerRef || internalContainerRef;
+  const containerRef = externalContainerRef || internalContainerRef;
   
   const internalCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const cameraRef = cameraRef || internalCameraRef;
+  const cameraRef = externalCameraRef || internalCameraRef;
   
   const internalControlsRef = useRef<OrbitControls | null>(null);
-  const controlsRef = controlsRef || internalControlsRef;
+  const controlsRef = externalControlsRef || internalControlsRef;
   
   const sceneRef = useRef<THREE.Scene>(new THREE.Scene());
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -112,8 +72,8 @@ function EmbeddingScene({
     if (!points.length) return;
     
     // Log point counts for debugging
-    console.log("EmbeddingScene received", points.length, "points");
-    console.log("showAllPoints is set to:", showAllPoints);
+    console.log(`EmbeddingScene received ${points.length} points`);
+    console.log(`showAllPoints is set to: ${showAllPoints}`);
     
     const emotionCounts: Record<string, number> = {};
     points.forEach(point => {
@@ -135,7 +95,7 @@ function EmbeddingScene({
     } else if (showAllPoints) {
       // Show all points regardless of group
       filteredPointsRef.current = points;
-      console.log("Displaying all", points.length, "points");
+      console.log(`Displaying all ${points.length} points`);
     } else {
       // Show only points from top emotional groups
       filteredPointsRef.current = points.filter(p => 
@@ -174,7 +134,7 @@ function EmbeddingScene({
     camera.position.z = 20;
     
     // Change background color from dark purple to yellow/soft yellow
-    scene.background = new THREE.Color(0xFFFFFF); // Using white color
+    scene.background = new THREE.Color(0xfef7cd); // Using soft yellow color
 
     const controlsInstance = new OrbitControls(camera, renderer.domElement);
     controlsRef.current = controlsInstance;
@@ -704,7 +664,47 @@ function EmbeddingScene({
     }
   }, [selectedPoint, comparisonPoint]);
 
-  return null;
-}
+  return (
+    <div ref={externalContainerRef ? undefined : internalContainerRef} style={{ width: '100%', height: '100%' }} />
+  );
+};
+
+export const zoomIn = (camera: THREE.PerspectiveCamera | null) => {
+  if (!camera) return;
+  
+  gsap.to(camera.position, {
+    z: Math.max(camera.position.z - 2, 1),
+    duration: 0.5,
+    ease: "power2.out"
+  });
+};
+
+export const zoomOut = (camera: THREE.PerspectiveCamera | null) => {
+  if (!camera) return;
+  
+  gsap.to(camera.position, {
+    z: Math.min(camera.position.z + 3, 50),
+    duration: 0.5,
+    ease: "power2.out"
+  });
+};
+
+export const resetZoom = (camera: THREE.PerspectiveCamera | null, controls: OrbitControls | null) => {
+  if (!camera || !controls) return;
+  
+  gsap.to(camera.position, {
+    x: 0,
+    y: 0,
+    z: 20,
+    duration: 1,
+    ease: "power2.inOut",
+    onUpdate: () => {
+      if (controls) {
+        controls.target.set(0, 0, 0);
+        controls.update();
+      }
+    }
+  });
+};
 
 export default EmbeddingScene;

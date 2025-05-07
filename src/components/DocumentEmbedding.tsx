@@ -315,7 +315,7 @@ export const DocumentEmbedding = ({
       )}
       
       {emotionalGroups.length > 0 && (
-        <div className="absolute top-16 right-4 z-10 bg-light-lavender backdrop-blur-sm p-2 rounded-md">
+        <div className="absolute top-16 right-4 z-10 bg-card/80 backdrop-blur-sm p-2 rounded-md">
           <Collapsible 
             open={isEmotionalGroupsOpen} 
             onOpenChange={setIsEmotionalGroupsOpen}
@@ -324,7 +324,7 @@ export const DocumentEmbedding = ({
             <div className="flex items-center justify-between">
               <div className="text-xs font-semibold flex items-center">
                 <Target className="h-3 w-3 mr-1.5" />
-                Jump to Emotional Groups
+                {t("jumpToEmotionalGroup")}
               </div>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0">

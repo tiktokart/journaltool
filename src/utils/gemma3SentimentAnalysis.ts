@@ -11,7 +11,6 @@ interface GemmaAnalysisResult {
 export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysisResult> => {
   try {
     console.info("Starting Gemma 3 analysis...");
-    console.info("Text length for analysis:", text.length, "characters");
     
     // Perform simple sentiment analysis using the text content
     let sentiment = 0.5; // Neutral by default
@@ -112,30 +111,19 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
         emotionalTones["Neutral"] = 1.0;
       }
       
-      // Generate a simple timeline for visualization
-      const timeline = generateTimeline(text);
-      
-      // Extract entities (people, places, things)
-      const entities = extractEntities(text);
-      
-      // Extract key phrases
-      const keyPhrases = extractKeyPhrases(text);
-      
       // Generate a simple summary
       let summary = "Analysis complete with Gemma 3 model.";
       if (sentiment < 0.3) summary = "The text contains predominantly negative emotions.";
       else if (sentiment > 0.7) summary = "The text contains predominantly positive emotions.";
       else summary = "The text contains a mix of emotions.";
       
-      console.info("Gemma 3 analysis completed successfully");
-      
       return {
         sentiment,
         emotionalTones,
         summary,
-        timeline,
-        entities,
-        keyPhrases
+        timeline: [],
+        entities: [],
+        keyPhrases: []
       };
       
     } catch (error) {
@@ -154,112 +142,3 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
     throw error;
   }
 };
-
-// Function to generate timeline data 
-function generateTimeline(text: string): any[] {
-  const paragraphs = text.split(/\n\n+/);
-  const timeline = [];
-  
-  // Create a timeline point for each paragraph (or section)
-  for (let i = 0; i < paragraphs.length; i++) {
-    if (paragraphs[i].trim().length < 20) continue;
-    
-    const sentimentValue = Math.random(); // Simple random sentiment for demo
-    timeline.push({
-      id: i,
-      position: i / (paragraphs.length - 1), // Normalized position
-      sentiment: sentimentValue, 
-      text: paragraphs[i].slice(0, 120) + '...'
-    });
-  }
-  
-  return timeline;
-}
-
-// Function to extract entities
-function extractEntities(text: string): any[] {
-  const entities = [];
-  const commonWords = ['I', 'me', 'my', 'myself', 'we', 'us', 'our', 'he', 'she', 'they'];
-  const words = text.split(/\s+/);
-  const wordCounts: Record<string, number> = {};
-  
-  // Count word occurrences
-  words.forEach(word => {
-    const cleanWord = word.replace(/[^\w]/g, '');
-    if (cleanWord.length < 3) return;
-    if (!wordCounts[cleanWord]) wordCounts[cleanWord] = 0;
-    wordCounts[cleanWord]++;
-  });
-  
-  // Find capitalized words that might be entities
-  const capitalizedWords = text.match(/[A-Z][a-z]+/g) || [];
-  const capitalizedWordCounts: Record<string, number> = {};
-  
-  capitalizedWords.forEach(word => {
-    if (commonWords.includes(word)) return;
-    if (!capitalizedWordCounts[word]) capitalizedWordCounts[word] = 0;
-    capitalizedWordCounts[word]++;
-  });
-  
-  // Create entities from most frequent words
-  Object.entries(wordCounts)
-    .filter(([_, count]) => count > 2) // Only words that appear more than twice
-    .sort((a, b) => b[1] - a[1]) // Sort by frequency
-    .slice(0, 15) // Take top 15
-    .forEach(([word, count]) => {
-      entities.push({
-        name: word,
-        type: 'keyword',
-        frequency: count,
-        sentiment: Math.random() // Random sentiment for demo
-      });
-    });
-    
-  // Add capitalized entities
-  Object.entries(capitalizedWordCounts)
-    .filter(([_, count]) => count > 1) // Only words that appear more than once
-    .sort((a, b) => b[1] - a[1]) // Sort by frequency
-    .slice(0, 5) // Take top 5
-    .forEach(([word, count]) => {
-      if (!entities.some(entity => entity.name === word)) {
-        entities.push({
-          name: word,
-          type: 'named entity',
-          frequency: count,
-          sentiment: Math.random()
-        });
-      }
-    });
-  
-  return entities;
-}
-
-// Function to extract key phrases
-function extractKeyPhrases(text: string): string[] {
-  const sentences = text.split(/[.!?]+/);
-  const keyPhrases = [];
-  
-  // Find substantial sentences with emotional words
-  for (const sentence of sentences) {
-    if (sentence.trim().length < 10 || sentence.trim().length > 100) continue;
-    
-    // Check for potential key phrases
-    if (
-      /\b(important|key|main|significant|essential|critical|crucial|vital|fundamental)\b/i.test(sentence) ||
-      /\b(feel|feeling|felt|emotion|emotional|sad|happy|angry|worried|anxious|stressed|calm|relaxed)\b/i.test(sentence)
-    ) {
-      keyPhrases.push(sentence.trim());
-    }
-  }
-  
-  // If we don't have enough key phrases, just take some sentences
-  if (keyPhrases.length < 5) {
-    sentences.forEach(sentence => {
-      if (sentence.trim().length > 20 && sentence.trim().length < 80 && !keyPhrases.includes(sentence.trim())) {
-        keyPhrases.push(sentence.trim());
-      }
-    });
-  }
-  
-  return keyPhrases.slice(0, 8); // Return up to 8 key phrases
-}

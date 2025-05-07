@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -189,7 +188,6 @@ const Dashboard = () => {
       toast.info("Starting document analysis with Gemma 3...");
       
       const gemma3Results = await analyzeTextWithGemma3(pdfText);
-      console.log("Gemma 3 raw analysis results:", gemma3Results);
       
       // Extract significant words from the text for visualization
       const significantWords = pdfText
@@ -266,13 +264,12 @@ const Dashboard = () => {
           neutral: neutralPercentage,
           negative: negativePercentage
         },
-        // Ensure we pass all required data for the tabs
         timeline: gemma3Results.timeline || [],
         entities: gemma3Results.entities || [],
         keyPhrases: gemma3Results.keyPhrases || []
       };
       
-      console.log("Gemma 3 processed analysis results:", results);
+      console.log("Gemma 3 analysis results:", results);
       setSentimentData(results);
       setFilteredPoints(results.embeddingPoints || []);
       setAnalysisComplete(true);
@@ -403,7 +400,7 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Document Analysis Section */}
+          {/* Document Analysis Section - With lavender background */}
           <Card className="border border-border shadow-md bg-lavender">
             <CardHeader>
               <CardTitle className="text-black">Document Analysis with Data Models</CardTitle>
@@ -500,7 +497,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-purple p-4 rounded-lg">
+              <div className="mt-8 mb-4">
                 <EmotionalClustersControl 
                   visibleClusterCount={visibleClusterCount}
                   setVisibleClusterCount={setVisibleClusterCount}
