@@ -14,12 +14,12 @@ export const DocumentSummary = ({ summary }: DocumentSummaryProps) => {
     <Card className="mb-6 border border-border shadow-md bg-lavender">
       <CardHeader className="pb-3">
         <div className="flex items-center">
-          <BookOpen className="h-5 w-5 mr-2 text-primary" />
-          <CardTitle className="text-xl">{t("documentSummary")}</CardTitle>
+          <BookOpen className="h-5 w-5 mr-2 text-orange" />
+          <CardTitle className="text-xl text-black">{t("documentSummary")}</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+        <div className="text-sm text-black leading-relaxed whitespace-pre-line">
           {summary || t("noSummaryAvailable")}
         </div>
       </CardContent>

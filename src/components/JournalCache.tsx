@@ -81,19 +81,19 @@ export const JournalCache = ({ onSelectEntry }: JournalCacheProps) => {
   };
 
   return (
-    <Card className="border border-border shadow-md bg-white">
+    <Card className="border border-border shadow-md bg-lavender">
       <CardHeader>
-        <CardTitle className="flex items-center text-xl">
-          <Database className="h-5 w-5 mr-2 text-primary" />
+        <CardTitle className="flex items-center text-xl text-black">
+          <Database className="h-5 w-5 mr-2 text-orange" />
           Saved Journal Entries
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-black">
           Your entries are stored locally for 30 days
         </CardDescription>
       </CardHeader>
       <CardContent>
         {entries.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-black">
             <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>No saved journal entries yet</p>
           </div>
@@ -107,7 +107,7 @@ export const JournalCache = ({ onSelectEntry }: JournalCacheProps) => {
                     className="p-3 rounded-md border border-border hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex justify-between items-start mb-1">
-                      <div className="flex items-center text-sm text-muted-foreground">
+                      <div className="flex items-center text-sm text-black">
                         <Calendar className="h-3 w-3 mr-1" />
                         {format(new Date(entry.date), 'MMM d, yyyy - h:mm a')}
                       </div>
@@ -120,12 +120,12 @@ export const JournalCache = ({ onSelectEntry }: JournalCacheProps) => {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="line-clamp-2 text-sm">
+                    <p className="line-clamp-2 text-sm text-black">
                       {entry.text}
                     </p>
                     <Button 
                       variant="outline" 
-                      className="mt-2 h-7 text-xs px-2 py-0"
+                      className="mt-2 h-7 text-xs px-2 py-0 bg-orange text-white hover:bg-orange/90 border-orange"
                       onClick={() => handleSelect(entry)}
                     >
                       Use This Entry
@@ -138,6 +138,7 @@ export const JournalCache = ({ onSelectEntry }: JournalCacheProps) => {
               <Button 
                 variant="outline" 
                 size="sm"
+                className="bg-orange text-white hover:bg-orange/90 border-orange"
                 onClick={handleClearAll}
               >
                 Clear All Entries

@@ -135,8 +135,8 @@ export const WordComparisonController = ({
     <Card className="border border-border shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-2">
-          <CardTitle className="flex items-center text-xl text-orange">
-            <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
+          <CardTitle className="flex items-center text-xl text-black">
+            <GitCompareArrows className="h-5 w-5 mr-2 text-orange" />
             {t("wordComparison")}
           </CardTitle>
           
@@ -146,7 +146,7 @@ export const WordComparisonController = ({
               onOpenChange={setCompareSearchOpen}
             >
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9">
+                <Button variant="outline" size="sm" className="h-9 bg-orange text-white hover:bg-orange/90 border-orange">
                   <Search className="h-4 w-4 mr-2" />
                   {t("addWord")}
                 </Button>
@@ -177,7 +177,7 @@ export const WordComparisonController = ({
                             />
                             <span>{point.word}</span>
                           </div>
-                          <span className="ml-auto text-xs text-muted-foreground">
+                          <span className="ml-auto text-xs text-black">
                             {point.emotionalTone ? t(point.emotionalTone.toLowerCase()) || point.emotionalTone : t("neutral")}
                           </span>
                         </CommandItem>
@@ -192,7 +192,7 @@ export const WordComparisonController = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-9"
+                className="h-9 bg-orange text-white hover:bg-orange/90 border-orange"
                 onClick={handleClearComparison}
               >
                 <X className="h-4 w-4 mr-2" />
@@ -204,7 +204,7 @@ export const WordComparisonController = ({
         
         {availableEmotions.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
-            <span className="text-sm text-muted-foreground mr-1 flex items-center">
+            <span className="text-sm text-black mr-1 flex items-center">
               Search by Emotion:
             </span>
             {availableEmotions.map(emotion => (

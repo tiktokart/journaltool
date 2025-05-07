@@ -3,6 +3,7 @@ body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: #000; /* Default text color set to black */
 }
 
 .bg-sentiment-positive {
@@ -29,7 +30,7 @@ body {
   background-color: #DFC5FE;
 }
 
-/* Updating orange to a slightly darker shade for better contrast on yellow backgrounds */
+/* Orange color for buttons and accents */
 .bg-orange {
   background-color: #e56e00;
 }
@@ -73,7 +74,7 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
-/* Updated to use lavender color instead of dark purple */
+/* Updated to use lavender color and black text */
 .relationship-analysis-tag {
   background-color: #DFC5FE !important;
   color: #000 !important;

@@ -378,7 +378,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-yellow">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
@@ -402,9 +402,9 @@ const Dashboard = () => {
           </div>
           
           {/* Document Analysis Section - With lavender background */}
-          <Card className="border border-border shadow-md bg-lavender text-black">
+          <Card className="border border-border shadow-md bg-lavender">
             <CardHeader>
-              <CardTitle className="text-orange">Document Analysis with Data Models</CardTitle>
+              <CardTitle className="text-black">Document Analysis with Data Models</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-3 gap-6">
@@ -413,7 +413,7 @@ const Dashboard = () => {
                 </div>
                 <div className="flex flex-col gap-4">
                   <div className="p-4 bg-white/30 rounded-lg">
-                    <h3 className="font-medium mb-2 text-orange">Selected File</h3>
+                    <h3 className="font-medium mb-2 text-black">Selected File</h3>
                     <p className="text-sm text-black">
                       {file ? file.name : "No file selected"}
                     </p>
@@ -432,7 +432,7 @@ const Dashboard = () => {
                     <Button 
                       onClick={analyzeSentiment} 
                       disabled={(!file && !pdfText) || isAnalyzing}
-                      className="w-full"
+                      className="w-full bg-orange hover:bg-orange/90 text-white"
                     >
                       {isAnalyzing && analysisMethod === "bert" ? (
                         <>
@@ -445,7 +445,7 @@ const Dashboard = () => {
                       onClick={analyzeWithGemma3} 
                       disabled={(!file && !pdfText) || isAnalyzing}
                       variant="outline"
-                      className="w-full"
+                      className="w-full border-orange text-orange hover:bg-orange/10"
                     >
                       {isAnalyzing && analysisMethod === "gemma3" ? (
                         <>
@@ -506,7 +506,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4 text-black">
+              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4">
                 <TextEmotionViewer 
                   pdfText={pdfText}
                   embeddingPoints={sentimentData.embeddingPoints}
@@ -514,13 +514,13 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4 text-black">
+              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4">
                 <WellbeingResources 
                   embeddingPoints={sentimentData.embeddingPoints}
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4 text-black">
+              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4">
                 <WordComparisonController 
                   points={sentimentData.embeddingPoints}
                   selectedPoint={selectedPoint}
