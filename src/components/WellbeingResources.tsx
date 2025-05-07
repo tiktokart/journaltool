@@ -1,218 +1,218 @@
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { LifeBuoy, Heart, ChevronRight, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Point } from "@/types/embedding";
-import { useLanguage } from "@/contexts/LanguageContext";
-
-interface Resource {
-  id: string;
-  title: string;
-  description: string;
-  steps?: string[];
-  triggerWords: string[];
-  emotions: string[];
-}
+import { Point } from '@/types/embedding';
+import { Heart, HelpCircle, AlertCircle } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WellbeingResourcesProps {
-  embeddingPoints?: Point[];
+  embeddingPoints: Point[];
 }
 
-export const WellbeingResources = ({ embeddingPoints = [] }: WellbeingResourcesProps) => {
-  const { t } = useLanguage();
-  const [activeResources, setActiveResources] = useState<Resource[]>([]);
-  const [triggeredWords, setTriggeredWords] = useState<Map<string, string[]>>(new Map());
+interface SuggestionItem {
+  id: string;
+  title: string;
+  steps: string[];
+  relatedEmotions: string[];
+  priority: number;
+}
 
-  // Resources database
-  const resources: Resource[] = [
-    {
-      id: "anxiety",
-      title: "Anxiety Management Techniques",
-      description: "Strategies to manage feelings of anxiety and worry.",
-      steps: [
-        "Practice deep breathing: Inhale for 4 seconds, hold for 2, and exhale for 6.",
-        "Use grounding techniques: Name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste.",
-        "Challenge anxious thoughts by examining evidence for and against them.",
-        "Practice progressive muscle relaxation by tensing and releasing each muscle group.",
-        "Limit caffeine and alcohol which can increase anxiety symptoms."
-      ],
-      triggerWords: ["anxiety", "anxious", "worry", "fear", "panic", "stress", "scared", "nervous", "tense", "uneasy"],
-      emotions: ["Fear", "Anxiety"]
-    },
-    {
-      id: "depression",
-      title: "Depression Support Resources",
-      description: "Approaches to help manage depressive feelings and thoughts.",
-      steps: [
-        "Set small, achievable daily goals to build a sense of accomplishment.",
-        "Maintain a regular sleep schedule, aiming for 7-9 hours per night.",
-        "Engage in physical activity, even if it's just a short walk outside.",
-        "Reach out to a trusted friend or family member about how you're feeling.",
-        "Practice self-compassion and challenge negative self-talk."
-      ],
-      triggerWords: ["depression", "sad", "hopeless", "empty", "worthless", "tired", "exhausted", "lonely", "despair", "numb"],
-      emotions: ["Sadness", "Depression"]
-    },
-    {
-      id: "anger",
-      title: "Healthy Anger Management",
-      description: "Methods to process and express anger in constructive ways.",
-      steps: [
-        "Take a timeout when you feel anger building and count to 10 before responding.",
-        "Use "I" statements when expressing frustration (e.g., "I feel upset when...").",
-        "Identify specific triggers and plan alternative responses.",
-        "Channel energy into physical activities like exercise or household tasks.",
-        "Practice relaxation techniques like deep breathing or visualization."
-      ],
-      triggerWords: ["anger", "angry", "rage", "furious", "mad", "frustrated", "irritated", "resentful", "hostile", "bitter"],
-      emotions: ["Anger", "Rage"]
-    },
-    {
-      id: "grief",
-      title: "Grief and Loss Support",
-      description: "Support for processing grief and coping with loss.",
-      steps: [
-        "Allow yourself to feel emotions without judgment or rushing the process.",
-        "Create personal rituals to honor and remember what you've lost.",
-        "Join a support group to connect with others experiencing similar feelings.",
-        "Take care of your physical needs like sleep, nutrition, and exercise.",
-        "Seek professional help if grief feels overwhelming or persistent."
-      ],
-      triggerWords: ["grief", "loss", "death", "mourning", "missing", "gone", "heartbreak", "sorrow", "bereavement", "devastated"],
-      emotions: ["Sadness", "Grief"]
-    },
-    {
-      id: "stress",
-      title: "Stress Reduction Techniques",
-      description: "Practices to reduce and manage everyday stress.",
-      steps: [
-        "Identify and address sources of stress in your life when possible.",
-        "Practice mindfulness meditation for 5-10 minutes daily.",
-        "Maintain boundaries between work and personal life.",
-        "Use time management strategies to reduce feeling overwhelmed.",
-        "Incorporate regular breaks into your day to reset and recharge."
-      ],
-      triggerWords: ["stress", "stressed", "overwhelm", "pressure", "burnout", "tension", "overload", "strain", "burden", "hectic"],
-      emotions: ["Stress", "Fear", "Anxiety"]
-    }
+export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps) => {
+  const { t } = useLanguage();
+  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
+  
+  // These are the negative emotion keywords that we'll use to trigger suggestions
+  const negativeKeywords = [
+    'anger', 'angry', 'rage', 'furious', 'livid',
+    'sad', 'depressed', 'grief', 'sorrow', 'depression', 
+    'anxious', 'anxiety', 'worry', 'stressed', 'nervous',
+    'fear', 'scared', 'terrified', 'panic', 'dread',
+    'lonely', 'alone', 'isolated', 'abandoned', 'rejected',
+    'guilty', 'shame', 'regret', 'remorse', 'embarrassed',
+    'tired', 'exhausted', 'fatigue', 'drained', 'burnout',
+    'hopeless', 'despair', 'helpless', 'worthless', 'suicidal'
   ];
 
   useEffect(() => {
     if (!embeddingPoints || embeddingPoints.length === 0) return;
+
+    // Extract all emotional tones from the points
+    const emotionalTones = embeddingPoints
+      .map(point => point.emotionalTone)
+      .filter(tone => tone) as string[];
+
+    // Count the frequency of each emotional tone
+    const toneFrequency = emotionalTones.reduce<Record<string, number>>((acc, tone) => {
+      acc[tone] = (acc[tone] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Extract unique words from the embedding points
+    const contentWords = embeddingPoints.map(point => point.word.toLowerCase());
     
-    // Map to track which words trigger each resource
-    const newTriggeredWords = new Map<string, string[]>();
-    const matchedResources = new Set<Resource>();
+    // Check if any of the embedding points contain negative emotion keywords
+    const foundNegativeKeywords = negativeKeywords.filter(keyword => 
+      contentWords.includes(keyword)
+    );
+
+    // Define our wellbeing suggestions with their related emotions
+    const allSuggestions: SuggestionItem[] = [
+      {
+        id: 'anxiety-breathing',
+        title: 'Deep Breathing for Anxiety Relief',
+        steps: [
+          'Find a quiet, comfortable place to sit or lie down',
+          'Place one hand on your chest and the other on your abdomen',
+          'Breathe in slowly through your nose for 4 counts',
+          'Hold your breath for 2 counts',
+          'Exhale slowly through your mouth for 6 counts',
+          'Repeat for 5-10 minutes'
+        ],
+        relatedEmotions: ['anxiety', 'anxious', 'stress', 'stressed', 'worry', 'nervous', 'panic', 'fear', 'scared'],
+        priority: 1
+      },
+      {
+        id: 'mindfulness-meditation',
+        title: 'Mindfulness Meditation',
+        steps: [
+          'Sit in a comfortable position with your back straight',
+          'Close your eyes or maintain a soft gaze',
+          'Focus your attention on your breath',
+          'When your mind wanders, gently bring your attention back to your breath',
+          'Start with 5 minutes and gradually increase the time'
+        ],
+        relatedEmotions: ['stress', 'anxiety', 'worry', 'overthinking', 'restless'],
+        priority: 2
+      },
+      {
+        id: 'sadness-gratitude',
+        title: 'Gratitude Practice for Low Mood',
+        steps: [
+          'Take a moment to reflect on three things you're grateful for today',
+          'Write them down in a journal if possible',
+          'Consider why you're grateful for each item',
+          'Notice how reflecting on gratitude affects your mood',
+          'Make this a daily practice, especially when feeling low'
+        ],
+        relatedEmotions: ['sad', 'depression', 'depressed', 'low', 'down', 'hopeless', 'grief', 'sorrow'],
+        priority: 1
+      },
+      {
+        id: 'anger-management',
+        title: 'Healthy Anger Management',
+        steps: [
+          'Recognize when you're becoming angry (notice physical sensations)',
+          'Take a timeout – remove yourself from the triggering situation if possible',
+          'Use deep breathing to calm your physiological response',
+          'Express your feelings using "I" statements rather than blame',
+          'Engage in physical activity to release tension',
+          'Consider whether your anger is masking another emotion'
+        ],
+        relatedEmotions: ['anger', 'angry', 'rage', 'furious', 'irritated', 'annoyed'],
+        priority: 2
+      },
+      {
+        id: 'social-connection',
+        title: 'Building Social Connections',
+        steps: [
+          'Reach out to one friend or family member today',
+          'Join a group based on your interests (online or in person)',
+          'Practice active listening in your conversations',
+          'Share your feelings with someone you trust',
+          'Volunteer in your community'
+        ],
+        relatedEmotions: ['lonely', 'alone', 'isolated', 'disconnected', 'rejected'],
+        priority: 2
+      }
+    ];
+
+    // Filter suggestions based on found negative keywords
+    let activeSuggestions: SuggestionItem[] = [];
     
-    // Get all unique words from embedding points
-    const documentWords = embeddingPoints
-      .filter(point => point.word)
-      .map(point => point.word.toLowerCase());
-    
-    // Check each resource against the document words
-    resources.forEach(resource => {
-      const matches: string[] = [];
-      
-      // Check for trigger words
-      resource.triggerWords.forEach(triggerWord => {
-        const matchingWords = documentWords.filter(word => 
-          word === triggerWord || word.includes(triggerWord)
+    if (foundNegativeKeywords.length > 0) {
+      foundNegativeKeywords.forEach(keyword => {
+        // Find suggestions that relate to this keyword
+        const matchingSuggestions = allSuggestions.filter(suggestion => 
+          suggestion.relatedEmotions.includes(keyword)
         );
         
-        if (matchingWords.length > 0) {
-          matches.push(...matchingWords);
-        }
+        // Add any new matching suggestions to our active suggestions
+        matchingSuggestions.forEach(suggestion => {
+          if (!activeSuggestions.some(s => s.id === suggestion.id)) {
+            activeSuggestions.push({
+              ...suggestion,
+              relatedEmotions: suggestion.relatedEmotions.filter(emotion => 
+                foundNegativeKeywords.includes(emotion)
+              )
+            });
+          }
+        });
       });
       
-      // Check for emotional tones
-      embeddingPoints.forEach(point => {
-        if (point.emotionalTone && resource.emotions.includes(point.emotionalTone) && point.word) {
-          matches.push(point.word.toLowerCase());
-        }
-      });
-      
-      // If we found matches, add this resource
-      if (matches.length > 0) {
-        matchedResources.add(resource);
-        
-        // De-duplicate the matching words
-        const uniqueMatches = Array.from(new Set(matches));
-        newTriggeredWords.set(resource.id, uniqueMatches);
-      }
-    });
+      // Sort by priority
+      activeSuggestions.sort((a, b) => a.priority - b.priority);
+    }
     
-    setTriggeredWords(newTriggeredWords);
-    setActiveResources(Array.from(matchedResources));
+    setSuggestions(activeSuggestions);
   }, [embeddingPoints]);
 
-  if (activeResources.length === 0) {
+  if (suggestions.length === 0) {
     return null;
   }
 
   return (
-    <Card className="border border-border shadow-md">
+    <Card className="border border-border shadow-md bg-card mb-6">
       <CardHeader>
         <CardTitle className="flex items-center text-xl">
-          <LifeBuoy className="h-5 w-5 mr-2 text-primary" />
-          Resources and Support
+          <HelpCircle className="h-5 w-5 mr-2 text-primary" />
+          {t("resourcesAndSupport")}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[350px] pr-4">
-          <Accordion type="single" collapsible className="w-full">
-            {activeResources.map((resource) => (
-              <AccordionItem key={resource.id} value={resource.id}>
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex flex-col items-start text-left">
-                    <div className="flex items-center">
-                      <Heart className="h-4 w-4 mr-2 text-red-500" />
-                      <span>{resource.title}</span>
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {resource.description}
-                    </div>
-                    
-                    {triggeredWords.has(resource.id) && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        <span className="text-xs text-muted-foreground mr-1">Triggered by:</span>
-                        {(triggeredWords.get(resource.id) || []).slice(0, 5).map((word, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {word}
-                          </Badge>
-                        ))}
-                        {(triggeredWords.get(resource.id) || []).length > 5 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{(triggeredWords.get(resource.id) || []).length - 5} more
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  {resource.steps && (
-                    <ol className="space-y-2 pl-5 list-decimal">
-                      {resource.steps.map((step, index) => (
-                        <li key={index} className="text-sm">
-                          {step}
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </ScrollArea>
-        <div className="mt-4 text-sm text-muted-foreground">
-          <p>
-            These resources are provided based on words and emotions detected in your text. 
-            For immediate support, please contact a mental health professional.
+        <div className="mb-4">
+          <p className="text-sm text-muted-foreground">
+            {t("resourcesDescription")}
           </p>
         </div>
+        
+        <Accordion type="multiple" className="w-full">
+          {suggestions.map((suggestion) => (
+            <AccordionItem key={suggestion.id} value={suggestion.id}>
+              <AccordionTrigger className="hover:no-underline">
+                <div className="flex items-center text-left">
+                  <Heart className="h-4 w-4 mr-2 text-rose-500" />
+                  <span>{suggestion.title}</span>
+                  
+                  {suggestion.relatedEmotions.length > 0 && (
+                    <div className="ml-3 flex flex-wrap gap-1">
+                      {suggestion.relatedEmotions.map((emotion, i) => (
+                        <Badge key={i} variant="outline" className="text-xs py-0 px-2">
+                          {emotion}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <ol className="list-decimal pl-5 space-y-2 text-sm">
+                  {suggestion.steps.map((step, i) => (
+                    <li key={i} className="pl-1">{step}</li>
+                  ))}
+                </ol>
+                
+                <div className="mt-4 flex items-start gap-2 p-3 bg-primary/10 rounded-md">
+                  <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    {t("seekProfessionalHelp")}
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </CardContent>
     </Card>
   );
