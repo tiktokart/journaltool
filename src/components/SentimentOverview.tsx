@@ -101,7 +101,7 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
                 <span className="font-medium">{t("positive")}</span>
                 <span className="text-sm text-muted-foreground">{positive}%</span>
               </div>
-              <Progress value={positive} className="h-2 bg-gray-200" indicatorClassName="bg-sentiment-positive" />
+              <Progress value={positive} className="h-2 bg-gray-200" />
             </div>
             
             <div>
@@ -109,7 +109,7 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
                 <span className="font-medium">{t("neutral")}</span>
                 <span className="text-sm text-muted-foreground">{neutral}%</span>
               </div>
-              <Progress value={neutral} className="h-2 bg-gray-200" indicatorClassName="bg-sentiment-neutral" />
+              <Progress value={neutral} className="h-2 bg-gray-200" />
             </div>
             
             <div>
@@ -117,7 +117,7 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
                 <span className="font-medium">{t("negative")}</span>
                 <span className="text-sm text-muted-foreground">{negative}%</span>
               </div>
-              <Progress value={negative} className="h-2 bg-gray-200" indicatorClassName="bg-sentiment-negative" />
+              <Progress value={negative} className="h-2 bg-gray-200" />
             </div>
           </div>
           

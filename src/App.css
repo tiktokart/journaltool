@@ -1,5 +1,4 @@
 
-
 body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -27,7 +26,7 @@ body {
 }
 
 .bg-purple {
-  background-color: #a45fbf;
+  background-color: #DFC5FE;
 }
 
 /* Updating orange to a slightly darker shade for better contrast on yellow backgrounds */
@@ -37,7 +36,7 @@ body {
 
 /* New pastel colors for dashboard */
 .bg-lavender {
-  background-color: #E5DEFF;
+  background-color: #DFC5FE;
 }
 
 .bg-muted-orange {
@@ -45,7 +44,7 @@ body {
 }
 
 .bg-light-lavender {
-  background-color: rgba(229, 222, 255, 0.3);
+  background-color: rgba(223, 197, 254, 0.3);
 }
 
 .text-truncate {
@@ -77,4 +76,5 @@ body {
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
+
 
