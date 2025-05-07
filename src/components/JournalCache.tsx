@@ -81,7 +81,7 @@ export const JournalCache = ({ onSelectEntry }: JournalCacheProps) => {
   };
 
   return (
-    <Card className="border border-border shadow-md">
+    <Card className="border border-border shadow-md bg-white">
       <CardHeader>
         <CardTitle className="flex items-center text-xl">
           <Database className="h-5 w-5 mr-2 text-primary" />

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -377,31 +378,31 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-lavender">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
           {/* Life Plan Section - Moved above Journal Input */}
-          <div className="bg-light-lavender p-4 rounded-lg">
+          <div className="bg-lavender p-4 rounded-lg">
             <LifePlanSection journalText={journalText} />
           </div>
           
           {/* Journal Input Section */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-light-lavender p-4 rounded-lg">
+            <div className="bg-lavender p-4 rounded-lg">
               <JournalInput 
                 onJournalEntrySubmit={handleJournalEntrySubmit} 
                 onAddToLifePlan={handleAddToLifePlan}
               />
             </div>
-            <div className="bg-light-lavender p-4 rounded-lg">
+            <div className="bg-lavender p-4 rounded-lg">
               <JournalCache onSelectEntry={handleCachedEntrySelect} />
             </div>
           </div>
           
-          {/* Document Analysis Section - With light lavender background */}
-          <Card className="border border-border shadow-md bg-light-lavender text-black">
+          {/* Document Analysis Section - With lavender background */}
+          <Card className="border border-border shadow-md bg-lavender text-black">
             <CardHeader>
               <CardTitle className="text-orange">Document Analysis with Data Models</CardTitle>
             </CardHeader>
@@ -462,7 +463,7 @@ const Dashboard = () => {
           {/* Analysis Results Section */}
           {sentimentData && (
             <div className="animate-fade-in">
-              <div className="bg-light-lavender p-4 rounded-lg mb-4">
+              <div className="bg-lavender p-4 rounded-lg mb-4">
                 <FileInfoDisplay 
                   fileName={sentimentData.fileName}
                   fileSize={sentimentData.fileSize}
@@ -470,11 +471,11 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="bg-light-lavender p-4 rounded-lg mb-4">
+              <div className="bg-lavender p-4 rounded-lg mb-4">
                 <DocumentSummary summary={sentimentData.summary || "Analysis complete."} />
               </div>
               
-              <div className="bg-light-lavender p-4 rounded-lg mb-4">
+              <div className="bg-lavender p-4 rounded-lg mb-4">
                 <AnalysisTabs 
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
@@ -505,7 +506,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-light-lavender rounded-lg p-4 text-black">
+              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4 text-black">
                 <TextEmotionViewer 
                   pdfText={pdfText}
                   embeddingPoints={sentimentData.embeddingPoints}
@@ -513,13 +514,13 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-light-lavender rounded-lg p-4 text-black">
+              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4 text-black">
                 <WellbeingResources 
                   embeddingPoints={sentimentData.embeddingPoints}
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-light-lavender rounded-lg p-4 text-black">
+              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4 text-black">
                 <WordComparisonController 
                   points={sentimentData.embeddingPoints}
                   selectedPoint={selectedPoint}

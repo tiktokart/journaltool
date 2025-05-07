@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,7 +132,7 @@ export const WordComparisonController = ({
   };
 
   return (
-    <Card className="border border-border shadow-md bg-light-lavender" key={`word-comparison-card-${forceUpdate}`} style={{ backgroundColor: "#DFC5FE" }}>
+    <Card className="border border-border shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-2">
           <CardTitle className="flex items-center text-xl text-orange">
@@ -210,7 +211,7 @@ export const WordComparisonController = ({
               <Badge 
                 key={emotion}
                 variant="outline" 
-                className="cursor-pointer hover:bg-muted transition-colors"
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
                 style={{
                   borderColor: getEmotionColor(emotion),
                   backgroundColor: `${getEmotionColor(emotion)}20`

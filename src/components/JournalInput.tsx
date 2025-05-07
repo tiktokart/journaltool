@@ -85,7 +85,7 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
   };
 
   return (
-    <Card className="border border-border shadow-md mb-6">
+    <Card className="border border-border shadow-md mb-6 bg-white">
       <CardHeader>
         <CardTitle className="flex items-center text-xl text-black">
           <FileText className="h-5 w-5 mr-2 text-black" />
