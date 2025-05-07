@@ -1,4 +1,5 @@
 
+
 body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -79,3 +80,9 @@ body {
   background-color: #DFC5FE !important;
   color: #000 !important;
 }
+
+/* Color for emotional tones in visualization */
+.emotional-tone-yellow {
+  color: #f6df60;
+}
+

@@ -29,7 +29,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="border-b border-border bg-yellow-soft backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b border-border bg-yellow backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
@@ -41,10 +41,10 @@ export const Header = () => {
           <div className="hidden md:flex items-center space-x-8">
             <nav className="flex items-center space-x-8">
               <Link to="/" className="text-black hover:text-foreground transition-colors">
-                {t("home")}
+                Home
               </Link>
               <Link to="/dashboard" className="text-black hover:text-foreground transition-colors">
-                {t("dashboard")}
+                Dashboard
               </Link>
             </nav>
             
@@ -90,14 +90,14 @@ export const Header = () => {
                 className="text-black hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t("home")}
+                Home
               </Link>
               <Link 
                 to="/dashboard" 
                 className="text-black hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t("dashboard")}
+                Dashboard
               </Link>
               
               {/* Mobile Language Selector */}

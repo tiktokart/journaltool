@@ -69,7 +69,7 @@ export default function Index() {
             Plan your perfect life, analyze your thoughts, and track your emotional well-being.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Button asChild size="lg" className="bg-purple hover:bg-purple-dark text-black">
+            <Button asChild size="lg" className="bg-orange hover:bg-orange-dark text-black">
               <Link to="/dashboard">Go to Dashboard</Link>
             </Button>
           </div>
@@ -162,7 +162,7 @@ export default function Index() {
                       />
                       <Bar dataKey="value" fill="#a45fbf">
                         {mentalHealthData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#a45fbf" : "#7E69AB"} />
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#f6df60" : "#e7ce57"} />
                         ))}
                       </Bar>
                     </RecBarChart>
@@ -173,16 +173,16 @@ export default function Index() {
                   <ul className="space-y-3">
                     {mentalHealthData.map((item, index) => (
                       <li key={index} className="flex items-start">
-                        <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: index % 2 === 0 ? "#a45fbf" : "#7E69AB" }}></div>
+                        <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: index % 2 === 0 ? "#f6df60" : "#e7ce57" }}></div>
                         <p className="text-sm text-black">{item.description}</p>
                       </li>
                     ))}
                     <li className="flex items-start">
-                      <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: "#a45fbf" }}></div>
+                      <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: "#f6df60" }}></div>
                       <p className="text-sm text-black">Mental health conditions can reduce life expectancy by 10-20 years</p>
                     </li>
                     <li className="flex items-start">
-                      <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: "#7E69AB" }}></div>
+                      <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: "#e7ce57" }}></div>
                       <p className="text-sm text-black">Depression is a leading cause of disability worldwide</p>
                     </li>
                   </ul>
@@ -213,6 +213,9 @@ export default function Index() {
               </div>
             </CardContent>
           </Card>
+          <p className="text-center mt-4 text-black">
+            This is a short analysis and visualization of a person's recounting of his experience in a panic attack.
+          </p>
         </div>
 
         {/* Word Comparison */}

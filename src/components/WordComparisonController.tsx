@@ -148,7 +148,7 @@ export const WordComparisonController = ({
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 bg-orange text-white hover:bg-orange/90 border-orange">
                   <Search className="h-4 w-4 mr-2" />
-                  {t("addWord")}
+                  Add Word
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[300px] p-0" align="end" style={{ backgroundColor: "#DFC5FE" }}>
