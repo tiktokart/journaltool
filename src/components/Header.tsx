@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { FileText, Menu, X, Globe } from "lucide-react";
+import { Menu, X, Globe, Flower } from "lucide-react";
 import { useState } from "react";
 import {
   DropdownMenu,
@@ -33,24 +33,24 @@ export const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <FileText className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl">Journal Analysis</span>
+            <Flower className="h-6 w-6 text-primary animate-pulse" />
+            <span className="font-bold text-xl text-black">Journal Analysis</span>
           </Link>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <nav className="flex items-center space-x-8">
-              <Link to="/" className="text-foreground/80 hover:text-foreground transition-colors">
+              <Link to="/" className="text-black hover:text-foreground transition-colors">
                 {t("home")}
               </Link>
-              <Link to="/dashboard" className="text-foreground/80 hover:text-foreground transition-colors">
+              <Link to="/dashboard" className="text-black hover:text-foreground transition-colors">
                 {t("dashboard")}
               </Link>
             </nav>
             
             {/* Language Selector */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center text-foreground/80 hover:text-foreground transition-colors">
+              <DropdownMenuTrigger className="flex items-center text-black hover:text-foreground transition-colors">
                 <Globe className="h-5 w-5 mr-1" />
                 <span className="text-sm">{LANGUAGES[language as keyof typeof LANGUAGES]}</span>
               </DropdownMenuTrigger>
@@ -70,7 +70,7 @@ export const Header = () => {
           
           {/* Mobile Menu Button */}
           <button 
-            className="md:hidden text-foreground" 
+            className="md:hidden text-black" 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? (
@@ -87,14 +87,14 @@ export const Header = () => {
             <nav className="flex flex-col space-y-4">
               <Link 
                 to="/" 
-                className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                className="text-black hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t("home")}
               </Link>
               <Link 
                 to="/dashboard" 
-                className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                className="text-black hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t("dashboard")}
@@ -102,7 +102,7 @@ export const Header = () => {
               
               {/* Mobile Language Selector */}
               <div className="border-t border-border pt-4 mt-2">
-                <p className="text-sm text-foreground/60 mb-2">
+                <p className="text-sm text-black mb-2">
                   {t("selectLanguage")}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
