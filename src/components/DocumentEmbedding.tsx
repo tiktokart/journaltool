@@ -1,3 +1,4 @@
+
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -238,8 +239,8 @@ export const DocumentEmbedding = ({
         <CircleDot className="h-4 w-4 mr-2" />
         <span>
           {wordCount ? 
-            `${t("showingWords")} ${wordCount} ${t("words")}` : 
-            `${t("showingWords")} ${displayPoints.length} ${t("words")}`
+            `Showing Words: ${wordCount}` : 
+            `Showing Words: ${displayPoints.length}`
           }
         </span>
       </div>
@@ -247,7 +248,7 @@ export const DocumentEmbedding = ({
       {filterApplied && (
         <div className="absolute top-3 left-4 z-10 flex items-center text-sm font-normal bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md">
           <Filter className="h-4 w-4 mr-2 text-primary" />
-          <span>{t("filtered")} {selectedEmotionalGroup}</span>
+          <span>Filtered: {selectedEmotionalGroup}</span>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -338,7 +339,7 @@ export const DocumentEmbedding = ({
             
             <CollapsibleContent className="mt-1 space-y-1">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs text-muted-foreground">{t("filterByEmotion")}</span>
+                <span className="text-xs text-muted-foreground">Filter by Emotion</span>
                 {selectedEmotionalGroup && (
                   <Button 
                     variant="ghost" 

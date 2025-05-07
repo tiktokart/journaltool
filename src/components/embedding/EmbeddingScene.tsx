@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -134,7 +133,8 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     camera.updateProjectionMatrix();
     camera.position.z = 20;
     
-    scene.background = new THREE.Color(0xffffff);
+    // Change background color from dark purple to yellow/soft yellow
+    scene.background = new THREE.Color(0xfef7cd); // Using soft yellow color
 
     const controlsInstance = new OrbitControls(camera, renderer.domElement);
     controlsRef.current = controlsInstance;

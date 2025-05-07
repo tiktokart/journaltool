@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -529,7 +528,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8">
+              <div className="mt-8 bg-lavender p-4 rounded-lg">
                 <PdfExport sentimentData={sentimentData} />
               </div>
             </div>
