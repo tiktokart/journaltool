@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Save } from "lucide-react";
+import { FileText, Save, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import jsPDF from "jspdf";
@@ -306,6 +305,34 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
     }
   };
   
+  // Function to save to monthly reflection
+  const saveToMonthlyReflection = () => {
+    if (!sentimentData || !sentimentData.pdfText || sentimentData.pdfText.trim().length === 0) {
+      toast.error("No content to save to Monthly Reflection");
+      return;
+    }
+    
+    try {
+      // Get existing monthly reflections
+      const storedReflections = localStorage.getItem('monthlyReflections');
+      const reflections = storedReflections ? JSON.parse(storedReflections) : [];
+      
+      // Add the new reflection
+      reflections.push({
+        id: uuidv4(),
+        text: sentimentData.pdfText,
+        date: new Date().toISOString()
+      });
+      
+      // Save back to localStorage
+      localStorage.setItem('monthlyReflections', JSON.stringify(reflections));
+      toast.success("Content saved to Monthly Reflection");
+    } catch (error) {
+      console.error('Error saving to monthly reflection:', error);
+      toast.error("Failed to save to Monthly Reflection");
+    }
+  };
+  
   // Helper function to print a line with emotional highlighting
   const printLineWithEmotions = (
     doc: jsPDF, 
@@ -360,19 +387,19 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
   };
 
   return (
-    <Card className="border border-border shadow-md bg-card mt-8">
+    <Card className="border border-border shadow-md bg-light-lavender mt-8">
       <CardHeader>
-        <CardTitle className="flex items-center text-xl">
+        <CardTitle className="flex items-center text-xl text-orange">
           <FileText className="h-5 w-5 mr-2 text-primary" />
           {t("exportAnalysis")}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col">
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-black mb-4">
             {t("exportDescription")}
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Button 
               onClick={exportToPdf} 
               className="flex items-center gap-2"
@@ -388,6 +415,15 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
             >
               <Save className="h-4 w-4" />
               Save to Journal Collection
+            </Button>
+            
+            <Button 
+              onClick={saveToMonthlyReflection}
+              variant="secondary"
+              className="flex items-center gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              Save to Monthly Reflection
             </Button>
           </div>
         </div>

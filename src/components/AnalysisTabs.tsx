@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -139,7 +138,7 @@ export const AnalysisTabs = ({
 
   // Fallback component when data is missing
   const DataMissingFallback = ({ tabName }: { tabName: string }) => (
-    <Card className="border border-border shadow-md mt-4">
+    <Card className="border border-border shadow-md mt-4 bg-light-lavender">
       <CardContent className="flex flex-col items-center justify-center py-16">
         <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-medium mb-2">{t("noDataTabName").replace("{tabName}", tabName)}</h3>
@@ -153,7 +152,7 @@ export const AnalysisTabs = ({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
       <div className="overflow-x-auto">
-        <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto">
+        <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto bg-light-lavender">
           <TabsTrigger value="embedding" className="min-w-max">{t("latentEmotionalAnalysisTab")}</TabsTrigger>
           <TabsTrigger value="overview" className="min-w-max">{t("overviewTab")}</TabsTrigger>
           <TabsTrigger value="timeline" className="min-w-max">{t("timelineTab")}</TabsTrigger>

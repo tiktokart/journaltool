@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -135,7 +134,7 @@ export const WordComparisonController = ({
     <Card className="border border-border shadow-md bg-light-lavender" key={`word-comparison-card-${forceUpdate}`}>
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-2">
-          <CardTitle className="flex items-center text-xl">
+          <CardTitle className="flex items-center text-xl text-orange">
             <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
             {t("wordComparison")}
           </CardTitle>
@@ -151,7 +150,7 @@ export const WordComparisonController = ({
                   {t("addWord")}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0" align="end">
+              <PopoverContent className="w-[300px] p-0 bg-light-lavender" align="end">
                 <Command>
                   <CommandInput 
                     placeholder={t("searchWords")} 
@@ -206,7 +205,7 @@ export const WordComparisonController = ({
         {availableEmotions.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             <span className="text-sm text-muted-foreground mr-1 flex items-center">
-              Search by emotion:
+              Search by Emotion:
             </span>
             {availableEmotions.map(emotion => (
               <Badge 
