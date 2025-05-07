@@ -1,354 +1,301 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { v4 as uuidv4 } from 'uuid';
-import { Edit, Trash2, Save, FileText } from "lucide-react";
 
-interface PlanEntry {
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+interface Entry {
   id: string;
   text: string;
   date: string;
-  category: 'daily' | 'weekly' | 'monthly' | 'reflection';
+}
+
+interface LifePlanEntries {
+  daily: Entry[];
+  weekly: Entry[];
+  monthly: Entry[];
 }
 
 interface LifePlanSectionProps {
-  journalText: string;
+  journalText?: string;
 }
 
-export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
-  const [planEntries, setPlanEntries] = useState<PlanEntry[]>([]);
-  const [editingEntry, setEditingEntry] = useState<PlanEntry | null>(null);
-  const [editText, setEditText] = useState("");
-  
-  // Load saved plan entries from localStorage
+export function LifePlanSection({ journalText = "" }: LifePlanSectionProps) {
+  const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [entries, setEntries] = useState<LifePlanEntries>({
+    daily: [],
+    weekly: [],
+    monthly: []
+  });
+  const [newEntryText, setNewEntryText] = useState("");
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+
+  // Load entries from localStorage on component mount
   useEffect(() => {
-    const savedEntries = localStorage.getItem('lifePlanEntries');
-    if (savedEntries) {
-      try {
-        setPlanEntries(JSON.parse(savedEntries));
-      } catch (error) {
-        console.error('Error parsing saved life plan entries:', error);
+    try {
+      const storedEntries = localStorage.getItem("lifePlanEntries");
+      if (storedEntries) {
+        setEntries(JSON.parse(storedEntries));
       }
+    } catch (error) {
+      console.error("Error loading life plan entries:", error);
+      toast.error("Failed to load life plan entries");
     }
   }, []);
-  
-  // Save entries to localStorage when they change
+
+  // Pre-populate with journal text when editing
   useEffect(() => {
-    localStorage.setItem('lifePlanEntries', JSON.stringify(planEntries));
-  }, [planEntries]);
-  
-  const deleteEntry = (id: string) => {
-    setPlanEntries(prev => prev.filter(entry => entry.id !== id));
-    toast.success("Entry deleted");
-  };
-  
-  const startEditing = (entry: PlanEntry) => {
-    setEditingEntry(entry);
-    setEditText(entry.text);
-  };
-  
-  const saveEdit = () => {
-    if (!editingEntry) return;
-    
-    setPlanEntries(prev => prev.map(entry => 
-      entry.id === editingEntry.id 
-        ? { ...entry, text: editText } 
-        : entry
-    ));
-    
-    setEditingEntry(null);
-    setEditText("");
-    toast.success("Entry updated");
-  };
-  
-  const cancelEdit = () => {
-    setEditingEntry(null);
-    setEditText("");
-  };
-  
-  const getEntriesByCategory = (category: 'daily' | 'weekly' | 'monthly' | 'reflection') => {
-    return planEntries.filter(entry => entry.category === category);
+    if (journalText && !newEntryText) {
+      setNewEntryText(journalText);
+    }
+  }, [journalText]);
+
+  const saveEntries = (updatedEntries: LifePlanEntries) => {
+    try {
+      localStorage.setItem("lifePlanEntries", JSON.stringify(updatedEntries));
+      setEntries(updatedEntries);
+    } catch (error) {
+      console.error("Error saving life plan entries:", error);
+      toast.error("Failed to save entry");
+    }
   };
 
-  const addJournalToReflection = () => {
-    if (!journalText || journalText.trim().length === 0) {
-      toast.error("No journal text to save as reflection");
+  const handleAddEntry = () => {
+    if (!newEntryText.trim()) {
+      toast.error("Please enter some text for your life plan");
       return;
     }
 
-    const newEntry: PlanEntry = {
-      id: uuidv4(),
-      text: journalText,
-      date: new Date().toISOString(),
-      category: 'reflection'
-    };
+    try {
+      const newEntry = {
+        id: Date.now().toString(),
+        text: newEntryText,
+        date: new Date().toISOString()
+      };
 
-    setPlanEntries(prev => [...prev, newEntry]);
-    toast.success("Journal added to Monthly Reflections");
+      const updatedEntries = { ...entries };
+      updatedEntries[activeTab] = [newEntry, ...updatedEntries[activeTab]];
+      
+      saveEntries(updatedEntries);
+      setNewEntryText("");
+      toast.success(`Added to your ${activeTab} life plan`);
+    } catch (error) {
+      console.error("Error adding entry:", error);
+      toast.error("Failed to add entry");
+    }
   };
-  
+
+  const handleDeleteEntry = (id: string) => {
+    try {
+      const updatedEntries = { ...entries };
+      updatedEntries[activeTab] = updatedEntries[activeTab].filter(entry => entry.id !== id);
+      
+      saveEntries(updatedEntries);
+      toast.success("Entry removed");
+      
+      if (editingEntryId === id) {
+        setEditingEntryId(null);
+        setNewEntryText("");
+      }
+    } catch (error) {
+      console.error("Error deleting entry:", error);
+      toast.error("Failed to delete entry");
+    }
+  };
+
+  const handleEditEntry = (entry: Entry) => {
+    setEditingEntryId(entry.id);
+    setNewEntryText(entry.text);
+  };
+
+  const handleUpdateEntry = () => {
+    if (!editingEntryId || !newEntryText.trim()) return;
+
+    try {
+      const updatedEntries = { ...entries };
+      updatedEntries[activeTab] = updatedEntries[activeTab].map(entry => 
+        entry.id === editingEntryId
+          ? { ...entry, text: newEntryText, date: new Date().toISOString() }
+          : entry
+      );
+      
+      saveEntries(updatedEntries);
+      setEditingEntryId(null);
+      setNewEntryText("");
+      toast.success("Entry updated");
+    } catch (error) {
+      console.error("Error updating entry:", error);
+      toast.error("Failed to update entry");
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+      year: "numeric",
+      month: "short",
+      day: "numeric"
     });
   };
 
   return (
-    <Card className="border shadow-md bg-light-lavender">
+    <Card className="border border-border shadow-md bg-light-lavender">
       <CardHeader>
-        <CardTitle className="text-xl text-orange">What Does Your Perfect Life Look Like?</CardTitle>
+        <CardTitle className="text-black">{t("What does your Perfect Life Look Like?")}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            {/* Daily Life Section */}
-            <div className="space-y-4">
-              <h3 className="text-orange font-medium text-lg">Daily Life</h3>
-              {getEntriesByCategory('daily').length === 0 ? (
-                <p className="text-yellow italic py-2">No entries yet. Add your daily life goals.</p>
-              ) : (
-                <ul className="space-y-3 list-disc pl-6">
-                  {getEntriesByCategory('daily').map(entry => (
-                    <li key={entry.id} className="pl-2">
-                      {editingEntry?.id === entry.id ? (
-                        <div className="space-y-2">
-                          <Textarea 
-                            value={editText} 
-                            onChange={(e) => setEditText(e.target.value)} 
-                            className="min-h-[100px] text-black bg-white"
-                          />
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={saveEdit} className="text-yellow">Save</Button>
-                            <Button size="sm" variant="outline" onClick={cancelEdit} className="text-orange border-orange">Cancel</Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-white/60 rounded-lg">
-                          <p className="whitespace-pre-wrap text-black">{entry.text}</p>
-                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-muted">
-                            <span className="text-xs text-orange">
-                              {formatDate(entry.date)}
-                            </span>
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => startEditing(entry)}
-                                className="text-orange"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => deleteEntry(entry.id)}
-                                className="text-orange"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* Weekly Life Section */}
-            <div className="space-y-4">
-              <h3 className="text-orange font-medium text-lg">Weekly Life</h3>
-              {getEntriesByCategory('weekly').length === 0 ? (
-                <p className="text-yellow italic py-2">No entries yet. Add your weekly life goals.</p>
-              ) : (
-                <ul className="space-y-3 list-disc pl-6">
-                  {getEntriesByCategory('weekly').map(entry => (
-                    <li key={entry.id} className="pl-2">
-                      {editingEntry?.id === entry.id ? (
-                        <div className="space-y-2">
-                          <Textarea 
-                            value={editText} 
-                            onChange={(e) => setEditText(e.target.value)} 
-                            className="min-h-[100px] text-black bg-white"
-                          />
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={saveEdit} className="text-yellow">Save</Button>
-                            <Button size="sm" variant="outline" onClick={cancelEdit} className="text-orange border-orange">Cancel</Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-white/60 rounded-lg">
-                          <p className="whitespace-pre-wrap text-black">{entry.text}</p>
-                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-muted">
-                            <span className="text-xs text-orange">
-                              {formatDate(entry.date)}
-                            </span>
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => startEditing(entry)}
-                                className="text-orange"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => deleteEntry(entry.id)}
-                                className="text-orange"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* Monthly Life Section */}
-            <div className="space-y-4">
-              <h3 className="text-orange font-medium text-lg">Monthly Life</h3>
-              {getEntriesByCategory('monthly').length === 0 ? (
-                <p className="text-yellow italic py-2">No entries yet. Add your monthly life goals.</p>
-              ) : (
-                <ul className="space-y-3 list-disc pl-6">
-                  {getEntriesByCategory('monthly').map(entry => (
-                    <li key={entry.id} className="pl-2">
-                      {editingEntry?.id === entry.id ? (
-                        <div className="space-y-2">
-                          <Textarea 
-                            value={editText} 
-                            onChange={(e) => setEditText(e.target.value)} 
-                            className="min-h-[100px] text-black bg-white"
-                          />
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={saveEdit} className="text-yellow">Save</Button>
-                            <Button size="sm" variant="outline" onClick={cancelEdit} className="text-orange border-orange">Cancel</Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-white/60 rounded-lg">
-                          <p className="whitespace-pre-wrap text-black">{entry.text}</p>
-                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-muted">
-                            <span className="text-xs text-orange">
-                              {formatDate(entry.date)}
-                            </span>
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => startEditing(entry)}
-                                className="text-orange"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => deleteEntry(entry.id)}
-                                className="text-orange"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
+        <div className="space-y-4">
+          <Textarea
+            placeholder={t("Describe aspects of your ideal life...")}
+            className="min-h-[100px] bg-white/50 border-lavender text-black"
+            value={newEntryText}
+            onChange={(e) => setNewEntryText(e.target.value)}
+          />
           
-          {/* Monthly Reflection Section - Now on the right side */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-orange font-medium text-lg">Monthly Reflection</h3>
-              {journalText && journalText.trim().length > 0 && (
-                <Button 
-                  size="sm" 
-                  onClick={addJournalToReflection}
-                  className="bg-orange text-white hover:bg-orange/80 flex items-center gap-2"
+          <div className="flex justify-end gap-2">
+            {editingEntryId ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingEntryId(null);
+                    setNewEntryText("");
+                  }}
                 >
-                  <Save className="h-4 w-4" />
-                  Save Current Journal
+                  {t("Cancel")}
                 </Button>
-              )}
-            </div>
-            
-            {getEntriesByCategory('reflection').length === 0 ? (
-              <div className="p-4 bg-white/60 rounded-lg">
-                <div className="flex items-center justify-center flex-col gap-2 py-4">
-                  <FileText className="h-10 w-10 text-orange opacity-70" />
-                  <p className="text-black italic">No reflections yet. Save analyzed journals here.</p>
-                </div>
-              </div>
+                <Button 
+                  className="bg-orange hover:bg-orange/90 text-white"
+                  onClick={handleUpdateEntry}
+                >
+                  {t("Update")}
+                </Button>
+              </>
             ) : (
-              <div className="grid gap-4">
-                {getEntriesByCategory('reflection').map(entry => (
-                  <div key={entry.id} className="p-3 bg-white/60 rounded-lg">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-sm font-medium text-orange">
-                        {formatDate(entry.date)}
-                      </span>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => startEditing(entry)}
-                          className="text-orange h-8 w-8 p-0"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => deleteEntry(entry.id)}
-                          className="text-orange h-8 w-8 p-0"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {editingEntry?.id === entry.id ? (
-                      <div className="space-y-2">
-                        <Textarea 
-                          value={editText} 
-                          onChange={(e) => setEditText(e.target.value)} 
-                          className="min-h-[150px] text-black bg-white"
-                        />
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={saveEdit} className="text-yellow">Save</Button>
-                          <Button size="sm" variant="outline" onClick={cancelEdit} className="text-orange border-orange">Cancel</Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="max-h-[200px] overflow-y-auto pr-2">
-                        <p className="whitespace-pre-wrap text-black text-sm">{entry.text.length > 300 
-                          ? entry.text.substring(0, 300) + "..."
-                          : entry.text}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <Button 
+                className="bg-orange hover:bg-orange/90 text-white"
+                onClick={handleAddEntry}
+              >
+                {t("Save")}
+              </Button>
             )}
           </div>
+          
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "daily" | "weekly" | "monthly")}>
+            <TabsList className="w-full bg-lavender">
+              <TabsTrigger value="daily" className="flex-1">{t("Daily")}</TabsTrigger>
+              <TabsTrigger value="weekly" className="flex-1">{t("Weekly")}</TabsTrigger>
+              <TabsTrigger value="monthly" className="flex-1">{t("Monthly")}</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="daily" className="mt-4">
+              <h3 className="text-lg font-bold mb-2 text-black">Daily Life</h3>
+              <ScrollArea className="h-[150px] rounded border border-lavender bg-white/30 p-4">
+                {entries.daily.length === 0 ? (
+                  <p className="text-muted-foreground text-center text-black py-4">{t("No entries yet")}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {entries.daily.map((entry) => (
+                      <div key={entry.id} className="border-b border-lavender pb-2 text-black">
+                        <p className="mb-1">{entry.text}</p>
+                        <div className="flex justify-between items-center text-xs text-muted-foreground">
+                          <span>{formatDate(entry.date)}</span>
+                          <div className="space-x-2">
+                            <button 
+                              className="hover:text-primary" 
+                              onClick={() => handleEditEntry(entry)}
+                            >
+                              {t("Edit")}
+                            </button>
+                            <button 
+                              className="hover:text-destructive" 
+                              onClick={() => handleDeleteEntry(entry.id)}
+                            >
+                              {t("Delete")}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+            
+            <TabsContent value="weekly" className="mt-4">
+              <h3 className="text-lg font-bold mb-2 text-black">Weekly Life</h3>
+              <ScrollArea className="h-[150px] rounded border border-lavender bg-white/30 p-4">
+                {entries.weekly.length === 0 ? (
+                  <p className="text-muted-foreground text-center text-black py-4">{t("No entries yet")}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {entries.weekly.map((entry) => (
+                      <div key={entry.id} className="border-b border-lavender pb-2 text-black">
+                        <p className="mb-1">{entry.text}</p>
+                        <div className="flex justify-between items-center text-xs text-muted-foreground">
+                          <span>{formatDate(entry.date)}</span>
+                          <div className="space-x-2">
+                            <button 
+                              className="hover:text-primary" 
+                              onClick={() => handleEditEntry(entry)}
+                            >
+                              {t("Edit")}
+                            </button>
+                            <button 
+                              className="hover:text-destructive" 
+                              onClick={() => handleDeleteEntry(entry.id)}
+                            >
+                              {t("Delete")}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+            
+            <TabsContent value="monthly" className="mt-4">
+              <h3 className="text-lg font-bold mb-2 text-black">Monthly Life</h3>
+              <ScrollArea className="h-[150px] rounded border border-lavender bg-white/30 p-4">
+                {entries.monthly.length === 0 ? (
+                  <p className="text-muted-foreground text-center text-black py-4">{t("No entries yet")}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {entries.monthly.map((entry) => (
+                      <div key={entry.id} className="border-b border-lavender pb-2 text-black">
+                        <p className="mb-1">{entry.text}</p>
+                        <div className="flex justify-between items-center text-xs text-muted-foreground">
+                          <span>{formatDate(entry.date)}</span>
+                          <div className="space-x-2">
+                            <button 
+                              className="hover:text-primary" 
+                              onClick={() => handleEditEntry(entry)}
+                            >
+                              {t("Edit")}
+                            </button>
+                            <button 
+                              className="hover:text-destructive" 
+                              onClick={() => handleDeleteEntry(entry.id)}
+                            >
+                              {t("Delete")}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         </div>
       </CardContent>
     </Card>
   );
-};
+}

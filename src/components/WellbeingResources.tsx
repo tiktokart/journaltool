@@ -1,278 +1,240 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { Point } from '@/types/embedding';
-import { Heart, HelpCircle, AlertCircle, ArrowRight } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { Button } from "@/components/ui/button";
+import { Heart, BookOpen, HelpCircle, Mail, Link as LinkIcon } from "lucide-react";
+import { Point } from "@/types/embedding";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface WellbeingResourcesProps {
   embeddingPoints: Point[];
 }
 
-interface SuggestionItem {
-  id: string;
-  title: string;
-  steps: string[];
-  relatedEmotions: string[];
-  priority: number;
-  triggeredByWords?: string[]; // Words from the text that triggered this suggestion
-}
-
-export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps) => {
+export function WellbeingResources({ embeddingPoints = [] }: WellbeingResourcesProps) {
   const { t } = useLanguage();
-  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
-  
-  // These are the negative emotion keywords that we'll use to trigger suggestions
-  const negativeKeywords = [
-    'anger', 'angry', 'rage', 'furious', 'livid',
-    'sad', 'depressed', 'grief', 'sorrow', 'depression', 
-    'anxious', 'anxiety', 'worry', 'stressed', 'nervous',
-    'fear', 'scared', 'terrified', 'panic', 'dread',
-    'lonely', 'alone', 'isolated', 'abandoned', 'rejected',
-    'guilty', 'shame', 'regret', 'remorse', 'embarrassed',
-    'tired', 'exhausted', 'fatigue', 'drained', 'burnout',
-    'hopeless', 'despair', 'helpless', 'worthless', 'suicidal'
-  ];
+  const [dominantEmotions, setDominantEmotions] = useState<{ emotion: string; count: number }[]>([]);
 
   useEffect(() => {
     if (!embeddingPoints || embeddingPoints.length === 0) return;
 
-    // Extract all emotional tones from the points
-    const emotionalTones = embeddingPoints
-      .map(point => point.emotionalTone)
-      .filter(tone => tone) as string[];
+    // Count emotions
+    const emotionCounts: Record<string, number> = {};
+    let totalPoints = 0;
 
-    // Count the frequency of each emotional tone
-    const toneFrequency = emotionalTones.reduce<Record<string, number>>((acc, tone) => {
-      acc[tone] = (acc[tone] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Extract unique words from the embedding points
-    const contentWords = embeddingPoints.map(point => ({
-      word: point.word.toLowerCase(),
-      point: point
-    }));
-    
-    // Check if any of the embedding points contain negative emotion keywords
-    const foundNegativeKeywords = negativeKeywords.filter(keyword => 
-      contentWords.some(content => content.word === keyword)
-    );
-
-    // Store the mapping of words to points for reference
-    const wordToPointMap = contentWords.reduce<Record<string, Point>>((acc, { word, point }) => {
-      acc[word] = point;
-      return acc;
-    }, {});
-
-    // Define our wellbeing suggestions with their related emotions
-    const allSuggestions: SuggestionItem[] = [
-      {
-        id: 'anxiety-breathing',
-        title: 'Deep Breathing for Anxiety Relief',
-        steps: [
-          'Find a quiet, comfortable place to sit or lie down',
-          'Place one hand on your chest and the other on your abdomen',
-          'Breathe in slowly through your nose for 4 counts',
-          'Hold your breath for 2 counts',
-          'Exhale slowly through your mouth for 6 counts',
-          'Repeat for 5-10 minutes'
-        ],
-        relatedEmotions: ['anxiety', 'anxious', 'stress', 'stressed', 'worry', 'nervous', 'panic', 'fear', 'scared'],
-        priority: 1
-      },
-      {
-        id: 'mindfulness-meditation',
-        title: 'Mindfulness Meditation',
-        steps: [
-          'Sit in a comfortable position with your back straight',
-          'Close your eyes or maintain a soft gaze',
-          'Focus your attention on your breath',
-          'When your mind wanders, gently bring your attention back to your breath',
-          'Start with 5 minutes and gradually increase the time'
-        ],
-        relatedEmotions: ['stress', 'anxiety', 'worry', 'overthinking', 'restless'],
-        priority: 2
-      },
-      {
-        id: 'sadness-gratitude',
-        title: 'Gratitude Practice for Low Mood',
-        steps: [
-          "Take a moment to reflect on three things you're grateful for today",
-          'Write them down in a journal if possible',
-          "Consider why you're grateful for each item",
-          'Notice how reflecting on gratitude affects your mood',
-          'Make this a daily practice, especially when feeling low'
-        ],
-        relatedEmotions: ['sad', 'depression', 'depressed', 'low', 'down', 'hopeless', 'grief', 'sorrow'],
-        priority: 1
-      },
-      {
-        id: 'anger-management',
-        title: 'Healthy Anger Management',
-        steps: [
-          "Recognize when you're becoming angry (notice physical sensations)",
-          'Take a timeout – remove yourself from the triggering situation if possible',
-          'Use deep breathing to calm your physiological response',
-          'Express your feelings using "I" statements rather than blame',
-          'Engage in physical activity to release tension',
-          'Consider whether your anger is masking another emotion'
-        ],
-        relatedEmotions: ['anger', 'angry', 'rage', 'furious', 'irritated', 'annoyed'],
-        priority: 2
-      },
-      {
-        id: 'social-connection',
-        title: 'Building Social Connections',
-        steps: [
-          'Reach out to one friend or family member today',
-          'Join a group based on your interests (online or in person)',
-          'Practice active listening in your conversations',
-          'Share your feelings with someone you trust',
-          'Volunteer in your community'
-        ],
-        relatedEmotions: ['lonely', 'alone', 'isolated', 'disconnected', 'rejected'],
-        priority: 2
+    embeddingPoints.forEach(point => {
+      if (point.emotionalTone) {
+        emotionCounts[point.emotionalTone] = (emotionCounts[point.emotionalTone] || 0) + 1;
+        totalPoints++;
       }
-    ];
+    });
 
-    // Filter suggestions based on found negative keywords and track which words triggered them
-    let activeSuggestions: SuggestionItem[] = [];
-    
-    if (foundNegativeKeywords.length > 0) {
-      foundNegativeKeywords.forEach(keyword => {
-        // Find suggestions that relate to this keyword
-        const matchingSuggestions = allSuggestions.filter(suggestion => 
-          suggestion.relatedEmotions.includes(keyword)
-        );
-        
-        // Add any new matching suggestions to our active suggestions
-        matchingSuggestions.forEach(suggestion => {
-          const existingSuggestion = activeSuggestions.find(s => s.id === suggestion.id);
-          
-          if (!existingSuggestion) {
-            // Create a new suggestion with the triggering words
-            activeSuggestions.push({
-              ...suggestion,
-              relatedEmotions: suggestion.relatedEmotions.filter(emotion => 
-                foundNegativeKeywords.includes(emotion)
-              ),
-              triggeredByWords: [keyword]
-            });
-          } else {
-            // Update existing suggestion with additional trigger words
-            if (!existingSuggestion.triggeredByWords?.includes(keyword)) {
-              existingSuggestion.triggeredByWords = [
-                ...(existingSuggestion.triggeredByWords || []),
-                keyword
-              ];
-            }
-          }
-        });
-      });
-      
-      // Sort by priority
-      activeSuggestions.sort((a, b) => a.priority - b.priority);
-    }
-    
-    setSuggestions(activeSuggestions);
+    // Convert to array and sort
+    const emotionsArray = Object.entries(emotionCounts)
+      .map(([emotion, count]) => ({
+        emotion,
+        count,
+        percentage: totalPoints > 0 ? (count / totalPoints) * 100 : 0
+      }))
+      .sort((a, b) => b.percentage - a.percentage)
+      .slice(0, 3);  // Get top 3 emotions
+
+    setDominantEmotions(emotionsArray);
   }, [embeddingPoints]);
 
-  // If no suggestions, return a default message
-  if (suggestions.length === 0) {
+  const getResourcesForEmotion = (emotion: string): { title: string; description: string; link?: string }[] => {
+    // Simplified mapping of emotions to wellbeing resources
+    const emotionResourceMap: Record<string, { title: string; description: string; link?: string }[]> = {
+      "Anger": [
+        {
+          title: "Anger Management Techniques",
+          description: "Practice deep breathing, take a timeout, and identify possible solutions."
+        },
+        {
+          title: "Physical Activity",
+          description: "Exercise releases tension and improves mood."
+        }
+      ],
+      "Sadness": [
+        {
+          title: "Reach Out to Friends",
+          description: "Social connections can help lift your spirits."
+        },
+        {
+          title: "Self-Care Activities",
+          description: "Do things that bring you joy and comfort."
+        }
+      ],
+      "Fear": [
+        {
+          title: "Grounding Techniques",
+          description: "Practice the 5-4-3-2-1 method: name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste."
+        },
+        {
+          title: "Challenge Negative Thoughts",
+          description: "Question the evidence for your fears and consider alternative perspectives."
+        }
+      ],
+      "Joy": [
+        {
+          title: "Gratitude Practice",
+          description: "Keep a gratitude journal to maintain positive feelings."
+        },
+        {
+          title: "Share Your Happiness",
+          description: "Spread joy by sharing positive experiences with others."
+        }
+      ],
+      "Surprise": [
+        {
+          title: "Journal About Unexpected Events",
+          description: "Reflect on how surprises impact your perspective."
+        },
+        {
+          title: "Embrace Spontaneity",
+          description: "Occasionally do something unplanned to keep life interesting."
+        }
+      ],
+      "Disgust": [
+        {
+          title: "Mindfulness Meditation",
+          description: "Practice non-judgmental awareness of your thoughts and feelings."
+        },
+        {
+          title: "Reframe Your Perspective",
+          description: "Look for alternative viewpoints about what's bothering you."
+        }
+      ],
+      "Trust": [
+        {
+          title: "Set Healthy Boundaries",
+          description: "Maintain trust through clear communication and boundaries."
+        },
+        {
+          title: "Build Trust Gradually",
+          description: "Remember that trust takes time to develop fully."
+        }
+      ],
+      "Anticipation": [
+        {
+          title: "Plan Something to Look Forward To",
+          description: "Create future events that excite you."
+        },
+        {
+          title: "Balance Planning with Presence",
+          description: "While anticipating the future, remember to enjoy the present moment."
+        }
+      ],
+      "Neutral": [
+        {
+          title: "Explore New Interests",
+          description: "Try something new to spark emotion and engagement."
+        },
+        {
+          title: "Connect with Nature",
+          description: "Spending time outdoors can improve mood and wellbeing."
+        }
+      ]
+    };
+
+    return emotionResourceMap[emotion] || emotionResourceMap["Neutral"];
+  };
+
+  const flattenedResources = dominantEmotions.flatMap(({ emotion }) => 
+    getResourcesForEmotion(emotion).map(resource => ({
+      ...resource,
+      emotion
+    }))
+  );
+
+  if (dominantEmotions.length === 0) {
     return (
-      <Card className="border border-border shadow-md bg-card mb-6">
+      <Card className="border border-border shadow-md bg-light-lavender">
         <CardHeader>
-          <CardTitle className="flex items-center text-xl">
-            <HelpCircle className="h-5 w-5 mr-2 text-primary" />
-            {t("resourcesAndSupport")}
+          <CardTitle className="flex items-center text-xl text-black">
+            <Heart className="h-5 w-5 mr-2 text-primary" />
+            Suggestions
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-8">
-            <Heart className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-center text-muted-foreground">
-              Keep working on yourself, no prevalent issues detected.
-            </p>
-            <p className="text-center text-sm text-muted-foreground mt-2">
-              Continue to monitor your emotional wellbeing and check back if you need support.
-            </p>
-          </div>
+        <CardContent className="text-center py-8">
+          <p className="text-muted-foreground">{t("Analysis needed for personalized suggestions")}</p>
+          <Button className="mt-4 bg-orange text-white hover:bg-orange/90">
+            {t("Start Analysis")}
+          </Button>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="border border-border shadow-md bg-card mb-6">
+    <Card className="border border-border shadow-md bg-light-lavender">
       <CardHeader>
-        <CardTitle className="flex items-center text-xl">
-          <HelpCircle className="h-5 w-5 mr-2 text-primary" />
-          {t("resourcesAndSupport")}
+        <CardTitle className="flex items-center text-xl text-black">
+          <Heart className="h-5 w-5 mr-2 text-primary" />
+          Suggestions
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-4">
-          <p className="text-sm text-muted-foreground">
-            {t("resourcesDescription")}
-          </p>
-        </div>
-        
-        <Accordion type="multiple" className="w-full">
-          {suggestions.map((suggestion) => (
-            <AccordionItem key={suggestion.id} value={suggestion.id}>
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center text-left">
-                  <Heart className="h-4 w-4 mr-2 text-rose-500" />
-                  <span>{suggestion.title}</span>
-                  
-                  {suggestion.relatedEmotions.length > 0 && (
-                    <div className="ml-3 flex flex-wrap gap-1">
-                      {suggestion.relatedEmotions.map((emotion, i) => (
-                        <Badge key={i} variant="outline" className="text-xs py-0 px-2">
-                          {emotion}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {flattenedResources.slice(0, 4).map((resource, index) => (
+              <div 
+                key={index} 
+                className="p-4 rounded-lg bg-white/30 border border-border"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full bg-primary"></div>
+                  <h3 className="font-medium text-black">{resource.title}</h3>
                 </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                {suggestion.triggeredByWords && suggestion.triggeredByWords.length > 0 && (
-                  <div className="mb-4 bg-muted/50 p-2 rounded-md flex flex-col gap-1">
-                    <p className="text-xs text-muted-foreground flex items-center">
-                      <ArrowRight className="h-3 w-3 mr-1" />
-                      Triggered by words in your text:
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {suggestion.triggeredByWords.map((word, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
-                          "{word}"
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+                <p className="text-sm text-black">{resource.description}</p>
+                {resource.link && (
+                  <a 
+                    href={resource.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="mt-2 text-xs flex items-center text-primary hover:underline"
+                  >
+                    <LinkIcon className="h-3 w-3 mr-1" />
+                    Learn more
+                  </a>
                 )}
-                
-                <ol className="list-decimal pl-5 space-y-2 text-sm">
-                  {suggestion.steps.map((step, i) => (
-                    <li key={i} className="pl-1">{step}</li>
-                  ))}
-                </ol>
-                
-                <div className="mt-4 flex items-start gap-2 p-3 bg-primary/10 rounded-md">
-                  <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                  <p className="text-xs text-muted-foreground">
-                    {t("seekProfessionalHelp")}
-                  </p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-center">
+            <Button variant="outline" className="text-sm border-orange text-orange hover:bg-orange/10">
+              {t("Show More Resources")}
+            </Button>
+          </div>
+          
+          <div className="mt-6 pt-6 border-t border-border">
+            <div className="text-sm text-black">
+              <p className="mb-2 flex items-center">
+                <HelpCircle className="h-4 w-4 mr-1 text-muted-foreground" />
+                {t("Need professional support?")}
+              </p>
+              <div className="flex flex-col gap-2 mt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-orange text-orange hover:bg-orange/10 w-full justify-start"
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  {t("Find a therapist near you")}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-orange text-orange hover:bg-orange/10 w-full justify-start"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  {t("Contact support team")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
-};
+}
