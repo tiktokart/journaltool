@@ -44,9 +44,9 @@ export const resetZoom = (camera: THREE.PerspectiveCamera | null, controls: Orbi
 };
 
 interface EmbeddingSceneProps {
-  containerRef?: React.RefObject<HTMLDivElement>;
-  cameraRef?: React.RefObject<THREE.PerspectiveCamera | null>;
-  controlsRef?: React.RefObject<OrbitControls | null>;
+  containerRef: React.RefObject<HTMLDivElement>;
+  cameraRef: React.RefObject<THREE.PerspectiveCamera | null>;
+  controlsRef: React.RefObject<OrbitControls | null>;
   points: Point[];
   onPointHover: (point: Point | null) => void;
   onPointSelect: (point: Point | null) => void;
@@ -65,9 +65,9 @@ interface EmbeddingSceneProps {
 }
 
 function EmbeddingScene({ 
-  containerRef: externalContainerRef, 
-  cameraRef: externalCameraRef, 
-  controlsRef: externalControlsRef, 
+  containerRef, 
+  cameraRef, 
+  controlsRef, 
   points, 
   onPointHover, 
   onPointSelect, 
@@ -83,15 +83,15 @@ function EmbeddingScene({
   onResetView,
   visibleClusterCount = 8,
   showAllPoints = true
-}: EmbeddingSceneProps) {
+}) {
   const internalContainerRef = useRef<HTMLDivElement>(null);
-  const containerRef = externalContainerRef || internalContainerRef;
+  const containerRef = containerRef || internalContainerRef;
   
   const internalCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const cameraRef = externalCameraRef || internalCameraRef;
+  const cameraRef = cameraRef || internalCameraRef;
   
   const internalControlsRef = useRef<OrbitControls | null>(null);
-  const controlsRef = externalControlsRef || internalControlsRef;
+  const controlsRef = controlsRef || internalControlsRef;
   
   const sceneRef = useRef<THREE.Scene>(new THREE.Scene());
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -471,7 +471,7 @@ function EmbeddingScene({
         isZoomingRef.current = false;
       }
     });
-  }, [cameraRef, controlsRef]);
+  }, [cameraRef]);
 
   const resetView = useCallback(() => {
     if (!cameraRef.current || !controlsRef.current) return;
@@ -566,7 +566,7 @@ function EmbeddingScene({
         isZoomingRef.current = false;
       }
     });
-  }, [cameraRef, controlsRef]);
+  }, [cameraRef]);
 
   useEffect(() => {
     if (focusOnWord) {
