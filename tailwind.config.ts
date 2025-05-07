@@ -69,6 +69,23 @@ export default {
           positive: '#27AE60',
           neutral: '#3498DB',
           negative: '#E74C3C',
+        },
+        
+        // New theme colors
+        yellow: {
+          DEFAULT: '#f6df60',
+          light: '#f8e680',
+          dark: '#e6cf50',
+        },
+        purple: {
+          DEFAULT: '#a45fbf',
+          light: '#b47fcf',
+          dark: '#944faf',
+        },
+        orange: {
+          DEFAULT: '#f57e00',
+          light: '#ff9e20',
+          dark: '#e56e00',
         }
 			},
 			borderRadius: {

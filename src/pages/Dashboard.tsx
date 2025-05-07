@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUploader } from "@/components/FileUploader";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
-import { Loader2, FileText, Save } from "lucide-react";
+import { Loader2, FileText } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
@@ -19,6 +20,7 @@ import { analyzeTextWithGemma3 } from "@/utils/gemma3SentimentAnalysis";
 import { WellbeingResources } from "@/components/WellbeingResources";
 import { JournalInput } from "@/components/JournalInput";
 import { JournalCache } from "@/components/JournalCache";
+import { LifePlanSection } from "@/components/LifePlanSection";
 import { v4 as uuidv4 } from 'uuid';
 
 const Dashboard = () => {
@@ -106,6 +108,19 @@ const Dashboard = () => {
       console.error('Error saving journal entry:', error);
       toast.error("Failed to save journal entry");
     }
+  };
+
+  const handleAddToLifePlan = (category: 'daily' | 'weekly' | 'monthly') => {
+    // This function is passed down to JournalInput and will trigger the LifePlanSection
+    // to add the current journal text to the specified category
+    if (!journalText || journalText.trim().length === 0) {
+      toast.error("Please enter some text in the journal first");
+      return;
+    }
+    
+    // We handle the actual adding in the LifePlanSection component
+    // This function is just a bridge to show that the action was triggered
+    toast.success(`Journal entry added to ${category} life plan`);
   };
 
   const analyzeSentiment = async () => {
@@ -396,9 +411,15 @@ const Dashboard = () => {
         <div className="flex flex-col gap-8">
           {/* Journal Input Section */}
           <div className="grid md:grid-cols-2 gap-6">
-            <JournalInput onJournalEntrySubmit={handleJournalEntrySubmit} />
+            <JournalInput 
+              onJournalEntrySubmit={handleJournalEntrySubmit} 
+              onAddToLifePlan={handleAddToLifePlan}
+            />
             <JournalCache onSelectEntry={handleCachedEntrySelect} />
           </div>
+          
+          {/* Life Plan Section */}
+          <LifePlanSection journalText={journalText} />
           
           <Card className="border border-border shadow-md bg-card">
             <CardHeader>

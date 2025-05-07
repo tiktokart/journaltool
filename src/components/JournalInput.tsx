@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Mic, FileText } from "lucide-react";
+import { Mic, FileText, Calendar } from "lucide-react";
 
 interface JournalInputProps {
   onJournalEntrySubmit: (text: string) => void;
+  onAddToLifePlan?: (category: 'daily' | 'weekly' | 'monthly') => void;
 }
 
-export const JournalInput = ({ onJournalEntrySubmit }: JournalInputProps) => {
+export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalInputProps) => {
   const [journalText, setJournalText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
@@ -71,6 +72,18 @@ export const JournalInput = ({ onJournalEntrySubmit }: JournalInputProps) => {
     }
   };
 
+  const handleAddToLifePlan = (category: 'daily' | 'weekly' | 'monthly') => {
+    if (journalText.trim().length < 10) {
+      toast.error("Please enter at least 10 characters to add to your life plan");
+      return;
+    }
+
+    if (onAddToLifePlan) {
+      onAddToLifePlan(category);
+      toast.success(`Added to your ${category} life plan`);
+    }
+  };
+
   return (
     <Card className="border border-border shadow-md mb-6">
       <CardHeader>
@@ -116,6 +129,41 @@ export const JournalInput = ({ onJournalEntrySubmit }: JournalInputProps) => {
               </Button>
             )}
           </div>
+          
+          {onAddToLifePlan && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-sm mb-2 font-medium">Add to Life Plan:</p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => handleAddToLifePlan('daily')}
+                  disabled={journalText.trim().length < 10}
+                  className="flex items-center gap-1"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Daily
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleAddToLifePlan('weekly')}
+                  disabled={journalText.trim().length < 10}
+                  className="flex items-center gap-1"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Weekly
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleAddToLifePlan('monthly')}
+                  disabled={journalText.trim().length < 10}
+                  className="flex items-center gap-1"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Monthly
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -17,6 +17,18 @@ body {
   background-color: #E74C3C;
 }
 
+.bg-yellow {
+  background-color: #f6df60;
+}
+
+.bg-purple {
+  background-color: #a45fbf;
+}
+
+.bg-orange {
+  background-color: #f57e00;
+}
+
 .text-truncate {
   overflow: hidden;
   text-overflow: ellipsis;
