@@ -87,8 +87,8 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
   return (
     <Card className="border border-border shadow-md mb-6">
       <CardHeader>
-        <CardTitle className="flex items-center text-xl">
-          <FileText className="h-5 w-5 mr-2 text-primary" />
+        <CardTitle className="flex items-center text-xl text-orange">
+          <FileText className="h-5 w-5 mr-2 text-orange" />
           Journal Entry
         </CardTitle>
       </CardHeader>
@@ -96,7 +96,7 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
         <div className="space-y-4">
           <Textarea 
             placeholder="Type your journal entry here... Express your thoughts and feelings freely."
-            className="min-h-[150px] resize-y"
+            className="min-h-[150px] resize-y text-black bg-white"
             value={journalText}
             onChange={(e) => setJournalText(e.target.value)}
           />
@@ -105,6 +105,7 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
             <Button
               onClick={handleSubmit}
               disabled={journalText.trim().length < 10}
+              className="text-yellow"
             >
               Submit for Analysis
             </Button>
@@ -113,7 +114,7 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
               <Button
                 variant="outline"
                 onClick={startVoiceRecognition}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-orange border-orange"
               >
                 <Mic className="h-4 w-4" />
                 Record Voice
@@ -132,13 +133,13 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
           
           {onAddToLifePlan && (
             <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-sm mb-2 font-medium">Add to Life Plan:</p>
+              <p className="text-sm mb-2 font-medium text-orange">Add to Life Plan:</p>
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="secondary"
                   onClick={() => handleAddToLifePlan('daily')}
                   disabled={journalText.trim().length < 10}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 text-yellow"
                 >
                   <Calendar className="h-4 w-4" />
                   Daily
@@ -147,7 +148,7 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
                   variant="secondary"
                   onClick={() => handleAddToLifePlan('weekly')}
                   disabled={journalText.trim().length < 10}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 text-yellow"
                 >
                   <Calendar className="h-4 w-4" />
                   Weekly
@@ -156,7 +157,7 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
                   variant="secondary"
                   onClick={() => handleAddToLifePlan('monthly')}
                   disabled={journalText.trim().length < 10}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 text-yellow"
                 >
                   <Calendar className="h-4 w-4" />
                   Monthly

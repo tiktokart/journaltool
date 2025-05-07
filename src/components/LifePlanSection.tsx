@@ -89,9 +89,9 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
       <CardContent>
         <div className="space-y-6">
           <div className="space-y-4">
-            <h3 className="text-primary font-medium text-lg">Daily Life</h3>
+            <h3 className="text-orange font-medium text-lg">Daily Life</h3>
             {getEntriesByCategory('daily').length === 0 ? (
-              <p className="text-muted-foreground italic py-2">No entries yet. Add your daily life goals.</p>
+              <p className="text-orange italic py-2">No entries yet. Add your daily life goals.</p>
             ) : (
               <ul className="space-y-3 list-disc pl-6">
                 {getEntriesByCategory('daily').map(entry => (
@@ -101,18 +101,18 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                         <Textarea 
                           value={editText} 
                           onChange={(e) => setEditText(e.target.value)} 
-                          className="min-h-[100px]"
+                          className="min-h-[100px] text-black bg-white"
                         />
                         <div className="flex gap-2">
-                          <Button size="sm" onClick={saveEdit}>Save</Button>
-                          <Button size="sm" variant="outline" onClick={cancelEdit}>Cancel</Button>
+                          <Button size="sm" onClick={saveEdit} className="text-yellow">Save</Button>
+                          <Button size="sm" variant="outline" onClick={cancelEdit} className="text-orange border-orange">Cancel</Button>
                         </div>
                       </div>
                     ) : (
                       <div className="p-3 bg-muted/30 rounded-lg">
-                        <p className="whitespace-pre-wrap">{entry.text}</p>
+                        <p className="whitespace-pre-wrap text-orange">{entry.text}</p>
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-muted">
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-orange">
                             {formatDate(entry.date)}
                           </span>
                           <div className="flex gap-2">
@@ -120,6 +120,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                               size="sm" 
                               variant="ghost" 
                               onClick={() => startEditing(entry)}
+                              className="text-orange"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -127,6 +128,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                               size="sm" 
                               variant="ghost" 
                               onClick={() => deleteEntry(entry.id)}
+                              className="text-orange"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -141,9 +143,9 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-primary font-medium text-lg">Week Life</h3>
+            <h3 className="text-orange font-medium text-lg">Week Life</h3>
             {getEntriesByCategory('weekly').length === 0 ? (
-              <p className="text-muted-foreground italic py-2">No entries yet. Add your weekly life goals.</p>
+              <p className="text-orange italic py-2">No entries yet. Add your weekly life goals.</p>
             ) : (
               <ul className="space-y-3 list-disc pl-6">
                 {getEntriesByCategory('weekly').map(entry => (
@@ -153,18 +155,18 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                         <Textarea 
                           value={editText} 
                           onChange={(e) => setEditText(e.target.value)} 
-                          className="min-h-[100px]"
+                          className="min-h-[100px] text-black bg-white"
                         />
                         <div className="flex gap-2">
-                          <Button size="sm" onClick={saveEdit}>Save</Button>
-                          <Button size="sm" variant="outline" onClick={cancelEdit}>Cancel</Button>
+                          <Button size="sm" onClick={saveEdit} className="text-yellow">Save</Button>
+                          <Button size="sm" variant="outline" onClick={cancelEdit} className="text-orange border-orange">Cancel</Button>
                         </div>
                       </div>
                     ) : (
                       <div className="p-3 bg-muted/30 rounded-lg">
-                        <p className="whitespace-pre-wrap">{entry.text}</p>
+                        <p className="whitespace-pre-wrap text-orange">{entry.text}</p>
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-muted">
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-orange">
                             {formatDate(entry.date)}
                           </span>
                           <div className="flex gap-2">
@@ -172,6 +174,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                               size="sm" 
                               variant="ghost" 
                               onClick={() => startEditing(entry)}
+                              className="text-orange"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -179,6 +182,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                               size="sm" 
                               variant="ghost" 
                               onClick={() => deleteEntry(entry.id)}
+                              className="text-orange"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -193,9 +197,9 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-primary font-medium text-lg">Monthly Life</h3>
+            <h3 className="text-orange font-medium text-lg">Monthly Life</h3>
             {getEntriesByCategory('monthly').length === 0 ? (
-              <p className="text-muted-foreground italic py-2">No entries yet. Add your monthly life goals.</p>
+              <p className="text-orange italic py-2">No entries yet. Add your monthly life goals.</p>
             ) : (
               <ul className="space-y-3 list-disc pl-6">
                 {getEntriesByCategory('monthly').map(entry => (
@@ -205,18 +209,18 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                         <Textarea 
                           value={editText} 
                           onChange={(e) => setEditText(e.target.value)} 
-                          className="min-h-[100px]"
+                          className="min-h-[100px] text-black bg-white"
                         />
                         <div className="flex gap-2">
-                          <Button size="sm" onClick={saveEdit}>Save</Button>
-                          <Button size="sm" variant="outline" onClick={cancelEdit}>Cancel</Button>
+                          <Button size="sm" onClick={saveEdit} className="text-yellow">Save</Button>
+                          <Button size="sm" variant="outline" onClick={cancelEdit} className="text-orange border-orange">Cancel</Button>
                         </div>
                       </div>
                     ) : (
                       <div className="p-3 bg-muted/30 rounded-lg">
-                        <p className="whitespace-pre-wrap">{entry.text}</p>
+                        <p className="whitespace-pre-wrap text-orange">{entry.text}</p>
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-muted">
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-orange">
                             {formatDate(entry.date)}
                           </span>
                           <div className="flex gap-2">
@@ -224,6 +228,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                               size="sm" 
                               variant="ghost" 
                               onClick={() => startEditing(entry)}
+                              className="text-orange"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -231,6 +236,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                               size="sm" 
                               variant="ghost" 
                               onClick={() => deleteEntry(entry.id)}
+                              className="text-orange"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

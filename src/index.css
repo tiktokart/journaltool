@@ -7,14 +7,14 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 46 91% 67%;
+    --background: 46 91% 67%;
+    --foreground: 29 100% 48%;
 
     --card: 269 50% 15%;
-    --card-foreground: 46 91% 67%;
+    --card-foreground: 29 100% 48%;
 
     --popover: 269 50% 15%;
-    --popover-foreground: 46 91% 67%;
+    --popover-foreground: 29 100% 48%;
 
     --primary: 46 91% 67%;
     --primary-foreground: 269 50% 15%;
@@ -23,7 +23,7 @@
     --secondary-foreground: 46 91% 67%;
 
     --muted: 269 30% 25%;
-    --muted-foreground: 46 30% 67%;
+    --muted-foreground: 29 100% 48%;
 
     --accent: 29 100% 48%;
     --accent-foreground: 0 0% 100%;
@@ -32,7 +32,7 @@
     --destructive-foreground: 46 91% 67%;
 
     --border: 269 30% 30%;
-    --input: 269 30% 30%;
+    --input: 0 0% 0%;
     --ring: 46 91% 67%;
 
     --radius: 0.75rem;
@@ -54,7 +54,7 @@
   }
 
   body {
-    @apply bg-white text-foreground;
+    @apply bg-yellow text-orange;
     font-family: 'Inter', sans-serif;
   }
   
