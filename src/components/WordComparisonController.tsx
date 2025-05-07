@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,7 +132,7 @@ export const WordComparisonController = ({
   };
 
   return (
-    <Card className="border border-border shadow-md bg-light-lavender" key={`word-comparison-card-${forceUpdate}`}>
+    <Card className="border border-border shadow-md bg-light-lavender" key={`word-comparison-card-${forceUpdate}`} style={{ backgroundColor: "#DFC5FE" }}>
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-2">
           <CardTitle className="flex items-center text-xl text-orange">
@@ -150,7 +151,7 @@ export const WordComparisonController = ({
                   {t("addWord")}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0 bg-light-lavender" align="end">
+              <PopoverContent className="w-[300px] p-0" align="end" style={{ backgroundColor: "#DFC5FE" }}>
                 <Command>
                   <CommandInput 
                     placeholder={t("searchWords")} 

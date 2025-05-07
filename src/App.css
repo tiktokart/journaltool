@@ -72,3 +72,9 @@ body {
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
+
+/* Fix for "jumpToEmotionalGroup" */
+.relationship-analysis-tag {
+  background-color: #DFC5FE !important;
+  color: #000 !important;
+}

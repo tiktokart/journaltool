@@ -19,7 +19,7 @@ export default function Index() {
   const { t } = useLanguage();
   const [points, setPoints] = useState<Point[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
-  const [showMHAStats, setShowMHAStats] = useState(false);
+  const [showMHAStats, setShowMHAStats] = useState(true); // Set to true to show MHA stats by default
 
   useEffect(() => {
     // Generate mock data for the visualization
@@ -27,58 +27,27 @@ export default function Index() {
     setPoints(mockPoints);
   }, []);
 
-  // Mock data for sentiment overview
-  const mockSentimentData = {
-    overallSentiment: {
-      score: 0.72,
-      label: "Positive",
-    },
-    distribution: {
-      positive: 65,
-      neutral: 25,
-      negative: 10,
-    },
-  };
-  
-  // Mock data for Mental Health America statistics
-  const mhaStatisticsData = {
+  // Updated mental health statistics data
+  const mentalHealthStatistics = {
     overallSentiment: {
       score: 0.48,
       label: "Neutral",
     },
     distribution: {
-      positive: 34, // Access to care data
-      neutral: 42, // Adults with mental illness data
-      negative: 24, // Youth with severe depression data
+      positive: 34,
+      neutral: 42,
+      negative: 24,
     },
   };
 
-  // MHA mental health statistics data for the bar chart
+  // More comprehensive mental health data
   const mentalHealthData = [
-    { state: "Hawaii", rank: 1, accessRank: 15, prevalenceRank: 1, value: 85.7 },
-    { state: "Massachusetts", rank: 2, accessRank: 1, prevalenceRank: 9, value: 83.8 },
-    { state: "Minnesota", rank: 3, accessRank: 4, prevalenceRank: 4, value: 82.3 },
-    { state: "Utah", rank: 4, accessRank: 7, prevalenceRank: 6, value: 81.4 },
-    { state: "New York", rank: 5, accessRank: 2, prevalenceRank: 16, value: 80.1 },
-    { state: "Washington", rank: 6, accessRank: 14, prevalenceRank: 2, value: 79.8 },
-    { state: "District of Columbia", rank: 7, accessRank: 3, prevalenceRank: 28, value: 79.2 },
-    { state: "Maryland", rank: 8, accessRank: 5, prevalenceRank: 21, value: 78.9 },
-    { state: "New Jersey", rank: 9, accessRank: 10, prevalenceRank: 12, value: 78.5 },
-    { state: "Illinois", rank: 10, accessRank: 9, prevalenceRank: 18, value: 77.8 }
+    { category: "Adults with Mental Illness", value: 21, description: "1 in 5 adults experience mental illness each year" },
+    { category: "Youth with Depression", value: 15, description: "15% of youth experienced a major depressive episode in the past year" },
+    { category: "Treatment Access", value: 55, description: "Only 55% of adults with mental illness receive treatment" },
+    { category: "Serious Mental Illness", value: 5.6, description: "5.6% of adults live with serious mental illness" },
+    { category: "Suicide", value: 12.3, description: "Suicide is the 2nd leading cause of death among people aged 10-34" }
   ];
-
-  // Color function for the states
-  const getStateColor = (index: number) => {
-    const colors = [
-      "#27AE60", // Green for top ranks
-      "#3498DB", // Blue for middle ranks
-      "#E74C3C"  // Red for bottom ranks
-    ];
-    
-    if (index < 3) return colors[0];
-    if (index < 7) return colors[1];
-    return colors[2];
-  };
 
   // Function to calculate relationship between points for demonstration
   const calculateRelationship = (point1: Point, point2: Point) => {
@@ -112,12 +81,12 @@ export default function Index() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
                 <Target className="h-5 w-5 mr-2 text-purple" />
-                {t("emotionalInsights")}
+                Emotional Insights
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-black">
-                {t("emotionalInsightsDescription")}
+                Gain deep insights into your emotional patterns and understand what drives your feelings.
               </p>
             </CardContent>
           </Card>
@@ -126,12 +95,12 @@ export default function Index() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
                 <Book className="h-5 w-5 mr-2 text-purple" />
-                {t("journalTracker")}
+                Journal Tracker
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-black">
-                {t("journalTrackerDescription")}
+                Track and analyze your daily thoughts through journaling to identify patterns and trends.
               </p>
             </CardContent>
           </Card>
@@ -140,12 +109,12 @@ export default function Index() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
                 <BarChart className="h-5 w-5 mr-2 text-purple" />
-                {t("sentimentAnalysis")}
+                Sentiment Analysis
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-black">
-                {t("sentimentAnalysisDescription")}
+                Understand the sentiment behind your thoughts and track your emotional well-being over time.
               </p>
             </CardContent>
           </Card>
@@ -157,91 +126,73 @@ export default function Index() {
             <h2 className="text-3xl font-bold text-black">
               Mental Health Insights
             </h2>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowMHAStats(!showMHAStats)}
-              className="bg-light-lavender text-orange border-orange"
-            >
-              {showMHAStats ? "Show Demo Data" : "Show MHA Statistics"}
-            </Button>
           </div>
           
-          {showMHAStats ? (
-            <Card className="border-0 shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
-              <CardHeader>
-                <CardTitle className="text-black">Mental Health America's State Rankings 2023</CardTitle>
-                <p className="text-sm text-black">Top 10 states with best mental health outcomes and access to care</p>
-              </CardHeader>
-              <CardContent>
+          <Card className="border-0 shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+            <CardHeader>
+              <CardTitle className="text-black">Mental Health Statistics</CardTitle>
+              <p className="text-sm text-black">Key facts about mental health prevalence and impact on daily life</p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <RecBarChart
                       data={mentalHealthData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                      layout="vertical"
+                      margin={{ top: 20, right: 30, left: 120, bottom: 20 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis 
-                        dataKey="state" 
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} horizontal={false} />
+                      <XAxis type="number" domain={[0, 100]} />
+                      <YAxis 
+                        dataKey="category" 
+                        type="category" 
+                        width={110}
                         tick={{ fontSize: 12 }}
                       />
-                      <YAxis 
-                        domain={[0, 100]} 
-                        label={{ value: 'Overall Mental Health Score', angle: -90, position: 'insideLeft' }}
-                      />
                       <Tooltip 
-                        formatter={(value: number, name: string, props: any) => [
-                          `Score: ${value}`,
-                          `Rank: ${props.payload.rank}`
-                        ]}
-                        labelFormatter={(label) => `State: ${label}`}
+                        formatter={(value: number) => [`${value}%`]}
+                        labelFormatter={(label) => `${label}`}
                         contentStyle={{ 
                           borderRadius: '0.5rem',
                           border: 'none',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          backgroundColor: '#f8f9fa'
                         }}
                       />
-                      <Legend 
-                        verticalAlign="top" 
-                        content={() => (
-                          <div className="flex justify-center mt-2 text-xs">
-                            <div className="flex items-center mx-2">
-                              <div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
-                              <span>Top Tier (1-3)</span>
-                            </div>
-                            <div className="flex items-center mx-2">
-                              <div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>
-                              <span>Mid Tier (4-7)</span>
-                            </div>
-                            <div className="flex items-center mx-2">
-                              <div className="w-3 h-3 rounded-full bg-red-500 mr-1"></div>
-                              <span>Lower Tier (8-10)</span>
-                            </div>
-                          </div>
-                        )}
-                      />
-                      <Bar dataKey="value" name="Mental Health Score">
+                      <Bar dataKey="value" fill="#a45fbf">
                         {mentalHealthData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={getStateColor(index)} />
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#a45fbf" : "#7E69AB"} />
                         ))}
                       </Bar>
                     </RecBarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="mt-4 text-sm text-center text-black">
-                  <p>Data from Mental Health America's State and County Dashboard 2023</p>
-                  <p className="mt-2">This data represents overall mental health rankings which combine measures of prevalence and access to care.</p>
+                <div className="flex flex-col justify-center">
+                  <h3 className="text-xl font-semibold mb-4 text-black">Impact on Daily Life</h3>
+                  <ul className="space-y-3">
+                    {mentalHealthData.map((item, index) => (
+                      <li key={index} className="flex items-start">
+                        <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: index % 2 === 0 ? "#a45fbf" : "#7E69AB" }}></div>
+                        <p className="text-sm text-black">{item.description}</p>
+                      </li>
+                    ))}
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: "#a45fbf" }}></div>
+                      <p className="text-sm text-black">Mental health conditions can reduce life expectancy by 10-20 years</p>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: "#7E69AB" }}></div>
+                      <p className="text-sm text-black">Depression is a leading cause of disability worldwide</p>
+                    </li>
+                  </ul>
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <SentimentOverview 
-              data={mockSentimentData} 
-              sourceDescription="Demo data for illustration purposes" 
-            />
-          )}
+              </div>
+              <div className="mt-4 text-sm text-center text-black">
+                <p>Data from Mental Health America's State and County Dashboard and NIMH</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* 3D Visualization */}
@@ -270,7 +221,7 @@ export default function Index() {
             <GitCompareArrows className="h-6 w-6 mr-2 text-purple" />
             Word Comparison
           </h2>
-          <div className="bg-light-lavender p-4 rounded-lg">
+          <div className="bg-light-lavender p-4 rounded-lg shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
             <WordComparisonController 
               points={points}
               selectedPoint={selectedPoint}
