@@ -34,17 +34,13 @@ body {
   background-color: #e56e00;
 }
 
-/* New pastel colors for dashboard */
+/* Consistent lavender colors */
 .bg-lavender {
   background-color: #DFC5FE;
 }
 
-.bg-muted-orange {
-  background-color: rgba(254, 198, 161, 0.3);
-}
-
 .bg-light-lavender {
-  background-color: rgba(223, 197, 254, 0.3);
+  background-color: rgba(223, 197, 254, 0.9); /* More opaque to prevent background bleed-through */
 }
 
 .text-truncate {
@@ -76,5 +72,3 @@ body {
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
-
-

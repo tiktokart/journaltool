@@ -19,11 +19,11 @@ export const EmotionalClustersControl = ({
   const { t } = useLanguage();
   
   return (
-    <Card className="border border-border shadow-md bg-card">
+    <Card className="border border-border shadow-md bg-light-lavender">
       <CardHeader>
-        <CardTitle className="flex items-center text-xl">
-          <Brain className="h-5 w-5 mr-2 text-primary" />
-          {t("emotionalClusters")}
+        <CardTitle className="flex items-center text-xl text-orange">
+          <Brain className="h-5 w-5 mr-2 text-orange" />
+          Emotional Clusters
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -32,7 +32,7 @@ export const EmotionalClustersControl = ({
             {t("emotionalClustersDescription")}
           </p>
           <div className="flex items-center gap-4">
-            <span className="text-sm font-medium">4</span>
+            <span className="text-sm font-medium text-black">4</span>
             <Slider 
               value={[visibleClusterCount]} 
               min={4}
@@ -46,8 +46,8 @@ export const EmotionalClustersControl = ({
               }}
               className="flex-1"
             />
-            <span className="text-sm font-medium">12</span>
-            <span className="bg-primary/10 text-primary px-2 py-1 rounded-md text-sm font-medium ml-2">
+            <span className="text-sm font-medium text-black">12</span>
+            <span className="bg-yellow text-orange px-2 py-1 rounded-md text-sm font-medium ml-2">
               {visibleClusterCount}
             </span>
           </div>

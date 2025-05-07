@@ -420,7 +420,7 @@ const Dashboard = () => {
             <JournalCache onSelectEntry={handleCachedEntrySelect} />
           </div>
           
-          {/* Document Analysis Section - Now with light lavender background */}
+          {/* Document Analysis Section - With light lavender background */}
           <Card className="border border-border shadow-md bg-light-lavender text-black">
             <CardHeader>
               <CardTitle className="text-orange">Document Analysis with Data Models</CardTitle>

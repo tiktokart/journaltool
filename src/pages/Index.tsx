@@ -18,6 +18,7 @@ export default function Index() {
   const { t } = useLanguage();
   const [points, setPoints] = useState<Point[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const [showMHAStats, setShowMHAStats] = useState(false);
 
   useEffect(() => {
     // Generate mock data for the visualization
@@ -35,6 +36,19 @@ export default function Index() {
       positive: 65,
       neutral: 25,
       negative: 10,
+    },
+  };
+  
+  // Mock data for Mental Health America statistics
+  const mhaStatisticsData = {
+    overallSentiment: {
+      score: 0.48,
+      label: "Neutral",
+    },
+    distribution: {
+      positive: 34, // Access to care data
+      neutral: 42, // Adults with mental illness data
+      negative: 24, // Youth with severe depression data
     },
   };
 
@@ -66,7 +80,7 @@ export default function Index() {
 
         {/* Feature highlights with icons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="border-0 shadow-md bg-yellow-soft">
+          <Card className="border-0 shadow-md bg-light-lavender">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
                 <Target className="h-5 w-5 mr-2 text-purple" />
@@ -80,7 +94,7 @@ export default function Index() {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-md bg-yellow-soft">
+          <Card className="border-0 shadow-md bg-light-lavender">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
                 <Book className="h-5 w-5 mr-2 text-purple" />
@@ -94,7 +108,7 @@ export default function Index() {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-md bg-yellow-soft">
+          <Card className="border-0 shadow-md bg-light-lavender">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
                 <BarChart className="h-5 w-5 mr-2 text-purple" />
@@ -109,28 +123,48 @@ export default function Index() {
           </Card>
         </div>
 
-        {/* Mental health statistics */}
+        {/* Mental Health Statistics */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold mb-6 text-center text-black">
-            {t("mentalHealthInsights")}
-          </h2>
-          <SentimentOverview data={mockSentimentData} sourceDescription={t("demoDataDisclaimer")} />
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-black">
+              Mental Health Insights
+            </h2>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowMHAStats(!showMHAStats)}
+              className="bg-light-lavender text-orange border-orange"
+            >
+              {showMHAStats ? "Show Demo Data" : "Show MHA Statistics"}
+            </Button>
+          </div>
+          
+          {showMHAStats ? (
+            <SentimentOverview 
+              data={mhaStatisticsData} 
+              sourceDescription="Data from Mental Health America's State and County Dashboard" 
+            />
+          ) : (
+            <SentimentOverview 
+              data={mockSentimentData} 
+              sourceDescription="Demo data for illustration purposes" 
+            />
+          )}
         </div>
 
         {/* 3D Visualization */}
         <div className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-center text-black">
-            {t("interactiveVisualization")}
+            Interactive Visualization
           </h2>
           <Card className="border-0 shadow-md overflow-hidden">
             <CardContent className="p-0">
-              <div className="h-[500px] w-full bg-yellow-soft">
+              <div className="h-[500px] w-full bg-light-lavender">
                 <DocumentEmbedding 
                   points={points}
                   onPointClick={setSelectedPoint}
                   isInteractive={true}
                   depressedJournalReference={false}
-                  sourceDescription={t("demoVisualizationDisclaimer")}
+                  sourceDescription="Demo visualization using sample data"
                 />
               </div>
             </CardContent>
@@ -141,13 +175,13 @@ export default function Index() {
         <div className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-center text-black flex items-center justify-center">
             <GitCompareArrows className="h-6 w-6 mr-2 text-purple" />
-            {t("wordComparison")}
+            Word Comparison
           </h2>
           <WordComparisonController 
             points={points}
             selectedPoint={selectedPoint}
             calculateRelationship={calculateRelationship}
-            sourceDescription={t("demoComparisonDisclaimer")}
+            sourceDescription="Demo comparison using sample data"
           />
         </div>
       </div>
