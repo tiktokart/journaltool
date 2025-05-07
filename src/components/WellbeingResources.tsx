@@ -103,7 +103,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         id: 'anger-management',
         title: 'Healthy Anger Management',
         steps: [
-          'Recognize when you're becoming angry (notice physical sensations)',
+          "Recognize when you're becoming angry (notice physical sensations)",
           'Take a timeout – remove yourself from the triggering situation if possible',
           'Use deep breathing to calm your physiological response',
           'Express your feelings using "I" statements rather than blame',
