@@ -34,6 +34,15 @@ body {
   background-color: #e56e00;
 }
 
+/* New pastel colors for dashboard */
+.bg-lavender {
+  background-color: #E5DEFF;
+}
+
+.bg-muted-orange {
+  background-color: rgba(254, 198, 161, 0.3);
+}
+
 .text-truncate {
   overflow: hidden;
   text-overflow: ellipsis;

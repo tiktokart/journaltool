@@ -403,7 +403,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-lavender">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
@@ -421,7 +421,7 @@ const Dashboard = () => {
           </div>
           
           {/* Document Analysis Section - Keep as is */}
-          <Card className="border border-border shadow-md bg-card">
+          <Card className="border border-border shadow-md bg-muted-orange text-black">
             <CardHeader>
               <CardTitle>Document Analysis with Data Models</CardTitle>
             </CardHeader>
@@ -431,18 +431,18 @@ const Dashboard = () => {
                   <FileUploader onFilesAdded={handleFileUpload} />
                 </div>
                 <div className="flex flex-col gap-4">
-                  <div className="p-4 bg-muted rounded-lg">
+                  <div className="p-4 bg-white/30 rounded-lg">
                     <h3 className="font-medium mb-2">Selected File</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-black">
                       {file ? file.name : "No file selected"}
                     </p>
                     {file && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-black mt-1">
                         {(file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     )}
                     {pdfText && pdfText.length > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-black mt-1">
                         {pdfText.split(/\s+/).length} words extracted
                       </p>
                     )}
@@ -518,7 +518,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4">
+              <div className="mt-8 mb-4 bg-muted-orange rounded-lg p-4 text-yellow">
                 <TextEmotionViewer 
                   pdfText={pdfText}
                   embeddingPoints={sentimentData.embeddingPoints}
@@ -526,13 +526,13 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4">
+              <div className="mt-8 mb-4 bg-muted-orange rounded-lg p-4 text-yellow">
                 <WellbeingResources 
                   embeddingPoints={sentimentData.embeddingPoints}
                 />
               </div>
               
-              <div className="mt-8 mb-4">
+              <div className="mt-8 mb-4 bg-muted-orange rounded-lg p-4 text-yellow">
                 <WordComparisonController 
                   points={sentimentData.embeddingPoints}
                   selectedPoint={selectedPoint}
