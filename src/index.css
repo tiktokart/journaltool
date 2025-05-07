@@ -7,7 +7,7 @@
 
 @layer base {
   :root {
-    --background: 269 50% 10%;
+    --background: 0 0% 100%;
     --foreground: 46 91% 67%;
 
     --card: 269 50% 15%;
@@ -54,7 +54,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white text-foreground;
     font-family: 'Inter', sans-serif;
   }
   

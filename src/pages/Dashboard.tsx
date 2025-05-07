@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUploader } from "@/components/FileUploader";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
-import { Loader2, FileText } from "lucide-react";
+import { Loader2, FileText, Save } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
@@ -404,11 +403,14 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
+          {/* Life Plan Section - Moved above Journal Input */}
+          <LifePlanSection journalText={journalText} />
+          
           {/* Journal Input Section */}
           <div className="grid md:grid-cols-2 gap-6">
             <JournalInput 
@@ -418,9 +420,7 @@ const Dashboard = () => {
             <JournalCache onSelectEntry={handleCachedEntrySelect} />
           </div>
           
-          {/* Life Plan Section */}
-          <LifePlanSection journalText={journalText} />
-          
+          {/* Document Analysis Section - Keep as is */}
           <Card className="border border-border shadow-md bg-card">
             <CardHeader>
               <CardTitle>Document Analysis with Data Models</CardTitle>
