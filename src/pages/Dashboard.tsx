@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUploader } from "@/components/FileUploader";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
-import { Loader2, FileText } from "lucide-react";
+import { Loader2, FileText, Save } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
@@ -363,6 +362,32 @@ const Dashboard = () => {
     }
   };
 
+  // New function to save the current journal entry
+  const saveCurrentJournal = () => {
+    if (!pdfText || pdfText.trim().length === 0) {
+      toast.error("No journal content to save");
+      return;
+    }
+    
+    try {
+      const entry = {
+        id: uuidv4(),
+        text: pdfText,
+        date: new Date().toISOString()
+      };
+      
+      const storedEntries = localStorage.getItem('journalEntries');
+      const entries = storedEntries ? JSON.parse(storedEntries) : [];
+      entries.push(entry);
+      
+      localStorage.setItem('journalEntries', JSON.stringify(entries));
+      toast.success("Journal entry saved to your collection");
+    } catch (error) {
+      console.error('Error saving journal entry:', error);
+      toast.error("Failed to save journal entry");
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -441,7 +466,7 @@ const Dashboard = () => {
                 wordCount={sentimentData.wordCount}
               />
               
-              <DocumentSummary summary={sentimentData.summary} />
+              <DocumentSummary summary={sentimentData.summary || "Analysis complete."} />
               
               <AnalysisTabs 
                 activeTab={activeTab}
@@ -481,6 +506,12 @@ const Dashboard = () => {
               </div>
               
               <div className="mt-8 mb-4">
+                <WellbeingResources 
+                  embeddingPoints={sentimentData.embeddingPoints}
+                />
+              </div>
+              
+              <div className="mt-8 mb-4">
                 <WordComparisonController 
                   points={sentimentData.embeddingPoints}
                   selectedPoint={selectedPoint}
@@ -489,11 +520,18 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8">
-                <WellbeingResources embeddingPoints={sentimentData.embeddingPoints} />
+              <div className="flex items-center gap-3 mt-8">
+                <PdfExport sentimentData={sentimentData} />
+                
+                <Button 
+                  onClick={saveCurrentJournal}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Save to Journal Collection
+                </Button>
               </div>
-              
-              <PdfExport sentimentData={sentimentData} />
             </div>
           )}
         </div>

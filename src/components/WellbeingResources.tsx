@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Point } from '@/types/embedding';
-import { Heart, HelpCircle, AlertCircle } from 'lucide-react';
+import { Heart, HelpCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WellbeingResourcesProps {
@@ -17,6 +17,7 @@ interface SuggestionItem {
   steps: string[];
   relatedEmotions: string[];
   priority: number;
+  triggeredByWords?: string[]; // Words from the text that triggered this suggestion
 }
 
 export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps) => {
@@ -50,12 +51,21 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     }, {});
 
     // Extract unique words from the embedding points
-    const contentWords = embeddingPoints.map(point => point.word.toLowerCase());
+    const contentWords = embeddingPoints.map(point => ({
+      word: point.word.toLowerCase(),
+      point: point
+    }));
     
     // Check if any of the embedding points contain negative emotion keywords
     const foundNegativeKeywords = negativeKeywords.filter(keyword => 
-      contentWords.includes(keyword)
+      contentWords.some(content => content.word === keyword)
     );
+
+    // Store the mapping of words to points for reference
+    const wordToPointMap = contentWords.reduce<Record<string, Point>>((acc, { word, point }) => {
+      acc[word] = point;
+      return acc;
+    }, {});
 
     // Define our wellbeing suggestions with their related emotions
     const allSuggestions: SuggestionItem[] = [
@@ -128,7 +138,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
       }
     ];
 
-    // Filter suggestions based on found negative keywords
+    // Filter suggestions based on found negative keywords and track which words triggered them
     let activeSuggestions: SuggestionItem[] = [];
     
     if (foundNegativeKeywords.length > 0) {
@@ -140,13 +150,25 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         
         // Add any new matching suggestions to our active suggestions
         matchingSuggestions.forEach(suggestion => {
-          if (!activeSuggestions.some(s => s.id === suggestion.id)) {
+          const existingSuggestion = activeSuggestions.find(s => s.id === suggestion.id);
+          
+          if (!existingSuggestion) {
+            // Create a new suggestion with the triggering words
             activeSuggestions.push({
               ...suggestion,
               relatedEmotions: suggestion.relatedEmotions.filter(emotion => 
                 foundNegativeKeywords.includes(emotion)
-              )
+              ),
+              triggeredByWords: [keyword]
             });
+          } else {
+            // Update existing suggestion with additional trigger words
+            if (!existingSuggestion.triggeredByWords?.includes(keyword)) {
+              existingSuggestion.triggeredByWords = [
+                ...(existingSuggestion.triggeredByWords || []),
+                keyword
+              ];
+            }
           }
         });
       });
@@ -197,6 +219,22 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
                 </div>
               </AccordionTrigger>
               <AccordionContent>
+                {suggestion.triggeredByWords && suggestion.triggeredByWords.length > 0 && (
+                  <div className="mb-4 bg-muted/50 p-2 rounded-md flex flex-col gap-1">
+                    <p className="text-xs text-muted-foreground flex items-center">
+                      <ArrowRight className="h-3 w-3 mr-1" />
+                      Triggered by words in your text:
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {suggestion.triggeredByWords.map((word, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs">
+                          "{word}"
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <ol className="list-decimal pl-5 space-y-2 text-sm">
                   {suggestion.steps.map((step, i) => (
                     <li key={i} className="pl-1">{step}</li>
