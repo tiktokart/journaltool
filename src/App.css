@@ -1,4 +1,5 @@
 
+
 body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -43,6 +44,10 @@ body {
   background-color: rgba(254, 198, 161, 0.3);
 }
 
+.bg-light-lavender {
+  background-color: rgba(229, 222, 255, 0.3);
+}
+
 .text-truncate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -72,3 +77,4 @@ body {
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
+

@@ -136,4 +136,4 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
       </Card>
     </div>
   );
-};
+}

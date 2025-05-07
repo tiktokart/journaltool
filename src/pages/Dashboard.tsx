@@ -421,7 +421,7 @@ const Dashboard = () => {
           </div>
           
           {/* Document Analysis Section - Keep as is */}
-          <Card className="border border-border shadow-md bg-muted-orange text-black">
+          <Card className="border border-border shadow-md bg-light-lavender text-black">
             <CardHeader>
               <CardTitle>Document Analysis with Data Models</CardTitle>
             </CardHeader>
@@ -518,7 +518,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-muted-orange rounded-lg p-4 text-yellow">
+              <div className="mt-8 mb-4 bg-light-lavender rounded-lg p-4 text-black">
                 <TextEmotionViewer 
                   pdfText={pdfText}
                   embeddingPoints={sentimentData.embeddingPoints}
@@ -526,13 +526,13 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-muted-orange rounded-lg p-4 text-yellow">
+              <div className="mt-8 mb-4 bg-light-lavender rounded-lg p-4 text-black">
                 <WellbeingResources 
                   embeddingPoints={sentimentData.embeddingPoints}
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-muted-orange rounded-lg p-4 text-yellow">
+              <div className="mt-8 mb-4 bg-light-lavender rounded-lg p-4 text-black">
                 <WordComparisonController 
                   points={sentimentData.embeddingPoints}
                   selectedPoint={selectedPoint}

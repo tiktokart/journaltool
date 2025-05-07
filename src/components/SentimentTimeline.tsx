@@ -25,7 +25,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
     : 0.5;
 
   return (
-    <Card className="border-0 shadow-md w-full">
+    <Card className="border-0 shadow-md w-full bg-white">
       <CardHeader>
         <CardTitle>{t("sentimentTimeline")}</CardTitle>
       </CardHeader>
