@@ -19,7 +19,7 @@ export const EmotionalClustersControl = ({
   const { t } = useLanguage();
   
   return (
-    <Card className="border border-border shadow-md bg-light-lavender">
+    <Card className="border border-border shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
       <CardHeader>
         <CardTitle className="flex items-center text-xl text-orange">
           <Brain className="h-5 w-5 mr-2 text-orange" />
@@ -28,7 +28,7 @@ export const EmotionalClustersControl = ({
       </CardHeader>
       <CardContent>
         <div className="mb-6">
-          <p className="text-sm text-muted-foreground mb-2">
+          <p className="text-sm text-black mb-2">
             {t("emotionalClustersDescription")}
           </p>
           <div className="flex items-center gap-4">

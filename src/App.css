@@ -34,13 +34,13 @@ body {
   background-color: #e56e00;
 }
 
-/* Consistent lavender colors */
+/* Consistent light lavender color */
 .bg-lavender {
   background-color: #DFC5FE;
 }
 
 .bg-light-lavender {
-  background-color: rgba(223, 197, 254, 0.9); /* More opaque to prevent background bleed-through */
+  background-color: #DFC5FE;
 }
 
 .text-truncate {
