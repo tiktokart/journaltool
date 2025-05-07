@@ -1,12 +1,14 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { FileText, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Point } from "@/types/embedding";
 import { getEmotionColor } from "@/utils/embeddingUtils";
+import { v4 as uuidv4 } from 'uuid';
 
 interface PdfExportProps {
   sentimentData: any;
@@ -278,6 +280,32 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
     }
   };
   
+  // Function to save the current journal entry
+  const saveCurrentJournal = () => {
+    if (!sentimentData || !sentimentData.pdfText || sentimentData.pdfText.trim().length === 0) {
+      toast.error("No journal content to save");
+      return;
+    }
+    
+    try {
+      const entry = {
+        id: uuidv4(),
+        text: sentimentData.pdfText,
+        date: new Date().toISOString()
+      };
+      
+      const storedEntries = localStorage.getItem('journalEntries');
+      const entries = storedEntries ? JSON.parse(storedEntries) : [];
+      entries.push(entry);
+      
+      localStorage.setItem('journalEntries', JSON.stringify(entries));
+      toast.success("Journal entry saved to your collection");
+    } catch (error) {
+      console.error('Error saving journal entry:', error);
+      toast.error("Failed to save journal entry");
+    }
+  };
+  
   // Helper function to print a line with emotional highlighting
   const printLineWithEmotions = (
     doc: jsPDF, 
@@ -344,13 +372,24 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
           <p className="text-sm text-muted-foreground mb-4">
             {t("exportDescription")}
           </p>
-          <Button 
-            onClick={exportToPdf} 
-            className="self-start"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            {t("exportToPdf")}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={exportToPdf} 
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              {t("exportToPdf")}
+            </Button>
+            
+            <Button 
+              onClick={saveCurrentJournal}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save to Journal Collection
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
