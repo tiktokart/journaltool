@@ -1,8 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Info, AlertCircle, CheckCircle, HelpCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { Info } from "lucide-react"; 
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SentimentOverviewProps {
@@ -18,121 +17,117 @@ interface SentimentOverviewProps {
     };
     fileName?: string;
   };
-  sourceDescription?: string; // Add this to show where data came from
+  sourceDescription?: string;
 }
 
 export const SentimentOverview = ({ data, sourceDescription }: SentimentOverviewProps) => {
   const { t } = useLanguage();
-  const { overallSentiment, distribution, fileName } = data;
   
-  // Prepare data for pie chart
-  const pieData = [
-    { name: t("positive"), value: distribution.positive, color: "#27AE60" },
-    { name: t("neutral"), value: distribution.neutral, color: "#3498DB" },
-    { name: t("negative"), value: distribution.negative, color: "#E74C3C" },
-  ];
-
-  // Determine sentiment color
-  const getSentimentColor = (score: number) => {
+  const { score, label } = data.overallSentiment;
+  const { positive, neutral, negative } = data.distribution;
+  
+  // Generate sentiment color based on score
+  const getSentimentColor = () => {
     if (score >= 0.6) return "bg-sentiment-positive";
     if (score >= 0.4) return "bg-sentiment-neutral";
     return "bg-sentiment-negative";
   };
-
-  const sentimentColor = getSentimentColor(overallSentiment.score);
   
-  // Translate sentiment label
-  const getTranslatedSentiment = (label: string): string => {
-    const key = label.toLowerCase().replace(/\s+/g, '');
-    if (t(key)) {
-      return t(key);
-    }
-    return label;
+  // Generate sentiment icon based on label
+  const getSentimentIcon = () => {
+    if (label === "Positive") return <CheckCircle className="h-8 w-8 text-green-500" />;
+    if (label === "Negative") return <AlertCircle className="h-8 w-8 text-red-500" />;
+    return <HelpCircle className="h-8 w-8 text-blue-500" />;
   };
-
+  
+  const getScoreLabel = () => {
+    if (score >= 0.75) return t("veryPositive");
+    if (score >= 0.6) return t("positive");
+    if (score >= 0.45) return t("neutral");
+    if (score >= 0.3) return t("negative");
+    return t("veryNegative");
+  };
+  
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card className="border-0 shadow-md md:col-span-1">
+    <div className="grid gap-4 md:grid-cols-2">
+      <Card className="border-0 shadow-md bg-light-lavender">
         <CardHeader>
           <CardTitle>{t("overallSentiment")}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center">
-          <div className="w-32 h-32 rounded-full border-8 border-muted flex items-center justify-center mb-6">
-            <div className={`w-24 h-24 rounded-full ${sentimentColor} flex items-center justify-center text-white`}>
-              <span className="text-2xl font-bold">
-                {Math.round(overallSentiment.score * 100)}%
-              </span>
+        <CardContent>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              {getSentimentIcon()}
+              <div className="ml-4">
+                <p className="font-semibold text-lg">{getScoreLabel()}</p>
+                <p className="text-muted-foreground">{t("scoreLabel")}: {(score * 100).toFixed(0)}%</p>
+              </div>
+            </div>
+            <div className={`${getSentimentColor()} h-14 w-14 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg`}>
+              {(score * 100).toFixed(0)}
             </div>
           </div>
-
-          <h3 className="text-2xl font-bold mb-2">{getTranslatedSentiment(overallSentiment.label)}</h3>
-          <p className="text-sm text-muted-foreground text-center">
-            {fileName ? (
-              <>{t("documentWithName")} <strong>{fileName}</strong> {t("hasSentiment")} {getTranslatedSentiment(overallSentiment.label.toLowerCase())} {t("sentiment")}</>
-            ) : (
-              <>{t("documentSentiment")} {getTranslatedSentiment(overallSentiment.label.toLowerCase())} {t("sentiment")}</>
-            )}
-          </p>
+          
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+            <div 
+              className={`${getSentimentColor()} h-2.5 rounded-full transition-all duration-500 ease-out`} 
+              style={{ width: `${score * 100}%` }}
+            ></div>
+          </div>
+          
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{t("negative")}</span>
+            <span>{t("neutral")}</span>
+            <span>{t("positive")}</span>
+          </div>
+          
+          {sourceDescription && (
+            <div className="mt-4 flex items-center text-sm text-muted-foreground">
+              <Info className="h-4 w-4 mr-1" />
+              <p>{sourceDescription}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      <Card className="border-0 shadow-md md:col-span-2">
+      
+      <Card className="border-0 shadow-md bg-light-lavender">
         <CardHeader>
           <CardTitle>{t("sentimentDistribution")}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col md:flex-row items-center gap-8">
-          <div className="w-full md:w-1/2 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value) => [`${value}%`, t("sentiment")]}
-                  contentStyle={{ 
-                    borderRadius: '0.5rem',
-                    border: 'none',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          
-          <div className="w-full md:w-1/2 space-y-4">
-            {pieData.map((item) => (
-              <div key={item.name} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">{item.name}</span>
-                  <span className="text-sm text-muted-foreground">{item.value}%</span>
-                </div>
-                <Progress 
-                  value={item.value} 
-                  className="h-2"
-                  style={{ backgroundColor: `${item.color}40` }} 
-                />
+        <CardContent>
+          <div className="space-y-6">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium">{t("positive")}</span>
+                <span className="text-sm text-muted-foreground">{positive}%</span>
               </div>
-            ))}
-          </div>
-        </CardContent>
-        {sourceDescription && (
-          <div className="px-6 pb-4 text-sm text-center text-muted-foreground">
-            <div className="flex items-center justify-center">
-              <Info className="h-4 w-4 mr-1" />
-              {sourceDescription}
+              <Progress value={positive} className="h-2 bg-gray-200" indicatorClassName="bg-sentiment-positive" />
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium">{t("neutral")}</span>
+                <span className="text-sm text-muted-foreground">{neutral}%</span>
+              </div>
+              <Progress value={neutral} className="h-2 bg-gray-200" indicatorClassName="bg-sentiment-neutral" />
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium">{t("negative")}</span>
+                <span className="text-sm text-muted-foreground">{negative}%</span>
+              </div>
+              <Progress value={negative} className="h-2 bg-gray-200" indicatorClassName="bg-sentiment-negative" />
             </div>
           </div>
-        )}
+          
+          {sourceDescription && (
+            <div className="mt-4 flex items-center text-sm text-muted-foreground">
+              <Info className="h-4 w-4 mr-1" />
+              <p>{sourceDescription}</p>
+            </div>
+          )}
+        </CardContent>
       </Card>
     </div>
   );

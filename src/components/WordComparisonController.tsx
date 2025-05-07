@@ -132,7 +132,7 @@ export const WordComparisonController = ({
   };
 
   return (
-    <Card className="border border-border shadow-md bg-card" key={`word-comparison-card-${forceUpdate}`}>
+    <Card className="border border-border shadow-md bg-light-lavender" key={`word-comparison-card-${forceUpdate}`}>
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-2">
           <CardTitle className="flex items-center text-xl">

@@ -166,7 +166,7 @@ export const AnalysisTabs = ({
         {!hasEmbeddingData ? (
           <DataMissingFallback tabName={t("embedding")} />
         ) : (
-          <Card className="border border-border shadow-md overflow-hidden bg-card">
+          <Card className="border border-border shadow-md overflow-hidden bg-light-lavender">
             <CardHeader className="z-10">
               <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
                 <CardTitle className="flex items-center">

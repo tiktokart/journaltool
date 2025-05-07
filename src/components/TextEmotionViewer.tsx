@@ -115,7 +115,7 @@ export const TextEmotionViewer = ({
 
   if (!pdfText || pdfText.trim().length === 0) {
     return (
-      <Card className="border border-border shadow-md">
+      <Card className="border border-border shadow-md bg-light-lavender">
         <CardHeader>
           <CardTitle className="flex items-center text-xl">
             <Text className="h-5 w-5 mr-2 text-primary" />
@@ -130,7 +130,7 @@ export const TextEmotionViewer = ({
   }
 
   return (
-    <Card className="border border-border shadow-md">
+    <Card className="border border-border shadow-md bg-light-lavender">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
           <CardTitle className="flex items-center text-xl">
