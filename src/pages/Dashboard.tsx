@@ -18,6 +18,9 @@ import { PdfExport } from "@/components/PdfExport";
 import { TextEmotionViewer } from "@/components/TextEmotionViewer";
 import { analyzeTextWithGemma3 } from "@/utils/gemma3SentimentAnalysis";
 import { WellbeingResources } from "@/components/WellbeingResources";
+import { JournalInput } from "@/components/JournalInput";
+import { JournalCache } from "@/components/JournalCache";
+import { v4 as uuidv4 } from 'uuid';
 
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -34,6 +37,22 @@ const Dashboard = () => {
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   const [visibleClusterCount, setVisibleClusterCount] = useState(8);
   const [analysisMethod, setAnalysisMethod] = useState<"bert" | "gemma3">("bert");
+  const [journalText, setJournalText] = useState<string>("");
+
+  // Load analysis method preference
+  useEffect(() => {
+    const storedMethod = localStorage.getItem("analysisMethod");
+    if (storedMethod === "gemma3" || storedMethod === "bert") {
+      setAnalysisMethod(storedMethod as "bert" | "gemma3");
+    }
+  }, []);
+
+  // Save analysis method preference
+  useEffect(() => {
+    if (analysisMethod) {
+      localStorage.setItem("analysisMethod", analysisMethod);
+    }
+  }, [analysisMethod]);
 
   const handleFileUpload = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
@@ -54,9 +73,45 @@ const Dashboard = () => {
     }
   };
 
+  const handleJournalEntrySubmit = (text: string) => {
+    // Set the text as the current PDF text
+    setPdfText(text);
+    setJournalText(text);
+    
+    // Create a virtual "file" for the journal entry
+    const fileName = `Journal_Entry_${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
+    setFile(new File([text], fileName, { type: "text/plain" }));
+    
+    // Clear existing results
+    if (sentimentData) {
+      setSentimentData(null);
+      setSelectedPoint(null);
+      setAnalysisComplete(false);
+    }
+    
+    // Save to local storage
+    try {
+      const entry = {
+        id: uuidv4(),
+        text: text,
+        date: new Date().toISOString()
+      };
+      
+      const storedEntries = localStorage.getItem('journalEntries');
+      const entries = storedEntries ? JSON.parse(storedEntries) : [];
+      entries.push(entry);
+      
+      localStorage.setItem('journalEntries', JSON.stringify(entries));
+      toast.success("Journal entry saved");
+    } catch (error) {
+      console.error('Error saving journal entry:', error);
+      toast.error("Failed to save journal entry");
+    }
+  };
+
   const analyzeSentiment = async () => {
-    if (!file) {
-      toast.error("Please upload a PDF file first");
+    if (!file && !pdfText) {
+      toast.error("Please upload a PDF file or enter journal text first");
       return;
     }
 
@@ -66,8 +121,8 @@ const Dashboard = () => {
     
     try {
       toast.info("Starting document analysis with BERT...");
-      const results = await analyzePdfContent(file, pdfText);
-      console.log("Analysis results:", results); // Debug the results
+      const results = await analyzePdfContent(file!, pdfText);
+      console.log("BERT Analysis results:", results);
       
       // Add pdfText to the results object for PDF export
       const resultsWithText = {
@@ -89,7 +144,7 @@ const Dashboard = () => {
       setUniqueWords(words);
       
       if (results.pdfTextLength > 0) {
-        toast.success(`BERT analysis completed! Analyzed ${results.pdfTextLength} characters of text from your PDF.`);
+        toast.success(`BERT analysis completed! Analyzed ${results.pdfTextLength} characters of text.`);
       } else {
         toast.success("BERT document analysis completed! All tabs are now available.");
       }
@@ -102,13 +157,13 @@ const Dashboard = () => {
   };
 
   const analyzeWithGemma3 = async () => {
-    if (!file) {
-      toast.error("Please upload a PDF file first");
+    if (!file && !pdfText) {
+      toast.error("Please upload a PDF file or enter journal text first");
       return;
     }
 
     if (!pdfText || pdfText.trim().length === 0) {
-      toast.error("No readable text found in the PDF");
+      toast.error("No readable text found to analyze");
       return;
     }
 
@@ -121,7 +176,7 @@ const Dashboard = () => {
       
       const gemma3Results = await analyzeTextWithGemma3(pdfText);
       
-      // Extract significant words from the PDF text for visualization
+      // Extract significant words from the text for visualization
       const significantWords = pdfText
         .toLowerCase()
         .replace(/[^\w\s]/g, ' ')
@@ -169,147 +224,22 @@ const Dashboard = () => {
         };
       });
       
-      // Extract common word phrases for key phrases analysis
-      const keyPhrases = [];
-      const wordFrequency = new Map();
-      
-      // Count word frequency in the document
-      pdfText.toLowerCase()
-        .replace(/[^\w\s]/g, ' ')
-        .split(/\s+/)
-        .filter(word => word.length > 3)
-        .forEach(word => {
-          wordFrequency.set(word, (wordFrequency.get(word) || 0) + 1);
-        });
-      
-      // Convert word frequency to key phrases with sentiment
-      const sortedWords = [...wordFrequency.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 30);
-      
-      sortedWords.forEach(([word, count]) => {
-        // Use random sentiment based on global sentiment score
-        const random = Math.random();
-        let sentiment: "positive" | "neutral" | "negative";
-        
-        if (gemma3Results.sentiment > 0.6) {
-          // For positive documents, more positive words
-          sentiment = random < 0.6 ? "positive" : (random < 0.8 ? "neutral" : "negative");
-        } else if (gemma3Results.sentiment < 0.4) {
-          // For negative documents, more negative words
-          sentiment = random < 0.6 ? "negative" : (random < 0.8 ? "neutral" : "positive");
-        } else {
-          // For neutral documents, balanced distribution
-          sentiment = random < 0.33 ? "positive" : (random < 0.66 ? "neutral" : "negative");
-        }
-        
-        keyPhrases.push({
-          text: word,
-          sentiment,
-          count: count
-        });
-      });
-      
-      // Create themes/entities from frequent words or phrases
-      const entities = [];
-      const potentialThemes = sortedWords
-        .filter(([word]) => word.length > 4)
-        .slice(0, 15)
-        .map(([word]) => word);
-      
-      // Select random themes from potential themes
-      const themeCount = Math.min(8, potentialThemes.length);
-      const shuffled = [...potentialThemes].sort(() => 0.5 - Math.random());
-      const selectedThemes = shuffled.slice(0, themeCount);
-      
-      selectedThemes.forEach(theme => {
-        const themeSentiment = Math.random() * 0.4 + (gemma3Results.sentiment - 0.2);
-        entities.push({
-          name: theme.charAt(0).toUpperCase() + theme.slice(1),
-          score: Math.max(0, Math.min(1, themeSentiment)),
-          mentions: Math.floor(Math.random() * 15) + 5
-        });
-      });
-      
-      // Generate timeline data based on text structure
-      const pageCount = Math.max(5, Math.ceil(pdfText.length / 2000));
-      const timeline = [];
-      let prevScore = gemma3Results.sentiment * 0.8;
-      
-      for (let i = 1; i <= pageCount; i++) {
-        const volatility = 0.1;
-        const trend = (gemma3Results.sentiment - prevScore) * 0.3;
-        const randomChange = (Math.random() * 2 - 1) * volatility;
-        let newScore = prevScore + randomChange + trend;
-        newScore = Math.min(1, Math.max(0, newScore));
-        
-        timeline.push({ page: i, score: newScore });
-        prevScore = newScore;
-      }
-      
       // Calculate sentiment distribution
       const positivePercentage = Math.round(gemma3Results.sentiment * 100);
       const negativePercentage = Math.round((1 - gemma3Results.sentiment) * 0.5 * 100);
       const neutralPercentage = 100 - positivePercentage - negativePercentage;
       
-      // Generate a summary based on the document content
-      let summary = "";
-      const sentences = pdfText
-        .replace(/([.!?])\s*/g, "$1|")
-        .split("|")
-        .filter(s => s.trim().length > 10 && s.trim().length < 250)
-        .map(s => s.trim());
-      
-      if (sentences.length > 0) {
-        // Score sentences based on keywords and position
-        const scoredSentences = sentences.map((sentence, index) => {
-          const normalizedPosition = 1 - (index / sentences.length);
-          const lowerSentence = sentence.toLowerCase();
-          
-          // Check if the sentence contains any of the top words
-          let keywordScore = 0;
-          sortedWords.slice(0, 10).forEach(([word]) => {
-            if (lowerSentence.includes(word)) {
-              keywordScore += 1;
-            }
-          });
-          
-          const score = (keywordScore * 0.7) + (normalizedPosition * 0.3);
-          return { sentence, score };
-        });
-        
-        scoredSentences.sort((a, b) => b.score - a.score);
-        
-        // Select top sentences for summary
-        const summaryLength = Math.min(5, Math.max(2, Math.floor(sentences.length / 10)));
-        const topSentences = scoredSentences.slice(0, summaryLength);
-        
-        // Reorder sentences to match their original sequence
-        topSentences.sort((a, b) => {
-          return sentences.indexOf(a.sentence) - sentences.indexOf(b.sentence);
-        });
-        
-        summary = topSentences.map(s => s.sentence).join(" ");
-        
-        if (summary.length > 500) {
-          summary = summary.substring(0, 497) + "...";
-        }
-      } else {
-        // Fallback summary if no good sentences are found
-        const dominantEmotion = Object.entries(gemma3Results.emotionalTones)
-          .sort((a, b) => b[1] - a[1])[0][0];
-        
-        summary = `This document has a predominant ${dominantEmotion.toLowerCase()} emotional tone with an overall sentiment score of ${(gemma3Results.sentiment * 10).toFixed(1)}/10. The analysis reveals that the content is ${gemma3Results.sentiment >= 0.5 ? "generally positive" : "somewhat negative"} in nature.`;
-      }
+      const fileName = file ? file.name : `Journal_Entry_${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
+      const fileSize = file ? file.size : new Blob([pdfText]).size;
       
       const results = {
-        fileName: file.name,
-        fileSize: file.size,
+        fileName,
+        fileSize,
         wordCount: pdfText.split(/\s+/).length,
         pdfTextLength: pdfText.length,
-        pdfText: pdfText, // Add pdfText to the results for PDF export
+        pdfText: pdfText,
         sentiment: gemma3Results.sentiment,
-        summary: summary,
+        summary: gemma3Results.summary || "Analysis complete with Gemma 3 model.",
         embeddingPoints,
         sourceDescription: "Analyzed with Gemma 3 Model",
         overallSentiment: {
@@ -321,9 +251,9 @@ const Dashboard = () => {
           neutral: neutralPercentage,
           negative: negativePercentage
         },
-        timeline,
-        entities,
-        keyPhrases
+        timeline: gemma3Results.timeline || [],
+        entities: gemma3Results.entities || [],
+        keyPhrases: gemma3Results.keyPhrases || []
       };
       
       console.log("Gemma 3 analysis results:", results);
@@ -417,19 +347,21 @@ const Dashboard = () => {
     };
   };
 
-  useEffect(() => {
-    const storedMethod = localStorage.getItem("analysisMethod");
-    if (storedMethod === "gemma3" || storedMethod === "bert") {
-      setAnalysisMethod(storedMethod as "bert" | "gemma3");
+  const handleCachedEntrySelect = (text: string) => {
+    setPdfText(text);
+    setJournalText(text);
+    
+    // Create a virtual "file" for the journal entry
+    const fileName = `Journal_Entry_${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
+    setFile(new File([text], fileName, { type: "text/plain" }));
+    
+    // Clear existing results
+    if (sentimentData) {
+      setSentimentData(null);
+      setSelectedPoint(null);
+      setAnalysisComplete(false);
     }
-  }, []);
-
-  // Save the current analysis method to localStorage when it changes
-  useEffect(() => {
-    if (analysisMethod) {
-      localStorage.setItem("analysisMethod", analysisMethod);
-    }
-  }, [analysisMethod]);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -437,6 +369,12 @@ const Dashboard = () => {
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
+          {/* Journal Input Section */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <JournalInput onJournalEntrySubmit={handleJournalEntrySubmit} />
+            <JournalCache onSelectEntry={handleCachedEntrySelect} />
+          </div>
+          
           <Card className="border border-border shadow-md bg-card">
             <CardHeader>
               <CardTitle>Document Analysis with Data Models</CardTitle>
@@ -466,7 +404,7 @@ const Dashboard = () => {
                   <div className="flex flex-col gap-2">
                     <Button 
                       onClick={analyzeSentiment} 
-                      disabled={!file || isAnalyzing}
+                      disabled={(!file && !pdfText) || isAnalyzing}
                       className="w-full"
                     >
                       {isAnalyzing && analysisMethod === "bert" ? (
@@ -478,7 +416,7 @@ const Dashboard = () => {
                     </Button>
                     <Button 
                       onClick={analyzeWithGemma3} 
-                      disabled={!file || isAnalyzing}
+                      disabled={(!file && !pdfText) || isAnalyzing}
                       variant="outline"
                       className="w-full"
                     >

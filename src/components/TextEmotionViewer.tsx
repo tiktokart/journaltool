@@ -26,7 +26,12 @@ export const TextEmotionViewer = ({
   const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
 
   useEffect(() => {
-    if (!pdfText || pdfText.length === 0 || embeddingPoints.length === 0) {
+    if (!pdfText || pdfText.length === 0) {
+      setHighlightedText([pdfText || ""]);
+      return;
+    }
+
+    if (embeddingPoints.length === 0) {
       setHighlightedText([pdfText]);
       return;
     }
@@ -51,9 +56,7 @@ export const TextEmotionViewer = ({
 
     // Split text into words while preserving whitespace and punctuation
     const textSegments: { text: string; emotion: string | null }[] = [];
-    let currentText = "";
-    let currentSegmentType: "word" | "nonword" = "nonword";
-
+    
     // Regular expression that matches words
     const wordRegex = /[a-zA-Z0-9']+/g;
     let match;
@@ -120,7 +123,7 @@ export const TextEmotionViewer = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-10">
-          <p className="text-muted-foreground">{t("No text available from PDF")}</p>
+          <p className="text-muted-foreground">{t("No text available from document")}</p>
         </CardContent>
       </Card>
     );

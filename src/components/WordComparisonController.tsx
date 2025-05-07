@@ -10,6 +10,7 @@ import { WordComparison } from "@/components/WordComparison";
 import { toast } from "sonner";
 import { getEmotionColor } from "@/utils/embeddingUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Badge } from "@/components/ui/badge";
 
 interface WordComparisonControllerProps {
   points: Point[];
@@ -28,22 +29,30 @@ export const WordComparisonController = ({
   const [compareSearchOpen, setCompareSearchOpen] = useState(false);
   const [compareSearchTerm, setCompareSearchTerm] = useState("");
   const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
+  const [availableEmotions, setAvailableEmotions] = useState<string[]>([]);
   const { t, language } = useLanguage();
   const [forceUpdate, setForceUpdate] = useState(0);
 
-  // Update search results when points change
+  // Update search results and extract available emotions when points change
   useEffect(() => {
     if (points && points.length > 0) {
       setCompareSearchResults(points.slice(0, 15));
+      
+      // Extract unique emotions
+      const emotions = new Set<string>();
+      points.forEach(point => {
+        if (point.emotionalTone) {
+          emotions.add(point.emotionalTone);
+        }
+      });
+      setAvailableEmotions(Array.from(emotions).sort());
     }
   }, [points]);
 
-  // Force re-render when language changes - this is important for translations to take effect
+  // Force re-render when language changes
   useEffect(() => {
-    // Force component update
     setForceUpdate(prev => prev + 1);
     
-    // Also reset search term to force the search component to update
     if (compareSearchTerm) {
       const currentTerm = compareSearchTerm;
       setCompareSearchTerm("");
@@ -107,10 +116,25 @@ export const WordComparisonController = ({
     toast.info(t("clearedAllComparisonWords"));
   };
 
+  const handleEmotionFilter = (emotion: string) => {
+    // Filter points by the selected emotion and add up to 4 to comparison
+    const emotionPoints = points
+      .filter(point => point.emotionalTone === emotion)
+      .slice(0, 4);
+    
+    if (emotionPoints.length === 0) {
+      toast.info(`No words with emotion "${emotion}" found`);
+      return;
+    }
+    
+    setCompareWords(emotionPoints);
+    toast.success(`Added ${emotionPoints.length} words with "${emotion}" emotion to comparison`);
+  };
+
   return (
     <Card className="border border-border shadow-md bg-card" key={`word-comparison-card-${forceUpdate}`}>
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-2">
           <CardTitle className="flex items-center text-xl">
             <GitCompareArrows className="h-5 w-5 mr-2 text-primary" />
             {t("wordComparison")}
@@ -177,6 +201,29 @@ export const WordComparisonController = ({
             )}
           </div>
         </div>
+        
+        {/* Emotion filter badges */}
+        {availableEmotions.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            <span className="text-sm text-muted-foreground mr-1 flex items-center">
+              Search by emotion:
+            </span>
+            {availableEmotions.map(emotion => (
+              <Badge 
+                key={emotion}
+                variant="outline" 
+                className="cursor-pointer hover:bg-muted transition-colors"
+                style={{
+                  borderColor: getEmotionColor(emotion),
+                  backgroundColor: `${getEmotionColor(emotion)}20`
+                }}
+                onClick={() => handleEmotionFilter(emotion)}
+              >
+                {emotion}
+              </Badge>
+            ))}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <WordComparison 
