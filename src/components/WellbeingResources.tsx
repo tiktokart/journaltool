@@ -180,8 +180,29 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     setSuggestions(activeSuggestions);
   }, [embeddingPoints]);
 
+  // If no suggestions, return a default message
   if (suggestions.length === 0) {
-    return null;
+    return (
+      <Card className="border border-border shadow-md bg-card mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center text-xl">
+            <HelpCircle className="h-5 w-5 mr-2 text-primary" />
+            {t("resourcesAndSupport")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8">
+            <Heart className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-center text-muted-foreground">
+              Keep working on yourself, no prevalent issues detected.
+            </p>
+            <p className="text-center text-sm text-muted-foreground mt-2">
+              Continue to monitor your emotional wellbeing and check back if you need support.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
