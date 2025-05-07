@@ -29,8 +29,9 @@ body {
   background-color: #a45fbf;
 }
 
+/* Updating orange to a slightly darker shade for better contrast on yellow backgrounds */
 .bg-orange {
-  background-color: #f57e00;
+  background-color: #e56e00;
 }
 
 .text-truncate {
