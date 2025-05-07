@@ -27,12 +27,12 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
   return (
     <Card className="border-0 shadow-md w-full bg-light-lavender">
       <CardHeader>
-        <CardTitle>{t("sentimentTimeline")}</CardTitle>
+        <CardTitle className="text-orange">{t("sentimentTimeline")}</CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
           <div className="h-80 w-full flex items-center justify-center">
-            <p className="text-muted-foreground">{t("noDataAvailable")}</p>
+            <p className="text-yellow">{t("noDataAvailable")}</p>
           </div>
         ) : (
           <div className="h-80 w-full">
@@ -110,7 +110,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
             </ResponsiveContainer>
           </div>
         )}
-        <div className="mt-4 text-sm text-center text-muted-foreground">
+        <div className="mt-4 text-sm text-center text-yellow">
           {sourceDescription ? (
             <div className="flex items-center justify-center">
               <Info className="h-4 w-4 mr-1" />

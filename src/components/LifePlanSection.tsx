@@ -5,13 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Save, FileText } from "lucide-react";
 
 interface PlanEntry {
   id: string;
   text: string;
   date: string;
-  category: 'daily' | 'weekly' | 'monthly';
+  category: 'daily' | 'weekly' | 'monthly' | 'reflection';
 }
 
 interface LifePlanSectionProps {
@@ -69,8 +69,25 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
     setEditText("");
   };
   
-  const getEntriesByCategory = (category: 'daily' | 'weekly' | 'monthly') => {
+  const getEntriesByCategory = (category: 'daily' | 'weekly' | 'monthly' | 'reflection') => {
     return planEntries.filter(entry => entry.category === category);
+  };
+
+  const addJournalToReflection = () => {
+    if (!journalText || journalText.trim().length === 0) {
+      toast.error("No journal text to save as reflection");
+      return;
+    }
+
+    const newEntry: PlanEntry = {
+      id: uuidv4(),
+      text: journalText,
+      date: new Date().toISOString(),
+      category: 'reflection'
+    };
+
+    setPlanEntries(prev => [...prev, newEntry]);
+    toast.success("Journal added to Monthly Reflections");
   };
   
   const formatDate = (dateString: string) => {
@@ -82,16 +99,16 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
   };
 
   return (
-    <Card className="border shadow-md bg-card my-8">
+    <Card className="border shadow-md bg-light-lavender my-8">
       <CardHeader>
-        <CardTitle className="text-xl text-yellow">What does your perfect life look like?</CardTitle>
+        <CardTitle className="text-xl text-orange">What does your perfect life look like?</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
           <div className="space-y-4">
             <h3 className="text-orange font-medium text-lg">Daily Life</h3>
             {getEntriesByCategory('daily').length === 0 ? (
-              <p className="text-orange italic py-2">No entries yet. Add your daily life goals.</p>
+              <p className="text-yellow italic py-2">No entries yet. Add your daily life goals.</p>
             ) : (
               <ul className="space-y-3 list-disc pl-6">
                 {getEntriesByCategory('daily').map(entry => (
@@ -109,8 +126,8 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-3 bg-muted/30 rounded-lg">
-                        <p className="whitespace-pre-wrap text-orange">{entry.text}</p>
+                      <div className="p-3 bg-white/30 rounded-lg">
+                        <p className="whitespace-pre-wrap text-yellow">{entry.text}</p>
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-muted">
                           <span className="text-xs text-orange">
                             {formatDate(entry.date)}
@@ -145,7 +162,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
           <div className="space-y-4">
             <h3 className="text-orange font-medium text-lg">Week Life</h3>
             {getEntriesByCategory('weekly').length === 0 ? (
-              <p className="text-orange italic py-2">No entries yet. Add your weekly life goals.</p>
+              <p className="text-yellow italic py-2">No entries yet. Add your weekly life goals.</p>
             ) : (
               <ul className="space-y-3 list-disc pl-6">
                 {getEntriesByCategory('weekly').map(entry => (
@@ -163,8 +180,8 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-3 bg-muted/30 rounded-lg">
-                        <p className="whitespace-pre-wrap text-orange">{entry.text}</p>
+                      <div className="p-3 bg-white/30 rounded-lg">
+                        <p className="whitespace-pre-wrap text-yellow">{entry.text}</p>
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-muted">
                           <span className="text-xs text-orange">
                             {formatDate(entry.date)}
@@ -199,7 +216,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
           <div className="space-y-4">
             <h3 className="text-orange font-medium text-lg">Monthly Life</h3>
             {getEntriesByCategory('monthly').length === 0 ? (
-              <p className="text-orange italic py-2">No entries yet. Add your monthly life goals.</p>
+              <p className="text-yellow italic py-2">No entries yet. Add your monthly life goals.</p>
             ) : (
               <ul className="space-y-3 list-disc pl-6">
                 {getEntriesByCategory('monthly').map(entry => (
@@ -217,8 +234,8 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-3 bg-muted/30 rounded-lg">
-                        <p className="whitespace-pre-wrap text-orange">{entry.text}</p>
+                      <div className="p-3 bg-white/30 rounded-lg">
+                        <p className="whitespace-pre-wrap text-yellow">{entry.text}</p>
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-muted">
                           <span className="text-xs text-orange">
                             {formatDate(entry.date)}
@@ -247,6 +264,83 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+          
+          {/* New Monthly Reflection Section */}
+          <div className="space-y-4 mt-8">
+            <div className="flex justify-between items-center">
+              <h3 className="text-orange font-medium text-lg">Monthly Reflection</h3>
+              {journalText && journalText.trim().length > 0 && (
+                <Button 
+                  size="sm" 
+                  onClick={addJournalToReflection}
+                  className="bg-orange text-white hover:bg-orange-dark flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Save Current Journal
+                </Button>
+              )}
+            </div>
+            
+            {getEntriesByCategory('reflection').length === 0 ? (
+              <div className="p-4 bg-white/30 rounded-lg">
+                <div className="flex items-center justify-center flex-col gap-2 py-4">
+                  <FileText className="h-10 w-10 text-orange opacity-70" />
+                  <p className="text-yellow italic">No reflections yet. Save analyzed journals here.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {getEntriesByCategory('reflection').map(entry => (
+                  <div key={entry.id} className="p-3 bg-white/30 rounded-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-sm font-medium text-orange">
+                        {formatDate(entry.date)}
+                      </span>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => startEditing(entry)}
+                          className="text-orange h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => deleteEntry(entry.id)}
+                          className="text-orange h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {editingEntry?.id === entry.id ? (
+                      <div className="space-y-2">
+                        <Textarea 
+                          value={editText} 
+                          onChange={(e) => setEditText(e.target.value)} 
+                          className="min-h-[150px] text-black bg-white"
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={saveEdit} className="text-yellow">Save</Button>
+                          <Button size="sm" variant="outline" onClick={cancelEdit} className="text-orange border-orange">Cancel</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="max-h-[200px] overflow-y-auto pr-2">
+                        <p className="whitespace-pre-wrap text-yellow text-sm">{entry.text.length > 300 
+                          ? entry.text.substring(0, 300) + "..."
+                          : entry.text}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

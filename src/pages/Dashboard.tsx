@@ -420,10 +420,10 @@ const Dashboard = () => {
             <JournalCache onSelectEntry={handleCachedEntrySelect} />
           </div>
           
-          {/* Document Analysis Section - Keep as is */}
+          {/* Document Analysis Section - Now with light lavender background */}
           <Card className="border border-border shadow-md bg-light-lavender text-black">
             <CardHeader>
-              <CardTitle>Document Analysis with Data Models</CardTitle>
+              <CardTitle className="text-orange">Document Analysis with Data Models</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-3 gap-6">
@@ -432,7 +432,7 @@ const Dashboard = () => {
                 </div>
                 <div className="flex flex-col gap-4">
                   <div className="p-4 bg-white/30 rounded-lg">
-                    <h3 className="font-medium mb-2">Selected File</h3>
+                    <h3 className="font-medium mb-2 text-orange">Selected File</h3>
                     <p className="text-sm text-black">
                       {file ? file.name : "No file selected"}
                     </p>
@@ -479,6 +479,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Analysis Results Section */}
           {sentimentData && (
             <div className="animate-fade-in">
               <FileInfoDisplay 
