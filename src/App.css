@@ -73,7 +73,7 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
-/* Fix for "jumpToEmotionalGroup" */
+/* Updated to use lavender color instead of dark purple */
 .relationship-analysis-tag {
   background-color: #DFC5FE !important;
   color: #000 !important;

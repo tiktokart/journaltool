@@ -71,21 +71,26 @@ export default {
           negative: '#E74C3C',
         },
         
-        // New theme colors
+        // Updated theme colors - changed dark purple to lavender
         yellow: {
           DEFAULT: '#f6df60',
           light: '#f8e680',
           dark: '#e6cf50',
         },
         purple: {
-          DEFAULT: '#a45fbf',
-          light: '#b47fcf',
-          dark: '#944faf',
+          DEFAULT: '#DFC5FE',
+          light: '#EAD5FF',
+          dark: '#CEB5EE',
         },
         orange: {
           DEFAULT: '#f57e00',
           light: '#ff9e20',
           dark: '#e56e00',
+        },
+        lavender: {
+          DEFAULT: '#DFC5FE',
+          light: '#EAD5FF', 
+          dark: '#CEB5EE',
         }
 			},
 			borderRadius: {

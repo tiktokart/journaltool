@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,7 +98,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
   };
 
   return (
-    <Card className="border shadow-md bg-light-lavender my-8">
+    <Card className="border shadow-md bg-light-lavender">
       <CardHeader>
         <CardTitle className="text-xl text-orange">What Does Your Perfect Life Look Like?</CardTitle>
       </CardHeader>
@@ -161,7 +160,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
               )}
             </div>
 
-            {/* Week Life Section */}
+            {/* Weekly Life Section */}
             <div className="space-y-4">
               <h3 className="text-orange font-medium text-lg">Weekly Life</h3>
               {getEntriesByCategory('weekly').length === 0 ? (

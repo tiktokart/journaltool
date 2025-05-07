@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -202,7 +201,6 @@ export const WordComparisonController = ({
           </div>
         </div>
         
-        {/* Emotion filter badges */}
         {availableEmotions.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             <span className="text-sm text-muted-foreground mr-1 flex items-center">
