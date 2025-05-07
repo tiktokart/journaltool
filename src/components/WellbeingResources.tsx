@@ -90,9 +90,9 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         id: 'sadness-gratitude',
         title: 'Gratitude Practice for Low Mood',
         steps: [
-          'Take a moment to reflect on three things you're grateful for today',
+          "Take a moment to reflect on three things you're grateful for today",
           'Write them down in a journal if possible',
-          'Consider why you're grateful for each item',
+          "Consider why you're grateful for each item",
           'Notice how reflecting on gratitude affects your mood',
           'Make this a daily practice, especially when feeling low'
         ],
