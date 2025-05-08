@@ -6,6 +6,8 @@ interface GemmaAnalysisResult {
   timeline?: any[];
   entities?: any[];
   keyPhrases?: string[];
+  embeddingPoints?: any[]; // Add this field to match the expected structure
+  sourceDescription?: string; // Add this field to ensure source description is passed
 }
 
 export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysisResult> => {
@@ -180,13 +182,43 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
       else if (sentiment > 0.7) summary = "The text contains predominantly positive emotions.";
       else summary = "The text contains a mix of emotions.";
       
+      // Create embedding points for visualization 
+      // This is crucial for the suggestions to work properly
+      const embeddingPoints = words.filter(w => w.length > 2).map((word, index) => {
+        // Find if this word has an emotional tone
+        let emotionalTone = 'Neutral';
+        
+        Object.entries(emotionCategories).forEach(([emotion, keywords]) => {
+          if (keywords.some(keyword => word.includes(keyword))) {
+            emotionalTone = emotion;
+          }
+        });
+        
+        // Determine if word is negative or positive
+        let localSentiment = 0.5;
+        if (negativeWords.includes(word)) localSentiment = 0.2;
+        if (positiveWords.includes(word)) localSentiment = 0.8;
+        
+        return {
+          id: `point-${index}`,
+          word: word,
+          emotionalTone: emotionalTone,
+          sentiment: localSentiment,
+          x: Math.random() * 2 - 1,
+          y: Math.random() * 2 - 1,
+          z: Math.random() * 2 - 1,
+        };
+      });
+      
       return {
         sentiment,
         emotionalTones,
         summary,
         timeline,
         entities,
-        keyPhrases
+        keyPhrases,
+        embeddingPoints,
+        sourceDescription: "Analysis powered by Gemma 3" // Add source attribution
       };
       
     } catch (error) {
@@ -197,7 +229,9 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
         summary: "Error occurred during analysis. Using default values.",
         timeline: [],
         entities: [],
-        keyPhrases: []
+        keyPhrases: [],
+        embeddingPoints: [], // Empty array for embedding points
+        sourceDescription: "Analysis powered by Gemma 3 (Error)"
       };
     }
   } catch (error) {
