@@ -17,6 +17,22 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { WellbeingResources } from './WellbeingResources';
 import { getEmotionColor as getBertEmotionColor } from '../utils/bertSentimentAnalysis';
 
+// Helper function to convert hex color string to [r,g,b] tuple
+const hexToRgbTuple = (hex: string): [number, number, number] => {
+  // Remove # if present
+  const cleanHex = hex.charAt(0) === '#' ? hex.substring(1) : hex;
+  
+  // Parse the hex values
+  const bigint = parseInt(cleanHex, 16);
+  
+  // Convert to r, g, b values between 0 and 1
+  const r = ((bigint >> 16) & 255) / 255;
+  const g = ((bigint >> 8) & 255) / 255;
+  const b = (bigint & 255) / 255;
+  
+  return [r, g, b];
+};
+
 export const DocumentEmbedding = ({ 
   points = [], 
   onPointClick, 
@@ -93,21 +109,28 @@ export const DocumentEmbedding = ({
     if (points.length > 0) {
       console.log(`Setting display points with ${points.length} points from props`);
       
-      // Ensure all points have color properties based on their emotional tone
-      const pointsWithColors = points.map(point => {
-        if (!point.color && point.emotionalTone) {
+      // Ensure all points have proper color properties based on their emotional tone
+      const pointsWithCorrectColors = points.map(point => {
+        if (typeof point.color === 'string') {
+          // Convert string color to RGB tuple
           return {
             ...point,
-            color: getUnifiedEmotionColor(point.emotionalTone)
-          };
+            color: hexToRgbTuple(point.color as unknown as string)
+          } as Point;
+        } else if (point.emotionalTone && (!point.color || (Array.isArray(point.color) && point.color.every(c => c === 0)))) {
+          // If there's an emotional tone but no color or zeroed color
+          return {
+            ...point,
+            color: hexToRgbTuple(getUnifiedEmotionColor(point.emotionalTone))
+          } as Point;
         }
         return point;
       });
       
-      setDisplayPoints(pointsWithColors);
+      setDisplayPoints(pointsWithCorrectColors);
       
       // Export points to window for TextEmotionViewer to access
-      window.documentEmbeddingPoints = pointsWithColors;
+      window.documentEmbeddingPoints = pointsWithCorrectColors;
     } else if (generatedPoints.length === 0) {
       console.log("Generating mock points");
       const mockPoints = generateMockPoints(depressedJournalReference);
@@ -258,6 +281,28 @@ export const DocumentEmbedding = ({
     setFilterApplied(false);
     toast.info(t("viewReset"));
   };
+
+  useEffect(() => {
+    if (displayPoints.length > 0) {
+      (window as any).documentEmbeddingPoints = displayPoints;
+      console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
+      
+      // Add this debug message to verify points data
+      console.log("Sample words in visualization:", displayPoints.slice(0, 10).map(p => p.word).join(", "));
+      console.log("Points have emotionalTone:", displayPoints.some(p => p.emotionalTone));
+      
+      const uniqueGroups = new Set<string>();
+      displayPoints.forEach(point => {
+        if (point.emotionalTone) {
+          uniqueGroups.add(point.emotionalTone);
+        } else {
+          uniqueGroups.add("Neutral");
+        }
+      });
+      
+      setEmotionalGroups(Array.from(uniqueGroups).sort());
+    }
+  }, [displayPoints]);
   
   return (
     <div className="relative w-full h-full">
