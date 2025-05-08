@@ -1,9 +1,8 @@
 
 import * as pdfjs from 'pdfjs-dist';
 
-// Ensure the PDF.js worker is loaded
-const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.mjs');
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+// Set worker source using a different approach that's compatible with Vite
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 /**
  * Extracts text from a PDF file

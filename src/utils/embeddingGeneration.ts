@@ -53,13 +53,20 @@ export const generateEmbeddingPoints = async (text: string): Promise<Point[]> =>
       // Assign an emotional tone
       const emotionalTone = emotions[Math.floor(rng() * emotions.length)];
       
+      // Generate RGB color based on emotional tone
+      const r = rng() * 0.8 + 0.2; // 0.2 to 1.0
+      const g = rng() * 0.8 + 0.2; // 0.2 to 1.0
+      const b = rng() * 0.8 + 0.2; // 0.2 to 1.0
+      const color: [number, number, number] = [r, g, b];
+      
       // Create point with a unique ID
       const point: Point = {
         id: `p${i}`,
         position,
         word,
         sentiment,
-        emotionalTone
+        emotionalTone,
+        color // Adding the required color property
       };
       
       // Add relationships with other points (between 3-7 relationships)
