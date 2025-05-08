@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +50,11 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     'Disgust': ['disgusted', 'repulsed', 'revolted', 'nauseated', 'loathing', 'dislike', 'aversion', 'hate'],
     'Sadness': ['sad', 'depressed', 'unhappy', 'miserable', 'gloomy', 'heartbroken', 'grief', 'despair', 'sorry']
   };
+  
+  // Define substance abuse related keywords
+  const substanceAbuseKeywords = ['drug', 'drugs', 'substance', 'alcohol', 'addiction', 'addicted', 'using', 
+    'abuse', 'abusing', 'smoke', 'smoking', 'weed', 'marijuana', 'cocaine', 'heroin', 'opioid', 'pill', 'pills', 
+    'overdose', 'withdrawal', 'relapse', 'clean', 'sober', 'recovery', 'rehab', 'detox'];
 
   useEffect(() => {
     if (!embeddingPoints || embeddingPoints.length === 0) return;
@@ -87,6 +91,11 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     
     // Set the detected concerns
     setDetectedConcerns(foundConcerns);
+    
+    // Check for substance abuse related words
+    const hasSubstanceAbuseConcerns = wordsInText.some(word => 
+      substanceAbuseKeywords.some(keyword => word && word.includes(keyword))
+    );
     
     // Set if any negative words were found in our specific categories
     const foundNegativeWords = foundConcerns.length > 0;
@@ -177,40 +186,40 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
           "Spend at least 15-30 minutes outdoors each day"
         ]
       },
-      // Add professional mental health resources
+      // Substance abuse resources with specific triggers
       {
-        title: "PsychiatryOnline Resources",
-        description: "Access to professional psychiatry journals, DSM-5, and clinical resources for mental health assessment and treatment.",
+        title: "Substance Use Support",
+        description: "Find substance use treatment facilities and programs through SAMHSA's national helpline.",
+        tags: ["treatment", "substance", "support"],
+        link: "https://findtreatment.samhsa.gov/",
+        triggerWords: substanceAbuseKeywords, // Only trigger on specific substance-related keywords
+        actionPlan: [
+          "Call SAMHSA's National Helpline at 1-800-662-HELP (4357) for 24/7 support",
+          "Use the SAMHSA treatment locator to find nearby options",
+          "Consider speaking with your primary care doctor about treatment options",
+          "Reach out to a trusted person who can support your recovery journey",
+          "Attend a local support group meeting (AA, NA, SMART Recovery, etc.)"
+        ]
+      },
+      // Keep other professional resources but only show them when relevant
+      {
+        title: "Professional Mental Health Resources",
+        description: "Access to professional psychiatry resources for mental health assessment and treatment.",
         tags: ["professional", "psychiatry", "research"],
         link: "https://psychiatryonline.org/",
         triggerWords: ["psychiatr", "mental health", "treatment", "dsm", "profession", "diagnosis", "disorder"],
         emotionCategory: "Sadness",
         actionPlan: [
-          "Research specific mental health conditions that may match your symptoms",
-          "Discuss findings with a healthcare provider for proper diagnosis",
-          "Learn about evidence-based treatments for your specific concerns",
+          "Schedule an appointment with a mental health provider",
+          "Research evidence-based treatments for your specific concerns",
           "Create a list of questions to ask during professional consultations",
-          "Consider joining support groups related to your specific challenges"
+          "Consider joining support groups related to your specific challenges",
+          "Ask your provider about self-help resources to complement professional care"
         ]
       },
       {
-        title: "SAMHSA Treatment Locator",
-        description: "Find substance use or mental health treatment facilities and programs in your area through SAMHSA's national helpline.",
-        tags: ["treatment", "therapy", "professional help"],
-        link: "https://findtreatment.samhsa.gov/",
-        triggerWords: ["treatment", "therap", "help", "professional", "clinic", "substance", "alcohol", "drug"],
-        emotionCategory: "Fear",
-        actionPlan: [
-          "Use the SAMHSA locator to find nearby treatment options",
-          "Call facilities to ask about insurance coverage and availability",
-          "Prepare questions about treatment approaches and specialties",
-          "Ask about both inpatient and outpatient program options",
-          "Consider involving a trusted person in your treatment planning"
-        ]
-      },
-      {
-        title: "FindTreatment.gov Services",
-        description: "Official resource to find local treatment options for mental health and substance use disorders.",
+        title: "Finding Treatment Resources",
+        description: "Find local treatment options for mental health and substance use disorders.",
         tags: ["find help", "treatment", "local resources"],
         link: "https://findtreatment.gov/",
         triggerWords: ["find help", "treatment", "therapy", "counseling", "therapist", "professional"],
@@ -224,8 +233,8 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         ]
       },
       {
-        title: "NIMH Data Resources",
-        description: "Access data, research findings, and evidence-based approaches from the National Institute of Mental Health.",
+        title: "Research-Based Approaches",
+        description: "Access data, research findings, and evidence-based approaches from mental health institutions.",
         tags: ["research", "data", "evidence"],
         link: "https://www.nimh.nih.gov/research/research-conducted-at-nimh/nimh-data-archive",
         triggerWords: ["research", "evidence", "study", "data", "science", "experiment"],
@@ -235,34 +244,6 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
           "Learn about emerging treatments and their effectiveness",
           "Use evidence-based self-help resources from reputable sources",
           "Share relevant research with your healthcare providers"
-        ]
-      },
-      {
-        title: "APA PsycINFO Database",
-        description: "Comprehensive database of psychological research and literature from the American Psychological Association.",
-        tags: ["research", "psychology", "literature"],
-        link: "https://www.apa.org/pubs/databases/psycinfo",
-        triggerWords: ["research", "psychology", "article", "journal", "study", "literature", "evidence"],
-        actionPlan: [
-          "Search for specific psychological topics related to your concerns",
-          "Find peer-reviewed articles on treatment effectiveness",
-          "Access psychological assessment tools and their applications",
-          "Learn about psychological theories that explain your experiences",
-          "Understand the science behind recommended interventions"
-        ]
-      },
-      {
-        title: "WHO MiNDbank Resources",
-        description: "World Health Organization's collection of mental health policies, strategies, laws, and service standards.",
-        tags: ["policy", "global", "standards"],
-        link: "https://www.mindbank.info/",
-        triggerWords: ["policy", "law", "right", "standard", "global", "international", "world"],
-        actionPlan: [
-          "Understand your rights regarding mental health treatment",
-          "Learn about global standards for mental health services",
-          "Explore how different countries approach mental healthcare",
-          "Find advocacy resources for improving mental health systems",
-          "Access policy documents that can inform your healthcare decisions"
         ]
       }
     ];
@@ -298,7 +279,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     
     setTriggerMatches(matches);
     
-    // Filter resources based on detected concerns and trigger word matches
+    // Filter resources based on detected concerns, trigger word matches and substance abuse keywords
     let relevantResources: ResourceItem[] = [];
     
     // First add resources that match detected emotion categories
@@ -314,9 +295,21 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
       relevantResources = [...categorizedResources];
     }
     
+    // Special case for substance-related resources - only include if keywords are detected
+    if (hasSubstanceAbuseConcerns) {
+      const substanceResource = allResources.find(r => r.title === "Substance Use Support");
+      if (substanceResource && !relevantResources.some(r => r.title === substanceResource.title)) {
+        relevantResources.push(substanceResource);
+      }
+    }
+    
     // Then add resources that have direct trigger word matches but aren't already included
     matches.forEach(match => {
       const matchedResource = allResources[match.resourceIndex];
+      // Don't add substance resources unless substance keywords were detected
+      if (matchedResource.title === "Substance Use Support" && !hasSubstanceAbuseConcerns) {
+        return;
+      }
       if (!relevantResources.some(r => r.title === matchedResource.title)) {
         relevantResources.push(matchedResource);
       }
@@ -476,7 +469,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
                       )}
                     </div>
                     
-                    {/* Action Plan Section */}
+                    {/* Action Plan Section - Now always expanded by default */}
                     {resource.actionPlan && (
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <Button
