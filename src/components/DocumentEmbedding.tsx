@@ -1,37 +1,20 @@
+
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
-import { generateMockPoints, getEmotionColor } from '../utils/embeddingUtils';
+import { generateMockPoints } from '../utils/embeddingUtils';
 import { HoverInfoPanel } from './embedding/HoverInfoPanel';
-import { ZoomControls } from './embedding/ZoomControls';
 import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
 import ParticleBackground from './embedding/ParticleBackground';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { ChevronDown, ChevronUp, CircleDot, Target, RotateCcw, Filter, Info } from 'lucide-react';
-import { Button } from './ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { WellbeingResources } from './WellbeingResources';
-import { getEmotionColor as getBertEmotionColor } from '../utils/bertSentimentAnalysis';
-import { getHomepageEmotionColor } from '@/utils/colorUtils';
 import { useLocation } from 'react-router-dom';
-
-// Helper function to convert hex color string to [r,g,b] tuple
-const hexToRgbTuple = (hex: string): [number, number, number] => {
-  // Remove # if present
-  const cleanHex = hex.charAt(0) === '#' ? hex.substring(1) : hex;
-  
-  // Parse the hex values
-  const bigint = parseInt(cleanHex, 16);
-  
-  // Convert to r, g, b values between 0 and 1
-  const r = ((bigint >> 16) & 255) / 255;
-  const g = ((bigint >> 8) & 255) / 255;
-  const b = (bigint & 255) / 255;
-  
-  return [r, g, b];
-};
+import { enrichPoints, extractEmotionalGroups } from './embedding/PointUtils';
+import EmotionalGroupsPanel from './embedding/EmotionalGroupsPanel';
+import WordMetadataDisplay from './embedding/WordMetadataDisplay';
+import EmbeddingControls from './embedding/EmbeddingControls';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -64,28 +47,7 @@ export const DocumentEmbedding = ({
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   const [emotionalGroups, setEmotionalGroups] = useState<string[]>([]);
   const [selectedEmotionalGroup, setSelectedEmotionalGroup] = useState<string | null>(null);
-  const [isEmotionalGroupsOpen, setIsEmotionalGroupsOpen] = useState<boolean>(true);
   const [filterApplied, setFilterApplied] = useState<boolean>(false);
-
-  // Unified color function for emotional tones - ensuring consistency across the app
-  const getUnifiedEmotionColor = (emotion: string): string => {
-    // For homepage, use our special random pastel colors
-    if (isHomepage) {
-      const homepageColor = getHomepageEmotionColor(emotion, true);
-      if (homepageColor) {
-        return homepageColor;
-      }
-    }
-    
-    // For dashboard or fallback, use the standard colors
-    const bertColor = getBertEmotionColor(emotion);
-    if (bertColor !== "#95A5A6") { // Not the default gray
-      return bertColor;
-    }
-    
-    // Fall back to embedding utils color if BERT doesn't have a specific color
-    return getEmotionColor(emotion);
-  };
   
   useEffect(() => {
     if (focusOnWord !== currentFocusWord) {
@@ -118,25 +80,7 @@ export const DocumentEmbedding = ({
   useEffect(() => {
     if (points.length > 0) {
       console.log(`Setting display points with ${points.length} points from props`);
-      
-      // Ensure all points have proper color properties based on their emotional tone
-      const pointsWithCorrectColors = points.map(point => {
-        if (typeof point.color === 'string') {
-          // Convert string color to RGB tuple
-          return {
-            ...point,
-            color: hexToRgbTuple(point.color as unknown as string)
-          } as Point;
-        } else if (point.emotionalTone && (!point.color || (Array.isArray(point.color) && point.color.every(c => c === 0)))) {
-          // If there's an emotional tone but no color or zeroed color
-          return {
-            ...point,
-            color: hexToRgbTuple(getUnifiedEmotionColor(point.emotionalTone))
-          } as Point;
-        }
-        return point;
-      });
-      
+      const pointsWithCorrectColors = enrichPoints(points, isHomepage);
       setDisplayPoints(pointsWithCorrectColors);
       
       // Export points to window for TextEmotionViewer to access
@@ -150,7 +94,7 @@ export const DocumentEmbedding = ({
       // Export points to window for TextEmotionViewer to access
       window.documentEmbeddingPoints = mockPoints;
     }
-  }, [points, depressedJournalReference, generatedPoints.length]);
+  }, [points, depressedJournalReference, generatedPoints.length, isHomepage]);
   
   useEffect(() => {
     if (displayPoints.length > 0) {
@@ -161,16 +105,8 @@ export const DocumentEmbedding = ({
       console.log("Sample words in visualization:", displayPoints.slice(0, 10).map(p => p.word).join(", "));
       console.log("Points have emotionalTone:", displayPoints.some(p => p.emotionalTone));
       
-      const uniqueGroups = new Set<string>();
-      displayPoints.forEach(point => {
-        if (point.emotionalTone) {
-          uniqueGroups.add(point.emotionalTone);
-        } else {
-          uniqueGroups.add("Neutral");
-        }
-      });
-      
-      setEmotionalGroups(Array.from(uniqueGroups).sort());
+      const uniqueGroups = extractEmotionalGroups(displayPoints);
+      setEmotionalGroups(uniqueGroups);
     }
   }, [displayPoints]);
   
@@ -301,30 +237,14 @@ export const DocumentEmbedding = ({
       
       <ParticleBackground containerRef={containerRef} points={displayPoints} />
       
-      <div className="absolute top-3 right-4 z-10 text-sm font-normal flex items-center text-muted-foreground bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md">
-        <CircleDot className="h-4 w-4 mr-2" />
-        <span>
-          {wordCount ? 
-            `Showing Words: ${wordCount}` : 
-            `Showing Words: ${displayPoints.length}`
-          }
-        </span>
-      </div>
-      
-      {filterApplied && (
-        <div className="absolute top-3 left-4 z-10 flex items-center text-sm font-normal bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md">
-          <Filter className="h-4 w-4 mr-2 text-primary" />
-          <span>Filtered: {selectedEmotionalGroup}</span>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-6 w-6 ml-2"
-            onClick={resetEmotionalGroupFilter}
-          >
-            <RotateCcw className="h-3 w-3" />
-          </Button>
-        </div>
-      )}
+      <WordMetadataDisplay
+        wordCount={wordCount}
+        displayPointsLength={displayPoints.length}
+        filterApplied={filterApplied}
+        selectedEmotionalGroup={selectedEmotionalGroup}
+        resetEmotionalGroupFilter={resetEmotionalGroupFilter}
+        sourceDescription={sourceDescription}
+      />
       
       <EmbeddingScene 
         containerRef={containerRef}
@@ -348,106 +268,29 @@ export const DocumentEmbedding = ({
       />
       
       {isInteractive && (
-        <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
-          <ZoomControls 
-            onZoomIn={handleZoomIn} 
-            onZoomOut={handleZoomOut}
-            onResetZoom={handleResetZoom}
-          />
-          
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-1 px-2 py-1 text-xs"
-            onClick={handleResetView}
-          >
-            <RotateCcw className="h-3 w-3" />
-            {t("resetView")}
-          </Button>
-          
-          {selectedPoint && (
-            <button
-              onClick={toggleCompareMode}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs ${
-                isCompareMode 
-                  ? "bg-orange-500 text-white" 
-                  : "bg-muted text-foreground"
-              }`}
-            >
-              {isCompareMode ? t("selectingComparison") : t("compareWithAnotherWord")}
-            </button>
-          )}
-        </div>
+        <EmbeddingControls
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetZoom={handleResetZoom}
+          onResetView={handleResetView}
+          selectedPoint={selectedPoint}
+          isCompareMode={isCompareMode}
+          toggleCompareMode={toggleCompareMode}
+        />
       )}
       
       {emotionalGroups.length > 0 && (
-        <div className="absolute top-16 right-4 z-10 bg-card/80 backdrop-blur-sm p-2 rounded-lg shadow-md border border-border">
-          <Collapsible 
-            open={isEmotionalGroupsOpen} 
-            onOpenChange={setIsEmotionalGroupsOpen}
-            className="w-full max-w-[200px]"
-          >
-            <div className="flex items-center justify-between">
-              <div className="text-xs font-semibold flex items-center">
-                <Target className="h-3 w-3 mr-1.5 text-orange" />
-                {t("jumpToEmotionalGroups")}
-              </div>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  {isEmotionalGroupsOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            
-            <CollapsibleContent className="mt-1 space-y-1">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-xs text-muted-foreground">{t("filterByEmotion")}</span>
-                {selectedEmotionalGroup && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={resetEmotionalGroupFilter}
-                    className="h-6 py-0 px-1 text-xs"
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" />
-                    {t("reset")}
-                  </Button>
-                )}
-              </div>
-              
-              {emotionalGroups.map(group => (
-                <Button
-                  key={group}
-                  size="sm"
-                  variant={selectedEmotionalGroup === group ? "default" : "outline"}
-                  className="h-7 text-xs justify-start px-2 w-full"
-                  onClick={() => focusOnEmotionalGroup(group)}
-                >
-                  <div 
-                    className="w-3 h-3 rounded-full mr-1.5" 
-                    style={{ backgroundColor: getUnifiedEmotionColor(group) }}
-                  />
-                  {group}
-                </Button>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
+        <EmotionalGroupsPanel
+          emotionalGroups={emotionalGroups}
+          selectedEmotionalGroup={selectedEmotionalGroup}
+          onSelectEmotionalGroup={focusOnEmotionalGroup}
+          onResetFilter={resetEmotionalGroupFilter}
+          isHomepage={isHomepage}
+        />
       )}
       
       {hoveredPoint && (
         <HoverInfoPanel point={hoveredPoint} />
-      )}
-      
-      {sourceDescription && (
-        <div className="absolute bottom-4 right-4 z-10 flex items-center text-xs bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md text-muted-foreground">
-          <Info className="h-3.5 w-3.5 mr-1" />
-          {sourceDescription}
-        </div>
       )}
       
       {displayPoints.length > 0 && (

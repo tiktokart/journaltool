@@ -1,27 +1,16 @@
+
 import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { FileUploader } from "@/components/FileUploader";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
-import { WordComparisonController } from "@/components/WordComparisonController";
-import { ViewDetailedAnalysis } from "@/components/ViewDetailedAnalysis";
-import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
-import { FileInfoDisplay } from "@/components/FileInfoDisplay";
-import { AnalysisTabs } from "@/components/AnalysisTabs";
-import { PdfExport } from "@/components/PdfExport";
-import { TextEmotionViewer } from "@/components/TextEmotionViewer";
-import { WellbeingResources } from "@/components/WellbeingResources";
+import { v4 as uuidv4 } from 'uuid';
+import PerfectLifePlan from "@/components/dashboard/PerfectLifePlan";
+import { MonthlyReflections } from "@/components/MonthlyReflections";
 import { JournalInput } from "@/components/JournalInput";
 import { JournalCache } from "@/components/JournalCache";
-import { MonthlyReflections } from "@/components/MonthlyReflections";
-import { v4 as uuidv4 } from 'uuid';
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import DocumentAnalysisPanel from "@/components/dashboard/DocumentAnalysisPanel";
+import AnalysisResults from "@/components/dashboard/AnalysisResults";
 
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -42,26 +31,6 @@ const Dashboard = () => {
   const [refreshJournalTrigger, setRefreshJournalTrigger] = useState(0);
   const [refreshReflectionsTrigger, setRefreshReflectionsTrigger] = useState(0);
 
-  // Perfect Life Plan state variables
-  const [dailyPlan, setDailyPlan] = useState<string>("");
-  const [weeklyPlan, setWeeklyPlan] = useState<string>("");
-  const [monthlyPlan, setMonthlyPlan] = useState<string>("");
-
-  // Load perfect life plans from local storage on component mount
-  useEffect(() => {
-    try {
-      const storedDailyPlan = localStorage.getItem('perfectLifeDailyPlan');
-      const storedWeeklyPlan = localStorage.getItem('perfectLifeWeeklyPlan');
-      const storedMonthlyPlan = localStorage.getItem('perfectLifeMonthlyPlan');
-      
-      if (storedDailyPlan) setDailyPlan(storedDailyPlan);
-      if (storedWeeklyPlan) setWeeklyPlan(storedWeeklyPlan);
-      if (storedMonthlyPlan) setMonthlyPlan(storedMonthlyPlan);
-    } catch (error) {
-      console.error('Error loading perfect life plans from storage:', error);
-    }
-  }, []);
-
   // Callback functions for triggering refreshes
   const handleJournalEntryAdded = useCallback(() => {
     setRefreshJournalTrigger(prev => prev + 1);
@@ -70,19 +39,6 @@ const Dashboard = () => {
   const handleMonthlyReflectionAdded = useCallback(() => {
     setRefreshReflectionsTrigger(prev => prev + 1);
   }, []);
-
-  // Save perfect life plans to local storage
-  const handleSavePerfectLifePlans = () => {
-    try {
-      localStorage.setItem('perfectLifeDailyPlan', dailyPlan);
-      localStorage.setItem('perfectLifeWeeklyPlan', weeklyPlan);
-      localStorage.setItem('perfectLifeMonthlyPlan', monthlyPlan);
-      toast.success("Perfect Life Plans saved successfully");
-    } catch (error) {
-      console.error('Error saving perfect life plans to storage:', error);
-      toast.error("Failed to save Perfect Life Plans");
-    }
-  };
 
   const handleFileUpload = (files: File[], extractedText?: string) => {
     if (files && files.length > 0) {
@@ -307,52 +263,7 @@ const Dashboard = () => {
         <div className="flex flex-col gap-8">
           {/* Perfect Life and Monthly Reflections - Side by Side */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white p-4 rounded-lg">
-              <h2 className="text-2xl font-bold mb-4 text-black">What does your Perfect Life Look Like?</h2>
-              <Card className="bg-white border border-border shadow-md">
-                <CardContent className="pt-6 space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="daily-plan" className="text-black font-medium">Daily</Label>
-                    <Textarea 
-                      id="daily-plan"
-                      placeholder="Enter your Goals, Objectives, and Tasks"
-                      className="min-h-[80px] text-black"
-                      value={dailyPlan}
-                      onChange={(e) => setDailyPlan(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="weekly-plan" className="text-black font-medium">Weekly</Label>
-                    <Textarea 
-                      id="weekly-plan"
-                      placeholder="Enter your Goals, Objectives, and Tasks"
-                      className="min-h-[80px] text-black"
-                      value={weeklyPlan}
-                      onChange={(e) => setWeeklyPlan(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="monthly-plan" className="text-black font-medium">Monthly</Label>
-                    <Textarea 
-                      id="monthly-plan"
-                      placeholder="Enter your Goals, Objectives, and Tasks"
-                      className="min-h-[80px] text-black"
-                      value={monthlyPlan}
-                      onChange={(e) => setMonthlyPlan(e.target.value)}
-                    />
-                  </div>
-                  
-                  <Button 
-                    onClick={handleSavePerfectLifePlans}
-                    className="mt-2 bg-orange hover:bg-orange/90 w-full text-white"
-                  >
-                    Save Changes
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+            <PerfectLifePlan />
             <div className="bg-white p-4 rounded-lg">
               <MonthlyReflections 
                 journalText={monthlyReflectionText} 
@@ -377,137 +288,42 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Document Analysis Section - With updated background */}
-          <Card className="border border-border shadow-md bg-white">
-            <CardHeader>
-              <CardTitle className="text-black">Document Analysis with BERT Model</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="md:col-span-2">
-                  <FileUploader onFilesAdded={handleFileUpload} />
-                </div>
-                <div className="flex flex-col gap-4">
-                  <div className="p-4 bg-yellow/30 rounded-lg">
-                    <h3 className="font-medium mb-2 text-black">Selected File</h3>
-                    <p className="text-sm text-black">
-                      {file ? file.name : "No file selected"}
-                    </p>
-                    {file && (
-                      <p className="text-xs text-black mt-1">
-                        {(file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    )}
-                    {pdfText && pdfText.length > 0 && (
-                      <p className="text-xs text-black mt-1">
-                        {pdfText.split(/\s+/).length} words extracted
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Button 
-                      onClick={analyzeSentiment} 
-                      disabled={(!file && !pdfText) || isAnalyzing}
-                      className="w-full bg-orange hover:bg-orange/90 text-white"
-                    >
-                      {isAnalyzing ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Analyzing with BERT...
-                        </>
-                      ) : "Analyze with BERT"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Document Analysis Section */}
+          <DocumentAnalysisPanel
+            file={file}
+            pdfText={pdfText}
+            isAnalyzing={isAnalyzing}
+            onFileUpload={handleFileUpload}
+            onAnalyzeClick={analyzeSentiment}
+          />
 
           {/* Analysis Results Section */}
           {sentimentData && (
-            <div className="animate-fade-in">
-              <div className="bg-white p-4 rounded-lg mb-4">
-                <FileInfoDisplay 
-                  fileName={sentimentData.fileName}
-                  fileSize={sentimentData.fileSize}
-                  wordCount={sentimentData.wordCount}
-                />
-              </div>
-              
-              <div className="bg-white p-4 rounded-lg mb-4">
-                <ViewDetailedAnalysis 
-                  summary={sentimentData.summary} 
-                  text={sentimentData.text || sentimentData.pdfText}
-                  wordCount={sentimentData.wordCount}
-                  sourceDescription={sentimentData.sourceDescription}
-                />
-              </div>
-              
-              <div className="bg-white p-4 rounded-lg mb-4">
-                <AnalysisTabs 
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  sentimentData={sentimentData}
-                  searchTerm={searchTerm}
-                  setSearchTerm={setSearchTerm}
-                  selectedPoint={selectedPoint}
-                  setSelectedPoint={setSelectedPoint}
-                  selectedWord={selectedWord}
-                  setSelectedWord={setSelectedWord}
-                  filteredPoints={filteredPoints}
-                  setFilteredPoints={setFilteredPoints}
-                  uniqueWords={uniqueWords}
-                  connectedPoints={connectedPoints}
-                  setConnectedPoints={setConnectedPoints}
-                  visibleClusterCount={visibleClusterCount}
-                  handlePointClick={handlePointClick}
-                  handleResetVisualization={handleResetVisualization}
-                  handleClearSearch={handleClearSearch}
-                />
-              </div>
-              
-              <div className="mt-8 mb-4">
-                <EmotionalClustersControl 
-                  visibleClusterCount={visibleClusterCount}
-                  setVisibleClusterCount={setVisibleClusterCount}
-                  activeTab={activeTab}
-                />
-              </div>
-              
-              {/* Word Comparison Section - Moved above Document Text Visualization */}
-              <div className="mt-8 mb-4 bg-white rounded-lg p-4">
-                <WordComparisonController 
-                  points={sentimentData.embeddingPoints}
-                  selectedPoint={selectedPoint}
-                  sourceDescription={sentimentData.sourceDescription}
-                  calculateRelationship={calculateRelationship}
-                />
-              </div>
-              
-              {/* Document Text Visualization */}
-              <div className="mt-8 mb-4 bg-white rounded-lg p-4">
-                <TextEmotionViewer 
-                  pdfText={pdfText}
-                  embeddingPoints={sentimentData.embeddingPoints}
-                  sourceDescription={sentimentData.sourceDescription}
-                />
-              </div>
-              
-              <div className="mt-8 mb-4 bg-white rounded-lg p-4">
-                <WellbeingResources 
-                  embeddingPoints={sentimentData.embeddingPoints}
-                  sourceDescription={sentimentData.sourceDescription}
-                />
-              </div>
-              
-              <div className="mt-8 bg-white p-4 rounded-lg">
-                <PdfExport 
-                  sentimentData={sentimentData}
-                  onJournalEntryAdded={handleJournalEntryAdded}
-                  onMonthlyReflectionAdded={handleMonthlyReflectionAdded}
-                />
-              </div>
-            </div>
+            <AnalysisResults
+              sentimentData={sentimentData}
+              pdfText={pdfText}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedPoint={selectedPoint}
+              setSelectedPoint={setSelectedPoint}
+              selectedWord={selectedWord}
+              setSelectedWord={setSelectedWord}
+              filteredPoints={filteredPoints}
+              setFilteredPoints={setFilteredPoints}
+              uniqueWords={uniqueWords}
+              connectedPoints={connectedPoints}
+              setConnectedPoints={setConnectedPoints}
+              visibleClusterCount={visibleClusterCount}
+              setVisibleClusterCount={setVisibleClusterCount}
+              handlePointClick={handlePointClick}
+              handleResetVisualization={handleResetVisualization}
+              handleClearSearch={handleClearSearch}
+              calculateRelationship={calculateRelationship}
+              onJournalEntryAdded={handleJournalEntryAdded}
+              onMonthlyReflectionAdded={handleMonthlyReflectionAdded}
+            />
           )}
         </div>
       </main>

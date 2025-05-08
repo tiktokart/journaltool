@@ -1,19 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { CalendarClock, Trash2, FileText, Save, ChevronRight, BarChart2 } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { toast } from "sonner";
 import { format } from "date-fns";
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  Collapsible, 
-  CollapsibleTrigger, 
-  CollapsibleContent 
-} from "@/components/ui/collapsible";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { MonthlyReflectionCard } from "./reflections/MonthlyReflectionCard";
+import JournalAnalysisSection from "./reflections/JournalAnalysisSection";
 
 interface MonthlyReflection {
   id: string;
@@ -36,7 +28,6 @@ export const MonthlyReflections = ({ journalText, refreshTrigger = 0 }: MonthlyR
   const { t } = useLanguage();
   const [reflections, setReflections] = useState<MonthlyReflection[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
-  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [timelineData, setTimelineData] = useState<any[]>([]);
   const [overallSentimentChange, setOverallSentimentChange] = useState<string>("No change");
   const [averageSentiment, setAverageSentiment] = useState<number>(0);
@@ -227,175 +218,22 @@ export const MonthlyReflections = ({ journalText, refreshTrigger = 0 }: MonthlyR
     return "#ef4444"; // Red - negative
   };
 
-  // Custom tooltip for the chart
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const sentimentText = payload[0].value >= 0.5 ? "Positive" : "Negative";
-      return (
-        <div className="bg-white p-2 border border-gray-200 shadow-md rounded-md">
-          <p className="text-sm">{`Date: ${label}`}</p>
-          <p className="text-sm">{`Sentiment: ${payload[0].value} (${sentimentText})`}</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
-    <Card className="bg-white border border-border shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center text-black">
-          <CalendarClock className="h-5 w-5 mr-2 text-orange" />
-          <span className="font-bold">Monthly Reflections</span>
-          <span className="ml-2 text-sm bg-orange/20 text-orange px-2 py-0.5 rounded-full">
-            {currentMonth}
-          </span>
-        </CardTitle>
-        <CardDescription className="text-black">
-          Your personal growth journey over time
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {reflections.length === 0 ? (
-          <div className="text-center py-8 text-black">
-            <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No monthly reflections yet</p>
-          </div>
-        ) : (
-          <>
-            <ScrollArea className="h-[250px] pr-4">
-              <div className="space-y-2">
-                {reflections.map((reflection) => (
-                  <div 
-                    key={reflection.id} 
-                    className="p-3 rounded-md border border-border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="flex items-center text-sm text-black">
-                        <CalendarClock className="h-3 w-3 mr-1" />
-                        {format(new Date(reflection.date), 'MMM d, yyyy - h:mm a')}
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(reflection.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <p className="text-sm text-black whitespace-pre-wrap">
-                      {reflection.text}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-            <div className="mt-4 flex justify-end">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="bg-orange text-white hover:bg-orange/90 border-orange"
-                onClick={handleClearAll}
-              >
-                Clear All Reflections
-              </Button>
-            </div>
-          </>
-        )}
-
-        {/* Monthly Journal Analysis Section */}
-        <div className="mt-6">
-          <Collapsible
-            open={isAnalysisOpen}
-            onOpenChange={setIsAnalysisOpen}
-            className="border border-border rounded-md"
-          >
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className="flex w-full items-center justify-between p-4"
-              >
-                <div className="flex items-center">
-                  <BarChart2 className="h-5 w-5 mr-2 text-orange" />
-                  <span className="font-semibold">Journal Analysis Summary</span>
-                </div>
-                <ChevronRight className={`h-5 w-5 transition-transform ${isAnalysisOpen ? 'rotate-90' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 bg-muted/20">
-              {journalEntries.length < 2 ? (
-                <div className="text-center py-4 text-black">
-                  <p>Need at least two journal entries to analyze trends.</p>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-4">
-                    <h3 className="font-medium mb-2 text-black">Monthly Sentiment Summary</h3>
-                    <div className="bg-white p-3 rounded-md shadow-sm">
-                      <p className="text-sm mb-2 text-black">
-                        <span className="font-semibold">Overall Trend: </span> 
-                        {overallSentimentChange}
-                      </p>
-                      <p className="text-sm mb-2 text-black">
-                        <span className="font-semibold">Average Sentiment: </span> 
-                        {averageSentiment} 
-                        <span className="ml-2 px-2 py-0.5 rounded-full text-xs text-white" 
-                          style={{backgroundColor: getSentimentColor(averageSentiment)}}>
-                          {averageSentiment >= 0.7 ? "Very Positive" : 
-                           averageSentiment >= 0.5 ? "Positive" : 
-                           averageSentiment >= 0.4 ? "Neutral" : 
-                           averageSentiment >= 0.3 ? "Negative" : "Very Negative"}
-                        </span>
-                      </p>
-                      <p className="text-sm text-black">
-                        <span className="font-semibold">Journal Entries Analyzed: </span> 
-                        {journalEntries.length}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="h-[200px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={timelineData}
-                        margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                        <XAxis 
-                          dataKey="date" 
-                          tick={{ fontSize: 12 }}
-                          padding={{ left: 10, right: 10 }}
-                        />
-                        <YAxis 
-                          domain={[0, 1]} 
-                          tick={{ fontSize: 12 }}
-                          tickFormatter={(v) => v.toFixed(1)}
-                          label={{ 
-                            value: 'Sentiment', 
-                            angle: -90, 
-                            position: 'insideLeft',
-                            style: { textAnchor: 'middle' }
-                          }}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Line
-                          type="monotone"
-                          dataKey="sentiment"
-                          stroke="#9b87f5"
-                          strokeWidth={2}
-                          dot={{ r: 4, fill: "#9b87f5" }}
-                          activeDot={{ r: 6, fill: "#7E69AB" }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </>
-              )}
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-      </CardContent>
-    </Card>
+    <>
+      <MonthlyReflectionCard 
+        reflections={reflections} 
+        onDelete={handleDelete}
+        onClearAll={handleClearAll}
+        currentMonth={currentMonth}
+      />
+      
+      <JournalAnalysisSection 
+        journalEntries={journalEntries}
+        timelineData={timelineData}
+        overallSentimentChange={overallSentimentChange}
+        averageSentiment={averageSentiment}
+        getSentimentColor={getSentimentColor}
+      />
+    </>
   );
 };
