@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Info, Heart, AlertTriangle } from "lucide-react";
+import { Info, Heart, AlertTriangle, ArrowRight } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
@@ -15,6 +15,7 @@ interface ResourceItem {
   link?: string;
   triggerWords: string[]; // Words that trigger this resource
   emotionCategory?: string; // The emotion category this resource addresses
+  actionPlan?: string[]; // Action steps to resolve the concern
 }
 
 interface WellbeingResourcesProps {
@@ -41,6 +42,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
   const [hasNegativeWords, setHasNegativeWords] = useState<boolean>(false);
   const [detectedConcerns, setDetectedConcerns] = useState<DetectedConcern[]>([]);
   const [triggerMatches, setTriggerMatches] = useState<TriggerMatch[]>([]);
+  const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
 
   // Define the negative emotion categories we want to detect
   const negativeEmotionCategories = {
@@ -111,34 +113,69 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         tags: ["crisis", "support", "immediate"],
         link: "https://988lifeline.org/",
         triggerWords: ["overwhelm", "crisis", "suicid", "help", "desperate", "emergency", "panic", "hopeless"],
-        emotionCategory: "Fear"
+        emotionCategory: "Fear",
+        actionPlan: [
+          "Take a moment to breathe deeply and acknowledge your feelings",
+          "Call a crisis helpline like 988 if you need immediate support",
+          "Reach out to a trusted friend or family member",
+          "Remove yourself from stressful environments if possible",
+          "Focus on the present moment using grounding techniques"
+        ]
       },
       {
         title: "Managing Difficult Emotions",
         description: "Techniques like deep breathing, mindfulness, and gentle movement can help regulate emotions.",
         tags: ["self-care", "emotions", "regulation"],
         triggerWords: ["sad", "depress", "anxiet", "worry", "stress", "emotion", "feel", "overwhelm", "difficult"],
-        emotionCategory: "Sadness"
+        emotionCategory: "Sadness",
+        actionPlan: [
+          "Practice deep breathing exercises (4-7-8 technique: inhale for 4, hold for 7, exhale for 8)",
+          "Try a 5-minute mindfulness meditation daily",
+          "Express your feelings through journaling or creative outlets",
+          "Establish a regular exercise routine, even if it's just a short walk",
+          "Create a self-soothing kit with items that engage your five senses"
+        ]
       },
       {
         title: "Healthy Expression of Anger",
         description: "Learn to recognize anger triggers and develop constructive ways to express and channel anger.",
         tags: ["anger", "management", "expression"],
         triggerWords: ["anger", "angry", "mad", "rage", "furious", "frustrat", "irritat", "upset"],
-        emotionCategory: "Anger"
+        emotionCategory: "Anger",
+        actionPlan: [
+          "Identify your personal anger triggers and early warning signs",
+          "Practice time-outs: step away from triggering situations for 10-15 minutes",
+          "Release physical tension through exercise or activities like punching a pillow",
+          "Use 'I statements' when expressing feelings (\"I feel frustrated when...\")",
+          "Consider anger management techniques like progressive muscle relaxation"
+        ]
       },
       {
         title: "Coping with Negative Feelings",
         description: "Strategies for dealing with disgust, aversion, and other challenging emotions.",
         tags: ["coping", "negative", "emotions"],
         triggerWords: ["disgust", "hate", "avers", "loath", "repuls", "revolt", "nauseat"],
-        emotionCategory: "Disgust"
+        emotionCategory: "Disgust",
+        actionPlan: [
+          "Practice cognitive reframing to challenge negative thoughts",
+          "Use systematic desensitization to gradually reduce aversive responses",
+          "Implement distraction techniques when negative feelings arise",
+          "Try the 'opposite action' technique (acting opposite to the emotion)",
+          "Consider talking to a professional about specific phobias or aversions"
+        ]
       },
       {
         title: "Daily Wellness Practices",
         description: "Small daily habits like walking outdoors, quality sleep, and connecting with others can improve wellbeing.",
         tags: ["wellness", "habits", "daily"],
-        triggerWords: ["health", "well", "habit", "sleep", "routine", "exercise", "connect", "practice", "daily", "regular"]
+        triggerWords: ["health", "well", "habit", "sleep", "routine", "exercise", "connect", "practice", "daily", "regular"],
+        actionPlan: [
+          "Start a morning routine that includes 10 minutes of movement",
+          "Prioritize 7-9 hours of sleep each night with a consistent schedule",
+          "Take short breaks every hour if doing focused work",
+          "Stay hydrated by drinking water throughout the day",
+          "Spend at least 15-30 minutes outdoors each day"
+        ]
       },
       // Add professional mental health resources
       {
@@ -147,7 +184,14 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         tags: ["professional", "psychiatry", "research"],
         link: "https://psychiatryonline.org/",
         triggerWords: ["psychiatr", "mental health", "treatment", "dsm", "profession", "diagnosis", "disorder"],
-        emotionCategory: "Sadness"
+        emotionCategory: "Sadness",
+        actionPlan: [
+          "Research specific mental health conditions that may match your symptoms",
+          "Discuss findings with a healthcare provider for proper diagnosis",
+          "Learn about evidence-based treatments for your specific concerns",
+          "Create a list of questions to ask during professional consultations",
+          "Consider joining support groups related to your specific challenges"
+        ]
       },
       {
         title: "SAMHSA Treatment Locator",
@@ -155,7 +199,14 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         tags: ["treatment", "therapy", "professional help"],
         link: "https://findtreatment.samhsa.gov/",
         triggerWords: ["treatment", "therap", "help", "professional", "clinic", "substance", "alcohol", "drug"],
-        emotionCategory: "Fear"
+        emotionCategory: "Fear",
+        actionPlan: [
+          "Use the SAMHSA locator to find nearby treatment options",
+          "Call facilities to ask about insurance coverage and availability",
+          "Prepare questions about treatment approaches and specialties",
+          "Ask about both inpatient and outpatient program options",
+          "Consider involving a trusted person in your treatment planning"
+        ]
       },
       {
         title: "FindTreatment.gov Services",
@@ -163,7 +214,14 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         tags: ["find help", "treatment", "local resources"],
         link: "https://findtreatment.gov/",
         triggerWords: ["find help", "treatment", "therapy", "counseling", "therapist", "professional"],
-        emotionCategory: "Sadness"
+        emotionCategory: "Sadness",
+        actionPlan: [
+          "Search for providers who specialize in your specific concerns",
+          "Check which therapists accept your insurance or offer sliding scale fees",
+          "Prepare for your first appointment by noting your symptoms and goals",
+          "Consider different therapy types (CBT, DBT, psychodynamic, etc.)",
+          "Schedule an initial consultation to assess fit with potential therapists"
+        ]
       },
       {
         title: "NIMH Data Resources",
@@ -171,6 +229,13 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         tags: ["research", "data", "evidence"],
         link: "https://www.nimh.nih.gov/research/research-conducted-at-nimh/nimh-data-archive",
         triggerWords: ["research", "evidence", "study", "data", "science", "experiment"],
+        actionPlan: [
+          "Explore current research on conditions you're experiencing",
+          "Look for clinical trials that may be recruiting participants",
+          "Learn about emerging treatments and their effectiveness",
+          "Use evidence-based self-help resources from reputable sources",
+          "Share relevant research with your healthcare providers"
+        ]
       },
       {
         title: "APA PsycINFO Database",
@@ -178,6 +243,13 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         tags: ["research", "psychology", "literature"],
         link: "https://www.apa.org/pubs/databases/psycinfo",
         triggerWords: ["research", "psychology", "article", "journal", "study", "literature", "evidence"],
+        actionPlan: [
+          "Search for specific psychological topics related to your concerns",
+          "Find peer-reviewed articles on treatment effectiveness",
+          "Access psychological assessment tools and their applications",
+          "Learn about psychological theories that explain your experiences",
+          "Understand the science behind recommended interventions"
+        ]
       },
       {
         title: "WHO MiNDbank Resources",
@@ -185,6 +257,13 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         tags: ["policy", "global", "standards"],
         link: "https://www.mindbank.info/",
         triggerWords: ["policy", "law", "right", "standard", "global", "international", "world"],
+        actionPlan: [
+          "Understand your rights regarding mental health treatment",
+          "Learn about global standards for mental health services",
+          "Explore how different countries approach mental healthcare",
+          "Find advocacy resources for improving mental health systems",
+          "Access policy documents that can inform your healthcare decisions"
+        ]
       }
     ];
     
@@ -279,6 +358,13 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     }
   };
 
+  const togglePlan = (resourceTitle: string) => {
+    setExpandedPlans(prev => ({
+      ...prev,
+      [resourceTitle]: !prev[resourceTitle]
+    }));
+  };
+
   if (!embeddingPoints || embeddingPoints.length === 0) {
     return null;
   }
@@ -349,41 +435,72 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
             <div className="grid md:grid-cols-2 gap-4">
               {filteredResources.map((resource, index) => {
                 const triggerMatches = getResourceTriggerMatches(resource.title);
+                const isExpanded = expandedPlans[resource.title] || false;
+                
                 return (
                   <div 
                     key={index} 
                     className="border rounded-lg p-4 hover:bg-lavender/30 transition-colors cursor-pointer"
-                    onClick={() => handleResourceClick(resource)}
                   >
-                    <h3 className="font-medium mb-2 text-black">{resource.title}</h3>
-                    <p className="text-sm text-black mb-3">{resource.description}</p>
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {resource.tags.map(tag => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
+                    <div onClick={() => handleResourceClick(resource)}>
+                      <h3 className="font-medium mb-2 text-black">{resource.title}</h3>
+                      <p className="text-sm text-black mb-3">{resource.description}</p>
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {resource.tags.map(tag => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                      
+                      {resource.emotionCategory && Object.keys(concernsByCategory).includes(resource.emotionCategory) && (
+                        <div className="mt-2 mb-2">
+                          <Badge className="bg-orange/20 text-orange border-none">
+                            Addresses {resource.emotionCategory.toLowerCase()} concerns
+                          </Badge>
+                        </div>
+                      )}
+                      
+                      {/* Show detected trigger words that matched this resource */}
+                      {triggerMatches.length > 0 && (
+                        <div className="mt-2 mb-2">
+                          <p className="text-xs font-medium text-gray-500 mb-1">Words that triggered this suggestion:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {triggerMatches.map((word, i) => (
+                              <Badge key={i} className="bg-orange/10 text-orange border-orange text-xs">
+                                {word}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
-                    {resource.emotionCategory && Object.keys(concernsByCategory).includes(resource.emotionCategory) && (
-                      <div className="mt-2 mb-2">
-                        <Badge className="bg-orange/20 text-orange border-none">
-                          Addresses {resource.emotionCategory.toLowerCase()} concerns
-                        </Badge>
-                      </div>
-                    )}
-                    
-                    {/* Show detected trigger words that matched this resource */}
-                    {triggerMatches.length > 0 && (
-                      <div className="mt-2 mb-2">
-                        <p className="text-xs font-medium text-gray-500 mb-1">Words that triggered this suggestion:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {triggerMatches.map((word, i) => (
-                            <Badge key={i} className="bg-orange/10 text-orange border-orange text-xs">
-                              {word}
-                            </Badge>
-                          ))}
-                        </div>
+                    {/* Action Plan Section */}
+                    {resource.actionPlan && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <Button
+                          variant="ghost"
+                          className="p-0 h-auto text-sm text-orange hover:text-orange/80 hover:bg-transparent flex items-center gap-1 mb-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePlan(resource.title);
+                          }}
+                        >
+                          <ArrowRight className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                          {isExpanded ? "Hide action plan" : "Show action plan"}
+                        </Button>
+                        
+                        {isExpanded && (
+                          <div className="mt-2 pl-4 border-l-2 border-orange/30 animate-fadeIn">
+                            <p className="text-sm font-medium text-black mb-2">Action Plan:</p>
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                              {resource.actionPlan.map((step, idx) => (
+                                <li key={idx} className="pl-1">{step}</li>
+                              ))}
+                            </ol>
+                          </div>
+                        )}
                       </div>
                     )}
                     
