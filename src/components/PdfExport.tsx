@@ -1,11 +1,12 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileDown } from "lucide-react";
+import { FileDown, FileText, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { v4 as uuidv4 } from 'uuid';
 
 interface PdfExportProps {
   sentimentData: any;
@@ -155,6 +156,60 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
     }
   };
   
+  const addToJournalEntries = () => {
+    try {
+      if (!sentimentData.text && !sentimentData.pdfText) {
+        toast.error("No text content available to add to journal entries");
+        return;
+      }
+      
+      const textContent = sentimentData.text || sentimentData.pdfText;
+      
+      const entry = {
+        id: uuidv4(),
+        text: textContent,
+        date: new Date().toISOString()
+      };
+      
+      const storedEntries = localStorage.getItem('journalEntries');
+      const entries = storedEntries ? JSON.parse(storedEntries) : [];
+      entries.push(entry);
+      
+      localStorage.setItem('journalEntries', JSON.stringify(entries));
+      toast.success("Added to journal entries");
+    } catch (error) {
+      console.error("Error adding to journal entries:", error);
+      toast.error("Failed to add to journal entries");
+    }
+  };
+  
+  const addToMonthlyReflections = () => {
+    try {
+      if (!sentimentData.text && !sentimentData.pdfText) {
+        toast.error("No text content available to add to monthly reflections");
+        return;
+      }
+      
+      const textContent = sentimentData.text || sentimentData.pdfText;
+      
+      const reflection = {
+        id: uuidv4(),
+        text: textContent,
+        date: new Date().toISOString()
+      };
+      
+      const storedReflections = localStorage.getItem('monthlyReflections');
+      const reflections = storedReflections ? JSON.parse(storedReflections) : [];
+      reflections.push(reflection);
+      
+      localStorage.setItem('monthlyReflections', JSON.stringify(reflections));
+      toast.success("Added to monthly reflections");
+    } catch (error) {
+      console.error("Error adding to monthly reflections:", error);
+      toast.error("Failed to add to monthly reflections");
+    }
+  };
+  
   return (
     <Card className="border border-border shadow-md bg-white">
       <CardHeader>
@@ -164,13 +219,33 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
         <p className="text-sm text-muted-foreground mb-4">
           {t("exportDescription")}
         </p>
-        <Button
-          onClick={exportToPdf}
-          className="w-full"
-        >
-          <FileDown className="mr-2 h-4 w-4" />
-          Export to PDF
-        </Button>
+        <div className="flex flex-col space-y-2">
+          <Button
+            onClick={exportToPdf}
+            className="w-full"
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            Export to PDF
+          </Button>
+          
+          <Button
+            onClick={addToJournalEntries}
+            variant="outline"
+            className="w-full border-orange text-orange hover:bg-orange/10"
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Add to Journal Entries
+          </Button>
+          
+          <Button
+            onClick={addToMonthlyReflections}
+            variant="outline"
+            className="w-full border-orange text-orange hover:bg-orange/10"
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            Add to Monthly Reflections
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
