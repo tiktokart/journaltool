@@ -24,6 +24,7 @@ export const TextEmotionViewer = ({
   const [highlightedText, setHighlightedText] = useState<React.ReactNode[]>([]);
   const [showHighlights, setShowHighlights] = useState(true);
   const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
+  const [filteringLevel, setFilteringLevel] = useState<'strict' | 'minimal'>('minimal');
 
   useEffect(() => {
     if (!pdfText || pdfText.length === 0) {
@@ -38,7 +39,7 @@ export const TextEmotionViewer = ({
 
     // Process text with emotion highlighting
     processTextWithEmotions();
-  }, [pdfText, embeddingPoints, showHighlights, hideNonHighlighted]);
+  }, [pdfText, embeddingPoints, showHighlights, hideNonHighlighted, filteringLevel]);
 
   const processTextWithEmotions = () => {
     if (!showHighlights) {
@@ -53,6 +54,36 @@ export const TextEmotionViewer = ({
         wordEmotionMap.set(point.word.toLowerCase(), point.emotionalTone);
       }
     });
+
+    // Words to filter out - only essential filtering now (minimal list)
+    const wordsToFilter = filteringLevel === 'strict' ? [
+      // Prepositions
+      'at', 'by', 'for', 'from', 'in', 'of', 'on', 'to', 'with',
+      'about', 'above', 'across', 'after', 'against', 'along', 'among',
+      'around', 'before', 'behind', 'below', 'beneath', 'beside',
+      'between', 'beyond', 'during', 'except', 'inside', 'into',
+      'like', 'near', 'off', 'over', 'since', 'through',
+      'throughout', 'under', 'until', 'up', 'upon',
+      
+      // Articles
+      'a', 'an', 'the',
+      
+      // Question words
+      'when', 'where', 'why', 'how', 'which', 'what', 'who', 'whom', 'whose',
+      
+      // Pronouns
+      'i', 'me', 'my', 'mine', 'myself',
+      'you', 'your', 'yours', 'yourself', 'yourselves',
+      'he', 'him', 'his', 'himself',
+      'she', 'her', 'hers', 'herself',
+      'it', 'its', 'itself',
+      'we', 'us', 'our', 'ours', 'ourselves',
+      'they', 'them', 'their', 'theirs', 'themselves',
+      'this', 'that', 'these', 'those'
+    ] : [
+      // Minimal filtering - only the most common articles and pronouns
+      'a', 'an', 'the', 'i', 'me', 'my', 'you', 'your', 'we', 'us', 'our', 'they', 'them', 'their'
+    ];
 
     // Split text into words while preserving whitespace and punctuation
     const textSegments: { text: string; emotion: string | null }[] = [];
@@ -71,8 +102,16 @@ export const TextEmotionViewer = ({
 
       // Add word segment
       const word = match[0];
-      const emotion = wordEmotionMap.get(word.toLowerCase()) || null;
-      textSegments.push({ text: word, emotion });
+      const wordLower = word.toLowerCase();
+      const shouldFilter = wordsToFilter.includes(wordLower);
+      const emotion = wordEmotionMap.get(wordLower) || null;
+      
+      // Only filter if it's in our filtered list AND has no emotion assigned
+      if (shouldFilter && !emotion) {
+        textSegments.push({ text: word, emotion: null });
+      } else {
+        textSegments.push({ text: word, emotion });
+      }
 
       lastIndex = match.index + word.length;
     }
@@ -137,7 +176,7 @@ export const TextEmotionViewer = ({
             <Highlighter className="h-5 w-5 mr-2 text-primary" />
             {t("Document Text Visualization")}
           </CardTitle>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant={showHighlights ? "default" : "outline"}
               size="sm"
@@ -147,20 +186,31 @@ export const TextEmotionViewer = ({
               {showHighlights ? t("Hide Emotional Highlights") : t("Show Emotional Highlights")}
             </Button>
             {showHighlights && (
-              <Toggle
-                pressed={hideNonHighlighted}
-                onPressedChange={setHideNonHighlighted}
-                size="sm"
-                aria-label="Toggle non-highlighted words visibility"
-                className="self-start"
-              >
-                {hideNonHighlighted ? (
-                  <EyeOff className="h-4 w-4 mr-1" />
-                ) : (
-                  <Eye className="h-4 w-4 mr-1" />
-                )}
-                {hideNonHighlighted ? t("Show All Text") : t("Hide Non-Highlighted")}
-              </Toggle>
+              <>
+                <Toggle
+                  pressed={hideNonHighlighted}
+                  onPressedChange={setHideNonHighlighted}
+                  size="sm"
+                  aria-label="Toggle non-highlighted words visibility"
+                  className="self-start"
+                >
+                  {hideNonHighlighted ? (
+                    <EyeOff className="h-4 w-4 mr-1" />
+                  ) : (
+                    <Eye className="h-4 w-4 mr-1" />
+                  )}
+                  {hideNonHighlighted ? t("Show All Text") : t("Hide Non-Highlighted")}
+                </Toggle>
+                <Toggle
+                  pressed={filteringLevel === 'strict'}
+                  onPressedChange={(pressed) => setFilteringLevel(pressed ? 'strict' : 'minimal')}
+                  size="sm"
+                  aria-label="Toggle filtering level"
+                  className="self-start"
+                >
+                  {filteringLevel === 'strict' ? "Strict Filtering" : "Minimal Filtering"}
+                </Toggle>
+              </>
             )}
           </div>
         </div>
