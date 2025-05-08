@@ -315,7 +315,7 @@ const Dashboard = () => {
                     <Label htmlFor="daily-plan" className="text-black font-medium">Daily</Label>
                     <Textarea 
                       id="daily-plan"
-                      placeholder="What does your perfect day look like?"
+                      placeholder="Enter your Goals, Objectives, and Tasks"
                       className="min-h-[80px] text-black"
                       value={dailyPlan}
                       onChange={(e) => setDailyPlan(e.target.value)}
@@ -326,7 +326,7 @@ const Dashboard = () => {
                     <Label htmlFor="weekly-plan" className="text-black font-medium">Weekly</Label>
                     <Textarea 
                       id="weekly-plan"
-                      placeholder="What does your perfect week look like?"
+                      placeholder="Enter your Goals, Objectives, and Tasks"
                       className="min-h-[80px] text-black"
                       value={weeklyPlan}
                       onChange={(e) => setWeeklyPlan(e.target.value)}
@@ -337,7 +337,7 @@ const Dashboard = () => {
                     <Label htmlFor="monthly-plan" className="text-black font-medium">Monthly</Label>
                     <Textarea 
                       id="monthly-plan"
-                      placeholder="What does your perfect month look like?"
+                      placeholder="Enter your Goals, Objectives, and Tasks"
                       className="min-h-[80px] text-black"
                       value={monthlyPlan}
                       onChange={(e) => setMonthlyPlan(e.target.value)}
