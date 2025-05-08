@@ -246,6 +246,7 @@ export const AnalysisTabs = ({
                 <CircleDot className="h-4 w-4 mr-2" />
                 <span>{t("hoverOrClick")}</span>
               </div>
+              <p className="text-sm mt-2 text-black">This is a generated text about a recount of someone having a panic attack.</p>
             </CardHeader>
             <CardContent className="p-0">
               <div className="h-[500px] relative">

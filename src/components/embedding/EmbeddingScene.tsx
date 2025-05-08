@@ -112,10 +112,15 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     const scene = sceneRef.current;
     
     if (!cameraRef.current) {
-      cameraRef.current = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      if (externalCameraRef) {
+        externalCameraRef.current = camera;
+      } else {
+        internalCameraRef.current = camera;
+      }
     }
-    const camera = cameraRef.current;
-
+    const camera = cameraRef.current!;
+    
     rendererRef.current = new THREE.WebGLRenderer({ 
       antialias: true, 
       alpha: true,
@@ -133,11 +138,16 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     camera.updateProjectionMatrix();
     camera.position.z = 20;
     
-    // Change background color from dark purple to yellow/soft yellow
-    scene.background = new THREE.Color(0xfef7cd); // Using soft yellow color
+    // Change background color to white
+    scene.background = new THREE.Color(0xFFFFFF);
 
     const controlsInstance = new OrbitControls(camera, renderer.domElement);
-    controlsRef.current = controlsInstance;
+    if (externalControlsRef) {
+      externalControlsRef.current = controlsInstance;
+    } else {
+      internalControlsRef.current = controlsInstance;
+    }
+    
     controlsInstance.enableDamping = true;
     controlsInstance.dampingFactor = 0.1;
     controlsInstance.screenSpacePanning = true;
@@ -223,7 +233,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
         containerRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [cameraRef, containerRef, controlsRef]);
+  }, [externalCameraRef, externalControlsRef]);
 
   useEffect(() => {
     if (selectedEmotionalGroup) {

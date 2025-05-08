@@ -1,6 +1,4 @@
 
-
-
 body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -87,3 +85,15 @@ body {
   color: #f6df60;
 }
 
+/* Bold text for life plan sections */
+.life-plan-title {
+  font-weight: 700;
+  color: #000;
+}
+
+/* Background for Jump to Emotional Groups section */
+.emotional-groups-panel {
+  background-color: rgba(223, 197, 254, 0.95);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}

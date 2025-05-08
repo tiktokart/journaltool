@@ -20,13 +20,13 @@ export const EmotionalClustersControl = ({
   
   return (
     <Card className="border border-border shadow-md bg-light-lavender">
-      <CardHeader>
+      <CardHeader className="bg-purple rounded-t-lg">
         <CardTitle className="flex items-center text-xl text-orange">
           <Brain className="h-5 w-5 mr-2 text-orange" />
           Emotional Clusters
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="bg-lavender">
         <div className="mb-6">
           <p className="text-sm text-black mb-2">
             {t("emotionalClustersDescription")}
