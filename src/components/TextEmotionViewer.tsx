@@ -24,7 +24,7 @@ export const TextEmotionViewer = ({
   const [highlightedText, setHighlightedText] = useState<React.ReactNode[]>([]);
   const [showHighlights, setShowHighlights] = useState(true);
   const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
-  const [filteringLevel, setFilteringLevel] = useState<'strict' | 'minimal'>('minimal');
+  const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal'>('minimal');
 
   useEffect(() => {
     if (!pdfText || pdfText.length === 0) {
@@ -55,35 +55,11 @@ export const TextEmotionViewer = ({
       }
     });
 
-    // Words to filter out - only essential filtering now (minimal list)
-    const wordsToFilter = filteringLevel === 'strict' ? [
-      // Prepositions
-      'at', 'by', 'for', 'from', 'in', 'of', 'on', 'to', 'with',
-      'about', 'above', 'across', 'after', 'against', 'along', 'among',
-      'around', 'before', 'behind', 'below', 'beneath', 'beside',
-      'between', 'beyond', 'during', 'except', 'inside', 'into',
-      'like', 'near', 'off', 'over', 'since', 'through',
-      'throughout', 'under', 'until', 'up', 'upon',
-      
-      // Articles
-      'a', 'an', 'the',
-      
-      // Question words
-      'when', 'where', 'why', 'how', 'which', 'what', 'who', 'whom', 'whose',
-      
-      // Pronouns
-      'i', 'me', 'my', 'mine', 'myself',
-      'you', 'your', 'yours', 'yourself', 'yourselves',
-      'he', 'him', 'his', 'himself',
-      'she', 'her', 'hers', 'herself',
-      'it', 'its', 'itself',
-      'we', 'us', 'our', 'ours', 'ourselves',
-      'they', 'them', 'their', 'theirs', 'themselves',
-      'this', 'that', 'these', 'those'
-    ] : [
-      // Minimal filtering - only the most common articles and pronouns
-      'a', 'an', 'the', 'i', 'me', 'my', 'you', 'your', 'we', 'us', 'our', 'they', 'them', 'their'
-    ];
+    // Words to filter out - significantly reduced filtering, only the most common/basic words
+    const wordsToFilter = filteringLevel === 'minimal' ? [
+      // Minimal filtering - only the most common articles and basic pronouns
+      'a', 'an', 'the', 'is', 'are', 'was', 'were'
+    ] : [];
 
     // Split text into words while preserving whitespace and punctuation
     const textSegments: { text: string; emotion: string | null }[] = [];
@@ -106,11 +82,14 @@ export const TextEmotionViewer = ({
       const shouldFilter = wordsToFilter.includes(wordLower);
       const emotion = wordEmotionMap.get(wordLower) || null;
       
-      // Only filter if it's in our filtered list AND has no emotion assigned
-      if (shouldFilter && !emotion) {
+      // If it has an emotion, never filter it regardless of its type
+      if (emotion) {
+        textSegments.push({ text: word, emotion });
+      } else if (shouldFilter) {
+        // Only filter if it's in our filtered list AND has no emotion assigned
         textSegments.push({ text: word, emotion: null });
       } else {
-        textSegments.push({ text: word, emotion });
+        textSegments.push({ text: word, emotion: null });
       }
 
       lastIndex = match.index + word.length;
@@ -202,13 +181,13 @@ export const TextEmotionViewer = ({
                   {hideNonHighlighted ? t("Show All Text") : t("Hide Non-Highlighted")}
                 </Toggle>
                 <Toggle
-                  pressed={filteringLevel === 'strict'}
-                  onPressedChange={(pressed) => setFilteringLevel(pressed ? 'strict' : 'minimal')}
+                  pressed={filteringLevel === 'none'}
+                  onPressedChange={(pressed) => setFilteringLevel(pressed ? 'none' : 'minimal')}
                   size="sm"
                   aria-label="Toggle filtering level"
                   className="self-start"
                 >
-                  {filteringLevel === 'strict' ? "Strict Filtering" : "Minimal Filtering"}
+                  {filteringLevel === 'none' ? "No Filtering" : "Minimal Filtering"}
                 </Toggle>
               </>
             )}

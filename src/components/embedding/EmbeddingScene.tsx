@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -74,6 +75,12 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     // Log point counts for debugging
     console.log(`EmbeddingScene received ${points.length} points`);
     console.log(`showAllPoints is set to: ${showAllPoints}`);
+    
+    // Make points globally available for other components like TextEmotionViewer
+    if (typeof window !== 'undefined') {
+      window.documentEmbeddingPoints = points;
+      console.log(`EmbeddingScene: Exposed ${points.length} points to window object`);
+    }
     
     const emotionCounts: Record<string, number> = {};
     points.forEach(point => {

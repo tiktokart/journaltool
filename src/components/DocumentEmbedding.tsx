@@ -79,11 +79,17 @@ export const DocumentEmbedding = ({
     if (points.length > 0) {
       console.log(`Setting display points with ${points.length} points from props`);
       setDisplayPoints(points);
+      
+      // Export points to window for TextEmotionViewer to access
+      window.documentEmbeddingPoints = points;
     } else if (generatedPoints.length === 0) {
       console.log("Generating mock points");
       const mockPoints = generateMockPoints(depressedJournalReference);
       setGeneratedPoints(mockPoints);
       setDisplayPoints(mockPoints);
+      
+      // Export points to window for TextEmotionViewer to access
+      window.documentEmbeddingPoints = mockPoints;
     }
   }, [points, depressedJournalReference, generatedPoints.length]);
   

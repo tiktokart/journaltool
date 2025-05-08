@@ -73,6 +73,9 @@ export const AnalysisTabs = ({
   const hasEntitiesData = sentimentData?.entities && sentimentData.entities.length > 0;
   const hasKeyPhrasesData = sentimentData?.keyPhrases && sentimentData.keyPhrases.length > 0;
 
+  // Ensure we have text data for visualization
+  const hasTextData = sentimentData?.text && sentimentData.text.length > 0;
+
   useEffect(() => {
     if (!sentimentData) return;
     
@@ -88,6 +91,12 @@ export const AnalysisTabs = ({
     });
     
     setFilteredPoints(filtered);
+    
+    // Make sure the points are exposed to window for visualization connection
+    if (filtered.length > 0) {
+      window.documentEmbeddingPoints = filtered;
+      console.log(`Updated filteredPoints: ${filtered.length} points`);
+    }
   }, [searchTerm, sentimentData, setFilteredPoints]);
 
   useEffect(() => {
@@ -246,7 +255,9 @@ export const AnalysisTabs = ({
                 <CircleDot className="h-4 w-4 mr-2" />
                 <span>{t("hoverOrClick")}</span>
               </div>
-              <p className="text-sm mt-2 text-black">This is a generated text about a recount of someone having a panic attack.</p>
+              {sentimentData?.sourceDescription && (
+                <p className="text-sm mt-2 text-black">{sentimentData.sourceDescription}</p>
+              )}
             </CardHeader>
             <CardContent className="p-0">
               <div className="h-[500px] relative">
@@ -262,6 +273,17 @@ export const AnalysisTabs = ({
               </div>
             </CardContent>
           </Card>
+        )}
+        
+        {/* Add the TextEmotionViewer component to ensure connection with visualizations */}
+        {hasTextData && hasEmbeddingData && (
+          <div className="mt-6">
+            <TextEmotionViewer
+              pdfText={sentimentData.text}
+              embeddingPoints={sentimentData.embeddingPoints}
+              sourceDescription={sentimentData.sourceDescription}
+            />
+          </div>
         )}
       </TabsContent>
       
