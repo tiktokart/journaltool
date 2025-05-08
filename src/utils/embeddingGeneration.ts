@@ -1,4 +1,3 @@
-
 import { Point } from '../types/embedding';
 
 interface EmbeddingPoint {
@@ -7,6 +6,34 @@ interface EmbeddingPoint {
   sentiment: number;
   emotionalTone: string;
 }
+
+// Common words to exclude from analysis (expanded list)
+const commonWordsToExclude = [
+  // Articles
+  "the", "a", "an",
+  
+  // Common prepositions
+  "in", "on", "at", "by", "for", "with", "about", "against", "between", "into", 
+  "through", "during", "before", "after", "above", "below", "from", "up", "down",
+  "over", "under", "again", "further", "then", "once", "here", "there", "when", 
+  "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other",
+  
+  // Common conjunctions
+  "and", "but", "or", "nor", "yet", "so", "because", "although", "since", "unless",
+  "while", "where", "if", "than",
+  
+  // Helping verbs and to be verbs
+  "is", "are", "am", "was", "were", "be", "being", "been", 
+  "have", "has", "had", "do", "does", "did",
+  "can", "could", "shall", "should", "will", "would", "may", "might", "must",
+  "get", "got", "getting", "goes", "going", "come", "comes", "coming",
+  
+  // Other common words with little semantic value
+  "very", "too", "also", "just", "only", "even", "such", "well", "that", "this",
+  "these", "those", "whom", "whose", "which", "what", "who", "its", "out", "off", 
+  "their", "them", "they", "thing", "things", "some", "something", "one", "two", 
+  "three", "four", "five", "not"
+];
 
 /**
  * Generates embedding points for visualization
@@ -79,7 +106,10 @@ function extractSignificantWords(text: string, limit: number): string[] {
     .toLowerCase()
     .replace(/[^\w\s]/g, '')
     .split(/\s+/)
-    .filter(word => word.length > 3); // Filter out short words
+    .filter(word => {
+      // Filter out short words and common words
+      return word.length > 3 && !commonWordsToExclude.includes(word);
+    });
   
   // Count word frequencies
   const wordFrequency: Record<string, number> = {};

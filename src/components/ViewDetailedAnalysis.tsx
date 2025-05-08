@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -53,7 +52,7 @@ export const ViewDetailedAnalysis = ({
     return `This document contains ${wordCount} words, ${sentenceCount} sentences, and approximately ${paragraphCount} paragraphs.`;
   };
   
-  // More comprehensive extraction of emotional actions/verbs from the text, excluding helping verbs and to be verbs
+  // More comprehensive extraction of emotional actions/verbs from the text
   const extractEmotionalTopics = (): EmotionalTopic[] => {
     if (!displayText) return [];
     
@@ -62,21 +61,48 @@ export const ViewDetailedAnalysis = ({
     
     // Action verbs with emotional connections
     const emotionKeywords: Record<string, string[]> = {
-      "joy": ["laugh", "celebrate", "smile", "dance", "embrace", "rejoice", "play", "sing", "hug", "enjoy"],
-      "sadness": ["cry", "mourn", "sigh", "tears", "grieve", "withdraw", "slouch", "retreat", "weep", "sob"],
-      "anger": ["shout", "slam", "stomp", "punch", "argue", "fight", "confront", "storm", "rage", "yell"],
-      "fear": ["tremble", "freeze", "hide", "run", "escape", "avoid", "flinch", "panic", "flee", "shiver"],
-      "surprise": ["gasp", "jump", "startle", "shock", "revelation", "discovery", "wonder", "astonishment", "amazement", "stun"],
-      "trust": ["handshake", "alliance", "partnership", "agreement", "bonding", "connection", "loyalty", "faith", "rely", "depend"],
-      "anticipation": ["planning", "preparation", "awaiting", "expectation", "prospect", "future", "hope", "countdown", "anticipate", "expect"]
+      "joy": ["laugh", "celebrate", "smile", "dance", "embrace", "rejoice", "play", "sing", "hug", "enjoy", "happy", "excited", "delighted"],
+      "sadness": ["cry", "mourn", "sigh", "tears", "grieve", "withdraw", "slouch", "retreat", "weep", "sob", "sad", "depressed", "melancholy"],
+      "anger": ["shout", "slam", "stomp", "punch", "argue", "fight", "confront", "storm", "rage", "yell", "angry", "furious", "outraged"],
+      "fear": ["tremble", "freeze", "hide", "run", "escape", "avoid", "flinch", "panic", "flee", "shiver", "afraid", "scared", "terrified"],
+      "surprise": ["gasp", "jump", "startle", "shock", "revelation", "discovery", "wonder", "astonishment", "amazement", "stun", "surprised", "astonished"],
+      "trust": ["handshake", "alliance", "partnership", "agreement", "bonding", "connection", "loyalty", "faith", "rely", "depend", "trusted", "reliable"],
+      "anticipation": ["planning", "preparation", "awaiting", "expectation", "prospect", "future", "hope", "countdown", "anticipate", "expect", "eager", "ready"]
     };
     
-    // List of helping verbs and to be verbs to exclude
-    const verbsToExclude = [
+    // Common words to exclude (helping verbs, to be verbs, prepositions, conjunctions, articles, etc.)
+    const wordsToExclude = [
+      // Articles
+      "the", "a", "an",
+      
+      // Common prepositions
+      "in", "on", "at", "by", "for", "with", "about", "against", "between", "into", 
+      "through", "during", "before", "after", "above", "below", "from", "up", "down",
+      "over", "under", "again", "further", "then", "once", "here", "there", "when", 
+      "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other",
+      
+      // Common conjunctions
+      "and", "but", "or", "nor", "yet", "so", "because", "although", "since", "unless",
+      "while", "where", "if", "than",
+      
+      // Helping verbs and to be verbs
       "is", "are", "am", "was", "were", "be", "being", "been", 
       "have", "has", "had", "do", "does", "did",
       "can", "could", "shall", "should", "will", "would", "may", "might", "must",
-      "get", "got", "getting", "goes", "going", "come", "comes", "coming"
+      "get", "got", "getting", "goes", "going", "come", "comes", "coming",
+      
+      // Common verbs that are unlikely to be subjects
+      "say", "said", "says", "saying", "tell", "told", "tells", "telling",
+      "go", "went", "gone", "make", "made", "makes", "making",
+      "take", "took", "taken", "taking", "see", "saw", "seen", "seeing",
+      "know", "knew", "known", "knowing", "think", "thought", "thinking",
+      "use", "used", "using", "find", "found", "finding", "give", "gave", "given", "giving",
+      
+      // Other common words with little semantic value
+      "very", "too", "also", "just", "only", "even", "such", "well", "that", "this",
+      "these", "those", "whom", "whose", "which", "what", "who", "its", "out", "off", 
+      "their", "them", "they", "thing", "things", "some", "something", "one", "two", 
+      "three", "four", "five", "not"
     ];
     
     // Count actual instances of action verbs
@@ -85,7 +111,7 @@ export const ViewDetailedAnalysis = ({
     // First, parse through whole text to identify action verbs and count instances
     words.forEach(word => {
       if (word.length < 3) return; // Skip short words
-      if (verbsToExclude.includes(word)) return; // Skip helping verbs and to be verbs
+      if (wordsToExclude.includes(word)) return; // Skip excluded words
       
       // Check if this word is in our emotion keywords lists
       for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
@@ -99,7 +125,7 @@ export const ViewDetailedAnalysis = ({
     // Count all words in the text (even those not in our predefined lists)
     const wordFrequency: Record<string, number> = {};
     words.forEach(word => {
-      if (word.length >= 3 && !verbsToExclude.includes(word)) { // Skip short words and excluded verbs
+      if (word.length >= 3 && !wordsToExclude.includes(word)) { // Skip short words and excluded words
         wordFrequency[word] = (wordFrequency[word] || 0) + 1;
       }
     });
@@ -125,52 +151,80 @@ export const ViewDetailedAnalysis = ({
       combinedCounts[word] = (combinedCounts[word] || 0) + Math.floor(contextCount * 0.5); // Weight context slightly less than direct mentions
     }
     
-    // Add frequent words from the text that aren't in our predefined lists
+    // Add frequent verbs from the text that aren't in our predefined lists
     for (const [word, count] of Object.entries(wordFrequency)) {
-      if (count >= 2 && !combinedCounts[word] && !verbsToExclude.includes(word)) {  // Changed from 3 to 2 to be more sensitive
-        combinedCounts[word] = count;
+      if (count >= 2 && !combinedCounts[word] && !wordsToExclude.includes(word)) {
+        // Check if the word looks like a verb (common verb endings)
+        if (word.endsWith("ing") || word.endsWith("ed") || word.endsWith("ize") || 
+            word.endsWith("ise") || word.endsWith("ate") || word.endsWith("ify") || 
+            word.endsWith("en")) {
+          combinedCounts[word] = count;
+        }
       }
     }
     
-    // Get all action verbs that occur at least twice (loosened from 3+ times)
+    // Get all action verbs that occur at least twice
     return Object.entries(combinedCounts)
-      .filter(([word, count]) => count >= 2 && !verbsToExclude.includes(word))  // Changed from 3 to 2 to be more sensitive
+      .filter(([word, count]) => count >= 2 && !wordsToExclude.includes(word))
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10) // Limit to top 10
       .map(([topic, count]) => ({ topic, count: count as number }));
   };
   
-  // Improved extraction of main subjects/nouns from text using both counting and context, excluding verbs
+  // Improved extraction of main subjects/nouns from text
   const extractMainSubjects = (): MainSubject[] => {
     if (!displayText) return [];
     
     // Parse sentences for better contextual analysis
     const sentences = displayText.toLowerCase().split(/[.!?]+/).filter(s => s.trim().length > 0);
     
-    // Common noun subjects to look for
-    const subjectCategories: Record<string, string[]> = {
-      "family": ["family", "parent", "child", "sibling", "mother", "father", "daughter", "son", "home", "brother", "sister"],
-      "work": ["job", "career", "office", "profession", "business", "company", "project", "task", "boss", "colleague", "meeting", "work"],
-      "education": ["learn", "study", "school", "college", "university", "education", "knowledge", "degree", "class", "teacher", "student", "book", "course"],
-      "health": ["health", "body", "illness", "wellness", "exercise", "doctor", "medicine", "hospital", "symptom", "disease", "therapy", "treatment"],
-      "finance": ["money", "budget", "savings", "investment", "account", "expense", "income", "debt", "wealth", "bank", "cost", "finance"],
-      "travel": ["journey", "destination", "vacation", "trip", "adventure", "exploration", "places", "transport", "hotel", "flight", "travel"],
-      "technology": ["device", "computer", "software", "internet", "phone", "application", "system", "network", "data", "technology", "digital"],
-      "art": ["creation", "music", "painting", "literature", "film", "culture", "expression", "beauty", "design", "art", "artist", "creativity"]
-    };
-    
-    // List of verbs to exclude as subjects
-    const verbsToExclude = [
+    // Common words to exclude (helping verbs, to be verbs, prepositions, conjunctions, articles, etc.)
+    const wordsToExclude = [
+      // Articles
+      "the", "a", "an",
+      
+      // Common prepositions
+      "in", "on", "at", "by", "for", "with", "about", "against", "between", "into", 
+      "through", "during", "before", "after", "above", "below", "from", "up", "down",
+      "over", "under", "again", "further", "then", "once", "here", "there", "when", 
+      "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other",
+      
+      // Common conjunctions
+      "and", "but", "or", "nor", "yet", "so", "because", "although", "since", "unless",
+      "while", "where", "if", "than",
+      
+      // Helping verbs and to be verbs
       "is", "are", "am", "was", "were", "be", "being", "been", 
       "have", "has", "had", "do", "does", "did",
       "can", "could", "shall", "should", "will", "would", "may", "might", "must",
       "get", "got", "getting", "goes", "going", "come", "comes", "coming",
+      
+      // Common verbs that are unlikely to be subjects
       "say", "said", "says", "saying", "tell", "told", "tells", "telling",
       "go", "went", "gone", "make", "made", "makes", "making",
       "take", "took", "taken", "taking", "see", "saw", "seen", "seeing",
       "know", "knew", "known", "knowing", "think", "thought", "thinking",
-      "use", "used", "using", "find", "found", "finding", "give", "gave", "given", "giving"
+      "use", "used", "using", "find", "found", "finding", "give", "gave", "given", "giving",
+      
+      // Other common words with little semantic value
+      "very", "too", "also", "just", "only", "even", "such", "well", "that", "this",
+      "these", "those", "whom", "whose", "which", "what", "who", "its", "out", "off", 
+      "their", "them", "they", "thing", "things", "some", "something", "one", "two", 
+      "three", "four", "five", "not"
     ];
+    
+    // Common noun subjects to look for
+    const subjectCategories: Record<string, string[]> = {
+      "family": ["family", "parent", "child", "sibling", "mother", "father", "daughter", "son", "home", "brother", "sister"],
+      "work": ["job", "career", "office", "profession", "business", "company", "project", "task", "boss", "colleague", "meeting", "work"],
+      "education": ["school", "college", "university", "education", "knowledge", "degree", "class", "teacher", "student", "book", "course"],
+      "health": ["health", "body", "illness", "wellness", "exercise", "doctor", "medicine", "hospital", "symptom", "disease", "therapy", "treatment"],
+      "finance": ["money", "budget", "savings", "investment", "account", "expense", "income", "debt", "wealth", "bank", "cost", "finance"],
+      "travel": ["journey", "destination", "vacation", "trip", "adventure", "exploration", "places", "transport", "hotel", "flight", "travel"],
+      "technology": ["device", "computer", "software", "internet", "phone", "application", "system", "network", "data", "technology", "digital"],
+      "art": ["creation", "music", "painting", "literature", "film", "culture", "expression", "beauty", "design", "art", "artist", "creativity"],
+      "animals": ["cat", "dog", "bird", "animal", "pet", "wildlife", "creature", "species", "fish", "mammal", "reptile"]
+    };
     
     // Track noun frequency and context
     const nounCounts: Record<string, number> = {};
@@ -182,7 +236,7 @@ export const ViewDetailedAnalysis = ({
     // Count all words in the text (even those not in our predefined lists)
     const wordFrequency: Record<string, number> = {};
     words.forEach(word => {
-      if (word.length >= 3 && !verbsToExclude.includes(word)) { // Skip short words and verbs
+      if (word.length >= 3 && !wordsToExclude.includes(word)) { // Skip short words and excluded words
         wordFrequency[word] = (wordFrequency[word] || 0) + 1;
       }
     });
@@ -190,7 +244,7 @@ export const ViewDetailedAnalysis = ({
     // First check for words in our categorized lists
     words.forEach(word => {
       if (word.length < 3) return; // Skip short words
-      if (verbsToExclude.includes(word)) return; // Skip verbs
+      if (wordsToExclude.includes(word)) return; // Skip excluded words
       
       // Check if this word is a known subject/noun
       for (const [category, nouns] of Object.entries(subjectCategories)) {
@@ -246,16 +300,21 @@ export const ViewDetailedAnalysis = ({
       combinedCounts[noun] = (combinedCounts[noun] || 0) + Math.floor(contextScore * 0.5);
     }
     
-    // Add frequent words from the text that aren't in our predefined lists and aren't verbs
+    // Add frequent words from the text that aren't in our predefined lists, aren't excluded, and look like nouns
     for (const [word, count] of Object.entries(wordFrequency)) {
-      if (count >= 2 && !combinedCounts[word] && !verbsToExclude.includes(word)) {
-        combinedCounts[word] = count;
+      if (count >= 2 && !combinedCounts[word] && !wordsToExclude.includes(word)) {
+        // Check if the word looks like a noun (not ending with common verb endings)
+        if (!word.endsWith("ing") && !word.endsWith("ed") && !word.endsWith("ize") && 
+            !word.endsWith("ise") && !word.endsWith("ate") && !word.endsWith("ify") && 
+            !word.endsWith("en")) {
+          combinedCounts[word] = count;
+        }
       }
     }
     
-    // Get all nouns that appear at least twice (loosened from 3+ times)
+    // Get all nouns that appear at least twice
     return Object.entries(combinedCounts)
-      .filter(([word, count]) => count >= 2 && !verbsToExclude.includes(word))
+      .filter(([word, count]) => count >= 2 && !wordsToExclude.includes(word))
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8) // Limit to top 8
       .map(([subject, count]) => ({ subject, count: count as number }));
@@ -303,7 +362,8 @@ export const ViewDetailedAnalysis = ({
       "finance": "bg-yellow-100 text-yellow-800",
       "travel": "bg-teal-100 text-teal-800",
       "technology": "bg-slate-100 text-slate-800",
-      "art": "bg-rose-100 text-rose-800"
+      "art": "bg-rose-100 text-rose-800",
+      "animals": "bg-sky-100 text-sky-800"
     };
     
     for (const [category, nouns] of Object.entries({
@@ -314,7 +374,8 @@ export const ViewDetailedAnalysis = ({
       "finance": ["money", "budget", "savings", "investment", "account", "expense", "income", "debt", "wealth"],
       "travel": ["journey", "destination", "vacation", "trip", "adventure", "exploration", "places", "transport"],
       "technology": ["device", "computer", "software", "internet", "phone", "application", "system", "network"],
-      "art": ["creation", "music", "painting", "literature", "film", "culture", "expression", "beauty", "design"]
+      "art": ["creation", "music", "painting", "literature", "film", "culture", "expression", "beauty", "design"],
+      "animals": ["cat", "dog", "bird", "animal", "pet", "wildlife", "creature", "species", "fish", "mammal", "reptile"]
     })) {
       if (nouns.includes(subject)) {
         return subjectColors[category];
