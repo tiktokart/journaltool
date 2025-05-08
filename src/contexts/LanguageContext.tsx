@@ -85,7 +85,6 @@ const translations: Record<string, Record<string, string>> = {
     
     // Specific translations
     uploadDocuments: "Upload Documents",
-    analyzeWithBERT: "Analyze with BERT",
     analyzeWithGemma3: "Analyze with Gemma 3",
     documentTextVisualization: "Document Text Visualization",
     emotionalAnalysisVisualization: "Emotional Analysis Visualization",
@@ -229,7 +228,6 @@ const translations: Record<string, Record<string, string>> = {
     
     // Specific translations
     uploadDocuments: "Télécharger des documents",
-    analyzeWithBERT: "Analyser avec BERT",
     analyzeWithGemma3: "Analyser avec Gemma 3",
     documentTextVisualization: "Visualisation de texte de document",
     emotionalAnalysisVisualization: "Visualisation de l'analyse émotionnelle",
@@ -259,7 +257,6 @@ const translations: Record<string, Record<string, string>> = {
     resetView: "Réinitialiser la vue",
     hoverOrClick: "Survolez ou cliquez sur les points pour voir les détails",
     selected: "Sélectionné",
-    neutral: "Neutre",
     searchWords: "Rechercher des mots",
     noDataTabName: "Aucune donnée disponible pour l'onglet {tabName}",
     dataAvailableMissing: "Certaines données requises pour cette visualisation ne sont pas disponibles. Essayez d'analyser à nouveau le document ou essayez un document différent.",
@@ -374,7 +371,6 @@ const translations: Record<string, Record<string, string>> = {
     
     // Specific translations
     uploadDocuments: "Cargar documentos",
-    analyzeWithBERT: "Analizar con BERT",
     analyzeWithGemma3: "Analizar con Gemma 3",
     documentTextVisualization: "Visualización de texto de documento",
     emotionalAnalysisVisualization: "Visualización de análisis emocional",
@@ -404,7 +400,6 @@ const translations: Record<string, Record<string, string>> = {
     resetView: "Restablecer vista",
     hoverOrClick: "Pase el cursor o haga clic en los puntos para ver detalles",
     selected: "Seleccionado",
-    neutral: "Neutral",
     searchWords: "Buscar palabras",
     noDataTabName: "No hay datos disponibles para la pestaña {tabName}",
     dataAvailableMissing: "Algunos datos necesarios para esta visualización no están disponibles. Intente analizar el documento de nuevo o pruebe con un documento diferente.",
