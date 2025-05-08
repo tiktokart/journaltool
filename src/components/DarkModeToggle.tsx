@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,10 +11,26 @@ interface DarkModeToggleProps {
 const DarkModeToggle = ({ className }: DarkModeToggleProps) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // Check for saved preference on component mount
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setIsDarkMode(savedDarkMode);
+    if (savedDarkMode) {
+      document.documentElement.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+    }
+  }, []);
+
   const handleToggle = () => {
-    setIsDarkMode(!isDarkMode);
-    // Apply dark mode class to document for future implementation of actual dark mode
-    if (!isDarkMode) {
+    const newDarkModeState = !isDarkMode;
+    setIsDarkMode(newDarkModeState);
+    
+    // Save preference to localStorage
+    localStorage.setItem('darkMode', newDarkModeState.toString());
+    
+    // Apply dark mode class to document
+    if (newDarkModeState) {
       document.documentElement.classList.add('dark-mode');
     } else {
       document.documentElement.classList.remove('dark-mode');

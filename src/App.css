@@ -1,3 +1,4 @@
+
 body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -108,6 +109,57 @@ body {
   --background: #1A1F2C;
   --foreground: #ffffff;
   color-scheme: dark;
+}
+
+/* Dark Mode Implementation - Invert colors except for header */
+.dark-mode main {
+  background-color: #1A1F2C;
+  color: #ffffff;
+}
+
+.dark-mode .bg-white {
+  background-color: #222222;
+  color: #ffffff;
+}
+
+.dark-mode .text-black {
+  color: #ffffff;
+}
+
+/* Keep header consistent by explicitly setting its colors */
+header.bg-yellow {
+  background-color: #f6df60;
+}
+
+.dark-mode header.bg-yellow {
+  background-color: #f6df60;
+}
+
+.dark-mode header .text-black {
+  color: #000000;
+}
+
+/* Card styling for dark mode */
+.dark-mode .card {
+  background-color: #2A2A2A;
+  border-color: #3A3A3A;
+}
+
+/* Form elements in dark mode */
+.dark-mode input, 
+.dark-mode textarea {
+  background-color: #333333;
+  color: white;
+  border-color: #444444;
+}
+
+.dark-mode input::placeholder, 
+.dark-mode textarea::placeholder {
+  color: #999999;
+}
+
+.dark-mode button.bg-orange {
+  background-color: #e56e00;
 }
 
 /* Wave Animation Styles */
