@@ -37,12 +37,12 @@ export const DocumentSummary = ({ summary }: DocumentSummaryProps) => {
             >
               {isCollapsibleOpen ? (
                 <>
-                  <ChevronUp className="h-4 w-4 mr-1" />
+                  <ChevronUp className="h-4 w-4 mr-1 icon-dance" />
                   {t("showLess")}
                 </>
               ) : (
                 <>
-                  <ChevronDown className="h-4 w-4 mr-1" />
+                  <ChevronDown className="h-4 w-4 mr-1 icon-dance" />
                   {t("readMore")}
                 </>
               )}

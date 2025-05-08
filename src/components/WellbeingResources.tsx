@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -54,8 +55,8 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     'Sadness': ['sad', 'depressed', 'unhappy', 'miserable', 'gloomy', 'heartbroken', 'grief', 'despair', 'sorry']
   };
   
-  // Define substance abuse related keywords
-  const substanceAbuseKeywords = ['drug', 'drugs', 'substance', 'alcohol', 'addiction', 'addicted', 'using', 
+  // Define sensitive related keywords - blacklisted from UI display
+  const sensitiveKeywords = ['drug', 'substance', 'alcohol', 'addiction', 'addicted', 
     'abuse', 'abusing', 'smoke', 'smoking', 'weed', 'marijuana', 'cocaine', 'heroin', 'opioid', 'pill', 'pills', 
     'overdose', 'withdrawal', 'relapse', 'clean', 'sober', 'recovery', 'rehab', 'detox'];
 
@@ -109,9 +110,9 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     // Set the detected concerns
     setDetectedConcerns(foundConcerns);
     
-    // Check for substance abuse related words
-    const hasSubstanceAbuseConcerns = wordsInText.some(word => 
-      substanceAbuseKeywords.some(keyword => word && word.includes(keyword))
+    // Check for sensitive content related words - but don't display them in UI
+    const hasSensitiveContentConcerns = wordsInText.some(word => 
+      sensitiveKeywords.some(keyword => word && word.includes(keyword))
     );
     
     // Set if any negative words were found in our specific categories
@@ -203,13 +204,13 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
           "Spend at least 15-30 minutes outdoors each day"
         ]
       },
-      // Substance abuse resources with specific triggers and hide matched words flag
+      // Sensitive content resources with updated neutral language and hide matched words flag
       {
-        title: "Substance Use Support",
-        description: "Find substance use treatment facilities and programs through SAMHSA's national helpline.",
+        title: "Recovery Support",
+        description: "Find treatment facilities and programs through SAMHSA's national helpline.",
         tags: ["treatment", "support"],
         link: "https://findtreatment.samhsa.gov/",
-        triggerWords: substanceAbuseKeywords,
+        triggerWords: sensitiveKeywords,
         hideMatchedWords: true, // Add flag to hide matched words for this sensitive resource
         actionPlan: [
           "Call SAMHSA's National Helpline at 1-800-662-HELP (4357) for 24/7 support",
@@ -297,7 +298,7 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     
     setTriggerMatches(matches);
     
-    // Filter resources based on detected concerns, trigger word matches and substance abuse keywords
+    // Filter resources based on detected concerns, trigger word matches and sensitive content keywords
     let relevantResources: ResourceItem[] = [];
     
     // First add resources that match detected emotion categories
@@ -313,12 +314,12 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
       relevantResources = [...categorizedResources];
     }
     
-    // Always include substance-related resources if keywords are detected
+    // Always include sensitive content-related resources if keywords are detected
     // This ensures the resource appears even if we hide the trigger words
-    if (hasSubstanceAbuseConcerns) {
-      const substanceResource = allResources.find(r => r.title === "Substance Use Support");
-      if (substanceResource && !relevantResources.some(r => r.title === substanceResource.title)) {
-        relevantResources.push(substanceResource);
+    if (hasSensitiveContentConcerns) {
+      const sensitiveResource = allResources.find(r => r.title === "Recovery Support");
+      if (sensitiveResource && !relevantResources.some(r => r.title === sensitiveResource.title)) {
+        relevantResources.push(sensitiveResource);
       }
     }
     
@@ -369,7 +370,7 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     if (resourceIndex === -1) return [];
     
     const match = triggerMatches.find(m => m.resourceIndex === resourceIndex);
-    return match ? match.matchedWords : [];
+    return match ? match.matchedWords.filter(word => !sensitiveKeywords.includes(word)) : [];
   };
   
   const handleResourceClick = (resource: ResourceItem) => {

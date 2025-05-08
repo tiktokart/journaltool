@@ -1,3 +1,4 @@
+
 import { generateSummary } from './summaryGeneration';
 import { calculateSentiment } from './sentimentAnalysis';
 import { extractEntities } from './entityExtraction';
@@ -64,9 +65,3 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     throw error;
   }
 };
-
-async function generateMockEmbeddingPoints(text: string) {
-  console.log("Generating mock embedding points...");
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return generateMockEmbeddingPoints(text);
-}
