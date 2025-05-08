@@ -136,7 +136,7 @@ export const WordComparisonController = ({
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-2">
           <CardTitle className="flex items-center text-xl">
-            <GitCompareArrows className="h-5 w-5 mr-2" />
+            <GitCompareArrows className="h-5 w-5 mr-2 icon-dance" />
             {t("wordComparison")}
           </CardTitle>
           

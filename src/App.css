@@ -61,6 +61,31 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
+/* New dance animation for icons */
+@keyframes icon-dance {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-10deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(0deg) scale(1);
+  }
+  75% {
+    transform: rotate(10deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+.icon-dance {
+  animation: icon-dance 2s ease-in-out infinite;
+  transform-origin: center;
+  display: inline-block;
+}
+
 /* Color for emotional tones in visualization */
 .emotional-tone-yellow {
   color: #f6df60;

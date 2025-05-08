@@ -106,7 +106,7 @@ export default function Index() {
           <Card className="border-0 shadow-md bg-white">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
-                <Target className="h-5 w-5 mr-2 text-orange" />
+                <Target className="h-5 w-5 mr-2 text-orange icon-dance" />
                 Emotional Insights
               </CardTitle>
             </CardHeader>
@@ -120,7 +120,7 @@ export default function Index() {
           <Card className="border-0 shadow-md bg-white">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
-                <Book className="h-5 w-5 mr-2 text-orange" />
+                <Book className="h-5 w-5 mr-2 text-orange icon-dance" />
                 Journal Tracker
               </CardTitle>
             </CardHeader>
@@ -134,7 +134,7 @@ export default function Index() {
           <Card className="border-0 shadow-md bg-white">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
-                <BarChart className="h-5 w-5 mr-2 text-orange" />
+                <BarChart className="h-5 w-5 mr-2 text-orange icon-dance" />
                 Sentiment Analysis
               </CardTitle>
             </CardHeader>
@@ -253,7 +253,7 @@ export default function Index() {
               <CollapsibleTrigger asChild>
                 <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50">
                   <div className="flex items-center">
-                    <FileText className="h-5 w-5 mr-2 text-orange" />
+                    <FileText className="h-5 w-5 mr-2 text-orange icon-dance" />
                     <span className="font-medium text-black">View Detailed Analysis Data</span>
                   </div>
                   {isCollapsibleOpen ? (
@@ -345,7 +345,7 @@ export default function Index() {
         {/* Word Comparison */}
         <div className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-center text-black flex items-center justify-center">
-            <GitCompareArrows className="h-6 w-6 mr-2 text-orange" />
+            <GitCompareArrows className="h-6 w-6 mr-2 text-orange icon-dance" />
             Word Comparison
           </h2>
           <div className="bg-white p-4 rounded-lg shadow-md">
