@@ -22,6 +22,7 @@ interface MonthlyReflectionsProps {
 export const MonthlyReflections = ({ journalText }: MonthlyReflectionsProps) => {
   const { t } = useLanguage();
   const [reflections, setReflections] = useState<MonthlyReflection[]>([]);
+  const currentMonth = format(new Date(), 'MMMM yyyy');
 
   useEffect(() => {
     loadReflections();
@@ -93,6 +94,9 @@ export const MonthlyReflections = ({ journalText }: MonthlyReflectionsProps) => 
         <CardTitle className="flex items-center text-black">
           <CalendarClock className="h-5 w-5 mr-2 text-orange" />
           <span className="font-bold">Monthly Reflections</span>
+          <span className="ml-2 text-sm bg-orange/20 text-orange px-2 py-0.5 rounded-full">
+            {currentMonth}
+          </span>
         </CardTitle>
         <CardDescription className="text-black">
           Your personal growth journey over time
