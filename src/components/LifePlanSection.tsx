@@ -1,6 +1,4 @@
 
-// This is a new file that will override the read-only file's implementation
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,38 +35,6 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
     loadLifePlanFromStorage();
   }, []);
 
-  useEffect(() => {
-    // Update relevant section if journalText is passed and a section is being added to
-    if (!journalText) return;
-    
-    const addTextToSection = (currentText: string): string => {
-      if (!currentText) return journalText;
-      return currentText + "\n\n" + journalText;
-    };
-    
-    // Check if there's a pending section update via localStorage flag
-    const pendingSection = localStorage.getItem('pendingLifePlanSection');
-    if (pendingSection) {
-      switch (pendingSection) {
-        case 'daily':
-          setDailyLifeText(addTextToSection(dailyLifeText));
-          localStorage.setItem('dailyLifeText', addTextToSection(dailyLifeText));
-          break;
-        case 'weekly':
-          setWeeklyLifeText(addTextToSection(weeklyLifeText));
-          localStorage.setItem('weeklyLifeText', addTextToSection(weeklyLifeText));
-          break;
-        case 'monthly':
-          setMonthlyLifeText(addTextToSection(monthlyLifeText));
-          localStorage.setItem('monthlyLifeText', addTextToSection(monthlyLifeText));
-          break;
-      }
-      
-      // Clear the flag
-      localStorage.removeItem('pendingLifePlanSection');
-    }
-  }, [journalText, dailyLifeText, weeklyLifeText, monthlyLifeText]);
-
   const handleSaveDaily = () => {
     localStorage.setItem('dailyLifeText', dailyLifeText);
   };
@@ -90,7 +56,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
           <CardHeader>
             <CardTitle className="flex items-center text-black">
               <Calendar className="h-5 w-5 mr-2 text-orange" />
-              <span className="font-bold">Daily Life</span>
+              <span className="font-bold text-black">Daily Life</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -113,7 +79,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
           <CardHeader>
             <CardTitle className="flex items-center text-black">
               <Clock className="h-5 w-5 mr-2 text-orange" />
-              <span className="font-bold">Weekly Life</span>
+              <span className="font-bold text-black">Weekly Life</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -136,7 +102,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
           <CardHeader>
             <CardTitle className="flex items-center text-black">
               <CalendarClock className="h-5 w-5 mr-2 text-orange" />
-              <span className="font-bold">Monthly Life</span>
+              <span className="font-bold text-black">Monthly Life</span>
             </CardTitle>
           </CardHeader>
           <CardContent>

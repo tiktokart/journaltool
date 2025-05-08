@@ -1,85 +1,99 @@
 
-import { Point } from "../../types/embedding";
-import { getEmotionColor, getSentimentLabel } from "../../utils/embeddingUtils";
+import { useState, useEffect } from "react";
+import { Point } from "@/types/embedding";
+import { Badge } from "@/components/ui/badge";
+import { getEmotionColor } from "@/utils/embeddingUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface HoverInfoPanelProps {
-  point: Point;
+  point: Point | null;
+  position: { x: number; y: number } | null;
 }
 
-export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
+export const HoverInfoPanel = ({ point, position }: HoverInfoPanelProps) => {
   const { t } = useLanguage();
+  const [relatedWords, setRelatedWords] = useState<{ word: string; strength: number }[]>([]);
   
-  if (!point) return null;
-  
-  // Use gray color for neutral words
-  const emotionColor = point.emotionalTone === "Neutral" 
-    ? "rgb(128, 128, 128)" 
-    : getEmotionColor(point.emotionalTone || "");
-  
-  // Translate emotional tone
-  const getTranslatedEmotion = (emotion: string): string => {
-    if (!emotion) return t("neutral");
-    const lowerCaseEmotion = emotion.toLowerCase();
-    if (t(lowerCaseEmotion)) {
-      return t(lowerCaseEmotion);
+  useEffect(() => {
+    if (point && point.relationships) {
+      const related = point.relationships
+        .sort((a, b) => b.strength - a.strength)
+        .slice(0, 3)
+        .map(rel => {
+          const relatedPoint = window.allEmbeddingPoints?.find(p => p.id === rel.id);
+          return {
+            word: relatedPoint?.word || "unknown",
+            strength: rel.strength
+          };
+        });
+      setRelatedWords(related);
+    } else {
+      setRelatedWords([]);
     }
-    return emotion || t("neutral");
+  }, [point]);
+  
+  if (!point || !position) return null;
+  
+  const emotionColor = getEmotionColor(point.emotionalTone || "Neutral");
+  
+  const panelStyle = {
+    position: "absolute" as "absolute",
+    top: `${position.y}px`,
+    left: `${position.x}px`,
+    transform: "translate(-50%, -100%)",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: "0.5rem",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    padding: "1rem",
+    zIndex: 50,
+    maxWidth: "300px",
+    border: "1px solid #f6df60",
+    pointerEvents: "none"
   };
   
-  // Translate sentiment label
-  const getTranslatedSentiment = (sentiment: string): string => {
-    const key = sentiment.toLowerCase().replace(/\s+/g, '');
-    if (t(key)) {
-      return t(key);
-    }
-    return sentiment;
-  };
-  
+  const sentimentBgClass = 
+    point.sentiment > 0.6 ? "bg-sentiment-positive" : 
+    point.sentiment < 0.4 ? "bg-sentiment-negative" : 
+    "bg-sentiment-neutral";
+
   return (
-    <div className="absolute bottom-4 left-4 bg-card p-3 rounded-lg shadow-md max-w-xs z-10 border border-border">
-      <div className="flex items-center mb-2">
-        <div 
-          className="w-3 h-3 rounded-full mr-2" 
-          style={{ backgroundColor: emotionColor }} 
-        />
-        <span className="font-medium">
-          {point.emotionalTone ? getTranslatedEmotion(point.emotionalTone) : t("neutral")}
-        </span>
-      </div>
-      <p className="text-lg font-bold mb-2">{point.word}</p>
-      
-      {point.keywords && (
-        <div className="mb-2">
-          <span className="text-xs font-medium block mb-1">{t("relatedConcepts")}:</span>
-          <div className="flex flex-wrap gap-1">
-            {point.keywords.map((keyword, idx) => (
-              <span key={idx} className="text-xs bg-accent px-1.5 py-0.5 rounded-full">{keyword}</span>
-            ))}
-          </div>
+    <div style={panelStyle}>
+      <div className="flex flex-col gap-2 text-black">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-lg">{point.word}</h3>
+          <div 
+            className="w-4 h-4 rounded-full" 
+            style={{ backgroundColor: emotionColor }}
+          ></div>
         </div>
-      )}
-      
-      <div className="text-xs flex justify-between mb-2">
-        <span>{t("sentiment")}: {getTranslatedSentiment(getSentimentLabel(point.sentiment))}</span>
-        {point.emotionalTone && (
-          <span>{t("emotionalTones")}: {getTranslatedEmotion(point.emotionalTone)}</span>
+        
+        <div>
+          <span className="text-sm font-semibold">{t("emotionalTone")}:</span>
+          <span className="ml-2 text-sm">{point.emotionalTone || t("neutral")}</span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold">{t("sentiment")}:</span>
+          <div className={`h-2 flex-1 rounded-full ${sentimentBgClass}`}></div>
+          <span className="text-xs">{Math.round(point.sentiment * 100)}%</span>
+        </div>
+        
+        {relatedWords.length > 0 && (
+          <div>
+            <span className="text-sm font-semibold block mb-1">{t("relatedWords")}:</span>
+            <div className="flex flex-wrap gap-1">
+              {relatedWords.map((rel, i) => (
+                <Badge 
+                  key={i} 
+                  className="bg-yellow text-black"
+                >
+                  {rel.word}
+                </Badge>
+              ))}
+            </div>
+          </div>
         )}
       </div>
-      
-      {point.relationships && point.relationships.length > 0 && (
-        <div className="mt-2">
-          <span className="text-xs font-medium block mb-1">{t("connectedWords")}:</span>
-          <div className="grid grid-cols-2 gap-1">
-            {point.relationships.map((rel, idx) => (
-              <li key={idx} className="text-xs flex items-center">
-                <div className="w-1 h-1 rounded-full bg-primary mr-1"></div>
-                <span>{rel.word || `${t("connection") || "Connection"} ${idx + 1}`}</span>
-              </li>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
