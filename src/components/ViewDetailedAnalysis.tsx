@@ -13,6 +13,17 @@ interface ViewDetailedAnalysisProps {
   sourceDescription?: string;
 }
 
+// Define consistent types for our data structures
+interface EmotionalTopic {
+  topic: string;
+  count: number;
+}
+
+interface MainSubject {
+  subject: string;
+  count: number;
+}
+
 export const ViewDetailedAnalysis = ({ 
   summary, 
   text, 
@@ -43,7 +54,7 @@ export const ViewDetailedAnalysis = ({
   };
   
   // More comprehensive extraction of emotional actions/verbs from the text
-  const extractEmotionalTopics = () => {
+  const extractEmotionalTopics = (): EmotionalTopic[] => {
     if (!displayText) return [];
     
     const sentences = displayText.toLowerCase().split(/[.!?]+/).filter(s => s.trim().length > 0);
@@ -61,7 +72,7 @@ export const ViewDetailedAnalysis = ({
     };
     
     // Count actual instances of action verbs
-    const actionVerbCounts = {};
+    const actionVerbCounts: Record<string, number> = {};
     
     // First, parse through whole text to identify action verbs and count instances
     words.forEach(word => {
@@ -78,7 +89,7 @@ export const ViewDetailedAnalysis = ({
     });
     
     // Analyze context for each sentence
-    const sentenceContext = {};
+    const sentenceContext: Record<string, number> = {};
     sentences.forEach(sentence => {
       for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
         keywords.forEach(keyword => {
@@ -107,7 +118,7 @@ export const ViewDetailedAnalysis = ({
   };
   
   // Improved extraction of main subjects/nouns from text using both counting and context
-  const extractMainSubjects = () => {
+  const extractMainSubjects = (): MainSubject[] => {
     if (!displayText) return [];
     
     // Parse sentences for better contextual analysis
@@ -126,8 +137,8 @@ export const ViewDetailedAnalysis = ({
     };
     
     // Track noun frequency and context
-    const nounCounts = {};
-    const nounContext = {};
+    const nounCounts: Record<string, number> = {};
+    const nounContext: Record<string, number> = {};
     
     // Process every word in the text
     const words = displayText.toLowerCase().split(/\s+/);
@@ -146,7 +157,7 @@ export const ViewDetailedAnalysis = ({
     
     // Track pronouns to identify important subjects
     const pronouns = ["he", "she", "they", "it", "him", "her", "them", "his", "hers", "its", "their"];
-    const pronounReferences = {};
+    const pronounReferences: Record<string, number> = {};
     
     // Find what nouns the pronouns are referring to (basic coreference resolution)
     for (let i = 0; i < sentences.length; i++) {
@@ -198,8 +209,8 @@ export const ViewDetailedAnalysis = ({
       .map(([subject, count]) => ({ subject, count }));
   };
   
-  const emotionalTopics = extractEmotionalTopics();
-  const mainSubjects = extractMainSubjects();
+  const emotionalTopics: EmotionalTopic[] = extractEmotionalTopics();
+  const mainSubjects: MainSubject[] = extractMainSubjects();
   
   // Generate badge color based on emotion
   const getEmotionColor = (topic: string) => {
