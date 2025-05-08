@@ -143,6 +143,52 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
         description: "Small daily habits like walking outdoors, quality sleep, and connecting with others can improve wellbeing.",
         tags: ["wellness", "habits", "daily"],
         triggerWords: ["health", "well", "habit", "sleep", "routine", "exercise", "connect", "practice", "daily", "regular"]
+      },
+      // Add professional mental health resources
+      {
+        title: "PsychiatryOnline Resources",
+        description: "Access to professional psychiatry journals, DSM-5, and clinical resources for mental health assessment and treatment.",
+        tags: ["professional", "psychiatry", "research"],
+        link: "https://psychiatryonline.org/",
+        triggerWords: ["psychiatr", "mental health", "treatment", "dsm", "profession", "diagnosis", "disorder"],
+        emotionCategory: "Sadness"
+      },
+      {
+        title: "SAMHSA Treatment Locator",
+        description: "Find substance use or mental health treatment facilities and programs in your area through SAMHSA's national helpline.",
+        tags: ["treatment", "therapy", "professional help"],
+        link: "https://findtreatment.samhsa.gov/",
+        triggerWords: ["treatment", "therap", "help", "professional", "clinic", "substance", "alcohol", "drug"],
+        emotionCategory: "Fear"
+      },
+      {
+        title: "FindTreatment.gov Services",
+        description: "Official resource to find local treatment options for mental health and substance use disorders.",
+        tags: ["find help", "treatment", "local resources"],
+        link: "https://findtreatment.gov/",
+        triggerWords: ["find help", "treatment", "therapy", "counseling", "therapist", "professional"],
+        emotionCategory: "Sadness"
+      },
+      {
+        title: "NIMH Data Resources",
+        description: "Access data, research findings, and evidence-based approaches from the National Institute of Mental Health.",
+        tags: ["research", "data", "evidence"],
+        link: "https://www.nimh.nih.gov/research/research-conducted-at-nimh/nimh-data-archive",
+        triggerWords: ["research", "evidence", "study", "data", "science", "experiment"],
+      },
+      {
+        title: "APA PsycINFO Database",
+        description: "Comprehensive database of psychological research and literature from the American Psychological Association.",
+        tags: ["research", "psychology", "literature"],
+        link: "https://www.apa.org/pubs/databases/psycinfo",
+        triggerWords: ["research", "psychology", "article", "journal", "study", "literature", "evidence"],
+      },
+      {
+        title: "WHO MiNDbank Resources",
+        description: "World Health Organization's collection of mental health policies, strategies, laws, and service standards.",
+        tags: ["policy", "global", "standards"],
+        link: "https://www.mindbank.info/",
+        triggerWords: ["policy", "law", "right", "standard", "global", "international", "world"],
       }
     ];
     
