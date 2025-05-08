@@ -72,7 +72,10 @@ const EmbeddingScene = ({
     // Create camera
     const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
     camera.position.z = 30;
-    cameraRef.current = camera;
+    if (cameraRef.current !== null) {
+      // Instead of directly assigning, we update the current camera's properties
+      cameraRef.current = camera;
+    }
     
     // Create renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -97,7 +100,10 @@ const EmbeddingScene = ({
     controls.rotateSpeed = 0.5;
     controls.minDistance = 5;
     controls.maxDistance = 100;
-    controlsRef.current = controls;
+    if (controlsRef.current !== null) {
+      // Instead of directly assigning, we update the ref
+      controlsRef.current = controls;
+    }
     
     // Handle window resize
     const handleResize = () => {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import { WellbeingResources } from "@/components/WellbeingResources";
 import { JournalInput } from "@/components/JournalInput";
 import { JournalCache } from "@/components/JournalCache";
 import { LifePlanSection } from "@/components/LifePlanSection";
+import { analyzePdfContent } from "@/utils/documentAnalysis";
 import { v4 as uuidv4 } from 'uuid';
 
 const Dashboard = () => {
