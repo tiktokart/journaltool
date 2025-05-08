@@ -80,7 +80,7 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
 
     if (onAddToMonthlyReflection) {
       onAddToMonthlyReflection(journalText);
-      toast.success("Added to your monthly reflections");
+      toast.success("Added to your monthly reflections section");
     }
   };
 
@@ -133,7 +133,10 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
           
           {onAddToMonthlyReflection && (
             <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-2">
+                <p className="text-sm text-black">
+                  Save this entry to the Monthly Reflections section in the dashboard.
+                </p>
                 <Button
                   variant="secondary"
                   onClick={handleAddToMonthlyReflection}
@@ -141,7 +144,7 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
                   className="flex items-center gap-1 text-black"
                 >
                   <Calendar className="h-4 w-4" />
-                  Add to Monthly Reflections
+                  Add to Monthly Reflections Section
                 </Button>
               </div>
             </div>
