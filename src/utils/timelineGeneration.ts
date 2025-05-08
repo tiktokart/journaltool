@@ -44,13 +44,34 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
     };
     
     textUnits.forEach((unit, index) => {
+      // Extract key words from each text unit for the timeline marker
+      const words = unit.trim().split(/\s+/);
+      let timeMarker = "";
+      
       // Look for time expressions in the text
-      const hasTimeExpression = timeExpressions.some(expr => 
+      const timeExpression = timeExpressions.find(expr => 
         unit.toLowerCase().includes(expr)
       );
       
+      if (timeExpression) {
+        // Use the time expression as part of the marker
+        timeMarker = timeExpression.charAt(0).toUpperCase() + timeExpression.slice(1);
+      } else {
+        // Extract significant words (nouns, adjectives) from the beginning of the unit
+        // For simplicity, we'll just take the first 2-3 significant words
+        const significantWords = words
+          .filter(word => word.length > 3)
+          .slice(0, 2);
+          
+        if (significantWords.length > 0) {
+          timeMarker = significantWords.join(' ');
+        } else {
+          timeMarker = `Section ${index + 1}`;
+        }
+      }
+      
       // Only add to timeline if it has a time expression or it's a key paragraph
-      if (hasTimeExpression || index === 0 || index === textUnits.length - 1 || index % 3 === 0) {
+      if (timeExpression || index === 0 || index === textUnits.length - 1 || index % 3 === 0) {
         // Extract a suitable event description (first 50 chars or so)
         const event = unit.length > 50 ? unit.substring(0, 50) + '...' : unit;
         
@@ -65,7 +86,7 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
         const color = getColorForSentiment(sentiment);
         
         timeline.push({
-          time: `Point ${index + 1}`, // For text display
+          time: timeMarker, // Now contains meaningful words instead of "Point X"
           page, // For visualization (x-axis)
           score, // For visualization (y-axis)
           event: event.trim(),

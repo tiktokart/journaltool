@@ -10,6 +10,7 @@ interface TimelineEntry {
   color?: string;
   event?: string;
   index?: number;
+  time?: string;
 }
 
 interface SentimentTimelineProps {
@@ -29,13 +30,16 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
           ...item,
           page: item.page || index + 1,
           // Ensure score is between 0 and 1
-          score: Math.max(0, Math.min(1, item.score || 0.5))
+          score: Math.max(0, Math.min(1, item.score || 0.5)),
+          // Make sure we have a time property
+          time: item.time || `Section ${index + 1}`
         };
       }
       // Fallback for unexpected data format
       return {
         page: index + 1,
         score: 0.5,
+        time: `Section ${index + 1}`,
         index
       };
     }) : [];
@@ -74,7 +78,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={normalizedData}
-                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                margin={{ top: 20, right: 30, left: 0, bottom: 30 }}
               >
                 <defs>
                   <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
@@ -85,7 +89,15 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                 <XAxis 
                   dataKey="page" 
-                  label={{ value: t("pageNumber"), position: 'insideBottom', offset: -10 }} 
+                  label={{ value: t("sequencePoint"), position: 'insideBottom', offset: -10 }} 
+                  // Use time property for labels instead of just "Page X"
+                  tickFormatter={(value, index) => {
+                    const point = normalizedData.find(d => d.page === value);
+                    return point?.time || `Section ${value}`;
+                  }}
+                  // Adjust angle for better readability if we have many points
+                  tick={{ angle: normalizedData.length > 7 ? -45 : 0, textAnchor: normalizedData.length > 7 ? 'end' : 'middle' }}
+                  height={60}
                 />
                 <YAxis 
                   domain={[0, 1]} 
@@ -96,7 +108,14 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                     `${t("score")}: ${value.toFixed(2)}`,
                     t("sentiment")
                   ]}
-                  labelFormatter={(label) => `${t("page")} ${label}`}
+                  // Show time and event instead of just "Page X"
+                  labelFormatter={(label, payload) => {
+                    if (payload && payload.length > 0) {
+                      const point = normalizedData.find(d => d.page === label);
+                      return point?.time ? `${point.time}: ${point.event || ''}` : `Section ${label}`;
+                    }
+                    return `Section ${label}`;
+                  }}
                   contentStyle={{ 
                     borderRadius: '0.5rem',
                     border: 'none',

@@ -74,7 +74,7 @@ export const EntitySentiment = ({ data = [], sourceDescription }: EntitySentimen
           <Filter className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-orange" />
           <Input
             className="pl-8 pr-8"
-            placeholder="Filter themes..."
+            placeholder={t("filterThemesPlaceholder") || "Filter themes..."}
             value={filterTerm}
             onChange={(e) => setFilterTerm(e.target.value)}
           />
@@ -93,10 +93,13 @@ export const EntitySentiment = ({ data = [], sourceDescription }: EntitySentimen
         {isFiltering && (
           <div className="mb-4 flex items-center justify-between">
             <Badge className="bg-orange/20 text-orange border-none">
-              Showing {filteredData.length} of {normalizedData.length} themes
+              {t("showingFilteredResults", { 
+                filtered: filteredData.length, 
+                total: normalizedData.length 
+              }) || `Showing ${filteredData.length} of ${normalizedData.length} themes`}
             </Badge>
             <Button variant="outline" size="sm" onClick={() => setFilterTerm("")}>
-              Clear filter
+              {t("clearFilter") || "Clear filter"}
             </Button>
           </div>
         )}
@@ -127,6 +130,13 @@ export const EntitySentiment = ({ data = [], sourceDescription }: EntitySentimen
                   dataKey="name" 
                   tick={{ fontSize: 12 }}
                   width={150}
+                  label={{ 
+                    value: t("themes") || "Themes", 
+                    angle: -90, 
+                    position: 'insideLeft',
+                    offset: 5,
+                    style: { textAnchor: 'middle' }
+                  }}
                 />
                 <Tooltip 
                   formatter={(value: number, name: string, props: any) => [
@@ -138,7 +148,7 @@ export const EntitySentiment = ({ data = [], sourceDescription }: EntitySentimen
                     border: 'none',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                   }}
-                  labelFormatter={(label) => `Theme: ${label}`}
+                  labelFormatter={(label) => `${t("theme")}: ${label}`}
                 />
                 <Bar dataKey="score" radius={[0, 4, 4, 0]}>
                   {sortedData.map((entry, index) => (

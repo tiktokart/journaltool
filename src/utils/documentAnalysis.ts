@@ -35,17 +35,18 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Extract entities
     const entities = await extractEntities(text);
     
-    // Extract key phrases
+    // Extract key phrases - focus on nouns and verbs
     const keyPhrases = await extractKeyPhrases(text);
     
-    // Generate timeline
+    // Generate timeline with meaningful text markers instead of "Page X"
     const timeline = await generateTimeline(text);
     
     // Generate embedding points with actual text data
     const embeddingPoints = await generateEmbeddingPoints(text);
     
-    console.log("BERT Analysis complete with the following data:");
+    console.log("BERT Analysis complete with the following stats:");
     console.log(`- Word count: ${wordCount}`);
+    console.log(`- Overall sentiment: ${overallSentiment.label} (${overallSentiment.score.toFixed(2)})`);
     console.log(`- Embedding points: ${embeddingPoints.length}`);
     console.log(`- Key phrases: ${keyPhrases.length}`);
     console.log(`- Entities: ${entities.length}`);
@@ -54,8 +55,8 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Make the data available on window.documentEmbeddingPoints for other components
     window.documentEmbeddingPoints = embeddingPoints;
     
-    // Make sure to include the entire text in the result
-    return {
+    // Create a complete analysis object with all the required data for all tabs
+    const analysisResults = {
       fileName: file ? file.name : "Text Analysis",
       fileSize: file ? file.size : new TextEncoder().encode(text).length,
       wordCount,
@@ -68,8 +69,19 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
       timeline,
       entities,
       keyPhrases,
-      sourceDescription: "Analysis with BERT Model"
+      sourceDescription: "Analysis with BERT Model",
+      // Add timestamps to help with caching/refreshing
+      timestamp: new Date().toISOString()
     };
+    
+    // Store the results in sessionStorage for persistence across tab changes
+    try {
+      sessionStorage.setItem('lastAnalysisResults', JSON.stringify(analysisResults));
+    } catch (storageError) {
+      console.warn("Could not save analysis results to sessionStorage:", storageError);
+    }
+    
+    return analysisResults;
   } catch (error) {
     console.error("Error analyzing PDF content:", error);
     throw error;

@@ -236,9 +236,9 @@ export const getSentimentColor = (score: number): string => {
 export const getEmotionColor = (emotion: string): string => {
   const emotions: Record<string, string> = {
     "Joy": "#FFD700",        // Gold color for Joy
-    "Joyful": "#FFD700",     // Gold color for Joyful
+    "Joyful": "#F1C40F",     // Yellow color for Joyful (changed from gold to distinguish from Joy)
     "Happy": "#2ECC71",      // Light Green
-    "Excited": "#F1C40F",    // Yellow
+    "Excited": "#E67E22",    // Orange
     "Peaceful": "#3498DB",   // Blue
     "Calm": "#2980B9",       // Dark Blue
     "Neutral": "#95A5A6",    // Gray
@@ -246,9 +246,9 @@ export const getEmotionColor = (emotion: string): string => {
     "Angry": "#C0392B",      // Dark Red
     "Sad": "#9B59B6",        // Purple
     "Depressed": "#8E44AD",  // Dark Purple
-    "Frustrated": "#E67E22", // Orange
+    "Frustrated": "#D35400", // Burnt Orange
     "Confused": "#F39C12",   // Light Orange
-    "Scared": "#D35400",     // Burnt Orange
+    "Scared": "#7F8C8D",     // Dark Gray
     "Disgusted": "#6C3483",  // Violet
     "Surprised": "#16A085",  // Teal
     "Fearful": "#D35400"     // Burnt Orange (same as Scared)
