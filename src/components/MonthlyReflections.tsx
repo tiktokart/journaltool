@@ -29,9 +29,10 @@ interface JournalEntry {
 
 interface MonthlyReflectionsProps {
   journalText?: string;
+  refreshTrigger?: number;
 }
 
-export const MonthlyReflections = ({ journalText }: MonthlyReflectionsProps) => {
+export const MonthlyReflections = ({ journalText, refreshTrigger = 0 }: MonthlyReflectionsProps) => {
   const { t } = useLanguage();
   const [reflections, setReflections] = useState<MonthlyReflection[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
@@ -42,9 +43,10 @@ export const MonthlyReflections = ({ journalText }: MonthlyReflectionsProps) => 
   const currentMonth = format(new Date(), 'MMMM yyyy');
 
   useEffect(() => {
+    // Load reflections and journal entries when component mounts or refresh is triggered
     loadReflections();
     loadJournalEntries();
-  }, []);
+  }, [refreshTrigger]);
 
   useEffect(() => {
     // If journal entries loaded, analyze them
@@ -64,7 +66,12 @@ export const MonthlyReflections = ({ journalText }: MonthlyReflectionsProps) => 
     try {
       const storedReflections = localStorage.getItem('monthlyReflections');
       if (storedReflections) {
-        setReflections(JSON.parse(storedReflections));
+        const parsedReflections = JSON.parse(storedReflections);
+        // Sort reflections by date (newest first)
+        parsedReflections.sort((a: MonthlyReflection, b: MonthlyReflection) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        setReflections(parsedReflections);
       }
     } catch (error) {
       console.error('Error loading monthly reflections:', error);

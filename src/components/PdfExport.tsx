@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileDown, FileText, Calendar } from "lucide-react";
@@ -9,9 +10,15 @@ import { v4 as uuidv4 } from 'uuid';
 
 interface PdfExportProps {
   sentimentData: any;
+  onJournalEntryAdded?: () => void;
+  onMonthlyReflectionAdded?: () => void;
 }
 
-export const PdfExport = ({ sentimentData }: PdfExportProps) => {
+export const PdfExport = ({ 
+  sentimentData, 
+  onJournalEntryAdded, 
+  onMonthlyReflectionAdded 
+}: PdfExportProps) => {
   const { t } = useLanguage();
   
   const exportToPdf = () => {
@@ -176,6 +183,11 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
       
       localStorage.setItem('journalEntries', JSON.stringify(entries));
       toast.success("Added to journal entries");
+      
+      // Trigger callback to refresh journal entries
+      if (onJournalEntryAdded) {
+        onJournalEntryAdded();
+      }
     } catch (error) {
       console.error("Error adding to journal entries:", error);
       toast.error("Failed to add to journal entries");
@@ -203,6 +215,11 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
       
       localStorage.setItem('monthlyReflections', JSON.stringify(reflections));
       toast.success("Added to monthly reflections");
+      
+      // Trigger callback to refresh monthly reflections
+      if (onMonthlyReflectionAdded) {
+        onMonthlyReflectionAdded();
+      }
     } catch (error) {
       console.error("Error adding to monthly reflections:", error);
       toast.error("Failed to add to monthly reflections");

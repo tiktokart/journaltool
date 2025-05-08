@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +39,8 @@ const Dashboard = () => {
   const [visibleClusterCount, setVisibleClusterCount] = useState(8);
   const [journalText, setJournalText] = useState<string>("");
   const [monthlyReflectionText, setMonthlyReflectionText] = useState<string>("");
+  const [refreshJournalTrigger, setRefreshJournalTrigger] = useState(0);
+  const [refreshReflectionsTrigger, setRefreshReflectionsTrigger] = useState(0);
 
   // Perfect Life Plan state variables
   const [dailyPlan, setDailyPlan] = useState<string>("");
@@ -59,6 +60,15 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error loading perfect life plans from storage:', error);
     }
+  }, []);
+
+  // Callback functions for triggering refreshes
+  const handleJournalEntryAdded = useCallback(() => {
+    setRefreshJournalTrigger(prev => prev + 1);
+  }, []);
+  
+  const handleMonthlyReflectionAdded = useCallback(() => {
+    setRefreshReflectionsTrigger(prev => prev + 1);
   }, []);
 
   // Save perfect life plans to local storage
@@ -123,6 +133,9 @@ const Dashboard = () => {
       
       localStorage.setItem('journalEntries', JSON.stringify(entries));
       toast.success("Journal entry saved");
+      
+      // Trigger refresh for journal cache
+      setRefreshJournalTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Error saving journal entry:', error);
       toast.error("Failed to save journal entry");
@@ -131,6 +144,25 @@ const Dashboard = () => {
 
   const handleAddToMonthlyReflection = (text: string) => {
     setMonthlyReflectionText(text);
+    
+    try {
+      const reflection = {
+        id: uuidv4(),
+        text: text,
+        date: new Date().toISOString()
+      };
+      
+      const storedReflections = localStorage.getItem('monthlyReflections');
+      const reflections = storedReflections ? JSON.parse(storedReflections) : [];
+      reflections.push(reflection);
+      
+      localStorage.setItem('monthlyReflections', JSON.stringify(reflections));
+      
+      // Trigger refresh for monthly reflections
+      setRefreshReflectionsTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Error adding to monthly reflections:', error);
+    }
   };
 
   const analyzeSentiment = async () => {
@@ -322,7 +354,10 @@ const Dashboard = () => {
               </Card>
             </div>
             <div className="bg-white p-4 rounded-lg">
-              <MonthlyReflections journalText={monthlyReflectionText} />
+              <MonthlyReflections 
+                journalText={monthlyReflectionText} 
+                refreshTrigger={refreshReflectionsTrigger}
+              />
             </div>
           </div>
           
@@ -335,7 +370,10 @@ const Dashboard = () => {
               />
             </div>
             <div className="bg-white p-4 rounded-lg">
-              <JournalCache onSelectEntry={handleCachedEntrySelect} />
+              <JournalCache 
+                onSelectEntry={handleCachedEntrySelect} 
+                refreshTrigger={refreshJournalTrigger}
+              />
             </div>
           </div>
           
@@ -463,7 +501,11 @@ const Dashboard = () => {
               </div>
               
               <div className="mt-8 bg-white p-4 rounded-lg">
-                <PdfExport sentimentData={sentimentData} />
+                <PdfExport 
+                  sentimentData={sentimentData}
+                  onJournalEntryAdded={handleJournalEntryAdded}
+                  onMonthlyReflectionAdded={handleMonthlyReflectionAdded}
+                />
               </div>
             </div>
           )}
