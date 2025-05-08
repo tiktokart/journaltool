@@ -46,6 +46,7 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
   const [triggerMatches, setTriggerMatches] = useState<TriggerMatch[]>([]);
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
   const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [dataProcessed, setDataProcessed] = useState<boolean>(false);
 
   // Define the negative emotion categories we want to detect
   const negativeEmotionCategories = {
@@ -69,8 +70,8 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
   }, []);
   
   useEffect(() => {
-    if (!embeddingPoints || embeddingPoints.length === 0) {
-      console.log("WellbeingResources: No embedding points provided");
+    // Only process data once per embedding points set
+    if (!embeddingPoints || embeddingPoints.length === 0 || dataProcessed) {
       return;
     }
     
@@ -80,9 +81,9 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     // Calculate average sentiment
     let sentimentTotal = 0;
     embeddingPoints.forEach(point => {
-      sentimentTotal += point.sentiment;
+      sentimentTotal += point.sentiment || 0.5; // Default to neutral if sentiment is missing
     });
-    const avgSentiment = sentimentTotal / embeddingPoints.length;
+    const avgSentiment = embeddingPoints.length > 0 ? sentimentTotal / embeddingPoints.length : 0.5;
     setAverageSentiment(avgSentiment);
     
     // Extract all words from the text
@@ -298,10 +299,14 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     
     setTriggerMatches(matches);
     
-    // Filter resources based on detected concerns, trigger word matches and sensitive content keywords
+    // Always include daily wellness practices by default to ensure we show something
     let relevantResources: ResourceItem[] = [];
+    const wellnessResource = allResources.find(r => r.title === "Daily Wellness Practices");
+    if (wellnessResource) {
+      relevantResources.push(wellnessResource);
+    }
     
-    // First add resources that match detected emotion categories
+    // Add resources that match detected emotion categories
     if (foundConcerns.length > 0) {
       // Get the unique categories from our concerns
       const detectedCategories = [...new Set(foundConcerns.map(c => c.category))];
@@ -311,11 +316,15 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
         resource.emotionCategory && detectedCategories.includes(resource.emotionCategory)
       );
       
-      relevantResources = [...categorizedResources];
+      // Add them if not already included
+      categorizedResources.forEach(resource => {
+        if (!relevantResources.some(r => r.title === resource.title)) {
+          relevantResources.push(resource);
+        }
+      });
     }
     
     // Always include sensitive content-related resources if keywords are detected
-    // This ensures the resource appears even if we hide the trigger words
     if (hasSensitiveContentConcerns) {
       const sensitiveResource = allResources.find(r => r.title === "Recovery Support");
       if (sensitiveResource && !relevantResources.some(r => r.title === sensitiveResource.title)) {
@@ -332,42 +341,11 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     });
     
     // If no specific resources match but sentiment is low AND there are negative words, add the general support resource
-    if (relevantResources.length === 0 && avgSentiment < 0.4 && foundNegativeWords) {
+    if (relevantResources.length <= 1 && avgSentiment < 0.4 && foundNegativeWords) {
       const supportResource = allResources.find(r => r.title === "Immediate Support Resources");
-      if (supportResource) {
+      if (supportResource && !relevantResources.some(r => r.title === supportResource.title)) {
         relevantResources.push(supportResource);
       }
-    }
-    
-    // Always include daily wellness practices if no other resources match
-    if (relevantResources.length === 0) {
-      const wellnessResource = allResources.find(r => r.title === "Daily Wellness Practices");
-      if (wellnessResource) {
-        relevantResources.push(wellnessResource);
-      }
-    }
-    
-    // Make sure we're showing at least one resource
-    // This ensures suggestions always appear when documents are uploaded
-    if (relevantResources.length === 0 && allResources.length > 0) {
-      relevantResources.push(allResources[0]);
-    }
-    
-    setFilteredResources(relevantResources);
-    
-    // Ensure we always have at least one suggestion showing
-    if (relevantResources.length === 0) {
-      setFilteredResources([{
-        title: "Daily Wellness Practices",
-        description: "Small daily habits like walking outdoors, quality sleep, and connecting with others can improve wellbeing.",
-        tags: ["wellness", "habits", "daily"],
-        triggerWords: ["health"],
-        actionPlan: [
-          "Start a morning routine that includes 10 minutes of movement",
-          "Prioritize 7-9 hours of sleep each night with a consistent schedule",
-          "Take short breaks every hour if doing focused work"
-        ]
-      }]);
     }
     
     // Force expanded state of first action plan to ensure visibility
@@ -378,6 +356,17 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
       }));
     }
     
+    setFilteredResources(relevantResources);
+    setDataProcessed(true);
+    
+  }, [embeddingPoints, dataProcessed]);
+  
+  // Reset data processed flag when embedding points change
+  useEffect(() => {
+    if (embeddingPoints && embeddingPoints !== window.lastProcessedEmbeddingPoints) {
+      setDataProcessed(false);
+      window.lastProcessedEmbeddingPoints = embeddingPoints;
+    }
   }, [embeddingPoints]);
   
   // Find trigger matches for a specific resource
@@ -405,7 +394,6 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
   };
 
   if (!embeddingPoints || embeddingPoints.length === 0) {
-    console.log("WellbeingResources: No embedding points, not rendering");
     return null;
   }
 
@@ -417,6 +405,9 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     }
     concernsByCategory[concern.category].push(concern.word);
   });
+
+  // Always ensure we show at least one resource suggestion
+  const displayResources = filteredResources.length > 0 ? filteredResources : resources.slice(0, 1);
 
   return (
     <div className={`transition-all duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
@@ -443,7 +434,6 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
             </div>
           )}
           
-          {/* Always show concerns section for testing */}
           <div className="bg-gray-100 p-4 rounded-lg mb-4">
             <div className="flex items-start">
               <AlertTriangle className="h-5 w-5 mr-2 text-orange mt-0.5" />
@@ -474,9 +464,9 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
             </div>
           </div>
           
-          {filteredResources.length > 0 ? (
+          {displayResources.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-4">
-              {filteredResources.map((resource, index) => {
+              {displayResources.map((resource, index) => {
                 const triggerMatches = getResourceTriggerMatches(resource.title);
                 const isExpanded = expandedPlans[resource.title] || false;
                 
@@ -519,7 +509,7 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
                       )}
                     </div>
                     
-                    {/* Action Plan Section - Now always expanded by default */}
+                    {/* Action Plan Section */}
                     {resource.actionPlan && (
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <Button
@@ -582,3 +572,16 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     </div>
   );
 };
+
+// Add this for tracking processed embeddings
+declare global {
+  interface Window {
+    lastProcessedEmbeddingPoints?: Point[];
+    documentEmbeddingPoints?: Point[];
+    documentEmbeddingActions?: {
+      focusOnEmotionalGroup?: (tone: string) => void;
+      resetEmotionalGroupFilter?: () => void;
+      resetView?: () => void;
+    };
+  }
+}

@@ -1,8 +1,12 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
-import { Info } from "lucide-react";
+import { Info, Filter, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 interface EntitySentimentProps {
   data: Array<{ name: string; score: number; mentions: number }>;
@@ -11,9 +15,28 @@ interface EntitySentimentProps {
 
 export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProps) => {
   const { t } = useLanguage();
+  const [filteredData, setFilteredData] = useState(data);
+  const [filterTerm, setFilterTerm] = useState("");
+  const [isFiltering, setIsFiltering] = useState(false);
   
+  useEffect(() => {
+    if (!filterTerm) {
+      setFilteredData(data);
+      setIsFiltering(false);
+      return;
+    }
+    
+    const term = filterTerm.toLowerCase();
+    const filtered = data.filter(item => 
+      item.name.toLowerCase().includes(term)
+    );
+    
+    setFilteredData(filtered);
+    setIsFiltering(filtered.length < data.length);
+  }, [filterTerm, data]);
+
   // Sort data by score for better visualization
-  const sortedData = [...data].sort((a, b) => b.score - a.score);
+  const sortedData = [...filteredData].sort((a, b) => b.score - a.score);
 
   // Determine color for each bar based on score
   const getColor = (score: number) => {
@@ -24,13 +47,44 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
 
   return (
     <Card className="border-0 shadow-md w-full">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{t("themeAnalysisTitle")}</CardTitle>
+        <div className="relative w-full max-w-xs">
+          <Filter className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-orange" />
+          <Input
+            className="pl-8 pr-8"
+            placeholder="Filter themes..."
+            value={filterTerm}
+            onChange={(e) => setFilterTerm(e.target.value)}
+          />
+          {filterTerm && (
+            <Button 
+              variant="ghost" 
+              className="absolute right-0 top-0 h-full px-2"
+              onClick={() => setFilterTerm("")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
-        {data.length === 0 ? (
+        {isFiltering && (
+          <div className="mb-4 flex items-center justify-between">
+            <Badge className="bg-orange/20 text-orange border-none">
+              Showing {filteredData.length} of {data.length} themes
+            </Badge>
+            <Button variant="outline" size="sm" onClick={() => setFilterTerm("")}>
+              Clear filter
+            </Button>
+          </div>
+        )}
+        
+        {filteredData.length === 0 ? (
           <div className="h-80 w-full flex items-center justify-center">
-            <p className="text-muted-foreground">{t("noThemeDataAvailable")}</p>
+            <p className="text-muted-foreground">
+              {filterTerm ? t("noMatchingThemesFound") : t("noThemeDataAvailable")}
+            </p>
           </div>
         ) : (
           <div className="h-80 w-full">
@@ -51,9 +105,10 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
                   type="category" 
                   dataKey="name" 
                   tick={{ fontSize: 12 }}
+                  width={150}
                 />
                 <Tooltip 
-                  formatter={(value: number) => [
+                  formatter={(value: number, name: string, props: any) => [
                     `${t("score")}: ${value.toFixed(2)}`, 
                     t("sentiment")
                   ]}
@@ -62,6 +117,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
                     border: 'none',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                   }}
+                  labelFormatter={(label) => `Theme: ${label}`}
                 />
                 <Bar dataKey="score" radius={[0, 4, 4, 0]}>
                   {sortedData.map((entry, index) => (

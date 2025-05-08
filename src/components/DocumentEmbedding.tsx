@@ -1,3 +1,4 @@
+
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -14,6 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { WellbeingResources } from './WellbeingResources';
+import { getEmotionColor as getBertEmotionColor } from '../utils/bertSentimentAnalysis';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -74,14 +76,38 @@ export const DocumentEmbedding = ({
       }
     }
   }, [focusOnWord, currentFocusWord, displayPoints]);
+
+  // Unified color function for emotional tones
+  const getUnifiedEmotionColor = (emotion: string): string => {
+    // Prioritize BERT emotional colors for consistency
+    const bertColor = getBertEmotionColor(emotion);
+    if (bertColor !== "#95A5A6") { // Not the default gray
+      return bertColor;
+    }
+    
+    // Fall back to embedding utils color if BERT doesn't have a specific color
+    return getEmotionColor(emotion);
+  };
   
   useEffect(() => {
     if (points.length > 0) {
       console.log(`Setting display points with ${points.length} points from props`);
-      setDisplayPoints(points);
+      
+      // Ensure all points have color properties based on their emotional tone
+      const pointsWithColors = points.map(point => {
+        if (!point.color && point.emotionalTone) {
+          return {
+            ...point,
+            color: getUnifiedEmotionColor(point.emotionalTone)
+          };
+        }
+        return point;
+      });
+      
+      setDisplayPoints(pointsWithColors);
       
       // Export points to window for TextEmotionViewer to access
-      window.documentEmbeddingPoints = points;
+      window.documentEmbeddingPoints = pointsWithColors;
     } else if (generatedPoints.length === 0) {
       console.log("Generating mock points");
       const mockPoints = generateMockPoints(depressedJournalReference);
@@ -111,7 +137,7 @@ export const DocumentEmbedding = ({
         }
       });
       
-      setEmotionalGroups(Array.from(uniqueGroups));
+      setEmotionalGroups(Array.from(uniqueGroups).sort());
     }
   }, [displayPoints]);
   
@@ -330,7 +356,7 @@ export const DocumentEmbedding = ({
           >
             <div className="flex items-center justify-between">
               <div className="text-xs font-semibold flex items-center">
-                <Target className="h-3 w-3 mr-1.5" />
+                <Target className="h-3 w-3 mr-1.5 text-orange" />
                 Jump to Emotional Groups
               </div>
               <CollapsibleTrigger asChild>
@@ -370,7 +396,7 @@ export const DocumentEmbedding = ({
                 >
                   <div 
                     className="w-3 h-3 rounded-full mr-1.5" 
-                    style={{ backgroundColor: getEmotionColor(group) }}
+                    style={{ backgroundColor: getUnifiedEmotionColor(group) }}
                   />
                   {group}
                 </Button>
@@ -408,6 +434,7 @@ export const DocumentEmbedding = ({
 declare global {
   interface Window {
     documentEmbeddingPoints?: Point[];
+    lastProcessedEmbeddingPoints?: Point[];
     documentEmbeddingActions?: {
       focusOnEmotionalGroup?: (tone: string) => void;
       resetEmotionalGroupFilter?: () => void;

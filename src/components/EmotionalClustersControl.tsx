@@ -4,6 +4,7 @@ import { Slider } from "@/components/ui/slider";
 import { Brain } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getEmotionColor } from "@/utils/bertSentimentAnalysis";
 
 interface EmotionalClustersControlProps {
   visibleClusterCount: number;
