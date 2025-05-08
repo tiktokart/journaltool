@@ -8,35 +8,56 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
-interface EntitySentimentProps {
-  data: Array<{ name: string; score: number; mentions: number }>;
-  sourceDescription?: string; // Add this to show where data came from
+interface Entity {
+  name: string;
+  score?: number;
+  sentiment?: number;
+  type?: string;
+  mentions?: number;
 }
 
-export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProps) => {
+interface EntitySentimentProps {
+  data: Array<Entity>;
+  sourceDescription?: string;
+}
+
+export const EntitySentiment = ({ data = [], sourceDescription }: EntitySentimentProps) => {
   const { t } = useLanguage();
-  const [filteredData, setFilteredData] = useState(data);
+  
+  // Normalize data to ensure all entities have the necessary properties
+  const normalizedData: Entity[] = data.map(item => {
+    return {
+      ...item,
+      // Use sentiment if available, otherwise use score, otherwise default to 0.5
+      score: item.sentiment !== undefined ? item.sentiment : 
+             (item.score !== undefined ? item.score : 0.5)
+    };
+  });
+  
+  const [filteredData, setFilteredData] = useState(normalizedData);
   const [filterTerm, setFilterTerm] = useState("");
   const [isFiltering, setIsFiltering] = useState(false);
   
   useEffect(() => {
     if (!filterTerm) {
-      setFilteredData(data);
+      setFilteredData(normalizedData);
       setIsFiltering(false);
       return;
     }
     
     const term = filterTerm.toLowerCase();
-    const filtered = data.filter(item => 
+    const filtered = normalizedData.filter(item => 
       item.name.toLowerCase().includes(term)
     );
     
     setFilteredData(filtered);
-    setIsFiltering(filtered.length < data.length);
-  }, [filterTerm, data]);
+    setIsFiltering(filtered.length < normalizedData.length);
+  }, [filterTerm, normalizedData]);
 
   // Sort data by score for better visualization
-  const sortedData = [...filteredData].sort((a, b) => b.score - a.score);
+  const sortedData = [...filteredData]
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .slice(0, 15); // Limit to 15 entities for better visual display
 
   // Determine color for each bar based on score
   const getColor = (score: number) => {
@@ -72,7 +93,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
         {isFiltering && (
           <div className="mb-4 flex items-center justify-between">
             <Badge className="bg-orange/20 text-orange border-none">
-              Showing {filteredData.length} of {data.length} themes
+              Showing {filteredData.length} of {normalizedData.length} themes
             </Badge>
             <Button variant="outline" size="sm" onClick={() => setFilterTerm("")}>
               Clear filter
@@ -121,7 +142,7 @@ export const EntitySentiment = ({ data, sourceDescription }: EntitySentimentProp
                 />
                 <Bar dataKey="score" radius={[0, 4, 4, 0]}>
                   {sortedData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getColor(entry.score)} />
+                    <Cell key={`cell-${index}`} fill={getColor(entry.score || 0.5)} />
                   ))}
                   <LabelList dataKey="score" position="right" formatter={(value: number) => value.toFixed(2)} />
                 </Bar>

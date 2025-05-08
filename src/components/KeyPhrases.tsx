@@ -7,21 +7,35 @@ import { useLanguage } from "@/contexts/LanguageContext";
 type KeyPhrase = {
   phrase: string;
   score: number;
-  mentions: number;
+  mentions?: number;
 };
 
 interface KeyPhrasesProps {
-  data: KeyPhrase[];
+  data: string[] | KeyPhrase[];
   sourceDescription?: string;
 }
 
 export const KeyPhrases = ({ data = [], sourceDescription }: KeyPhrasesProps) => {
   const { t } = useLanguage();
 
+  // Normalize data to ensure consistent structure
+  const normalizedData: KeyPhrase[] = data.map(item => {
+    if (typeof item === 'string') {
+      // Convert string items to KeyPhrase structure with default values
+      return {
+        phrase: item,
+        score: 0.5, // Default middle score
+        mentions: 1
+      };
+    }
+    // Already in KeyPhrase format
+    return item as KeyPhrase;
+  });
+
   // Group phrases by approximate score range
-  const highImportance = data.filter(item => item.score >= 0.7);
-  const mediumImportance = data.filter(item => item.score >= 0.4 && item.score < 0.7);
-  const lowImportance = data.filter(item => item.score < 0.4);
+  const highImportance = normalizedData.filter(item => item.score >= 0.7);
+  const mediumImportance = normalizedData.filter(item => item.score >= 0.4 && item.score < 0.7);
+  const lowImportance = normalizedData.filter(item => item.score < 0.4);
 
   // Helper to render phrase badges
   const renderPhraseBadges = (phrases: KeyPhrase[], importance: "high" | "medium" | "low") => {
@@ -40,7 +54,7 @@ export const KeyPhrases = ({ data = [], sourceDescription }: KeyPhrasesProps) =>
             className={`${colorClass} hover:${colorClass} font-normal py-1 px-2`}
           >
             {phrase.phrase}
-            {phrase.mentions > 1 && (
+            {phrase.mentions && phrase.mentions > 1 && (
               <span className="ml-1 text-xs opacity-70">({phrase.mentions})</span>
             )}
           </Badge>
@@ -58,7 +72,7 @@ export const KeyPhrases = ({ data = [], sourceDescription }: KeyPhrasesProps) =>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {data.length === 0 ? (
+        {normalizedData.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground">{t("noKeyPhrasesExtracted")}</p>
           </div>

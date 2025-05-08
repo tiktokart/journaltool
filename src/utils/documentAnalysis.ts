@@ -44,7 +44,12 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Generate embedding points with actual text data
     const embeddingPoints = await generateEmbeddingPoints(text);
     
-    console.log("Generated embedding points:", embeddingPoints.length);
+    console.log("Analysis complete with the following data:");
+    console.log(`- Word count: ${wordCount}`);
+    console.log(`- Embedding points: ${embeddingPoints.length}`);
+    console.log(`- Key phrases: ${keyPhrases.length}`);
+    console.log(`- Entities: ${entities.length}`);
+    console.log(`- Timeline entries: ${timeline.length}`);
     
     // Make sure to include the entire text in the result
     return {

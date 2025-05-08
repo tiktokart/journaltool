@@ -4,18 +4,41 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Info } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+interface TimelineEntry {
+  page: number; 
+  score: number;
+  color?: string;
+  event?: string;
+  index?: number;
+}
+
 interface SentimentTimelineProps {
-  data: Array<{ 
-    page: number; 
-    score: number;
-    color?: string;
-    event?: string;
-  }>;
+  data: Array<TimelineEntry>;
   sourceDescription?: string;
 }
 
 export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimelineProps) => {
   const { t } = useLanguage();
+  
+  // Normalize data to ensure it's in the correct format
+  const normalizedData: TimelineEntry[] = Array.isArray(data) ? 
+    data.map((item, index) => {
+      if (typeof item === 'object' && item !== null) {
+        // Add a page number if it doesn't exist (using index + 1)
+        return {
+          ...item,
+          page: item.page || index + 1,
+          // Ensure score is between 0 and 1
+          score: Math.max(0, Math.min(1, item.score || 0.5))
+        };
+      }
+      // Fallback for unexpected data format
+      return {
+        page: index + 1,
+        score: 0.5,
+        index
+      };
+    }) : [];
   
   // Get color from data point or calculate based on score
   const getColor = (score: number, defaultColor?: string) => {
@@ -29,8 +52,8 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
   };
 
   // Calculate average sentiment
-  const averageSentiment = data.length > 0 
-    ? data.reduce((acc, item) => acc + item.score, 0) / data.length
+  const averageSentiment = normalizedData.length > 0 
+    ? normalizedData.reduce((acc, item) => acc + item.score, 0) / normalizedData.length
     : 0.5;
 
   return (
@@ -42,7 +65,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
         )}
       </CardHeader>
       <CardContent>
-        {data.length === 0 ? (
+        {normalizedData.length === 0 ? (
           <div className="h-80 w-full flex items-center justify-center">
             <p className="text-muted-foreground">{t("noDataAvailable")}</p>
           </div>
@@ -50,7 +73,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={data}
+                data={normalizedData}
                 margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
               >
                 <defs>
