@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface Translations {
@@ -13,7 +14,7 @@ interface LanguageContextType {
 
 const translations: Record<string, Record<string, string>> = {
   en: {
-    // Common
+    // Common UI elements
     welcome: "Welcome",
     loading: "Loading...",
     error: "Error",
@@ -26,6 +27,61 @@ const translations: Record<string, Record<string, string>> = {
     view: "View",
     search: "Search",
     noResultsFound: "No results found",
+    home: "Home",
+    dashboard: "Dashboard",
+    journalAnalysis: "Journal Analysis",
+    selectLanguage: "Select Language",
+    
+    // Navigation and Header
+    welcomeToLifePlanner: "Welcome to Your Life Planner",
+    planYourLife: "Plan your perfect life, analyze your thoughts, and track your emotional well-being.",
+    goToDashboard: "Go to Dashboard",
+    
+    // Feature highlights
+    emotionalInsights: "Emotional Insights",
+    journalTracker: "Journal Tracker",
+    sentimentAnalysis: "Sentiment Analysis",
+    emotionalInsightsDesc: "Gain deep insights into your emotional patterns and understand what drives your feelings.",
+    journalTrackerDesc: "Track and analyze your daily thoughts through journaling to identify patterns and trends.",
+    sentimentAnalysisDesc: "Understand the sentiment behind your thoughts and track your emotional well-being over time.",
+    
+    // Mental Health Stats
+    mentalHealthInsights: "Mental Health Insights",
+    mentalHealthStatistics: "Mental Health Statistics",
+    keyFactsAboutMental: "Key facts about mental health prevalence and impact on daily life",
+    impactOnDailyLife: "Impact on Daily Life",
+    
+    // Interactive Visualization
+    interactiveVisualization: "Interactive Visualization",
+    shortAnalysis: "This is a short analysis and visualization of a generated person's recounting of his experience in a panic attack.",
+    viewDetailedAnalysis: "View Detailed Analysis Data",
+    originalTextSample: "Original Text Sample",
+    keyEmotionalPatterns: "Key Emotional Patterns",
+    dominantThemes: "Dominant Themes",
+    sentimentDistribution: "Sentiment Distribution",
+    negative: "Negative",
+    neutral: "Neutral",
+    positive: "Positive",
+    linguisticMarkers: "Linguistic Markers",
+    wordComparison: "Word Comparison",
+    
+    // Document Analysis
+    documentAnalysisWithBERT: "Document Analysis with BERT Model",
+    selectedFile: "Selected File",
+    noFileSelected: "No file selected",
+    wordsExtracted: "words extracted",
+    analyzeWithBERT: "Analyze with BERT",
+    analyzingWithBERT: "Analyzing with BERT...",
+    
+    // Perfect Life Plan
+    perfectLifeTitle: "What does your Perfect Life Look Like?",
+    dailyPlan: "Daily",
+    weeklyPlan: "Weekly",
+    monthlyPlan: "Monthly",
+    dailyPlanPlaceholder: "What does your perfect day look like?",
+    weeklyPlanPlaceholder: "What does your perfect week look like?",
+    monthlyPlanPlaceholder: "What does your perfect month look like?",
+    saveChanges: "Save Changes",
     
     // Specific translations
     uploadDocuments: "Upload Documents",
@@ -54,14 +110,11 @@ const translations: Record<string, Record<string, string>> = {
     sentiment: "Sentiment",
     page: "Page",
     average: "Average",
-    positive: "Positive",
-    negative: "Negative",
     timelineDescription: "This chart shows sentiment changes throughout the document",
     searchWordsOrEmotions: "Search words or emotions...",
     resetView: "Reset View",
     hoverOrClick: "Hover over or click on points to see details",
     selected: "Selected",
-    neutral: "Neutral",
     searchWords: "Search words",
     noDataTabName: "No data available for the {tabName} tab",
     dataAvailableMissing: "Some data required for this visualization is not available. Try analyzing the document again or try a different document.",
@@ -103,17 +156,9 @@ const translations: Record<string, Record<string, string>> = {
     addToMonthly: "Add to Monthly Reflection",
     monthlyReflectionsTitle: "Monthly Reflections & Progress",
     monthlyReflectionsDescription: "Review your emotional journey and track progress over time",
-    perfectLifeTitle: "What does your Perfect Life Look Like?",
-    dailyPlan: "Daily",
-    weeklyPlan: "Weekly",
-    monthlyPlan: "Monthly",
-    dailyPlanPlaceholder: "What does your perfect day look like?",
-    weeklyPlanPlaceholder: "What does your perfect week look like?",
-    monthlyPlanPlaceholder: "What does your perfect month look like?",
-    saveChanges: "Save Changes",
   },
   fr: {
-    // Common
+    // Common UI elements
     welcome: "Bienvenue",
     loading: "Chargement...",
     error: "Erreur",
@@ -126,12 +171,67 @@ const translations: Record<string, Record<string, string>> = {
     view: "Voir",
     search: "Rechercher",
     noResultsFound: "Aucun résultat trouvé",
+    home: "Accueil",
+    dashboard: "Tableau de bord",
+    journalAnalysis: "Analyse de Journal",
+    selectLanguage: "Sélectionner la langue",
+    
+    // Navigation and Header
+    welcomeToLifePlanner: "Bienvenue dans votre planificateur de vie",
+    planYourLife: "Planifiez votre vie parfaite, analysez vos pensées et suivez votre bien-être émotionnel.",
+    goToDashboard: "Aller au tableau de bord",
+    
+    // Feature highlights
+    emotionalInsights: "Aperçus émotionnels",
+    journalTracker: "Suivi du journal",
+    sentimentAnalysis: "Analyse des sentiments",
+    emotionalInsightsDesc: "Obtenez des aperçus profonds de vos schémas émotionnels et comprenez ce qui motive vos sentiments.",
+    journalTrackerDesc: "Suivez et analysez vos pensées quotidiennes par la tenue d'un journal pour identifier les tendances.",
+    sentimentAnalysisDesc: "Comprenez le sentiment derrière vos pensées et suivez votre bien-être émotionnel au fil du temps.",
+    
+    // Mental Health Stats
+    mentalHealthInsights: "Aperçus sur la santé mentale",
+    mentalHealthStatistics: "Statistiques de santé mentale",
+    keyFactsAboutMental: "Faits clés sur la prévalence de la santé mentale et l'impact sur la vie quotidienne",
+    impactOnDailyLife: "Impact sur la vie quotidienne",
+    
+    // Interactive Visualization
+    interactiveVisualization: "Visualisation interactive",
+    shortAnalysis: "C'est une courte analyse et visualisation du récit d'une personne sur son expérience d'une crise de panique.",
+    viewDetailedAnalysis: "Voir les données d'analyse détaillées",
+    originalTextSample: "Exemple de texte original",
+    keyEmotionalPatterns: "Modèles émotionnels clés",
+    dominantThemes: "Thèmes dominants",
+    sentimentDistribution: "Répartition des sentiments",
+    negative: "Négatif",
+    neutral: "Neutre",
+    positive: "Positif",
+    linguisticMarkers: "Marqueurs linguistiques",
+    wordComparison: "Comparaison de mots",
+    
+    // Document Analysis
+    documentAnalysisWithBERT: "Analyse de document avec le modèle BERT",
+    selectedFile: "Fichier sélectionné",
+    noFileSelected: "Aucun fichier sélectionné",
+    wordsExtracted: "mots extraits",
+    analyzeWithBERT: "Analyser avec BERT",
+    analyzingWithBERT: "Analyse avec BERT...",
+    
+    // Perfect Life Plan
+    perfectLifeTitle: "À quoi ressemble votre vie parfaite ?",
+    dailyPlan: "Quotidien",
+    weeklyPlan: "Hebdomadaire",
+    monthlyPlan: "Mensuel",
+    dailyPlanPlaceholder: "À quoi ressemble votre journée parfaite ?",
+    weeklyPlanPlaceholder: "À quoi ressemble votre semaine parfaite ?",
+    monthlyPlanPlaceholder: "À quoi ressemble votre mois parfait ?",
+    saveChanges: "Enregistrer les modifications",
     
     // Specific translations
     uploadDocuments: "Télécharger des documents",
     analyzeWithBERT: "Analyser avec BERT",
     analyzeWithGemma3: "Analyser avec Gemma 3",
-    documentTextVisualization: "Visualisation du texte du document",
+    documentTextVisualization: "Visualisation de texte de document",
     emotionalAnalysisVisualization: "Visualisation de l'analyse émotionnelle",
     documentSummary: "Résumé du document",
     viewDetailedAnalysisData: "Voir les données d'analyse détaillées",
@@ -154,8 +254,6 @@ const translations: Record<string, Record<string, string>> = {
     sentiment: "Sentiment",
     page: "Page",
     average: "Moyenne",
-    positive: "Positif",
-    negative: "Négatif",
     timelineDescription: "Ce graphique montre l'évolution des sentiments dans le document",
     searchWordsOrEmotions: "Rechercher des mots ou des émotions...",
     resetView: "Réinitialiser la vue",
@@ -203,17 +301,9 @@ const translations: Record<string, Record<string, string>> = {
     addToMonthly: "Ajouter à la réflexion mensuelle",
     monthlyReflectionsTitle: "Réflexions mensuelles et progrès",
     monthlyReflectionsDescription: "Examinez votre parcours émotionnel et suivez vos progrès au fil du temps",
-    perfectLifeTitle: "À quoi ressemble votre vie parfaite ?",
-    dailyPlan: "Quotidien",
-    weeklyPlan: "Hebdomadaire",
-    monthlyPlan: "Mensuel",
-    dailyPlanPlaceholder: "À quoi ressemble votre journée parfaite ?",
-    weeklyPlanPlaceholder: "À quoi ressemble votre semaine parfaite ?",
-    monthlyPlanPlaceholder: "À quoi ressemble votre mois parfait ?",
-    saveChanges: "Enregistrer les modifications",
   },
   es: {
-    // Common
+    // Common UI elements
     welcome: "Bienvenido",
     loading: "Cargando...",
     error: "Error",
@@ -226,6 +316,61 @@ const translations: Record<string, Record<string, string>> = {
     view: "Ver",
     search: "Buscar",
     noResultsFound: "No se encontraron resultados",
+    home: "Inicio",
+    dashboard: "Panel",
+    journalAnalysis: "Análisis de Diario",
+    selectLanguage: "Seleccionar idioma",
+    
+    // Navigation and Header
+    welcomeToLifePlanner: "Bienvenido a tu planificador de vida",
+    planYourLife: "Planifica tu vida perfecta, analiza tus pensamientos y haz seguimiento de tu bienestar emocional.",
+    goToDashboard: "Ir al panel",
+    
+    // Feature highlights
+    emotionalInsights: "Conocimientos emocionales",
+    journalTracker: "Seguimiento de diario",
+    sentimentAnalysis: "Análisis de sentimientos",
+    emotionalInsightsDesc: "Obtén conocimientos profundos sobre tus patrones emocionales y comprende qué impulsa tus sentimientos.",
+    journalTrackerDesc: "Sigue y analiza tus pensamientos diarios a través del diario para identificar patrones y tendencias.",
+    sentimentAnalysisDesc: "Comprende el sentimiento detrás de tus pensamientos y sigue tu bienestar emocional a lo largo del tiempo.",
+    
+    // Mental Health Stats
+    mentalHealthInsights: "Conocimientos sobre salud mental",
+    mentalHealthStatistics: "Estadísticas de salud mental",
+    keyFactsAboutMental: "Datos clave sobre la prevalencia de la salud mental y el impacto en la vida diaria",
+    impactOnDailyLife: "Impacto en la vida diaria",
+    
+    // Interactive Visualization
+    interactiveVisualization: "Visualización interactiva",
+    shortAnalysis: "Este es un breve análisis y visualización del relato de una persona sobre su experiencia en un ataque de pánico.",
+    viewDetailedAnalysis: "Ver datos de análisis detallados",
+    originalTextSample: "Muestra de texto original",
+    keyEmotionalPatterns: "Patrones emocionales clave",
+    dominantThemes: "Temas dominantes",
+    sentimentDistribution: "Distribución de sentimientos",
+    negative: "Negativo",
+    neutral: "Neutral",
+    positive: "Positivo",
+    linguisticMarkers: "Marcadores lingüísticos",
+    wordComparison: "Comparación de palabras",
+    
+    // Document Analysis
+    documentAnalysisWithBERT: "Análisis de documento con modelo BERT",
+    selectedFile: "Archivo seleccionado",
+    noFileSelected: "No hay archivo seleccionado",
+    wordsExtracted: "palabras extraídas",
+    analyzeWithBERT: "Analizar con BERT",
+    analyzingWithBERT: "Analizando con BERT...",
+    
+    // Perfect Life Plan
+    perfectLifeTitle: "¿Cómo es tu vida perfecta?",
+    dailyPlan: "Diario",
+    weeklyPlan: "Semanal",
+    monthlyPlan: "Mensual",
+    dailyPlanPlaceholder: "¿Cómo es tu día perfecto?",
+    weeklyPlanPlaceholder: "¿Cómo es tu semana perfecta?",
+    monthlyPlanPlaceholder: "¿Cómo es tu mes perfecto?",
+    saveChanges: "Guardar cambios",
     
     // Specific translations
     uploadDocuments: "Cargar documentos",
@@ -254,8 +399,6 @@ const translations: Record<string, Record<string, string>> = {
     sentiment: "Sentimiento",
     page: "Página",
     average: "Promedio",
-    positive: "Positivo",
-    negative: "Negativo",
     timelineDescription: "Este gráfico muestra los cambios de sentimiento a lo largo del documento",
     searchWordsOrEmotions: "Buscar palabras o emociones...",
     resetView: "Restablecer vista",
@@ -303,14 +446,6 @@ const translations: Record<string, Record<string, string>> = {
     addToMonthly: "Añadir a la reflexión mensual",
     monthlyReflectionsTitle: "Reflexiones mensuales y progreso",
     monthlyReflectionsDescription: "Revisa tu viaje emocional y sigue el progreso a lo largo del tiempo",
-    perfectLifeTitle: "¿Cómo es tu vida perfecta?",
-    dailyPlan: "Diario",
-    weeklyPlan: "Semanal",
-    monthlyPlan: "Mensual",
-    dailyPlanPlaceholder: "¿Cómo es tu día perfecto?",
-    weeklyPlanPlaceholder: "¿Cómo es tu semana perfecta?",
-    monthlyPlanPlaceholder: "¿Cómo es tu mes perfecto?",
-    saveChanges: "Guardar cambios",
   }
 };
 

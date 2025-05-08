@@ -35,17 +35,17 @@ export const Header = () => {
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <Flower className="h-6 w-6 text-purple animate-bounce" />
-            <span className="font-bold text-xl text-black">Journal Analysis</span>
+            <span className="font-bold text-xl text-black">{t("journalAnalysis")}</span>
           </Link>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <nav className="flex items-center space-x-8">
               <Link to="/" className="text-black hover:text-foreground transition-colors">
-                Home
+                {t("home")}
               </Link>
               <Link to="/dashboard" className="text-black hover:text-foreground transition-colors">
-                Dashboard
+                {t("dashboard")}
               </Link>
               <DarkModeToggle />
             </nav>
@@ -92,14 +92,14 @@ export const Header = () => {
                 className="text-black hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Home
+                {t("home")}
               </Link>
               <Link 
                 to="/dashboard" 
                 className="text-black hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Dashboard
+                {t("dashboard")}
               </Link>
               
               {/* Dark Mode Toggle in Mobile Menu */}
