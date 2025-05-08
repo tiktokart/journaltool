@@ -27,6 +27,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
   const [averageSentiment, setAverageSentiment] = useState<number>(0);
   const [needsSupport, setNeedsSupport] = useState<boolean>(false);
   const [emotionalTones, setEmotionalTones] = useState<Map<string, number>>(new Map());
+  const [hasNegativeWords, setHasNegativeWords] = useState<boolean>(false);
 
   useEffect(() => {
     if (!embeddingPoints || embeddingPoints.length === 0) return;
@@ -39,8 +40,26 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     const avgSentiment = sentimentTotal / embeddingPoints.length;
     setAverageSentiment(avgSentiment);
     
-    // Identify if support is needed
-    setNeedsSupport(avgSentiment < 0.4);
+    // Check if there are any negative words in the text
+    const negativeWords = [
+      'sad', 'angry', 'upset', 'disappointed', 'frustrated',
+      'anxious', 'worried', 'fear', 'hate', 'terrible',
+      'awful', 'bad', 'worse', 'worst', 'horrible',
+      'depressed', 'depression', 'stress', 'stressed', 'unhappy',
+      'miserable', 'hurt', 'pain', 'failure', 'fail',
+      'worried', 'guilty', 'ashamed', 'regret', 'lonely',
+      'alone', 'abandoned', 'sorry', 'trouble', 'problem'
+    ];
+    
+    const wordsInText = embeddingPoints.map(point => point.word?.toLowerCase()).filter(Boolean);
+    const foundNegativeWords = wordsInText.some(word => 
+      negativeWords.some(negWord => word && word.includes(negWord))
+    );
+    
+    setHasNegativeWords(foundNegativeWords);
+    
+    // Only show support notice if sentiment is low AND there are negative words
+    setNeedsSupport(avgSentiment < 0.4 && foundNegativeWords);
     
     // Count emotional tones
     const emotions = new Map<string, number>();
@@ -84,9 +103,6 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     setResources(allResources);
     
     // Extract all words from embedding points
-    const wordsInText = embeddingPoints.map(point => point.word?.toLowerCase()).filter(Boolean);
-    
-    // Filter resources based on words present in the text
     const relevantResources = allResources.filter(resource => {
       // Check if any trigger word is present in the text
       return resource.triggerWords.some(triggerWord => 
@@ -94,8 +110,8 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
       );
     });
     
-    // If no specific resources match but sentiment is low, add the general support resource
-    if (relevantResources.length === 0 && avgSentiment < 0.4) {
+    // If no specific resources match but sentiment is low AND there are negative words, add the general support resource
+    if (relevantResources.length === 0 && avgSentiment < 0.4 && foundNegativeWords) {
       const supportResource = allResources.find(r => r.title === "Immediate Support Resources");
       if (supportResource) {
         relevantResources.push(supportResource);
