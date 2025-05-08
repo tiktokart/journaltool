@@ -73,7 +73,7 @@ export const ViewDetailedAnalysis = ({
     Object.entries(emotionKeywords).forEach(([emotion, keywords]) => {
       keywords.forEach(word => {
         const count = wordCounts[word] || 0;
-        if (count >= 3) { // Only include if mentioned 3 or more times
+        if (count >= 3) { // Only include if mentioned frequently
           foundEmotions[word] = count;
         }
       });
@@ -85,7 +85,7 @@ export const ViewDetailedAnalysis = ({
       .map(([topic, count]) => ({ topic, count }));
   };
   
-  // Extract main subjects from text - focusing only on nouns mentioned 3+ times
+  // Extract main subjects from text - focusing only on nouns mentioned frequently
   const extractMainSubjects = () => {
     if (!displayText) return [];
     
@@ -93,7 +93,7 @@ export const ViewDetailedAnalysis = ({
     const subjectCategories = {
       "family": ["family", "parent", "child", "sibling", "mother", "father", "daughter", "son", "home", "brother", "sister"],
       "work": ["job", "career", "office", "profession", "business", "company", "project", "task", "boss", "colleague", "meeting", "work"],
-      "education": ["school", "university", "learning", "knowledge", "degree", "class", "teacher", "student", "book", "course", "education", "study"],
+      "education": ["learn", "study", "school", "university", "education", "knowledge", "degree", "class", "teacher", "student", "book", "course"],
       "health": ["health", "body", "illness", "wellness", "exercise", "doctor", "medicine", "hospital", "symptom", "disease", "therapy", "treatment"],
       "finance": ["money", "budget", "savings", "investment", "account", "expense", "income", "debt", "wealth", "bank", "cost", "finance"],
       "travel": ["journey", "destination", "vacation", "trip", "adventure", "exploration", "places", "transport", "hotel", "flight", "travel"],
@@ -113,11 +113,11 @@ export const ViewDetailedAnalysis = ({
     
     const foundSubjects: Record<string, number> = {};
     
-    // Identify nouns mentioned 3+ times
+    // Identify nouns mentioned frequently
     Object.entries(subjectCategories).forEach(([category, nouns]) => {
       nouns.forEach(noun => {
         const count = wordCounts[noun] || 0;
-        if (count >= 3) { // Only include if mentioned 3 or more times
+        if (count >= 3) { // Only include if mentioned frequently
           foundSubjects[noun] = count;
         }
       });
@@ -322,13 +322,12 @@ export const ViewDetailedAnalysis = ({
                                 {item.topic}
                               </span>
                             </div>
-                            <span className="mt-1 text-xs opacity-75">({item.count} times)</span>
                           </div>
                         ))}
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground text-center">
-                        No emotional actions mentioned 3+ times
+                        No significant emotional actions detected
                       </p>
                     )}
                   </div>
@@ -336,7 +335,7 @@ export const ViewDetailedAnalysis = ({
                 
                 {/* Main Subjects - Below */}
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6">
-                  <h3 className="font-medium mb-4 text-black text-center">Main Subjects (3+ mentions)</h3>
+                  <h3 className="font-medium mb-4 text-black text-center">Main Subjects</h3>
                   {mainSubjects.length > 0 ? (
                     <div className="flex justify-center gap-6 flex-wrap">
                       {mainSubjects.map((item, index) => (
@@ -352,15 +351,14 @@ export const ViewDetailedAnalysis = ({
                               flexDirection: 'column'
                             }}
                           >
-                            <div className="font-semibold mb-1">{item.subject}</div>
-                            <div className="text-xs opacity-75">{item.count} mentions</div>
+                            <div className="font-semibold">{item.subject}</div>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground text-center">
-                      No nouns mentioned 3+ times
+                      No significant subjects detected
                     </p>
                   )}
                 </div>
