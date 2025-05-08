@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowDown } from "lucide-react";
 import { WordComparison } from "@/components/WordComparison";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Point } from "@/types/embedding";
@@ -23,7 +22,6 @@ const WordComparisonController = ({
 }: WordComparisonControllerProps) => {
   const { t } = useLanguage();
   const [word1, setWord1] = useState<string>("");
-  const [word2, setWord2] = useState<string>("");
   const [selectedWords, setSelectedWords] = useState<Point[]>([]);
 
   const handleAddWord = () => {
@@ -48,7 +46,7 @@ const WordComparisonController = ({
   };
 
   return (
-    <Card className="border border-border shadow-md bg-light-lavender">
+    <Card className="border border-border shadow-md bg-yellow-soft">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Word Comparison</span>
@@ -76,8 +74,6 @@ const WordComparisonController = ({
         {selectedWords.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground">No Words Selected</p>
-            <ArrowDown className="h-5 w-5 mx-auto mt-2 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground mt-1">{t("addAWordToCompare")}</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -102,10 +98,11 @@ const WordComparisonController = ({
                   {selectedWords.slice(i + 1).map((otherWord, j) => (
                     <WordComparison
                       key={`${i}-${j}`}
-                      word1={word}
-                      word2={otherWord}
+                      words={[word, otherWord]}
+                      onRemoveWord={() => {}}
+                      calculateRelationship={calculateRelationship}
+                      onAddWordClick={() => {}}
                       sourceDescription={sourceDescription}
-                      relationship={calculateRelationship(word, otherWord)}
                     />
                   ))}
                 </div>

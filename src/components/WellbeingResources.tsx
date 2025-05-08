@@ -1,199 +1,104 @@
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Info, Heart } from "lucide-react";
-import { Point } from "@/types/embedding";
-import { toast } from "sonner";
-import { Button } from "./ui/button";
+import { Heart, CheckCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-type ResourceItem = {
-  title: string;
-  description: string;
-  tags: string[];
-  link?: string;
-};
+import { Point } from "@/types/embedding";
 
 interface WellbeingResourcesProps {
   embeddingPoints: Point[];
 }
 
-export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps) => {
+export const WellbeingResources: React.FC<WellbeingResourcesProps> = ({ 
+  embeddingPoints
+}) => {
   const { t } = useLanguage();
-  const [resources, setResources] = useState<ResourceItem[]>([]);
-  const [averageSentiment, setAverageSentiment] = useState<number>(0);
-  const [needsSupport, setNeedsSupport] = useState<boolean>(false);
-  const [emotionalTones, setEmotionalTones] = useState<Map<string, number>>(new Map());
-
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  
   useEffect(() => {
-    if (!embeddingPoints || embeddingPoints.length === 0) {
-      setResources([{
-        title: "You're doing great",
-        description: "Keep working on yourself.",
-        tags: ["wellness", "encouragement"]
-      }]);
-      return;
-    }
-    
-    // Calculate average sentiment
-    let sentimentTotal = 0;
-    embeddingPoints.forEach(point => {
-      sentimentTotal += point.sentiment;
-    });
-    const avgSentiment = sentimentTotal / embeddingPoints.length;
-    setAverageSentiment(avgSentiment);
-    
-    // Identify if support is needed
-    setNeedsSupport(avgSentiment < 0.4);
-    
-    // Count emotional tones and negative words
-    const emotions = new Map<string, number>();
-    const negativeWords = [];
-    
-    embeddingPoints.forEach(point => {
-      if (point.emotionalTone) {
-        const count = emotions.get(point.emotionalTone) || 0;
-        emotions.set(point.emotionalTone, count + 1);
+    // If we have embedding points, analyze them for negative emotions
+    if (embeddingPoints && embeddingPoints.length > 0) {
+      const negativePoints = embeddingPoints.filter(
+        point => point.sentiment < 0.4 || 
+        ["Sadness", "Fear", "Anger", "Disgust"].includes(point.emotionalTone || "")
+      );
+      
+      const suggestionsToShow: string[] = [];
+      
+      // Generate suggestions based on negative emotions found
+      if (negativePoints.length > 0) {
+        // Look for specific negative words to give targeted suggestions
+        const wordsToCheck = [
+          { words: ["anxious", "anxiety", "worry", "stress", "stressed"], 
+            suggestion: "Try deep breathing exercises or meditation to reduce anxiety." },
+          { words: ["sad", "depression", "depressed", "unhappy", "upset"], 
+            suggestion: "Consider speaking with a friend or therapist about your feelings of sadness." },
+          { words: ["angry", "anger", "frustrated", "annoyed", "mad"], 
+            suggestion: "Physical activity can help release anger in a healthy way." },
+          { words: ["tired", "exhausted", "fatigue", "sleep", "insomnia"], 
+            suggestion: "Focus on improving your sleep hygiene and establishing a regular sleep schedule." },
+          { words: ["lonely", "alone", "isolated", "disconnected"], 
+            suggestion: "Reach out to an old friend or join a community group to build connections." },
+          { words: ["pain", "hurt", "ache", "headache", "sick"], 
+            suggestion: "Remember to take care of your physical health and see a doctor if needed." },
+          { words: ["work", "job", "career", "boss", "overwhelmed"], 
+            suggestion: "Try setting boundaries at work and practicing time management." }
+        ];
+        
+        // Check for matches in the negative points
+        negativePoints.forEach(point => {
+          wordsToCheck.forEach(wordGroup => {
+            if (wordGroup.words.includes(point.word.toLowerCase()) && 
+                !suggestionsToShow.includes(wordGroup.suggestion)) {
+              suggestionsToShow.push(wordGroup.suggestion);
+            }
+          });
+        });
+        
+        // Add some general suggestions if we don't have enough specific ones
+        if (suggestionsToShow.length < 2) {
+          suggestionsToShow.push("Practice self-compassion and remember it's okay to have difficult emotions.");
+          
+          if (negativePoints.length > 3) {
+            suggestionsToShow.push("Consider journaling about your emotions to better understand them.");
+          }
+        }
+      } else {
+        // If no negative points found, give positive reinforcement
+        suggestionsToShow.push("You're doing great. Keep working on yourself.");
       }
       
-      // Check if this is a negative word (sentiment < 0.3)
-      if (point.sentiment < 0.3) {
-        negativeWords.push(point.word);
-      }
-    });
-    setEmotionalTones(emotions);
-    
-    // Generate resources based on emotional tones, sentiment, and specific words
-    const suggestedResources: ResourceItem[] = [];
-    
-    // Check for anxiety-related words
-    const anxietyWords = ['anxiety', 'anxious', 'worry', 'panic', 'stress', 'nervous', 'fear'];
-    const hasAnxietyWords = negativeWords.some(word => 
-      anxietyWords.some(anxWord => word.toLowerCase().includes(anxWord))
-    );
-    
-    if (hasAnxietyWords) {
-      suggestedResources.push({
-        title: "Coping with Anxiety",
-        description: "Try deep breathing exercises, mindfulness meditation, or progressive muscle relaxation to manage anxiety symptoms.",
-        tags: ["anxiety", "coping", "relaxation"],
-      });
+      // Limit to 5 suggestions
+      setSuggestions(suggestionsToShow.slice(0, 5));
+    } else {
+      setSuggestions(["You're doing great. Keep working on yourself."]);
     }
-    
-    // Check for depression-related words
-    const depressionWords = ['sad', 'depression', 'hopeless', 'empty', 'despair', 'miserable', 'worthless'];
-    const hasDepressionWords = negativeWords.some(word => 
-      depressionWords.some(depWord => word.toLowerCase().includes(depWord))
-    );
-    
-    if (hasDepressionWords) {
-      suggestedResources.push({
-        title: "Managing Low Mood",
-        description: "Regular physical activity, maintaining social connections, and establishing daily routines can help improve mood.",
-        tags: ["mood", "depression", "self-care"],
-      });
-    }
-    
-    // Check for anger-related words
-    const angerWords = ['anger', 'angry', 'rage', 'furious', 'frustrated', 'mad', 'irritated'];
-    const hasAngerWords = negativeWords.some(word => 
-      angerWords.some(angWord => word.toLowerCase().includes(angWord))
-    );
-    
-    if (hasAngerWords) {
-      suggestedResources.push({
-        title: "Healthy Expression of Anger",
-        description: "Learn to recognize anger triggers and develop constructive ways to express and channel anger.",
-        tags: ["anger", "management", "expression"],
-      });
-    }
-    
-    // Crisis support if extremely negative sentiment detected
-    if (avgSentiment < 0.3) {
-      suggestedResources.push({
-        title: "Immediate Support Resources",
-        description: "If you're feeling overwhelmed, talking with someone can help. Crisis lines provide immediate support.",
-        tags: ["crisis", "support", "immediate"],
-        link: "https://988lifeline.org/"
-      });
-    }
-    
-    // Add general wellness resources if nothing specific was identified
-    if (suggestedResources.length === 0) {
-      suggestedResources.push({
-        title: "Daily Wellness Practices",
-        description: "Small daily habits like walking outdoors, quality sleep, and connecting with others can improve wellbeing.",
-        tags: ["wellness", "habits", "daily"],
-      });
-    }
-    
-    setResources(suggestedResources);
   }, [embeddingPoints]);
   
-  const handleResourceClick = (resource: ResourceItem) => {
-    if (resource.link) {
-      window.open(resource.link, "_blank");
-    } else {
-      toast.info(`Resource information: ${resource.description}`);
-    }
-  };
-
   return (
-    <Card className="border border-border shadow-md bg-light-lavender">
-      <CardHeader>
+    <Card className="border border-border shadow-md bg-yellow">
+      <CardHeader className="pb-2">
         <CardTitle className="flex items-center text-xl">
           <Heart className="h-5 w-5 mr-2 text-orange" />
           Suggestions
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {needsSupport && (
-          <div className="bg-yellow-soft p-4 rounded-lg mb-6">
-            <div className="flex items-start">
-              <Info className="h-5 w-5 mr-2 text-orange mt-0.5" />
-              <div>
-                <p className="font-medium text-black">Support Notice</p>
-                <p className="text-sm text-black mt-1">
-                  Your entries show patterns that may benefit from additional support. 
-                  Consider reaching out to a mental health professional.
-                </p>
-              </div>
-            </div>
-          </div>
+        {suggestions.length === 0 ? (
+          <p className="text-center text-muted-foreground py-4">
+            "You're doing great. Keep working on yourself."
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {suggestions.map((suggestion, i) => (
+              <li key={i} className="flex items-start">
+                <CheckCircle className="h-5 w-5 text-orange mt-0.5 mr-2 flex-shrink-0" />
+                <span>{suggestion}</span>
+              </li>
+            ))}
+          </ul>
         )}
-        
-        <div className="grid md:grid-cols-2 gap-4">
-          {resources.map((resource, index) => (
-            <div 
-              key={index} 
-              className="border rounded-lg p-4 hover:bg-light-lavender/30 transition-colors cursor-pointer"
-              onClick={() => handleResourceClick(resource)}
-            >
-              <h3 className="font-medium mb-2 text-black">{resource.title}</h3>
-              <p className="text-sm text-black mb-3">{resource.description}</p>
-              <div className="flex flex-wrap gap-1">
-                {resource.tags.map(tag => (
-                  <Badge key={tag} variant="outline" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              {resource.link && (
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto text-sm text-orange mt-2" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(resource.link, "_blank");
-                  }}
-                >
-                  Visit resource
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
       </CardContent>
     </Card>
   );

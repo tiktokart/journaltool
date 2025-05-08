@@ -31,11 +31,6 @@ body {
   background-color: #e56e00;
 }
 
-/* Light background */
-.bg-light-lavender {
-  background-color: #EAD5FF;
-}
-
 .text-truncate {
   overflow: hidden;
   text-overflow: ellipsis;

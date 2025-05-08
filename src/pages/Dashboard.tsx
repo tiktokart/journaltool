@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +8,7 @@ import { toast } from "sonner";
 import { Loader2, FileText, Heart } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
-import { analyzePdfContent } from "@/utils/documentAnalysis";
-import { WordComparisonController } from "@/components/WordComparisonController";
+import WordComparisonController from "@/components/WordComparisonController";
 import { DocumentSummary } from "@/components/DocumentSummary";
 import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
 import { FileInfoDisplay } from "@/components/FileInfoDisplay";
@@ -402,10 +402,10 @@ const Dashboard = () => {
         <div className="flex flex-col gap-8">
           {/* Life Plan and Monthly Reflection Section */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-light-lavender p-4 rounded-lg">
+            <div className="bg-yellow-soft p-4 rounded-lg">
               <LifePlanSection journalText={journalText} />
             </div>
-            <div className="bg-light-lavender p-4 rounded-lg">
+            <div className="bg-yellow-soft p-4 rounded-lg">
               <Card className="border border-border shadow-md">
                 <CardHeader>
                   <CardTitle className="flex items-center text-xl">
@@ -422,16 +422,16 @@ const Dashboard = () => {
           
           {/* Journal Input Section */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-light-lavender p-4 rounded-lg">
+            <div className="bg-yellow-soft p-4 rounded-lg">
               <JournalInput onJournalEntrySubmit={handleJournalEntrySubmit} />
             </div>
-            <div className="bg-light-lavender p-4 rounded-lg">
+            <div className="bg-yellow-soft p-4 rounded-lg">
               <JournalCache onSelectEntry={handleCachedEntrySelect} />
             </div>
           </div>
           
-          {/* Document Analysis Section - With lavender background */}
-          <Card className="border border-border shadow-md bg-light-lavender">
+          {/* Document Analysis Section */}
+          <Card className="border border-border shadow-md bg-yellow-soft">
             <CardHeader>
               <CardTitle className="text-black">Document Analysis with Data Models</CardTitle>
             </CardHeader>
@@ -492,7 +492,7 @@ const Dashboard = () => {
           {/* Analysis Results Section */}
           {sentimentData && (
             <div className="animate-fade-in">
-              <div className="bg-light-lavender p-4 rounded-lg mb-4">
+              <div className="bg-yellow-soft p-4 rounded-lg mb-4">
                 <FileInfoDisplay 
                   fileName={sentimentData.fileName}
                   fileSize={sentimentData.fileSize}
@@ -500,11 +500,11 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="bg-light-lavender p-4 rounded-lg mb-4">
+              <div className="bg-yellow-soft p-4 rounded-lg mb-4">
                 <DocumentSummary summary={sentimentData.summary || "Analysis complete."} />
               </div>
               
-              <div className="bg-light-lavender p-4 rounded-lg mb-4">
+              <div className="bg-yellow-soft p-4 rounded-lg mb-4">
                 <AnalysisTabs 
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
@@ -535,7 +535,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-light-lavender rounded-lg p-4">
+              <div className="mt-8 mb-4 bg-yellow-soft rounded-lg p-4">
                 <TextEmotionViewer 
                   pdfText={pdfText}
                   embeddingPoints={sentimentData.embeddingPoints}
@@ -543,13 +543,13 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-light-lavender rounded-lg p-4">
+              <div className="mt-8 mb-4 bg-yellow-soft rounded-lg p-4">
                 <WellbeingResources 
                   embeddingPoints={sentimentData.embeddingPoints}
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-light-lavender rounded-lg p-4">
+              <div className="mt-8 mb-4 bg-yellow-soft rounded-lg p-4">
                 <WordComparisonController 
                   points={sentimentData.embeddingPoints}
                   selectedPoint={selectedPoint}
@@ -558,7 +558,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 bg-light-lavender p-4 rounded-lg">
+              <div className="mt-8 bg-yellow-soft p-4 rounded-lg">
                 <PdfExport sentimentData={sentimentData} />
               </div>
             </div>

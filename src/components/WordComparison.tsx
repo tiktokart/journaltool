@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight, X, Search, GitCompareArrows, Info } from 'lucide-react';
+import { ArrowLeftRight, X, Info, GitCompareArrows } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getEmotionColor, getSentimentLabel } from '@/utils/embeddingUtils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -17,7 +17,7 @@ interface WordComparisonProps {
     sharedKeywords: string[];
   } | null;
   onAddWordClick: () => void;
-  sourceDescription?: string; // Add this to show where words came from
+  sourceDescription?: string;
 }
 
 export const WordComparison: React.FC<WordComparisonProps> = ({ 
@@ -86,14 +86,6 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
             </>
           )}
         </p>
-        <Button 
-          variant="outline" 
-          className="mt-4"
-          onClick={onAddWordClick}
-        >
-          <Search className="h-4 w-4 mr-2" />
-          {t("searchWords")}
-        </Button>
         
         {sourceDescription && (
           <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">

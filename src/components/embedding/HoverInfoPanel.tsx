@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 interface HoverInfoPanelProps {
   point: Point | null;
-  position: { x: number; y: number } | null;
+  position?: { x: number; y: number } | null;
 }
 
 export const HoverInfoPanel = ({ point, position }: HoverInfoPanelProps) => {
@@ -20,7 +20,8 @@ export const HoverInfoPanel = ({ point, position }: HoverInfoPanelProps) => {
         .sort((a, b) => b.strength - a.strength)
         .slice(0, 3)
         .map(rel => {
-          const relatedPoint = window.allEmbeddingPoints?.find(p => p.id === rel.id);
+          const allPoints = window.documentEmbeddingPoints || [];
+          const relatedPoint = allPoints.find(p => p.id === rel.id);
           return {
             word: relatedPoint?.word || "unknown",
             strength: rel.strength
@@ -32,14 +33,14 @@ export const HoverInfoPanel = ({ point, position }: HoverInfoPanelProps) => {
     }
   }, [point]);
   
-  if (!point || !position) return null;
+  if (!point) return null;
   
   const emotionColor = getEmotionColor(point.emotionalTone || "Neutral");
   
   const panelStyle = {
-    position: "absolute" as "absolute",
-    top: `${position.y}px`,
-    left: `${position.x}px`,
+    position: "absolute" as const,
+    top: position ? `${position.y}px` : '10px',
+    left: position ? `${position.x}px` : '10px',
     transform: "translate(-50%, -100%)",
     backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: "0.5rem",
@@ -48,7 +49,7 @@ export const HoverInfoPanel = ({ point, position }: HoverInfoPanelProps) => {
     zIndex: 50,
     maxWidth: "300px",
     border: "1px solid #f6df60",
-    pointerEvents: "none"
+    pointerEvents: "none" as const
   };
   
   const sentimentBgClass = 
