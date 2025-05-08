@@ -5,7 +5,7 @@ interface TimelineEvent {
   sentiment?: number;
   page?: number;
   score?: number;
-  color?: string; // Add color property
+  color?: string;
 }
 
 /**
@@ -34,7 +34,7 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
       'tomorrow', 'morning', 'afternoon', 'evening', 'night'
     ];
     
-    // Color mapping for emotional tones
+    // Color mapping for emotional tones - more distinctive colors
     const getColorForSentiment = (score: number): string => {
       if (score >= 0.7) return "#27AE60"; // Positive - Green
       if (score >= 0.6) return "#3498DB"; // Neutral-positive - Blue

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Info } from "lucide-react";
@@ -8,16 +7,20 @@ interface SentimentTimelineProps {
   data: Array<{ 
     page: number; 
     score: number;
-    color?: string;  // Added color property
+    color?: string;
   }>;
-  sourceDescription?: string; // Add this to show where data came from
+  sourceDescription?: string;
 }
 
 export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimelineProps) => {
   const { t } = useLanguage();
   
-  // Determine color for each point based on score
-  const getColor = (score: number) => {
+  // Get color from data point or calculate based on score
+  const getColor = (score: number, defaultColor?: string) => {
+    // Use provided color if available
+    if (defaultColor) return defaultColor;
+    
+    // Otherwise calculate based on score
     if (score >= 0.6) return "#27AE60";
     if (score >= 0.4) return "#3498DB";
     return "#E74C3C";
@@ -32,6 +35,9 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
     <Card className="border-0 shadow-md w-full bg-white">
       <CardHeader>
         <CardTitle className="text-orange">{t("sentimentTimeline")}</CardTitle>
+        {sourceDescription && (
+          <p className="text-sm text-muted-foreground">{sourceDescription}</p>
+        )}
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (

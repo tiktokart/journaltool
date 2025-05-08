@@ -596,6 +596,17 @@ const Dashboard = () => {
                 />
               </div>
               
+              {/* Word Comparison Section - Moved above Document Text Visualization */}
+              <div className="mt-8 mb-4 bg-white rounded-lg p-4">
+                <WordComparisonController 
+                  points={sentimentData.embeddingPoints}
+                  selectedPoint={selectedPoint}
+                  sourceDescription={sentimentData.sourceDescription}
+                  calculateRelationship={calculateRelationship}
+                />
+              </div>
+              
+              {/* Document Text Visualization */}
               <div className="mt-8 mb-4 bg-white rounded-lg p-4">
                 <TextEmotionViewer 
                   pdfText={pdfText}
@@ -607,16 +618,7 @@ const Dashboard = () => {
               <div className="mt-8 mb-4 bg-white rounded-lg p-4">
                 <WellbeingResources 
                   embeddingPoints={sentimentData.embeddingPoints}
-                  sourceDescription={sentimentData.sourceDescription} // Pass the sourceDescription
-                />
-              </div>
-              
-              <div className="mt-8 mb-4 bg-white rounded-lg p-4">
-                <WordComparisonController 
-                  points={sentimentData.embeddingPoints}
-                  selectedPoint={selectedPoint}
                   sourceDescription={sentimentData.sourceDescription}
-                  calculateRelationship={calculateRelationship}
                 />
               </div>
               

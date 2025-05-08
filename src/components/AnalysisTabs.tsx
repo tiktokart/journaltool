@@ -20,8 +20,6 @@ import { EntitySentiment } from "@/components/EntitySentiment";
 import { KeyPhrases } from "@/components/KeyPhrases";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { TextEmotionViewer } from "@/components/TextEmotionViewer";
-import { WellbeingResources } from "@/components/WellbeingResources";
 
 interface AnalysisTabsProps {
   activeTab: string;
@@ -281,17 +279,6 @@ export const AnalysisTabs = ({
                 </div>
               </CardContent>
             </Card>
-            
-            {/* Add the TextEmotionViewer component - we keep only this one instance */}
-            {hasTextData && hasEmbeddingData && (
-              <div className="mt-6">
-                <TextEmotionViewer
-                  pdfText={textContent}
-                  embeddingPoints={sentimentData.embeddingPoints}
-                  sourceDescription={sentimentData.sourceDescription}
-                />
-              </div>
-            )}
           </>
         )}
       </TabsContent>

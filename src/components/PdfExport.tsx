@@ -391,7 +391,8 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
       <CardHeader>
         <CardTitle className="flex items-center text-xl text-orange">
           <FileText className="h-5 w-5 mr-2 text-primary" />
-          {t("exportAnalysis")}
+          {/* Changed from exportAnalysis to Export Analysis */}
+          Export Analysis
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -405,7 +406,8 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
               className="flex items-center gap-2"
             >
               <FileText className="h-4 w-4" />
-              {t("exportToPdf")}
+              {/* Changed from exportToPdf to Export to PDF */}
+              Export to PDF
             </Button>
             
             <Button 

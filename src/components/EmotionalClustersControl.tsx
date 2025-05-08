@@ -19,14 +19,14 @@ export const EmotionalClustersControl = ({
   const { t } = useLanguage();
   
   return (
-    <Card className="border border-border shadow-md bg-light-lavender">
+    <Card className="border border-border shadow-md bg-white">
       <CardHeader className="bg-purple rounded-t-lg">
         <CardTitle className="flex items-center text-xl text-orange">
           <Brain className="h-5 w-5 mr-2 text-orange" />
           Emotional Clusters
         </CardTitle>
       </CardHeader>
-      <CardContent className="bg-lavender">
+      <CardContent className="bg-white">
         <div className="mb-6">
           <p className="text-sm text-black mb-2">
             {t("emotionalClustersDescription")}
