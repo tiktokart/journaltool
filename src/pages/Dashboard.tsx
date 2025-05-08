@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
@@ -88,6 +87,13 @@ const Dashboard = () => {
       entries.push(entry);
       
       localStorage.setItem('journalEntries', JSON.stringify(entries));
+      
+      // Dispatch a storage event for other components to detect the change
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'journalEntries',
+        newValue: JSON.stringify(entries)
+      }));
+      
       toast.success("Journal entry saved");
       
       // Trigger refresh for journal cache
@@ -268,6 +274,7 @@ const Dashboard = () => {
               <MonthlyReflections 
                 journalText={monthlyReflectionText} 
                 refreshTrigger={refreshReflectionsTrigger}
+                journalRefreshTrigger={refreshJournalTrigger}
               />
             </div>
           </div>

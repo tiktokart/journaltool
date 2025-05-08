@@ -55,6 +55,13 @@ export const JournalCache = ({ onSelectEntry, refreshTrigger = 0 }: JournalCache
       const updatedEntries = journalEntries.filter(entry => entry.id !== id);
       setJournalEntries(updatedEntries);
       localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+      
+      // Dispatch a storage event for other components to detect the change
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'journalEntries',
+        newValue: JSON.stringify(updatedEntries)
+      }));
+      
       toast.success('Journal entry deleted');
     } catch (error) {
       console.error('Error deleting journal entry:', error);
@@ -66,6 +73,13 @@ export const JournalCache = ({ onSelectEntry, refreshTrigger = 0 }: JournalCache
     try {
       setJournalEntries([]);
       localStorage.removeItem('journalEntries');
+      
+      // Dispatch a storage event for other components to detect the change
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'journalEntries',
+        newValue: null
+      }));
+      
       toast.success('All journal entries cleared');
     } catch (error) {
       console.error('Error clearing journal entries:', error);

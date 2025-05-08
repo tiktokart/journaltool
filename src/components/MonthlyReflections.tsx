@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { v4 as uuidv4 } from 'uuid';
@@ -22,9 +21,14 @@ interface JournalEntry {
 interface MonthlyReflectionsProps {
   journalText?: string;
   refreshTrigger?: number;
+  journalRefreshTrigger?: number;
 }
 
-export const MonthlyReflections = ({ journalText, refreshTrigger = 0 }: MonthlyReflectionsProps) => {
+export const MonthlyReflections = ({ 
+  journalText, 
+  refreshTrigger = 0,
+  journalRefreshTrigger = 0 
+}: MonthlyReflectionsProps) => {
   const { t } = useLanguage();
   const [reflections, setReflections] = useState<MonthlyReflection[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
@@ -32,12 +36,13 @@ export const MonthlyReflections = ({ journalText, refreshTrigger = 0 }: MonthlyR
   const [overallSentimentChange, setOverallSentimentChange] = useState<string>("No change");
   const [averageSentiment, setAverageSentiment] = useState<number>(0);
   const currentMonth = format(new Date(), 'MMMM yyyy');
+  const [internalRefreshTrigger, setInternalRefreshTrigger] = useState<number>(0);
 
   useEffect(() => {
     // Load reflections and journal entries when component mounts or refresh is triggered
     loadReflections();
     loadJournalEntries();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, journalRefreshTrigger, internalRefreshTrigger]);
 
   useEffect(() => {
     // If journal entries loaded, analyze them
@@ -52,6 +57,20 @@ export const MonthlyReflections = ({ journalText, refreshTrigger = 0 }: MonthlyR
       addReflection(journalText);
     }
   }, [journalText]);
+
+  // Add event listener for storage changes
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'journalEntries' || event.key === 'monthlyReflections') {
+        setInternalRefreshTrigger(prev => prev + 1);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const loadReflections = () => {
     try {
@@ -76,9 +95,12 @@ export const MonthlyReflections = ({ journalText, refreshTrigger = 0 }: MonthlyR
       if (storedEntries) {
         const entries = JSON.parse(storedEntries);
         setJournalEntries(entries);
+      } else {
+        setJournalEntries([]);
       }
     } catch (error) {
       console.error('Error loading journal entries:', error);
+      setJournalEntries([]);
     }
   };
 
@@ -233,6 +255,7 @@ export const MonthlyReflections = ({ journalText, refreshTrigger = 0 }: MonthlyR
         overallSentimentChange={overallSentimentChange}
         averageSentiment={averageSentiment}
         getSentimentColor={getSentimentColor}
+        refreshTrigger={internalRefreshTrigger}
       />
     </>
   );

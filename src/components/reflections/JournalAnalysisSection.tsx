@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, BarChart2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -17,6 +17,7 @@ interface JournalAnalysisSectionProps {
   overallSentimentChange: string;
   averageSentiment: number;
   getSentimentColor: (sentiment: number) => string;
+  refreshTrigger?: number;
 }
 
 const JournalAnalysisSection = ({
@@ -24,7 +25,8 @@ const JournalAnalysisSection = ({
   timelineData,
   overallSentimentChange,
   averageSentiment,
-  getSentimentColor
+  getSentimentColor,
+  refreshTrigger = 0
 }: JournalAnalysisSectionProps) => {
   const { t } = useLanguage();
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
