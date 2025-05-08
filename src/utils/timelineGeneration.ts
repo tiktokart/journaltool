@@ -3,6 +3,8 @@ interface TimelineEvent {
   time: string;
   event: string;
   sentiment?: number;
+  page?: number;
+  score?: number;
 }
 
 /**
@@ -42,17 +44,19 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
         // Extract a suitable event description (first 50 chars or so)
         const event = unit.length > 50 ? unit.substring(0, 50) + '...' : unit;
         
-        // Generate a time label
-        let timeLabel = '';
-        if (index === 0) timeLabel = 'Beginning';
-        else if (index === textUnits.length - 1) timeLabel = 'End';
-        else timeLabel = `Middle (${index}/${textUnits.length})`;
+        // Generate random sentiment between 0.3 and 0.8
+        const sentiment = 0.3 + (Math.random() * 0.5);
         
-        // For demo purposes, we'll add the event to the timeline
+        // For compatibility with visualization components
+        const page = index + 1;
+        const score = sentiment;
+        
         timeline.push({
-          time: timeLabel,
+          time: `Point ${index + 1}`, // For text display
+          page, // For visualization (x-axis)
+          score, // For visualization (y-axis)
           event: event.trim(),
-          sentiment: 0.3 + (Math.random() * 0.5) // Random sentiment between 0.3 and 0.8
+          sentiment
         });
       }
     });
@@ -60,9 +64,9 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
     // Ensure we have at least a few events
     if (timeline.length < 3) {
       return [
-        { time: "Beginning", event: "Starting point of the narrative", sentiment: 0.65 },
-        { time: "Middle", event: "Development of key themes and emotions", sentiment: 0.45 },
-        { time: "End", event: "Resolution and reflection on experiences", sentiment: 0.55 }
+        { time: "Beginning", page: 1, score: 0.65, event: "Starting point of the narrative", sentiment: 0.65 },
+        { time: "Middle", page: 2, score: 0.45, event: "Development of key themes and emotions", sentiment: 0.45 },
+        { time: "End", page: 3, score: 0.55, event: "Resolution and reflection on experiences", sentiment: 0.55 }
       ];
     }
     
@@ -70,7 +74,7 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
   } catch (error) {
     console.error("Error generating timeline:", error);
     return [
-      { time: "Error", event: "Timeline could not be generated" }
+      { time: "Error", page: 1, score: 0.5, event: "Timeline could not be generated" }
     ];
   }
 };

@@ -31,9 +31,9 @@ export const analyzeTextWithGemma3 = async (text: string) => {
     const timeline = sentences.slice(0, Math.min(10, sentences.length)).map((sentence, index) => {
       const randomSentiment = 0.3 + Math.random() * 0.6; // Between 0.3 and 0.9
       return {
-        text: sentence,
-        sentiment: randomSentiment,
-        timestamp: new Date(Date.now() - (sentences.length - index) * 86400000).toISOString()
+        page: index + 1, // Changed to page for consistency with expected format
+        score: randomSentiment, // Changed to score for consistency
+        text: sentence
       };
     });
     
@@ -91,6 +91,65 @@ export const analyzeTextWithGemma3 = async (text: string) => {
     }. The emotional tone is predominantly negative with some moments of ${
       Math.random() > 0.5 ? 'hope' : 'reflection'
     } towards the end.`;
+
+    // Extract significant words from the text for visualization
+    const significantWords = text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(word => word.length > 3)
+      .filter((word, i, arr) => arr.indexOf(word) === i);
+
+    // Use all significant words for visualization, with reasonable limit
+    const wordLimit = Math.min(500, significantWords.length);
+    const filteredSignificantWords = significantWords.slice(0, wordLimit);
+    
+    // Create embedding points using actual text from the document
+    const embeddingPoints = filteredSignificantWords.map((word, index) => {
+      const angle1 = Math.random() * Math.PI * 2;
+      const angle2 = Math.random() * Math.PI * 2;
+      
+      // Generate a point in a sphere
+      const radius = 10 + Math.random() * 10;
+      const x = Math.cos(angle1) * Math.sin(angle2) * radius;
+      const y = Math.sin(angle1) * Math.sin(angle2) * radius;
+      const z = Math.cos(angle2) * radius;
+      
+      // Assign a sentiment score based on emotional tones
+      const emotionalToneEntries = Object.entries(emotionalTones);
+      const sortedTones = emotionalToneEntries.sort((a, b) => b[1] - a[1]);
+      
+      // Assign emotional tones based on sentiment scores
+      let emotionalTone;
+      const random = Math.random();
+      
+      if (random < 0.7) {
+        // 70% chance to get one of the top 2 emotional tones
+        const topIndex = Math.floor(Math.random() * Math.min(2, sortedTones.length));
+        emotionalTone = sortedTones[topIndex][0];
+      } else {
+        // 30% chance to get any other emotional tone
+        const randomIndex = Math.floor(Math.random() * sortedTones.length);
+        emotionalTone = sortedTones[randomIndex][0];
+      }
+      
+      const sentiment = 0.2 + Math.random() * 0.6; // Between 0.2 and 0.8
+      
+      // Generate a color based on sentiment (from red to green)
+      const r = Math.floor(255 * (1 - sentiment));
+      const g = Math.floor(255 * sentiment);
+      const b = Math.floor(255 * 0.5); // Add some blue to avoid pure red/green
+      
+      return {
+        id: `word-${index}`,
+        position: [x, y, z],
+        word: word,
+        sentiment: sentiment,
+        emotionalTone: emotionalTone,
+        color: [r/255, g/255, b/255],
+        relationships: generateMockRelationships(index, filteredSignificantWords.length)
+      };
+    });
     
     return {
       text, // Make sure we return the original text
@@ -99,13 +158,34 @@ export const analyzeTextWithGemma3 = async (text: string) => {
       timeline,
       entities,
       keyPhrases,
-      summary
+      summary,
+      embeddingPoints
     };
   } catch (error) {
     console.error("Error in Gemma 3 analysis:", error);
     throw error;
   }
 };
+
+// Helper function to generate mock relationships
+function generateMockRelationships(index: number, totalCount: number) {
+  const relationships = [];
+  const relationshipCount = Math.floor(Math.random() * 5) + 1; // 1-5 relationships
+  
+  for (let i = 0; i < relationshipCount; i++) {
+    let relatedIndex;
+    do {
+      relatedIndex = Math.floor(Math.random() * totalCount);
+    } while (relatedIndex === index);
+    
+    relationships.push({
+      id: `word-${relatedIndex}`,
+      strength: Math.random() * 0.8 + 0.2 // Between 0.2 and 1.0
+    });
+  }
+  
+  return relationships;
+}
 
 // Helper function to extract key phrases from text
 function extractKeyPhrases(text: string, wordsToFilter: string[]): string[] {
@@ -167,40 +247,6 @@ function extractEntities(text: string, wordsToFilter: string[]): any[] {
       isPrimaryEntity: isPrimaryEntity // Mark entities that don't contain filtered words
     };
   }).filter(entity => entity.isPrimaryEntity); // Keep only primary entities
-}
-
-// Helper function to generate timeline data
-function generateTimeline(text: string, overallSentiment: number): any[] {
-  const sentences = text.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0);
-  
-  // If there are very few sentences, return a minimal timeline
-  if (sentences.length < 5) {
-    return [
-      { time: "Beginning", sentiment: overallSentiment },
-      { time: "End", sentiment: overallSentiment }
-    ];
-  }
-  
-  const timelinePoints = [];
-  const segmentCount = Math.min(10, Math.max(5, Math.floor(sentences.length / 3)));
-  
-  for (let i = 0; i < segmentCount; i++) {
-    const segmentStart = Math.floor((i * sentences.length) / segmentCount);
-    const segmentEnd = Math.floor(((i + 1) * sentences.length) / segmentCount);
-    const segment = sentences.slice(segmentStart, segmentEnd).join(" ");
-    
-    const segmentSentiment = estimateSentiment(segment);
-    const timePoint = i === 0 ? "Beginning" : 
-                      i === segmentCount - 1 ? "End" : 
-                      `Point ${i}`;
-    
-    timelinePoints.push({
-      time: timePoint,
-      sentiment: segmentSentiment
-    });
-  }
-  
-  return timelinePoints;
 }
 
 // Helper function to find surrounding text around an entity

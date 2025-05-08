@@ -47,11 +47,14 @@ export const TextEmotionViewer = ({
       return;
     }
 
-    // Create a map of words to their emotional tones
+    // Create a map of words to their emotional tones and colors
     const wordEmotionMap = new Map();
     embeddingPoints.forEach(point => {
       if (point.word && point.emotionalTone) {
-        wordEmotionMap.set(point.word.toLowerCase(), point.emotionalTone);
+        wordEmotionMap.set(point.word.toLowerCase(), {
+          emotion: point.emotionalTone,
+          color: point.color || getEmotionColor(point.emotionalTone)
+        });
       }
     });
 
@@ -62,7 +65,7 @@ export const TextEmotionViewer = ({
     ] : [];
 
     // Split text into words while preserving whitespace and punctuation
-    const textSegments: { text: string; emotion: string | null }[] = [];
+    const textSegments: { text: string; emotion: string | null; color?: [number, number, number] }[] = [];
     
     // Regular expression that matches words
     const wordRegex = /[a-zA-Z0-9']+/g;
@@ -80,11 +83,15 @@ export const TextEmotionViewer = ({
       const word = match[0];
       const wordLower = word.toLowerCase();
       const shouldFilter = wordsToFilter.includes(wordLower);
-      const emotion = wordEmotionMap.get(wordLower) || null;
+      const emotionData = wordEmotionMap.get(wordLower);
       
       // If it has an emotion, never filter it regardless of its type
-      if (emotion) {
-        textSegments.push({ text: word, emotion });
+      if (emotionData) {
+        textSegments.push({ 
+          text: word, 
+          emotion: emotionData.emotion,
+          color: emotionData.color
+        });
       } else if (shouldFilter) {
         // Only filter if it's in our filtered list AND has no emotion assigned
         textSegments.push({ text: word, emotion: null });
@@ -112,8 +119,14 @@ export const TextEmotionViewer = ({
         return segment.text;
       }
 
-      // Get color for emotion
-      const backgroundColor = getEmotionColor(segment.emotion);
+      // Use the color from the point if available, otherwise get color for emotion
+      let backgroundColor;
+      if (segment.color) {
+        const [r, g, b] = segment.color;
+        backgroundColor = `rgba(${r*255}, ${g*255}, ${b*255}, 0.3)`;
+      } else {
+        backgroundColor = getEmotionColor(segment.emotion);
+      }
       const color = "inherit";
 
       return (
@@ -133,7 +146,7 @@ export const TextEmotionViewer = ({
 
   if (!pdfText || pdfText.trim().length === 0) {
     return (
-      <Card className="border border-border shadow-md bg-light-lavender">
+      <Card className="border border-border shadow-md bg-white">
         <CardHeader>
           <CardTitle className="flex items-center text-xl">
             <Text className="h-5 w-5 mr-2 text-primary" />
@@ -148,7 +161,7 @@ export const TextEmotionViewer = ({
   }
 
   return (
-    <Card className="border border-border shadow-md bg-light-lavender">
+    <Card className="border border-border shadow-md bg-white">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
           <CardTitle className="flex items-center text-xl">

@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -154,7 +155,7 @@ export const AnalysisTabs = ({
 
   // Fallback component when data is missing
   const DataMissingFallback = ({ tabName }: { tabName: string }) => (
-    <Card className="border border-border shadow-md mt-4 bg-light-lavender">
+    <Card className="border border-border shadow-md mt-4 bg-white">
       <CardContent className="flex flex-col items-center justify-center py-16">
         <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4 icon-dance" />
         <h3 className="text-lg font-medium mb-2">{t("noDataTabName").replace("{tabName}", tabName)}</h3>
@@ -168,7 +169,7 @@ export const AnalysisTabs = ({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
       <div className="overflow-x-auto">
-        <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto bg-light-lavender">
+        <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto bg-white">
           <TabsTrigger value="embedding" className="min-w-max">{t("latentEmotionalAnalysisTab")}</TabsTrigger>
           <TabsTrigger value="overview" className="min-w-max">{t("overviewTab")}</TabsTrigger>
           <TabsTrigger value="timeline" className="min-w-max">{t("timelineTab")}</TabsTrigger>
@@ -182,7 +183,7 @@ export const AnalysisTabs = ({
           <DataMissingFallback tabName={t("embedding")} />
         ) : (
           <>
-            <Card className="border border-border shadow-md overflow-hidden bg-light-lavender">
+            <Card className="border border-border shadow-md overflow-hidden bg-white">
               <CardHeader className="z-10">
                 <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
                   <CardTitle className="flex items-center">
