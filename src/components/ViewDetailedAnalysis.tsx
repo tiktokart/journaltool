@@ -46,74 +46,86 @@ export const ViewDetailedAnalysis = ({
   const extractEmotionalTopics = () => {
     if (!displayText) return [];
     
-    // Action and noun keywords to look for with emotional connections
+    // Action verbs with emotional connections
     const emotionKeywords = {
-      "joy": ["laugh", "celebrate", "smile", "dance", "embrace", "rejoice", "play", "sing"],
-      "sadness": ["cry", "mourn", "sigh", "tears", "grieve", "withdraw", "slouch", "retreat"],
-      "anger": ["shout", "slam", "stomp", "punch", "argue", "fight", "confront", "storm"],
-      "fear": ["tremble", "freeze", "hide", "run", "escape", "avoid", "flinch", "panic"],
-      "surprise": ["gasp", "jump", "startle", "shock", "revelation", "discovery", "wonder", "astonishment"],
-      "trust": ["handshake", "alliance", "partnership", "agreement", "bonding", "connection", "loyalty", "faith"],
-      "anticipation": ["planning", "preparation", "awaiting", "expectation", "prospect", "future", "hope", "countdown"]
+      "joy": ["laugh", "celebrate", "smile", "dance", "embrace", "rejoice", "play", "sing", "hug", "enjoy"],
+      "sadness": ["cry", "mourn", "sigh", "tears", "grieve", "withdraw", "slouch", "retreat", "weep", "sob"],
+      "anger": ["shout", "slam", "stomp", "punch", "argue", "fight", "confront", "storm", "rage", "yell"],
+      "fear": ["tremble", "freeze", "hide", "run", "escape", "avoid", "flinch", "panic", "flee", "shiver"],
+      "surprise": ["gasp", "jump", "startle", "shock", "revelation", "discovery", "wonder", "astonishment", "amazement", "stun"],
+      "trust": ["handshake", "alliance", "partnership", "agreement", "bonding", "connection", "loyalty", "faith", "rely", "depend"],
+      "anticipation": ["planning", "preparation", "awaiting", "expectation", "prospect", "future", "hope", "countdown", "anticipate", "expect"]
     };
     
-    const lowerText = displayText.toLowerCase();
+    // Count words in the text
+    const words = displayText.toLowerCase().split(/\s+/);
+    const wordCounts: Record<string, number> = {};
+    words.forEach(word => {
+      const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+      if (cleanWord && cleanWord.length > 2) {
+        wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
+      }
+    });
+    
     const foundEmotions: Record<string, number> = {};
     
-    // Count occurrences of emotional action/noun words
+    // Count occurrences of emotional action words (minimum 3 mentions)
     Object.entries(emotionKeywords).forEach(([emotion, keywords]) => {
-      const count = keywords.reduce((acc, word) => {
-        const regex = new RegExp(`\\b${word}\\b`, 'gi');
-        const matches = lowerText.match(regex);
-        return acc + (matches ? matches.length : 0);
-      }, 0);
-      
-      if (count > 0) {
-        foundEmotions[emotion] = count;
-      }
+      keywords.forEach(word => {
+        const count = wordCounts[word] || 0;
+        if (count >= 3) { // Only include if mentioned 3 or more times
+          foundEmotions[word] = count;
+        }
+      });
     });
     
     return Object.entries(foundEmotions)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
+      .slice(0, 10) // Limit to top 10
       .map(([topic, count]) => ({ topic, count }));
   };
   
-  // Extract main subjects from text - focusing only on nouns
+  // Extract main subjects from text - focusing only on nouns mentioned 3+ times
   const extractMainSubjects = () => {
     if (!displayText) return [];
     
     // Common noun subjects to look for
     const subjectCategories = {
-      "family": ["family", "parent", "child", "sibling", "mother", "father", "daughter", "son", "home"],
-      "work": ["job", "career", "office", "profession", "business", "company", "project", "task", "boss"],
-      "education": ["school", "university", "learning", "knowledge", "degree", "class", "teacher", "student", "book"],
-      "health": ["health", "body", "illness", "wellness", "exercise", "doctor", "medicine", "hospital", "symptom"],
-      "finance": ["money", "budget", "savings", "investment", "account", "expense", "income", "debt", "wealth"],
-      "travel": ["journey", "destination", "vacation", "trip", "adventure", "exploration", "places", "transport", "hotel"],
-      "technology": ["device", "computer", "software", "internet", "phone", "application", "system", "network", "data"],
-      "art": ["creation", "music", "painting", "literature", "film", "culture", "expression", "beauty", "design"]
+      "family": ["family", "parent", "child", "sibling", "mother", "father", "daughter", "son", "home", "brother", "sister"],
+      "work": ["job", "career", "office", "profession", "business", "company", "project", "task", "boss", "colleague", "meeting", "work"],
+      "education": ["school", "university", "learning", "knowledge", "degree", "class", "teacher", "student", "book", "course", "education", "study"],
+      "health": ["health", "body", "illness", "wellness", "exercise", "doctor", "medicine", "hospital", "symptom", "disease", "therapy", "treatment"],
+      "finance": ["money", "budget", "savings", "investment", "account", "expense", "income", "debt", "wealth", "bank", "cost", "finance"],
+      "travel": ["journey", "destination", "vacation", "trip", "adventure", "exploration", "places", "transport", "hotel", "flight", "travel"],
+      "technology": ["device", "computer", "software", "internet", "phone", "application", "system", "network", "data", "technology", "digital"],
+      "art": ["creation", "music", "painting", "literature", "film", "culture", "expression", "beauty", "design", "art", "artist", "creativity"]
     };
     
-    const lowerText = displayText.toLowerCase();
+    // Count words in the text
+    const words = displayText.toLowerCase().split(/\s+/);
+    const wordCounts: Record<string, number> = {};
+    words.forEach(word => {
+      const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+      if (cleanWord && cleanWord.length > 2) {
+        wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
+      }
+    });
+    
     const foundSubjects: Record<string, number> = {};
     
-    // Count occurrences of subject nouns
-    Object.entries(subjectCategories).forEach(([subject, nouns]) => {
-      const count = nouns.reduce((acc, noun) => {
-        const regex = new RegExp(`\\b${noun}\\b`, 'gi');
-        const matches = lowerText.match(regex);
-        return acc + (matches ? matches.length : 0);
-      }, 0);
-      
-      if (count > 0) {
-        foundSubjects[subject] = count;
-      }
+    // Identify nouns mentioned 3+ times
+    Object.entries(subjectCategories).forEach(([category, nouns]) => {
+      nouns.forEach(noun => {
+        const count = wordCounts[noun] || 0;
+        if (count >= 3) { // Only include if mentioned 3 or more times
+          foundSubjects[noun] = count;
+        }
+      });
     });
     
     return Object.entries(foundSubjects)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
+      .slice(0, 8) // Limit to top 8
       .map(([subject, count]) => ({ subject, count }));
   };
   
@@ -132,7 +144,21 @@ export const ViewDetailedAnalysis = ({
       "anticipation": "bg-cyan-100 text-cyan-800",
     };
     
-    return emotionColors[topic] || "bg-gray-100 text-gray-800";
+    for (const [emotion, keywords] of Object.entries({
+      "joy": ["laugh", "celebrate", "smile", "dance", "embrace", "rejoice", "play", "sing", "hug", "enjoy"],
+      "sadness": ["cry", "mourn", "sigh", "tears", "grieve", "withdraw", "slouch", "retreat", "weep", "sob"],
+      "anger": ["shout", "slam", "stomp", "punch", "argue", "fight", "confront", "storm", "rage", "yell"],
+      "fear": ["tremble", "freeze", "hide", "run", "escape", "avoid", "flinch", "panic", "flee", "shiver"],
+      "surprise": ["gasp", "jump", "startle", "shock", "revelation", "discovery", "wonder", "astonishment"],
+      "trust": ["handshake", "alliance", "partnership", "agreement", "bonding", "connection", "loyalty", "faith"],
+      "anticipation": ["planning", "preparation", "awaiting", "expectation", "prospect", "future", "hope", "countdown"],
+    })) {
+      if (keywords.includes(topic)) {
+        return emotionColors[emotion];
+      }
+    }
+    
+    return "bg-gray-100 text-gray-800";
   };
   
   // Generate badge color based on subject
@@ -148,7 +174,22 @@ export const ViewDetailedAnalysis = ({
       "art": "bg-rose-100 text-rose-800"
     };
     
-    return subjectColors[subject] || "bg-gray-100 text-gray-800";
+    for (const [category, nouns] of Object.entries({
+      "family": ["family", "parent", "child", "sibling", "mother", "father", "daughter", "son", "home", "brother", "sister"],
+      "work": ["job", "career", "office", "profession", "business", "company", "project", "task", "boss", "colleague"],
+      "education": ["school", "university", "learning", "knowledge", "degree", "class", "teacher", "student", "book"],
+      "health": ["health", "body", "illness", "wellness", "exercise", "doctor", "medicine", "hospital", "symptom"],
+      "finance": ["money", "budget", "savings", "investment", "account", "expense", "income", "debt", "wealth"],
+      "travel": ["journey", "destination", "vacation", "trip", "adventure", "exploration", "places", "transport"],
+      "technology": ["device", "computer", "software", "internet", "phone", "application", "system", "network"],
+      "art": ["creation", "music", "painting", "literature", "film", "culture", "expression", "beauty", "design"]
+    })) {
+      if (nouns.includes(subject)) {
+        return subjectColors[category];
+      }
+    }
+    
+    return "bg-gray-100 text-gray-800";
   };
   
   // Generate icon sizes based on count for visual representation
@@ -281,21 +322,23 @@ export const ViewDetailedAnalysis = ({
                                 {item.topic}
                               </span>
                             </div>
-                            <span className="mt-1 text-xs opacity-75">({item.count})</span>
+                            <span className="mt-1 text-xs opacity-75">({item.count} times)</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground text-center">No emotional topics detected</p>
+                      <p className="text-sm text-muted-foreground text-center">
+                        No emotional actions mentioned 3+ times
+                      </p>
                     )}
                   </div>
                 </div>
                 
                 {/* Main Subjects - Below */}
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6">
-                  <h3 className="font-medium mb-4 text-black text-center">Main Subjects</h3>
+                  <h3 className="font-medium mb-4 text-black text-center">Main Subjects (3+ mentions)</h3>
                   {mainSubjects.length > 0 ? (
-                    <div className="flex justify-center gap-6">
+                    <div className="flex justify-center gap-6 flex-wrap">
                       {mainSubjects.map((item, index) => (
                         <div key={index} className="text-center">
                           <div 
@@ -303,6 +346,10 @@ export const ViewDetailedAnalysis = ({
                             style={{
                               width: `${getIconSize(item.count, maxSubjectCount) * 1.2}px`,
                               height: `${getIconSize(item.count, maxSubjectCount) * 0.8}px`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexDirection: 'column'
                             }}
                           >
                             <div className="font-semibold mb-1">{item.subject}</div>
@@ -312,7 +359,9 @@ export const ViewDetailedAnalysis = ({
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center">No main subjects detected</p>
+                    <p className="text-sm text-muted-foreground text-center">
+                      No nouns mentioned 3+ times
+                    </p>
                   )}
                 </div>
                 
