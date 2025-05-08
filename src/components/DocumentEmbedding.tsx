@@ -1,3 +1,4 @@
+
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -34,7 +35,6 @@ export const DocumentEmbedding = ({
   const controlsRef = useRef<OrbitControls | null>(null);
   
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
-  const [hoveredPointPosition, setHoveredPointPosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [comparisonPoint, setComparisonPoint] = useState<Point | null>(null);
   const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
@@ -120,9 +120,8 @@ export const DocumentEmbedding = ({
     resetZoom(cameraRef.current, controlsRef.current);
   };
   
-  const handlePointHover = (point: Point | null, position?: { x: number; y: number } | null) => {
+  const handlePointHover = (point: Point | null) => {
     setHoveredPoint(point);
-    setHoveredPointPosition(position || null);
   };
   
   const handlePointSelect = (point: Point | null) => {
@@ -375,7 +374,7 @@ export const DocumentEmbedding = ({
       )}
       
       {hoveredPoint && (
-        <HoverInfoPanel point={hoveredPoint} position={hoveredPointPosition} />
+        <HoverInfoPanel point={hoveredPoint} />
       )}
       
       <EmotionsLegend />

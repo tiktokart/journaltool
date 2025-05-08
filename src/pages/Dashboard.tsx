@@ -1,14 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUploader } from "@/components/FileUploader";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
-import { Loader2, FileText, Heart } from "lucide-react";
+import { Loader2, FileText } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
-import WordComparisonController from "@/components/WordComparisonController";
+import { analyzePdfContent } from "@/utils/documentAnalysis";
+import { WordComparisonController } from "@/components/WordComparisonController";
 import { DocumentSummary } from "@/components/DocumentSummary";
 import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
 import { FileInfoDisplay } from "@/components/FileInfoDisplay";
@@ -20,7 +20,6 @@ import { WellbeingResources } from "@/components/WellbeingResources";
 import { JournalInput } from "@/components/JournalInput";
 import { JournalCache } from "@/components/JournalCache";
 import { LifePlanSection } from "@/components/LifePlanSection";
-import { analyzePdfContent } from "@/utils/documentAnalysis";
 import { v4 as uuidv4 } from 'uuid';
 
 const Dashboard = () => {
@@ -108,6 +107,19 @@ const Dashboard = () => {
       console.error('Error saving journal entry:', error);
       toast.error("Failed to save journal entry");
     }
+  };
+
+  const handleAddToLifePlan = (category: 'daily' | 'weekly' | 'monthly') => {
+    // This function is passed down to JournalInput and will trigger the LifePlanSection
+    // to add the current journal text to the specified category
+    if (!journalText || journalText.trim().length === 0) {
+      toast.error("Please enter some text in the journal first");
+      return;
+    }
+    
+    // We handle the actual adding in the LifePlanSection component
+    // This function is just a bridge to show that the action was triggered
+    toast.success(`Journal entry added to ${category} life plan`);
   };
 
   const analyzeSentiment = async () => {
@@ -364,75 +376,32 @@ const Dashboard = () => {
     }
   };
 
-  // Generate a simple monthly reflection based on journal entries
-  const generateMonthlyReflection = () => {
-    try {
-      const storedEntries = localStorage.getItem('journalEntries');
-      if (!storedEntries) return "No journal entries found for reflection.";
-      
-      const entries = JSON.parse(storedEntries);
-      if (entries.length === 0) return "No journal entries found for reflection.";
-      
-      // Get the current month
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth();
-      const currentYear = currentDate.getFullYear();
-      
-      // Filter entries from current month
-      const monthlyEntries = entries.filter((entry: any) => {
-        const entryDate = new Date(entry.date);
-        return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-      });
-      
-      if (monthlyEntries.length === 0) {
-        return "No entries for this month yet. Start journaling to see monthly reflections.";
-      }
-      
-      return `You've written ${monthlyEntries.length} journal ${monthlyEntries.length === 1 ? 'entry' : 'entries'} this month. Regular journaling helps track your emotional patterns and growth.`;
-    } catch (error) {
-      console.error('Error generating monthly reflection:', error);
-      return "Could not generate monthly reflection at this time.";
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-yellow">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
-          {/* Life Plan and Monthly Reflection Section */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-yellow-soft p-4 rounded-lg">
-              <LifePlanSection journalText={journalText} />
-            </div>
-            <div className="bg-yellow-soft p-4 rounded-lg">
-              <Card className="border border-border shadow-md">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-xl">
-                    <Heart className="h-5 w-5 mr-2 text-orange" />
-                    Monthly Reflections
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-black mb-6">{generateMonthlyReflection()}</p>
-                </CardContent>
-              </Card>
-            </div>
+          {/* Life Plan Section - Moved above Journal Input */}
+          <div className="bg-lavender p-4 rounded-lg">
+            <LifePlanSection journalText={journalText} />
           </div>
           
           {/* Journal Input Section */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-yellow-soft p-4 rounded-lg">
-              <JournalInput onJournalEntrySubmit={handleJournalEntrySubmit} />
+            <div className="bg-lavender p-4 rounded-lg">
+              <JournalInput 
+                onJournalEntrySubmit={handleJournalEntrySubmit} 
+                onAddToLifePlan={handleAddToLifePlan}
+              />
             </div>
-            <div className="bg-yellow-soft p-4 rounded-lg">
+            <div className="bg-lavender p-4 rounded-lg">
               <JournalCache onSelectEntry={handleCachedEntrySelect} />
             </div>
           </div>
           
-          {/* Document Analysis Section */}
-          <Card className="border border-border shadow-md bg-yellow-soft">
+          {/* Document Analysis Section - With lavender background */}
+          <Card className="border border-border shadow-md bg-lavender">
             <CardHeader>
               <CardTitle className="text-black">Document Analysis with Data Models</CardTitle>
             </CardHeader>
@@ -493,7 +462,7 @@ const Dashboard = () => {
           {/* Analysis Results Section */}
           {sentimentData && (
             <div className="animate-fade-in">
-              <div className="bg-yellow-soft p-4 rounded-lg mb-4">
+              <div className="bg-lavender p-4 rounded-lg mb-4">
                 <FileInfoDisplay 
                   fileName={sentimentData.fileName}
                   fileSize={sentimentData.fileSize}
@@ -501,11 +470,11 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="bg-yellow-soft p-4 rounded-lg mb-4">
+              <div className="bg-lavender p-4 rounded-lg mb-4">
                 <DocumentSummary summary={sentimentData.summary || "Analysis complete."} />
               </div>
               
-              <div className="bg-yellow-soft p-4 rounded-lg mb-4">
+              <div className="bg-lavender p-4 rounded-lg mb-4">
                 <AnalysisTabs 
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
@@ -536,7 +505,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-yellow-soft rounded-lg p-4">
+              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4">
                 <TextEmotionViewer 
                   pdfText={pdfText}
                   embeddingPoints={sentimentData.embeddingPoints}
@@ -544,13 +513,13 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-yellow-soft rounded-lg p-4">
+              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4">
                 <WellbeingResources 
                   embeddingPoints={sentimentData.embeddingPoints}
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-yellow-soft rounded-lg p-4">
+              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4">
                 <WordComparisonController 
                   points={sentimentData.embeddingPoints}
                   selectedPoint={selectedPoint}
@@ -559,7 +528,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 bg-yellow-soft p-4 rounded-lg">
+              <div className="mt-8 bg-lavender p-4 rounded-lg">
                 <PdfExport sentimentData={sentimentData} />
               </div>
             </div>

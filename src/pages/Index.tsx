@@ -1,573 +1,239 @@
 
-import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileUploader } from "@/components/FileUploader";
+import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { toast } from "sonner";
-import { Loader2, FileText, Heart } from "lucide-react";
-import { Point } from "@/types/embedding";
+import { Flower, Target, Book, BarChart, GitCompareArrows } from "lucide-react";
+import { DocumentEmbedding } from "@/components/DocumentEmbedding";
+import { SentimentOverview } from "@/components/SentimentOverview";
+import { WordComparisonController } from "@/components/WordComparisonController";
 import { generateMockPoints } from "@/utils/embeddingUtils";
-import WordComparisonController from "@/components/WordComparisonController";
-import { DocumentSummary } from "@/components/DocumentSummary";
-import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
-import { FileInfoDisplay } from "@/components/FileInfoDisplay";
-import { AnalysisTabs } from "@/components/AnalysisTabs";
-import { PdfExport } from "@/components/PdfExport";
-import { TextEmotionViewer } from "@/components/TextEmotionViewer";
-import { analyzeTextWithGemma3 } from "@/utils/gemma3SentimentAnalysis";
-import { WellbeingResources } from "@/components/WellbeingResources";
-import { JournalInput } from "@/components/JournalInput";
-import { JournalCache } from "@/components/JournalCache";
-import { LifePlanSection } from "@/components/LifePlanSection";
-import { analyzePdfContent } from "@/utils/documentAnalysis";
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useEffect } from "react";
+import { Point } from "@/types/embedding";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { BarChart as RecBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 
-const Dashboard = () => {
-  const [file, setFile] = useState<File | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [sentimentData, setSentimentData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("embedding");
+export default function Index() {
+  const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
+  const [points, setPoints] = useState<Point[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
-  const [analysisComplete, setAnalysisComplete] = useState(false);
-  const [uniqueWords, setUniqueWords] = useState<string[]>([]);
-  const [pdfText, setPdfText] = useState<string>(""); 
-  const [selectedWord, setSelectedWord] = useState<string | null>(null);
-  const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
-  const [visibleClusterCount, setVisibleClusterCount] = useState(8);
-  const [analysisMethod, setAnalysisMethod] = useState<"bert" | "gemma3">("bert");
-  const [journalText, setJournalText] = useState<string>("");
+  const [showMHAStats, setShowMHAStats] = useState(true); // Set to true to show MHA stats by default
 
-  // Load analysis method preference
   useEffect(() => {
-    const storedMethod = localStorage.getItem("analysisMethod");
-    if (storedMethod === "gemma3" || storedMethod === "bert") {
-      setAnalysisMethod(storedMethod as "bert" | "gemma3");
-    }
+    // Generate mock data for the visualization
+    const mockPoints = generateMockPoints(true);
+    setPoints(mockPoints);
   }, []);
 
-  // Save analysis method preference
-  useEffect(() => {
-    if (analysisMethod) {
-      localStorage.setItem("analysisMethod", analysisMethod);
-    }
-  }, [analysisMethod]);
-
-  const handleFileUpload = (files: File[], extractedText?: string) => {
-    if (files && files.length > 0) {
-      setFile(files[0]);
-      setPdfText(extractedText || "");
-      toast.success(`File "${files[0].name}" uploaded successfully`);
-      
-      if (extractedText && extractedText.length > 0) {
-        const wordCount = extractedText.split(/\s+/).length;
-        toast.info(`Extracted ${wordCount} words from PDF for analysis`);
-      }
-      
-      if (sentimentData) {
-        setSentimentData(null);
-        setSelectedPoint(null);
-        setAnalysisComplete(false);
-      }
-    }
+  // Updated mental health statistics data
+  const mentalHealthStatistics = {
+    overallSentiment: {
+      score: 0.48,
+      label: "Neutral",
+    },
+    distribution: {
+      positive: 34,
+      neutral: 42,
+      negative: 24,
+    },
   };
 
-  const handleJournalEntrySubmit = (text: string) => {
-    // Set the text as the current PDF text
-    setPdfText(text);
-    setJournalText(text);
-    
-    // Create a virtual "file" for the journal entry
-    const fileName = `Journal_Entry_${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
-    setFile(new File([text], fileName, { type: "text/plain" }));
-    
-    // Clear existing results
-    if (sentimentData) {
-      setSentimentData(null);
-      setSelectedPoint(null);
-      setAnalysisComplete(false);
-    }
-    
-    // Save to local storage
-    try {
-      const entry = {
-        id: uuidv4(),
-        text: text,
-        date: new Date().toISOString()
-      };
-      
-      const storedEntries = localStorage.getItem('journalEntries');
-      const entries = storedEntries ? JSON.parse(storedEntries) : [];
-      entries.push(entry);
-      
-      localStorage.setItem('journalEntries', JSON.stringify(entries));
-      toast.success("Journal entry saved");
-    } catch (error) {
-      console.error('Error saving journal entry:', error);
-      toast.error("Failed to save journal entry");
-    }
-  };
+  // More comprehensive mental health data
+  const mentalHealthData = [
+    { category: "Adults with Mental Illness", value: 21, description: "1 in 5 adults experience mental illness each year" },
+    { category: "Youth with Depression", value: 15, description: "15% of youth experienced a major depressive episode in the past year" },
+    { category: "Treatment Access", value: 55, description: "Only 55% of adults with mental illness receive treatment" },
+    { category: "Serious Mental Illness", value: 5.6, description: "5.6% of adults live with serious mental illness" },
+    { category: "Suicide", value: 12.3, description: "Suicide is the 2nd leading cause of death among people aged 10-34" }
+  ];
 
-  const analyzeSentiment = async () => {
-    if (!file && !pdfText) {
-      toast.error("Please upload a PDF file or enter journal text first");
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setAnalysisComplete(false);
-    setAnalysisMethod("bert");
-    
-    try {
-      toast.info("Starting document analysis with BERT...");
-      const results = await analyzePdfContent(file!, pdfText);
-      console.log("BERT Analysis results:", results);
-      
-      // Add pdfText to the results object for PDF export
-      const resultsWithText = {
-        ...results,
-        pdfText: pdfText
-      };
-      
-      setSentimentData(resultsWithText);
-      setFilteredPoints(results.embeddingPoints || []);
-      setAnalysisComplete(true);
-      
-      const words = results.embeddingPoints
-        .map((point: Point) => point.word)
-        .filter((word: string, index: number, self: string[]) => 
-          word && self.indexOf(word) === index
-        )
-        .sort();
-      
-      setUniqueWords(words);
-      
-      if (results.pdfTextLength > 0) {
-        toast.success(`BERT analysis completed! Analyzed ${results.pdfTextLength} characters of text.`);
-      } else {
-        toast.success("BERT document analysis completed! All tabs are now available.");
-      }
-    } catch (error) {
-      toast.error("Error analyzing document with BERT");
-      console.error("BERT analysis error:", error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const analyzeWithGemma3 = async () => {
-    if (!file && !pdfText) {
-      toast.error("Please upload a PDF file or enter journal text first");
-      return;
-    }
-
-    if (!pdfText || pdfText.trim().length === 0) {
-      toast.error("No readable text found to analyze");
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setAnalysisComplete(false);
-    setAnalysisMethod("gemma3");
-    
-    try {
-      toast.info("Starting document analysis with Gemma 3...");
-      
-      const gemma3Results = await analyzeTextWithGemma3(pdfText);
-      
-      // Extract significant words from the text for visualization
-      const significantWords = pdfText
-        .toLowerCase()
-        .replace(/[^\w\s]/g, ' ')
-        .split(/\s+/)
-        .filter(word => word.length > 3)
-        .filter((word, i, arr) => arr.indexOf(word) === i);
-      
-      // Use all significant words for visualization, with reasonable limit
-      const wordLimit = Math.min(500, significantWords.length);
-      const filteredSignificantWords = significantWords.slice(0, wordLimit);
-      
-      // Create embedding points using actual text from the document
-      const mockPoints = generateMockPoints(false, filteredSignificantWords.length);
-      
-      // Assign real words from the document to the points instead of random words
-      const embeddingPoints = mockPoints.map((point, index) => {
-        const emotionalToneEntries = Object.entries(gemma3Results.emotionalTones);
-        const sortedTones = emotionalToneEntries.sort((a, b) => b[1] - a[1]);
-        
-        // Assign emotional tones based on sentiment scores
-        let emotionalTone;
-        const random = Math.random();
-        
-        if (random < 0.7) {
-          // 70% chance to get one of the top 2 emotional tones
-          const topIndex = Math.floor(Math.random() * Math.min(2, sortedTones.length));
-          emotionalTone = sortedTones[topIndex][0];
-        } else {
-          // 30% chance to get any other emotional tone
-          const randomIndex = Math.floor(Math.random() * sortedTones.length);
-          emotionalTone = sortedTones[randomIndex][0];
-        }
-        
-        // Assign the actual word from the document
-        const wordIndex = index % filteredSignificantWords.length;
-        
-        return {
-          ...point,
-          word: filteredSignificantWords[wordIndex],
-          emotionalTone,
-          relationships: mockPoints
-            .filter(p => p.id !== point.id)
-            .slice(0, 5)
-            .map(p => ({ id: p.id, strength: Math.random() }))
-        };
-      });
-      
-      // Calculate sentiment distribution
-      const positivePercentage = Math.round(gemma3Results.sentiment * 100);
-      const negativePercentage = Math.round((1 - gemma3Results.sentiment) * 0.5 * 100);
-      const neutralPercentage = 100 - positivePercentage - negativePercentage;
-      
-      const fileName = file ? file.name : `Journal_Entry_${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
-      const fileSize = file ? file.size : new Blob([pdfText]).size;
-      
-      const results = {
-        fileName,
-        fileSize,
-        wordCount: pdfText.split(/\s+/).length,
-        pdfTextLength: pdfText.length,
-        pdfText: pdfText,
-        sentiment: gemma3Results.sentiment,
-        summary: gemma3Results.summary || "Analysis complete with Gemma 3 model.",
-        embeddingPoints,
-        sourceDescription: "Analyzed with Gemma 3 Model",
-        overallSentiment: {
-          score: gemma3Results.sentiment,
-          label: gemma3Results.sentiment > 0.6 ? "Positive" : (gemma3Results.sentiment > 0.4 ? "Neutral" : "Negative")
-        },
-        distribution: {
-          positive: positivePercentage,
-          neutral: neutralPercentage,
-          negative: negativePercentage
-        },
-        timeline: gemma3Results.timeline || [],
-        entities: gemma3Results.entities || [],
-        keyPhrases: gemma3Results.keyPhrases || []
-      };
-      
-      console.log("Gemma 3 analysis results:", results);
-      setSentimentData(results);
-      setFilteredPoints(results.embeddingPoints || []);
-      setAnalysisComplete(true);
-      
-      const uniqueResultWords = results.embeddingPoints
-        .map((point: Point) => point.word)
-        .filter((word: string, index: number, self: string[]) => 
-          word && self.indexOf(word) === index
-        )
-        .sort();
-      
-      setUniqueWords(uniqueResultWords);
-      
-      toast.success(`Gemma 3 analysis completed! Analyzed ${results.pdfTextLength} characters and found ${filteredSignificantWords.length} unique words.`);
-    } catch (error) {
-      toast.error("Error analyzing document with Gemma 3");
-      console.error("Gemma 3 analysis error:", error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const handlePointClick = (point: Point | null) => {
-    if (!point) {
-      setSelectedPoint(null);
-      setSelectedWord(null);
-      setConnectedPoints([]);
-      return;
-    }
-    
-    setSelectedPoint(point);
-    setSelectedWord(point.word);
-    
-    if (point.relationships && point.relationships.length > 0) {
-      const sortedRelationships = [...point.relationships]
-        .sort((a, b) => b.strength - a.strength)
-        .slice(0, 3);
-        
-      const connected = sentimentData.embeddingPoints
-        .filter((p: Point) => sortedRelationships.some(rel => rel.id === p.id));
-      
-      setConnectedPoints(connected);
-    } else {
-      setConnectedPoints([]);
-    }
-    
-    toast(`Selected: "${point.word}" (${point.emotionalTone || 'Neutral'})`);
-  };
-
-  const handleResetVisualization = () => {
-    if (window.documentEmbeddingActions && window.documentEmbeddingActions.resetView) {
-      window.documentEmbeddingActions.resetView();
-      toast.info("Visualization reset to default view");
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    setSelectedWord(null);
-  };
-
+  // Function to calculate relationship between points for demonstration
   const calculateRelationship = (point1: Point, point2: Point) => {
-    if (!point1 || !point2) return null;
-    
-    const distance = Math.sqrt(
-      Math.pow(point1.position[0] - point2.position[0], 2) +
-      Math.pow(point1.position[1] - point2.position[1], 2) +
-      Math.pow(point1.position[2] - point2.position[2], 2)
-    );
-    
-    const spatialSimilarity = Math.max(0, 1 - (distance / 40));
-    
-    const sentimentDiff = Math.abs(point1.sentiment - point2.sentiment);
-    const sentimentSimilarity = 1 - sentimentDiff;
-    
-    const sameEmotionalGroup = 
-      (point1.emotionalTone || "Neutral") === (point2.emotionalTone || "Neutral");
-    
-    const point1Keywords = point1.keywords || [];
-    const point2Keywords = point2.keywords || [];
-    const sharedKeywords = point1Keywords.filter(k => point2Keywords.includes(k));
-    
     return {
-      spatialSimilarity,
-      sentimentSimilarity,
-      sameEmotionalGroup,
-      sharedKeywords
+      spatialSimilarity: Math.random() * 0.6 + 0.2, // Random value between 0.2 and 0.8
+      sentimentSimilarity: Math.abs(point1.sentiment - point2.sentiment) > 0.3 ? 0.3 : 0.7,
+      sameEmotionalGroup: point1.emotionalTone === point2.emotionalTone,
+      sharedKeywords: ['writing', 'analysis'],
     };
   };
 
-  const handleCachedEntrySelect = (text: string) => {
-    setPdfText(text);
-    setJournalText(text);
-    
-    // Create a virtual "file" for the journal entry
-    const fileName = `Journal_Entry_${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
-    setFile(new File([text], fileName, { type: "text/plain" }));
-    
-    // Clear existing results
-    if (sentimentData) {
-      setSentimentData(null);
-      setSelectedPoint(null);
-      setAnalysisComplete(false);
-    }
-  };
-
-  // Generate a simple monthly reflection based on journal entries
-  const generateMonthlyReflection = () => {
-    try {
-      const storedEntries = localStorage.getItem('journalEntries');
-      if (!storedEntries) return "No journal entries found for reflection.";
-      
-      const entries = JSON.parse(storedEntries);
-      if (entries.length === 0) return "No journal entries found for reflection.";
-      
-      // Get the current month
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth();
-      const currentYear = currentDate.getFullYear();
-      
-      // Filter entries from current month
-      const monthlyEntries = entries.filter((entry: any) => {
-        const entryDate = new Date(entry.date);
-        return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-      });
-      
-      if (monthlyEntries.length === 0) {
-        return "No entries for this month yet. Start journaling to see monthly reflections.";
-      }
-      
-      return `You've written ${monthlyEntries.length} journal ${monthlyEntries.length === 1 ? 'entry' : 'entries'} this month. Regular journaling helps track your emotional patterns and growth.`;
-    } catch (error) {
-      console.error('Error generating monthly reflection:', error);
-      return "Could not generate monthly reflection at this time.";
-    }
-  };
-
   return (
-    <div className="min-h-screen flex flex-col bg-yellow">
+    <div className="min-h-screen bg-yellow">
       <Header />
-      
-      <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
-        <div className="flex flex-col gap-8">
-          {/* Life Plan and Monthly Reflection Section */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-yellow-soft p-4 rounded-lg">
-              <LifePlanSection journalText={journalText} />
-            </div>
-            <div className="bg-yellow-soft p-4 rounded-lg">
-              <Card className="border border-border shadow-md">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-xl">
-                    <Heart className="h-5 w-5 mr-2 text-orange" />
-                    Monthly Reflections
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-black mb-6">{generateMonthlyReflection()}</p>
-                </CardContent>
-              </Card>
-            </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <h1 className="text-5xl font-bold mb-6 text-black">Welcome to Your Life Planner</h1>
+          <p className="text-xl mb-8 text-black">
+            Plan your perfect life, analyze your thoughts, and track your emotional well-being.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <Button asChild size="lg" className="bg-orange hover:bg-orange-dark text-black">
+              <Link to="/dashboard">Go to Dashboard</Link>
+            </Button>
           </div>
-          
-          {/* Journal Input Section */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-yellow-soft p-4 rounded-lg">
-              <JournalInput onJournalEntrySubmit={handleJournalEntrySubmit} />
-            </div>
-            <div className="bg-yellow-soft p-4 rounded-lg">
-              <JournalCache onSelectEntry={handleCachedEntrySelect} />
-            </div>
-          </div>
-          
-          {/* Document Analysis Section */}
-          <Card className="border border-border shadow-md bg-yellow-soft">
-            <CardHeader>
-              <CardTitle className="text-black">Document Analysis with Data Models</CardTitle>
+        </div>
+
+        {/* Feature highlights with icons */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <Card className="border-0 shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-xl text-black">
+                <Target className="h-5 w-5 mr-2 text-purple" />
+                Emotional Insights
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="md:col-span-2">
-                  <FileUploader onFilesAdded={handleFileUpload} />
-                </div>
-                <div className="flex flex-col gap-4">
-                  <div className="p-4 bg-white/30 rounded-lg">
-                    <h3 className="font-medium mb-2 text-black">Selected File</h3>
-                    <p className="text-sm text-black">
-                      {file ? file.name : "No file selected"}
-                    </p>
-                    {file && (
-                      <p className="text-xs text-black mt-1">
-                        {(file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    )}
-                    {pdfText && pdfText.length > 0 && (
-                      <p className="text-xs text-black mt-1">
-                        {pdfText.split(/\s+/).length} words extracted
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Button 
-                      onClick={analyzeSentiment} 
-                      disabled={(!file && !pdfText) || isAnalyzing}
-                      className="w-full bg-orange hover:bg-orange/90 text-white"
+              <p className="text-black">
+                Gain deep insights into your emotional patterns and understand what drives your feelings.
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-0 shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-xl text-black">
+                <Book className="h-5 w-5 mr-2 text-purple" />
+                Journal Tracker
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-black">
+                Track and analyze your daily thoughts through journaling to identify patterns and trends.
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-0 shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-xl text-black">
+                <BarChart className="h-5 w-5 mr-2 text-purple" />
+                Sentiment Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-black">
+                Understand the sentiment behind your thoughts and track your emotional well-being over time.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Mental Health Statistics */}
+        <div className="mb-12">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-black">
+              Mental Health Insights
+            </h2>
+          </div>
+          
+          <Card className="border-0 shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+            <CardHeader>
+              <CardTitle className="text-black">Mental Health Statistics</CardTitle>
+              <p className="text-sm text-black">Key facts about mental health prevalence and impact on daily life</p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="h-80 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RecBarChart
+                      data={mentalHealthData}
+                      layout="vertical"
+                      margin={{ top: 20, right: 30, left: 120, bottom: 20 }}
                     >
-                      {isAnalyzing && analysisMethod === "bert" ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Analyzing with BERT...
-                        </>
-                      ) : "Analyze with BERT"}
-                    </Button>
-                    <Button 
-                      onClick={analyzeWithGemma3} 
-                      disabled={(!file && !pdfText) || isAnalyzing}
-                      variant="outline"
-                      className="w-full border-orange text-orange hover:bg-orange/10"
-                    >
-                      {isAnalyzing && analysisMethod === "gemma3" ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Analyzing with Gemma 3...
-                        </>
-                      ) : "Analyze with Gemma 3"}
-                    </Button>
-                  </div>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} horizontal={false} />
+                      <XAxis type="number" domain={[0, 100]} />
+                      <YAxis 
+                        dataKey="category" 
+                        type="category" 
+                        width={110}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip 
+                        formatter={(value: number) => [`${value}%`]}
+                        labelFormatter={(label) => `${label}`}
+                        contentStyle={{ 
+                          borderRadius: '0.5rem',
+                          border: 'none',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          backgroundColor: '#f8f9fa'
+                        }}
+                      />
+                      <Bar dataKey="value" fill="#a45fbf">
+                        {mentalHealthData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#f6df60" : "#e7ce57"} />
+                        ))}
+                      </Bar>
+                    </RecBarChart>
+                  </ResponsiveContainer>
                 </div>
+                <div className="flex flex-col justify-center">
+                  <h3 className="text-xl font-semibold mb-4 text-black">Impact on Daily Life</h3>
+                  <ul className="space-y-3">
+                    {mentalHealthData.map((item, index) => (
+                      <li key={index} className="flex items-start">
+                        <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: index % 2 === 0 ? "#f6df60" : "#e7ce57" }}></div>
+                        <p className="text-sm text-black">{item.description}</p>
+                      </li>
+                    ))}
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: "#f6df60" }}></div>
+                      <p className="text-sm text-black">Mental health conditions can reduce life expectancy by 10-20 years</p>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 rounded-full mt-1.5 mr-2" style={{ backgroundColor: "#e7ce57" }}></div>
+                      <p className="text-sm text-black">Depression is a leading cause of disability worldwide</p>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-4 text-sm text-center text-black">
+                <p>Data from Mental Health America's State and County Dashboard and NIMH</p>
               </div>
             </CardContent>
           </Card>
-
-          {/* Analysis Results Section */}
-          {sentimentData && (
-            <div className="animate-fade-in">
-              <div className="bg-yellow-soft p-4 rounded-lg mb-4">
-                <FileInfoDisplay 
-                  fileName={sentimentData.fileName}
-                  fileSize={sentimentData.fileSize}
-                  wordCount={sentimentData.wordCount}
-                />
-              </div>
-              
-              <div className="bg-yellow-soft p-4 rounded-lg mb-4">
-                <DocumentSummary summary={sentimentData.summary || "Analysis complete."} />
-              </div>
-              
-              <div className="bg-yellow-soft p-4 rounded-lg mb-4">
-                <AnalysisTabs 
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  sentimentData={sentimentData}
-                  searchTerm={searchTerm}
-                  setSearchTerm={setSearchTerm}
-                  selectedPoint={selectedPoint}
-                  setSelectedPoint={setSelectedPoint}
-                  selectedWord={selectedWord}
-                  setSelectedWord={setSelectedWord}
-                  filteredPoints={filteredPoints}
-                  setFilteredPoints={setFilteredPoints}
-                  uniqueWords={uniqueWords}
-                  connectedPoints={connectedPoints}
-                  setConnectedPoints={setConnectedPoints}
-                  visibleClusterCount={visibleClusterCount}
-                  handlePointClick={handlePointClick}
-                  handleResetVisualization={handleResetVisualization}
-                  handleClearSearch={handleClearSearch}
-                />
-              </div>
-              
-              <div className="mt-8 mb-4">
-                <EmotionalClustersControl 
-                  visibleClusterCount={visibleClusterCount}
-                  setVisibleClusterCount={setVisibleClusterCount}
-                  activeTab={activeTab}
-                />
-              </div>
-              
-              <div className="mt-8 mb-4 bg-yellow-soft rounded-lg p-4">
-                <TextEmotionViewer 
-                  pdfText={pdfText}
-                  embeddingPoints={sentimentData.embeddingPoints}
-                  sourceDescription={sentimentData.sourceDescription}
-                />
-              </div>
-              
-              <div className="mt-8 mb-4 bg-yellow-soft rounded-lg p-4">
-                <WellbeingResources 
-                  embeddingPoints={sentimentData.embeddingPoints}
-                />
-              </div>
-              
-              <div className="mt-8 mb-4 bg-yellow-soft rounded-lg p-4">
-                <WordComparisonController 
-                  points={sentimentData.embeddingPoints}
-                  selectedPoint={selectedPoint}
-                  sourceDescription={sentimentData.sourceDescription}
-                  calculateRelationship={calculateRelationship}
-                />
-              </div>
-              
-              <div className="mt-8 bg-yellow-soft p-4 rounded-lg">
-                <PdfExport sentimentData={sentimentData} />
-              </div>
-            </div>
-          )}
         </div>
-      </main>
+
+        {/* 3D Visualization */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold mb-6 text-center text-black">
+            Interactive Visualization
+          </h2>
+          <p className="text-center mb-4 text-black">
+            This is a short analysis and visualization of a person's recounting of his experience in a panic attack.
+          </p>
+          <Card className="border-0 shadow-md overflow-hidden">
+            <CardContent className="p-0">
+              <div className="h-[500px] w-full" style={{ backgroundColor: "#DFC5FE" }}>
+                <DocumentEmbedding 
+                  points={points}
+                  onPointClick={setSelectedPoint}
+                  isInteractive={true}
+                  depressedJournalReference={false}
+                  sourceDescription="Demo visualization using sample data"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Word Comparison */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold mb-6 text-center text-black flex items-center justify-center">
+            <GitCompareArrows className="h-6 w-6 mr-2 text-purple" />
+            Word Comparison
+          </h2>
+          <div className="bg-light-lavender p-4 rounded-lg shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+            <WordComparisonController 
+              points={points}
+              selectedPoint={selectedPoint}
+              calculateRelationship={calculateRelationship}
+              sourceDescription="Demo comparison using sample data"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
