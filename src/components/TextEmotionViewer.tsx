@@ -72,13 +72,16 @@ export const TextEmotionViewer = ({
           }
         } else {
           // Otherwise get color based on emotion - try from both utils to ensure we have a color
-          color = getEmotionColor(emotion) || getBertEmotionColor(emotion);
+          color = getBertEmotionColor(emotion) || getEmotionColor(emotion);
         }
         
-        wordEmotionMap.set(point.word.toLowerCase(), {
-          emotion,
-          color
-        });
+        // Only add to map if we successfully identified a color
+        if (color) {
+          wordEmotionMap.set(point.word.toLowerCase(), {
+            emotion,
+            color
+          });
+        }
       }
     });
 

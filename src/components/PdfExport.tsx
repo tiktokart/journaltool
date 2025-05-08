@@ -1,7 +1,4 @@
 
-// Since we can't modify PdfExport.tsx (it's in read-only-files),
-// let's create a patch component that can be used instead
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
@@ -41,16 +38,19 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
         ],
       });
       
+      // Get the final Y position after the table
+      const firstTableEndY = (doc as any).lastAutoTable?.finalY || 60;
+      
       // Summary
       doc.setFontSize(14);
-      doc.text("Document Summary", 20, doc.lastAutoTable.finalY + 10);
+      doc.text("Document Summary", 20, firstTableEndY + 10);
       doc.setFontSize(11);
-      doc.text(sentimentData.summary || "No summary available", 20, doc.lastAutoTable.finalY + 20, {
+      doc.text(sentimentData.summary || "No summary available", 20, firstTableEndY + 20, {
         maxWidth: 170,
       });
       
       // Sentiment Overview
-      let yPos = doc.lastAutoTable.finalY + 50;
+      let yPos = firstTableEndY + 50;
       if (yPos > 250) {
         doc.addPage();
         yPos = 20;
@@ -74,12 +74,12 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
       
       // Distribution
       if (sentimentData.distribution) {
-        yPos = doc.lastAutoTable.finalY + 10;
+        const overviewTableEndY = (doc as any).lastAutoTable?.finalY || (yPos + 20);
         doc.setFontSize(14);
-        doc.text("Sentiment Distribution", 20, yPos);
+        doc.text("Sentiment Distribution", 20, overviewTableEndY + 10);
         
         autoTable(doc, {
-          startY: yPos + 5,
+          startY: overviewTableEndY + 15,
           head: [["Category", "Percentage"]],
           body: [
             ["Positive", `${sentimentData.distribution.positive}%`],
@@ -91,10 +91,12 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
       
       // Key Phrases
       if (sentimentData.keyPhrases && sentimentData.keyPhrases.length > 0) {
-        yPos = doc.lastAutoTable.finalY + 10;
-        if (yPos > 250) {
+        const distributionTableEndY = (doc as any).lastAutoTable?.finalY || (yPos + 40);
+        if (distributionTableEndY > 250) {
           doc.addPage();
           yPos = 20;
+        } else {
+          yPos = distributionTableEndY + 10;
         }
         
         doc.setFontSize(14);
@@ -111,10 +113,12 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
       
       // Entities
       if (sentimentData.entities && sentimentData.entities.length > 0) {
-        yPos = doc.lastAutoTable.finalY + 10;
-        if (yPos > 250) {
+        const keyPhrasesTableEndY = (doc as any).lastAutoTable?.finalY || (yPos + 20);
+        if (keyPhrasesTableEndY > 250) {
           doc.addPage();
           yPos = 20;
+        } else {
+          yPos = keyPhrasesTableEndY + 10;
         }
         
         doc.setFontSize(14);

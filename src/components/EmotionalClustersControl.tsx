@@ -47,7 +47,7 @@ export const EmotionalClustersControl = ({
               className="flex-1"
             />
             <span className="text-sm font-medium text-black">12</span>
-            <span className="bg-yellow text-orange px-2 py-1 rounded-md text-sm font-medium ml-2">
+            <span className="bg-white border border-orange text-orange px-2 py-1 rounded-md text-sm font-medium ml-2">
               {visibleClusterCount}
             </span>
           </div>

@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Info } from "lucide-react";
@@ -8,6 +9,7 @@ interface SentimentTimelineProps {
     page: number; 
     score: number;
     color?: string;
+    event?: string;
   }>;
   sourceDescription?: string;
 }
@@ -67,7 +69,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   label={{ value: t("sentimentScore"), angle: -90, position: 'insideLeft', offset: -5 }}
                 />
                 <Tooltip 
-                  formatter={(value: number) => [
+                  formatter={(value: number, name: string, props: any) => [
                     `${t("score")}: ${value.toFixed(2)}`,
                     t("sentiment")
                   ]}
@@ -103,7 +105,10 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   fillOpacity={1} 
                   fill="url(#colorScore)" 
                   dot={(props: any) => {
+                    if (!props || !props.cx || !props.cy) return null;
                     const { cx, cy, payload } = props;
+                    if (!payload) return null;
+                    
                     // Use the provided color if available, otherwise fall back to calculated color
                     const dotColor = payload.color || getColor(payload.score);
                     return (

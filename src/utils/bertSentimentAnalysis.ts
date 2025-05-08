@@ -1,3 +1,4 @@
+
 import { pipeline } from "@huggingface/transformers";
 
 // Cache for the sentiment analysis pipeline to avoid reloading the model
@@ -249,6 +250,7 @@ export const getEmotionColor = (emotion: string): string => {
     "Scared": "#D35400",     // Burnt Orange
     "Disgusted": "#6C3483",  // Violet
     "Surprised": "#16A085",  // Teal
+    "Fearful": "#D35400"     // Burnt Orange (same as Scared)
   };
   
   // Return the color for the emotion or default to gray if not found

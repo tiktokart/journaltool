@@ -41,8 +41,10 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Generate timeline
     const timeline = await generateTimeline(text);
     
-    // Generate embedding points
-    const embeddingPoints = await generateEmbeddingPoints(text);
+    // Generate embedding points with actual user data
+    const embeddingPoints = await generateEmbeddingPoints(text, true); // Force using actual text
+    
+    console.log("Generated embedding points with user data:", embeddingPoints.length);
     
     // Make sure to include the entire text in the result
     return {
