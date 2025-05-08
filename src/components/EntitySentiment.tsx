@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
@@ -18,7 +19,6 @@ interface EntitySentimentProps {
 
 const renderBarLabel = (props: any) => {
   const { x, y, width, height, value } = props;
-  const radius = width / 2;
   
   return (
     <g>
@@ -85,7 +85,7 @@ export const EntitySentiment = ({ entities, sourceDescription }: EntitySentiment
                   dataKey="name" 
                   tick={{ fontSize: 12 }}
                   width={150}
-                  label={{ value: t("themes"), position: 'insideLeft' }}
+                  label={{ value: t("entities"), position: 'insideLeft' }}
                 />
                 <Tooltip 
                   formatter={(value: number) => [

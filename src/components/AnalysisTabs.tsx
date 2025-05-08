@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -315,7 +314,7 @@ export const AnalysisTabs = ({
           <DataMissingFallback tabName={t("themesTab")} />
         ) : (
           <EntitySentiment 
-            data={sentimentData.entities}
+            entities={sentimentData.entities}
             sourceDescription={sentimentData.sourceDescription}
           />
         )}
