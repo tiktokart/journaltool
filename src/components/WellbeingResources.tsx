@@ -25,7 +25,6 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
   const [averageSentiment, setAverageSentiment] = useState<number>(0);
   const [needsSupport, setNeedsSupport] = useState<boolean>(false);
   const [emotionalTones, setEmotionalTones] = useState<Map<string, number>>(new Map());
-  const [monthlyReflection, setMonthlyReflection] = useState<string>("");
 
   useEffect(() => {
     if (!embeddingPoints || embeddingPoints.length === 0) return;
@@ -86,29 +85,6 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
       tags: ["wellness", "habits", "daily"],
     });
     
-    // Generate monthly reflection
-    const emotionsArray = Array.from(emotions.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(entry => entry[0]);
-      
-    let reflection = "Monthly Reflection: ";
-    
-    if (avgSentiment < 0.3) {
-      reflection += "This month appears challenging with predominant emotions of ";
-      reflection += emotionsArray.join(", ");
-      reflection += ". Consider seeking additional support and being gentle with yourself during this time.";
-    } else if (avgSentiment < 0.5) {
-      reflection += "This month shows mixed emotional patterns with ";
-      reflection += emotionsArray.join(", ");
-      reflection += " present in your entries. Focus on self-care and identifying specific triggers.";
-    } else {
-      reflection += "This month reflects generally positive patterns with ";
-      reflection += emotionsArray.join(", ");
-      reflection += " as prominent emotions. Continue practices that support your wellbeing.";
-    }
-    
-    setMonthlyReflection(reflection);
     setResources(suggestedResources);
   }, [embeddingPoints]);
   
@@ -126,18 +102,6 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
 
   return (
     <div>
-      <Card className="border border-border shadow-md mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center text-xl">
-            <Heart className="h-5 w-5 mr-2 text-orange" />
-            Monthly Reflections
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-black mb-6">{monthlyReflection}</p>
-        </CardContent>
-      </Card>
-    
       <Card className="border border-border shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center text-xl">
