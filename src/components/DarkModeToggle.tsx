@@ -9,31 +9,31 @@ interface DarkModeToggleProps {
 }
 
 const DarkModeToggle = ({ className }: DarkModeToggleProps) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isGrayMode, setIsGrayMode] = useState(false);
 
   // Check for saved preference on component mount
   useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-    if (savedDarkMode) {
-      document.documentElement.classList.add('dark-mode');
+    const savedGrayMode = localStorage.getItem('grayMode') === 'true';
+    setIsGrayMode(savedGrayMode);
+    if (savedGrayMode) {
+      document.documentElement.classList.add('gray-mode');
     } else {
-      document.documentElement.classList.remove('dark-mode');
+      document.documentElement.classList.remove('gray-mode');
     }
   }, []);
 
   const handleToggle = () => {
-    const newDarkModeState = !isDarkMode;
-    setIsDarkMode(newDarkModeState);
+    const newGrayModeState = !isGrayMode;
+    setIsGrayMode(newGrayModeState);
     
     // Save preference to localStorage
-    localStorage.setItem('darkMode', newDarkModeState.toString());
+    localStorage.setItem('grayMode', newGrayModeState.toString());
     
-    // Apply dark mode class to document
-    if (newDarkModeState) {
-      document.documentElement.classList.add('dark-mode');
+    // Apply gray mode class to document
+    if (newGrayModeState) {
+      document.documentElement.classList.add('gray-mode');
     } else {
-      document.documentElement.classList.remove('dark-mode');
+      document.documentElement.classList.remove('gray-mode');
     }
   };
 
@@ -42,11 +42,11 @@ const DarkModeToggle = ({ className }: DarkModeToggleProps) => {
       <Sun className="h-4 w-4 text-black" />
       <div className="relative">
         <Switch 
-          checked={isDarkMode} 
+          checked={isGrayMode} 
           onCheckedChange={handleToggle}
-          className="bg-gradient-to-r from-yellow to-orange data-[state=checked]:bg-[#1A1F2C]"
+          className="bg-gradient-to-r from-yellow to-orange data-[state=checked]:bg-[#C8C8C9]"
         />
-        {isDarkMode && (
+        {isGrayMode && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="wave wave1"></div>
             <div className="wave wave2"></div>

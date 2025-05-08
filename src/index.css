@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -47,43 +46,9 @@
     --sidebar-ring: 46 91% 67%;
   }
 
-  .dark-mode {
-    --background: 240 10% 10%;
-    --foreground: 0 0% 100%;
-
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 46 91% 67%;
-    --primary-foreground: 240 5.9% 10%;
-
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 29 100% 48%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 46 91% 67%;
-    --sidebar-primary: 46 91% 67%;
-    --sidebar-primary-foreground: 240 5.9% 10%;
-    --sidebar-accent: 29 100% 48%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 240 4.9% 83.9%;
+  .gray-mode {
+    --background: 0 0% 95%;
+    --foreground: 0 0% 20%;
   }
 }
 
@@ -157,4 +122,17 @@
   .dark-mode .relationship-analysis-tag {
     @apply bg-gray-700 text-white px-2 py-1 rounded-full text-xs;
   }
+}
+
+/* Gray mode classes - only change background colors, not text colors */
+.gray-mode body {
+  @apply bg-[#F1F1F1] text-black;
+}
+
+.gray-mode .bg-yellow {
+  background-color: #F1F1F1;
+}
+
+.gray-mode .bg-yellow-soft {
+  background-color: #F1F0FB;
 }
