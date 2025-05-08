@@ -59,6 +59,49 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
       'Anticipation': ['anticipation', 'expect', 'looking forward', 'awaiting', 'hopeful', 'eager', 'excited', 'keen']
     };
     
+    // Words to filter out (helping verbs, possessive nouns, prepositions)
+    const wordsToFilter = [
+      // Helping verbs
+      'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+      'have', 'has', 'had', 'having', 'do', 'does', 'did',
+      'can', 'could', 'shall', 'should', 'will', 'would', 'may', 'might', 'must',
+      
+      // Common prepositions
+      'at', 'by', 'for', 'from', 'in', 'of', 'on', 'to', 'with',
+      'about', 'above', 'across', 'after', 'against', 'along', 'among',
+      'around', 'before', 'behind', 'below', 'beneath', 'beside',
+      'between', 'beyond', 'during', 'except', 'inside', 'into',
+      'like', 'near', 'off', 'over', 'since', 'through',
+      'throughout', 'under', 'until', 'up', 'upon', 'when', 'though',
+      'there', 'where', 'while', 'within', 'without',
+      
+      // Articles
+      'a', 'an', 'the',
+      
+      // Conjunctions
+      'and', 'but', 'or', 'nor', 'so', 'yet', 'because', 'although',
+      'if', 'unless', 'since', 'while', 'whereas', 'whether',
+      
+      // Possessive markers
+      "'s", "s'",
+      
+      // Pronouns
+      'i', 'me', 'my', 'mine', 'myself',
+      'you', 'your', 'yours', 'yourself', 'yourselves',
+      'he', 'him', 'his', 'himself',
+      'she', 'her', 'hers', 'herself',
+      'it', 'its', 'itself',
+      'we', 'us', 'our', 'ours', 'ourselves',
+      'they', 'them', 'their', 'theirs', 'themselves',
+      'this', 'that', 'these', 'those',
+      'who', 'whom', 'whose', 'which', 'what',
+      
+      // Common words with low semantic value
+      'just', 'very', 'really', 'quite', 'even', 'only', 'too',
+      'much', 'many', 'some', 'any', 'all', 'most', 'more', 'less',
+      'few', 'little', 'other', 'another', 'such', 'same', 'else'
+    ];
+    
     try {
       // Simple analysis without WebGPU
       console.info("Using text-based sentiment analysis on actual content");
@@ -66,11 +109,22 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
       const textLower = text.toLowerCase();
       const words = textLower.split(/\s+/);
       
+      // Filter words to prioritize action verbs, nouns, and adjectives
+      const filteredWords = words.filter(word => {
+        // Remove punctuation for checking
+        const cleanWord = word.replace(/[.,!?;:'"()[\]{}]/g, '').trim();
+        
+        // Filter out words that are in the wordsToFilter list
+        return cleanWord.length > 0 && !wordsToFilter.includes(cleanWord);
+      });
+      
+      console.info(`Filtered ${words.length - filteredWords.length} words, kept ${filteredWords.length} words`);
+      
       // Calculate basic sentiment score
       let positiveCount = 0;
       let negativeCount = 0;
       
-      words.forEach(word => {
+      filteredWords.forEach(word => {
         if (positiveWords.includes(word)) positiveCount++;
         if (negativeWords.includes(word)) negativeCount++;
       });
@@ -88,7 +142,7 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
       Object.entries(emotionCategories).forEach(([emotion, keywords]) => {
         emotionCounts[emotion] = 0;
         
-        words.forEach(word => {
+        filteredWords.forEach(word => {
           if (keywords.includes(word)) {
             emotionCounts[emotion]++;
             totalEmotionWords++;
@@ -111,11 +165,11 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
         emotionalTones["Neutral"] = 1.0;
       }
       
-      // Extract key phrases
-      const keyPhrases = extractKeyPhrases(text);
+      // Extract key phrases - prioritize using filtered words
+      const keyPhrases = extractKeyPhrases(text, wordsToFilter);
       
       // Extract entities (people, places, organizations mentioned in the text)
-      const entities = extractEntities(text);
+      const entities = extractEntities(text, wordsToFilter);
       
       // Generate timeline data points for visualization
       const timeline = generateTimeline(text, sentiment);
@@ -153,16 +207,27 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
 };
 
 // Helper function to extract key phrases from text
-function extractKeyPhrases(text: string): string[] {
+function extractKeyPhrases(text: string, wordsToFilter: string[]): string[] {
   const sentences = text.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0);
   const keyPhrases: string[] = [];
   
   sentences.forEach(sentence => {
     const trimmedSentence = sentence.trim();
     if (trimmedSentence.length > 10 && trimmedSentence.length < 100) {
+      // Filter the sentence to focus on important words
       const words = trimmedSentence.split(/\s+/);
-      if (words.length >= 3 && words.length <= 10) {
-        keyPhrases.push(trimmedSentence);
+      const filtered = words.filter(word => {
+        const cleanWord = word.toLowerCase().replace(/[.,!?;:'"()[\]{}]/g, '').trim();
+        return cleanWord.length > 0 && !wordsToFilter.includes(cleanWord);
+      });
+      
+      // Only consider phrases with enough meaningful words
+      if (filtered.length >= 2 && filtered.length <= 8) {
+        // Reconstruct a simplified phrase from the filtered words
+        const simplifiedPhrase = filtered.join(' ');
+        if (simplifiedPhrase.length >= 5) {
+          keyPhrases.push(simplifiedPhrase);
+        }
       }
     }
   });
@@ -171,7 +236,7 @@ function extractKeyPhrases(text: string): string[] {
 }
 
 // Helper function to extract entities from text
-function extractEntities(text: string): any[] {
+function extractEntities(text: string, wordsToFilter: string[]): any[] {
   // A simple approach: look for capitalized words that might be entities
   const entityRegex = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g;
   const potentialEntities = text.match(entityRegex) || [];
@@ -184,6 +249,12 @@ function extractEntities(text: string): any[] {
   
   // For each entity, estimate a sentiment value
   return filteredEntities.map(entity => {
+    // Check if the entity contains words to filter
+    const entityWords = entity.split(/\s+/);
+    const isPrimaryEntity = !entityWords.some(word => 
+      wordsToFilter.includes(word.toLowerCase())
+    );
+    
     const surroundingText = findSurroundingText(text, entity);
     const sentimentScore = estimateSentiment(surroundingText);
     
@@ -191,9 +262,10 @@ function extractEntities(text: string): any[] {
       name: entity,
       sentiment: sentimentScore,
       type: guessEntityType(entity, text),
-      count: countOccurrences(text, entity)
+      count: countOccurrences(text, entity),
+      isPrimaryEntity: isPrimaryEntity // Mark entities that don't contain filtered words
     };
-  });
+  }).filter(entity => entity.isPrimaryEntity); // Keep only primary entities
 }
 
 // Helper function to generate timeline data
