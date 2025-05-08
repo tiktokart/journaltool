@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Info } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useEffect, useState } from "react";
 
 interface TimelineEntry {
   page: number; 
@@ -20,29 +21,54 @@ interface SentimentTimelineProps {
 
 export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimelineProps) => {
   const { t } = useLanguage();
-  
-  // Normalize data to ensure it's in the correct format
-  const normalizedData: TimelineEntry[] = Array.isArray(data) ? 
-    data.map((item, index) => {
-      if (typeof item === 'object' && item !== null) {
-        // Add a page number if it doesn't exist (using index + 1)
-        return {
-          ...item,
-          page: item.page || index + 1,
-          // Ensure score is between 0 and 1
-          score: Math.max(0, Math.min(1, item.score || 0.5)),
-          // Make sure we have a time property
-          time: item.time || `Section ${index + 1}`
-        };
+  const [normalizedData, setNormalizedData] = useState<TimelineEntry[]>([]);
+  const [averageSentiment, setAverageSentiment] = useState(0.5);
+  const [isDataValid, setIsDataValid] = useState(true);
+
+  useEffect(() => {
+    try {
+      // Validate the data
+      if (!Array.isArray(data) || data.length === 0) {
+        console.warn("SentimentTimeline received invalid data:", data);
+        setIsDataValid(false);
+        return;
       }
-      // Fallback for unexpected data format
-      return {
-        page: index + 1,
-        score: 0.5,
-        time: `Section ${index + 1}`,
-        index
-      };
-    }) : [];
+
+      // Process and normalize the data
+      const processed: TimelineEntry[] = data.map((item, index) => {
+        if (typeof item === 'object' && item !== null) {
+          // Add a page number if it doesn't exist (using index + 1)
+          return {
+            ...item,
+            page: item.page || index + 1,
+            // Ensure score is between 0 and 1
+            score: Math.max(0, Math.min(1, item.score || 0.5)),
+            // Make sure we have a time property
+            time: item.time || `Section ${index + 1}`
+          };
+        }
+        // Fallback for unexpected data format
+        return {
+          page: index + 1,
+          score: 0.5,
+          time: `Section ${index + 1}`,
+          index
+        };
+      });
+
+      setNormalizedData(processed);
+      
+      // Calculate average sentiment
+      const avg = processed.length > 0 
+        ? processed.reduce((acc, item) => acc + item.score, 0) / processed.length
+        : 0.5;
+      setAverageSentiment(avg);
+      setIsDataValid(true);
+    } catch (error) {
+      console.error("Error processing timeline data:", error);
+      setIsDataValid(false);
+    }
+  }, [data]);
   
   // Get color from data point or calculate based on score
   const getColor = (score: number, defaultColor?: string) => {
@@ -55,11 +81,6 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
     return "#E74C3C";
   };
 
-  // Calculate average sentiment
-  const averageSentiment = normalizedData.length > 0 
-    ? normalizedData.reduce((acc, item) => acc + item.score, 0) / normalizedData.length
-    : 0.5;
-
   return (
     <Card className="border-0 shadow-md w-full bg-white">
       <CardHeader>
@@ -69,7 +90,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
         )}
       </CardHeader>
       <CardContent>
-        {normalizedData.length === 0 ? (
+        {!isDataValid || normalizedData.length === 0 ? (
           <div className="h-80 w-full flex items-center justify-center">
             <p className="text-muted-foreground">{t("noDataAvailable")}</p>
           </div>
