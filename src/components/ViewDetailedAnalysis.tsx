@@ -58,10 +58,10 @@ export const ViewDetailedAnalysis = ({
     if (!displayText) return [];
     
     const sentences = displayText.toLowerCase().split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const words = displayText.toLowerCase().split(/\s+/);
+    const words = displayText.toLowerCase().split(/\s+/).map(w => w.replace(/[^\w]/g, ''));
     
     // Action verbs with emotional connections
-    const emotionKeywords = {
+    const emotionKeywords: Record<string, string[]> = {
       "joy": ["laugh", "celebrate", "smile", "dance", "embrace", "rejoice", "play", "sing", "hug", "enjoy"],
       "sadness": ["cry", "mourn", "sigh", "tears", "grieve", "withdraw", "slouch", "retreat", "weep", "sob"],
       "anger": ["shout", "slam", "stomp", "punch", "argue", "fight", "confront", "storm", "rage", "yell"],
@@ -76,15 +76,22 @@ export const ViewDetailedAnalysis = ({
     
     // First, parse through whole text to identify action verbs and count instances
     words.forEach(word => {
-      const cleanWord = word.replace(/[^\w]/g, '');
-      if (cleanWord.length < 3) return; // Skip short words
+      if (word.length < 3) return; // Skip short words
       
       // Check if this word is in our emotion keywords lists
       for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
-        if (keywords.includes(cleanWord)) {
-          actionVerbCounts[cleanWord] = (actionVerbCounts[cleanWord] || 0) + 1;
+        if (keywords.includes(word)) {
+          actionVerbCounts[word] = (actionVerbCounts[word] || 0) + 1;
           break;
         }
+      }
+    });
+    
+    // Count all words in the text (even those not in our predefined lists)
+    const wordFrequency: Record<string, number> = {};
+    words.forEach(word => {
+      if (word.length >= 3) { // Skip short words
+        wordFrequency[word] = (wordFrequency[word] || 0) + 1;
       }
     });
     
@@ -104,17 +111,24 @@ export const ViewDetailedAnalysis = ({
     });
     
     // Combine direct counts with contextual understanding
-    const combinedCounts = { ...actionVerbCounts };
+    const combinedCounts: Record<string, number> = { ...actionVerbCounts };
     for (const [word, contextCount] of Object.entries(sentenceContext)) {
       combinedCounts[word] = (combinedCounts[word] || 0) + Math.floor(contextCount * 0.5); // Weight context slightly less than direct mentions
     }
     
-    // Get all action verbs that occur at least 3 times (or have strong contextual relevance)
+    // Add frequent words from the text that aren't in our predefined lists
+    for (const [word, count] of Object.entries(wordFrequency)) {
+      if (count >= 3 && !combinedCounts[word]) {
+        combinedCounts[word] = count;
+      }
+    }
+    
+    // Get all action verbs that occur at least twice (loosened from 3+ times)
     return Object.entries(combinedCounts)
-      .filter(([_, count]) => count >= 3)
+      .filter(([_, count]) => count >= 2)  // Changed from 3 to 2 to make it more sensitive
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10) // Limit to top 10
-      .map(([topic, count]) => ({ topic, count }));
+      .map(([topic, count]) => ({ topic, count: count as number }));
   };
   
   // Improved extraction of main subjects/nouns from text using both counting and context
@@ -125,7 +139,7 @@ export const ViewDetailedAnalysis = ({
     const sentences = displayText.toLowerCase().split(/[.!?]+/).filter(s => s.trim().length > 0);
     
     // Common noun subjects to look for
-    const subjectCategories = {
+    const subjectCategories: Record<string, string[]> = {
       "family": ["family", "parent", "child", "sibling", "mother", "father", "daughter", "son", "home", "brother", "sister"],
       "work": ["job", "career", "office", "profession", "business", "company", "project", "task", "boss", "colleague", "meeting", "work"],
       "education": ["learn", "study", "school", "college", "university", "education", "knowledge", "degree", "class", "teacher", "student", "book", "course"],
@@ -141,15 +155,24 @@ export const ViewDetailedAnalysis = ({
     const nounContext: Record<string, number> = {};
     
     // Process every word in the text
-    const words = displayText.toLowerCase().split(/\s+/);
+    const words = displayText.toLowerCase().split(/\s+/).map(w => w.replace(/[^\w]/g, ''));
+    
+    // Count all words in the text (even those not in our predefined lists)
+    const wordFrequency: Record<string, number> = {};
     words.forEach(word => {
-      const cleanWord = word.replace(/[^\w]/g, '');
-      if (cleanWord.length < 3) return; // Skip short words
+      if (word.length >= 3) { // Skip short words
+        wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+      }
+    });
+    
+    // First check for words in our categorized lists
+    words.forEach(word => {
+      if (word.length < 3) return; // Skip short words
       
       // Check if this word is a known subject/noun
       for (const [category, nouns] of Object.entries(subjectCategories)) {
-        if (nouns.includes(cleanWord)) {
-          nounCounts[cleanWord] = (nounCounts[cleanWord] || 0) + 1;
+        if (nouns.includes(word)) {
+          nounCounts[word] = (nounCounts[word] || 0) + 1;
           break;
         }
       }
@@ -157,7 +180,6 @@ export const ViewDetailedAnalysis = ({
     
     // Track pronouns to identify important subjects
     const pronouns = ["he", "she", "they", "it", "him", "her", "them", "his", "hers", "its", "their"];
-    const pronounReferences: Record<string, number> = {};
     
     // Find what nouns the pronouns are referring to (basic coreference resolution)
     for (let i = 0; i < sentences.length; i++) {
@@ -196,17 +218,24 @@ export const ViewDetailedAnalysis = ({
     }
     
     // Combine direct counts with contextual understanding
-    const combinedCounts = { ...nounCounts };
+    const combinedCounts: Record<string, number> = { ...nounCounts };
     for (const [noun, contextScore] of Object.entries(nounContext)) {
       combinedCounts[noun] = (combinedCounts[noun] || 0) + Math.floor(contextScore * 0.5);
     }
     
-    // Get all nouns that appear at least 3 times (or have strong contextual relevance)
+    // Add frequent words from the text that aren't in our predefined lists
+    for (const [word, count] of Object.entries(wordFrequency)) {
+      if (count >= 2 && !combinedCounts[word]) {  // Changed from 3 to 2 to be more sensitive
+        combinedCounts[word] = count;
+      }
+    }
+    
+    // Get all nouns that appear at least twice (loosened from 3+ times)
     return Object.entries(combinedCounts)
-      .filter(([_, count]) => count >= 3)
+      .filter(([_, count]) => count >= 2)  // Changed from 3 to 2 to be more sensitive
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8) // Limit to top 8
-      .map(([subject, count]) => ({ subject, count }));
+      .map(([subject, count]) => ({ subject, count: count as number }));
   };
   
   const emotionalTopics: EmotionalTopic[] = extractEmotionalTopics();
@@ -458,4 +487,3 @@ export const ViewDetailedAnalysis = ({
     </Card>
   );
 };
-

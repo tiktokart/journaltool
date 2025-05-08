@@ -29,6 +29,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Enhanced text preprocessing for better context analysis
     // - Replace multiple spaces with single space
     // - Ensure proper sentence boundaries for better context analysis
+    // - Maintain original case for better entity detection
     const processedText = text
       .replace(/\s+/g, ' ')
       .replace(/(\w)\.(\w)/g, '$1. $2') // Add space after periods between words
@@ -95,4 +96,3 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     throw error;
   }
 };
-
