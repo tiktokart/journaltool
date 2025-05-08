@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +15,7 @@ interface ResourceItem {
   triggerWords: string[]; // Words that trigger this resource
   emotionCategory?: string; // The emotion category this resource addresses
   actionPlan?: string[]; // Action steps to resolve the concern
+  hideMatchedWords?: boolean; // Flag to hide matched trigger words for sensitive topics
 }
 
 interface WellbeingResourcesProps {
@@ -188,19 +188,20 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
           "Spend at least 15-30 minutes outdoors each day"
         ]
       },
-      // Substance abuse resources with specific triggers
+      // Substance abuse resources with specific triggers and hide matched words flag
       {
         title: "Substance Use Support",
         description: "Find substance use treatment facilities and programs through SAMHSA's national helpline.",
-        tags: ["treatment", "substance", "support"],
+        tags: ["treatment", "support"],
         link: "https://findtreatment.samhsa.gov/",
-        triggerWords: substanceAbuseKeywords, // Only trigger on specific substance-related keywords
+        triggerWords: substanceAbuseKeywords,
+        hideMatchedWords: true, // Add flag to hide matched words for this sensitive resource
         actionPlan: [
           "Call SAMHSA's National Helpline at 1-800-662-HELP (4357) for 24/7 support",
           "Use the SAMHSA treatment locator to find nearby options",
           "Consider speaking with your primary care doctor about treatment options",
           "Reach out to a trusted person who can support your recovery journey",
-          "Attend a local support group meeting (AA, NA, SMART Recovery, etc.)"
+          "Attend a local support group meeting"
         ]
       },
       // Keep other professional resources but only show them when relevant
@@ -297,7 +298,8 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
       relevantResources = [...categorizedResources];
     }
     
-    // Special case for substance-related resources - only include if keywords are detected
+    // Always include substance-related resources if keywords are detected
+    // This ensures the resource appears even if we hide the trigger words
     if (hasSubstanceAbuseConcerns) {
       const substanceResource = allResources.find(r => r.title === "Substance Use Support");
       if (substanceResource && !relevantResources.some(r => r.title === substanceResource.title)) {
@@ -308,10 +310,6 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     // Then add resources that have direct trigger word matches but aren't already included
     matches.forEach(match => {
       const matchedResource = allResources[match.resourceIndex];
-      // Don't add substance resources unless substance keywords were detected
-      if (matchedResource.title === "Substance Use Support" && !hasSubstanceAbuseConcerns) {
-        return;
-      }
       if (!relevantResources.some(r => r.title === matchedResource.title)) {
         relevantResources.push(matchedResource);
       }
@@ -331,6 +329,12 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
       if (wellnessResource) {
         relevantResources.push(wellnessResource);
       }
+    }
+    
+    // Make sure we're showing at least one resource (for testing purposes)
+    // This ensures suggestions always appear when documents are uploaded
+    if (relevantResources.length === 0 && allResources.length > 0) {
+      relevantResources.push(allResources[0]);
     }
     
     setFilteredResources(relevantResources);
@@ -456,8 +460,8 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
                         </div>
                       )}
                       
-                      {/* Show detected trigger words ONLY if matches exist */}
-                      {triggerMatches.length > 0 && (
+                      {/* Show detected trigger words ONLY if matches exist AND resource doesn't have hideMatchedWords flag */}
+                      {triggerMatches.length > 0 && !resource.hideMatchedWords && (
                         <div className="mt-2 mb-2">
                           <p className="text-xs font-medium text-gray-500 mb-1">Words that triggered this suggestion:</p>
                           <div className="flex flex-wrap gap-1">
