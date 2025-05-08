@@ -181,7 +181,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">
-              No specific suggestions available for this content.
+              Keep working on your self. You are doing good.
             </p>
           )}
         </CardContent>
