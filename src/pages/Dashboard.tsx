@@ -249,10 +249,14 @@ const Dashboard = () => {
         // Assign the actual word from the document
         const wordIndex = index % filteredSignificantWords.length;
         
+        // Keep the existing color from the mock point
+        const { color } = point;
+        
         return {
           ...point,
           word: filteredSignificantWords[wordIndex],
           emotionalTone,
+          color, // Ensure color is included
           relationships: mockPoints
             .filter(p => p.id !== point.id)
             .slice(0, 5)

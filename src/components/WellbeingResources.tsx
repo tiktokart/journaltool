@@ -45,7 +45,7 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
   const [detectedConcerns, setDetectedConcerns] = useState<DetectedConcern[]>([]);
   const [triggerMatches, setTriggerMatches] = useState<TriggerMatch[]>([]);
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
-  const [isVisible, setIsVisible] = useState<boolean>(false);
+  const [isVisible, setIsVisible] = useState<boolean>(true);
 
   // Define the negative emotion categories we want to detect
   const negativeEmotionCategories = {
@@ -347,7 +347,7 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
       }
     }
     
-    // Make sure we're showing at least one resource (for testing purposes)
+    // Make sure we're showing at least one resource
     // This ensures suggestions always appear when documents are uploaded
     if (relevantResources.length === 0 && allResources.length > 0) {
       relevantResources.push(allResources[0]);
@@ -355,13 +355,29 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     
     setFilteredResources(relevantResources);
     
-    // Force display suggestions for testing - REMOVE THIS IN PRODUCTION
-    if (filteredResources.length === 0 && resources.length > 0) {
-      console.log("Forcing display of suggestions for testing");
-      setFilteredResources([resources[0]]);
-      setHasNegativeWords(true);  // Force display of concerns section
-      setDetectedConcerns([{word: "test", category: "Sadness"}]);
+    // Ensure we always have at least one suggestion showing
+    if (relevantResources.length === 0) {
+      setFilteredResources([{
+        title: "Daily Wellness Practices",
+        description: "Small daily habits like walking outdoors, quality sleep, and connecting with others can improve wellbeing.",
+        tags: ["wellness", "habits", "daily"],
+        triggerWords: ["health"],
+        actionPlan: [
+          "Start a morning routine that includes 10 minutes of movement",
+          "Prioritize 7-9 hours of sleep each night with a consistent schedule",
+          "Take short breaks every hour if doing focused work"
+        ]
+      }]);
     }
+    
+    // Force expanded state of first action plan to ensure visibility
+    if (relevantResources.length > 0) {
+      setExpandedPlans(prev => ({
+        ...prev,
+        [relevantResources[0].title]: true
+      }));
+    }
+    
   }, [embeddingPoints]);
   
   // Find trigger matches for a specific resource
@@ -407,7 +423,7 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
       <Card className="border border-border shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center text-xl">
-            <Heart className="h-5 w-5 mr-2 text-orange" />
+            <Heart className="h-5 w-5 mr-2 text-orange animate-pulse" />
             Suggestions
           </CardTitle>
         </CardHeader>

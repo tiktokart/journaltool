@@ -1,3 +1,4 @@
+
 interface GemmaAnalysisResult {
   sentiment: number;
   emotionalTones: { [key: string]: number };
@@ -92,6 +93,7 @@ export const analyzeTextWithGemma3 = async (text: string) => {
     } towards the end.`;
     
     return {
+      text, // Make sure we return the original text
       sentiment: overallSentiment,
       emotionalTones,
       timeline,
