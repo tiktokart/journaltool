@@ -68,7 +68,7 @@ export const KeyPhrases = ({ data = [], sourceDescription }: KeyPhrasesProps) =>
       <CardHeader>
         <CardTitle className="flex items-center">
           <MessageSquare className="h-5 w-5 mr-2 text-orange" />
-          {t("keyPhrasesAndThemes")}
+          Key Phrases and Themes
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -79,17 +79,17 @@ export const KeyPhrases = ({ data = [], sourceDescription }: KeyPhrasesProps) =>
         ) : (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-medium mb-2 text-black">{t("primaryThemes")}</h3>
+              <h3 className="text-lg font-medium mb-2 text-black">Primary Themes</h3>
               {renderPhraseBadges(highImportance, "high")}
             </div>
             
             <div>
-              <h3 className="text-lg font-medium mb-2 text-black">{t("secondaryThemes")}</h3>
+              <h3 className="text-lg font-medium mb-2 text-black">Secondary Themes</h3>
               {renderPhraseBadges(mediumImportance, "medium")}
             </div>
             
             <div>
-              <h3 className="text-lg font-medium mb-2 text-black">{t("tertiaryThemes")}</h3>
+              <h3 className="text-lg font-medium mb-2 text-black">Tertiary Themes</h3>
               {renderPhraseBadges(lowImportance, "low")}
             </div>
           </div>

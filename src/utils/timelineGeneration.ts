@@ -27,11 +27,14 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
     // Generate timeline events from text units
     const timeline: TimelineEvent[] = [];
     
-    // Time expressions to look for
+    // Time expressions to look for - expanded list for more diverse timeline markers
     const timeExpressions = [
       'first', 'initially', 'then', 'after', 'before', 'during', 'finally', 
       'later', 'next', 'previously', 'subsequently', 'yesterday', 'today', 
-      'tomorrow', 'morning', 'afternoon', 'evening', 'night'
+      'tomorrow', 'morning', 'afternoon', 'evening', 'night', 'beginning',
+      'meanwhile', 'afterwards', 'early', 'late', 'soon', 'following',
+      'suddenly', 'gradually', 'immediately', 'eventually', 'currently',
+      'ultimately', 'originally', 'recently', 'formerly'
     ];
     
     // Color mapping for emotional tones - more distinctive colors
@@ -41,6 +44,23 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
       if (score >= 0.4) return "#F39C12"; // Neutral - Orange
       if (score >= 0.3) return "#E67E22"; // Neutral-negative - Dark Orange
       return "#E74C3C"; // Negative - Red
+    };
+    
+    // Find meaningful words for timeline markers
+    const extractMeaningfulWords = (text: string) => {
+      // Remove common words that aren't meaningful for markers
+      const stopWords = ['the', 'a', 'an', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by'];
+      const words = text.split(/\s+/)
+        .filter(word => word.length > 3) // Only words longer than 3 chars
+        .map(word => word.replace(/[^\w\s]/, '')) // Remove punctuation
+        .filter(word => !stopWords.includes(word.toLowerCase())); // Remove stop words
+        
+      if (words.length >= 2) {
+        return words.slice(0, 2).join(' ');
+      } else if (words.length === 1) {
+        return words[0];
+      }
+      return "Point";
     };
     
     textUnits.forEach((unit, index) => {
@@ -56,17 +76,25 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
       if (timeExpression) {
         // Use the time expression as part of the marker
         timeMarker = timeExpression.charAt(0).toUpperCase() + timeExpression.slice(1);
+        
+        // Add some context words if possible
+        const contextWords = extractMeaningfulWords(unit);
+        if (contextWords !== "Point") {
+          timeMarker += ` - ${contextWords}`;
+        }
       } else {
         // Extract significant words (nouns, adjectives) from the beginning of the unit
-        // For simplicity, we'll just take the first 2-3 significant words
         const significantWords = words
           .filter(word => word.length > 3)
-          .slice(0, 2);
+          .slice(0, 3);
           
         if (significantWords.length > 0) {
           timeMarker = significantWords.join(' ');
         } else {
-          timeMarker = `Section ${index + 1}`;
+          // Give more descriptive markers than just "Section X"
+          if (index === 0) timeMarker = "Beginning";
+          else if (index === textUnits.length - 1) timeMarker = "Conclusion";
+          else timeMarker = `Part ${index + 1}`;
         }
       }
       

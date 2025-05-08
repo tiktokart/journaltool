@@ -91,11 +91,11 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   dataKey="page" 
                   label={{ value: t("sequencePoint"), position: 'insideBottom', offset: -10 }} 
                   // Use time property for labels instead of just "Page X"
-                  tickFormatter={(value, index) => {
+                  tickFormatter={(value) => {
                     const point = normalizedData.find(d => d.page === value);
                     return point?.time || `Section ${value}`;
                   }}
-                  // Adjust angle for better readability if we have many points
+                  // Adjust for better readability if we have many points
                   tick={{ 
                     fontSize: 12,
                     textAnchor: normalizedData.length > 7 ? 'end' : 'middle',
@@ -106,6 +106,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                 <YAxis 
                   domain={[0, 1]} 
                   label={{ value: t("sentimentScore"), angle: -90, position: 'insideLeft', offset: -5 }}
+                  ticks={[0, 0.2, 0.4, 0.6, 0.8, 1]}
                 />
                 <Tooltip 
                   formatter={(value: number) => [
@@ -156,6 +157,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                     const dotColor = payload.color || getColor(payload.score);
                     return (
                       <circle 
+                        key={`dot-${cx}-${cy}`}
                         cx={cx} 
                         cy={cy} 
                         r={5} 

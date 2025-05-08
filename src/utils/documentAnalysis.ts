@@ -35,7 +35,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Extract entities
     const entities = await extractEntities(text);
     
-    // Extract key phrases - focus on nouns and verbs
+    // Extract key phrases - focus on nouns, verbs and adjectives
     const keyPhrases = await extractKeyPhrases(text);
     
     // Generate timeline with meaningful text markers instead of "Page X"
