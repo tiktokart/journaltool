@@ -26,6 +26,11 @@ interface DetectedConcern {
   category: string;
 }
 
+interface TriggerMatch {
+  resourceIndex: number;
+  matchedWords: string[];
+}
+
 export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps) => {
   const { t } = useLanguage();
   const [resources, setResources] = useState<ResourceItem[]>([]);
@@ -35,6 +40,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
   const [emotionalTones, setEmotionalTones] = useState<Map<string, number>>(new Map());
   const [hasNegativeWords, setHasNegativeWords] = useState<boolean>(false);
   const [detectedConcerns, setDetectedConcerns] = useState<DetectedConcern[]>([]);
+  const [triggerMatches, setTriggerMatches] = useState<TriggerMatch[]>([]);
 
   // Define the negative emotion categories we want to detect
   const negativeEmotionCategories = {
@@ -55,17 +61,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     const avgSentiment = sentimentTotal / embeddingPoints.length;
     setAverageSentiment(avgSentiment);
     
-    // Check if there are any negative words in the text that match our categories
-    const negativeWords = [
-      'sad', 'angry', 'upset', 'disappointed', 'frustrated',
-      'anxious', 'worried', 'fear', 'hate', 'terrible',
-      'awful', 'bad', 'worse', 'worst', 'horrible',
-      'depressed', 'depression', 'stress', 'stressed', 'unhappy',
-      'miserable', 'hurt', 'pain', 'failure', 'fail',
-      'worried', 'guilty', 'ashamed', 'regret', 'lonely',
-      'alone', 'abandoned', 'sorry', 'trouble', 'problem'
-    ];
-    
+    // Extract all words from the text
     const wordsInText = embeddingPoints.map(point => point.word?.toLowerCase()).filter(Boolean);
     
     // Detect concerns with their categories
@@ -194,18 +190,58 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     
     setResources(allResources);
     
-    // Filter resources based on detected concerns
+    // Find direct trigger word matches in the text
+    const matches: TriggerMatch[] = [];
+    
+    allResources.forEach((resource, index) => {
+      const matchedTriggerWords: string[] = [];
+      
+      // Check each word in text against resource trigger words
+      wordsInText.forEach(word => {
+        if (!word) return;
+        
+        // Check if any trigger word is contained in this word
+        resource.triggerWords.forEach(trigger => {
+          if (word.includes(trigger) && !matchedTriggerWords.includes(word)) {
+            matchedTriggerWords.push(word);
+          }
+        });
+      });
+      
+      // If we found matches, add to our matches array
+      if (matchedTriggerWords.length > 0) {
+        matches.push({
+          resourceIndex: index,
+          matchedWords: matchedTriggerWords
+        });
+      }
+    });
+    
+    setTriggerMatches(matches);
+    
+    // Filter resources based on detected concerns and trigger word matches
     let relevantResources: ResourceItem[] = [];
     
+    // First add resources that match detected emotion categories
     if (foundConcerns.length > 0) {
       // Get the unique categories from our concerns
       const detectedCategories = [...new Set(foundConcerns.map(c => c.category))];
       
       // Get resources that match these categories
-      relevantResources = allResources.filter(resource => 
+      const categorizedResources = allResources.filter(resource => 
         resource.emotionCategory && detectedCategories.includes(resource.emotionCategory)
       );
+      
+      relevantResources = [...categorizedResources];
     }
+    
+    // Then add resources that have direct trigger word matches but aren't already included
+    matches.forEach(match => {
+      const matchedResource = allResources[match.resourceIndex];
+      if (!relevantResources.some(r => r.title === matchedResource.title)) {
+        relevantResources.push(matchedResource);
+      }
+    });
     
     // If no specific resources match but sentiment is low AND there are negative words, add the general support resource
     if (relevantResources.length === 0 && avgSentiment < 0.4 && foundNegativeWords) {
@@ -213,16 +249,6 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
       if (supportResource) {
         relevantResources.push(supportResource);
       }
-    }
-    
-    // If no emotion-specific resources match, fall back to trigger word matching
-    if (relevantResources.length === 0) {
-      relevantResources = allResources.filter(resource => {
-        // Check if any trigger word is present in the text
-        return resource.triggerWords.some(triggerWord => 
-          wordsInText.some(word => word && word.includes(triggerWord))
-        );
-      });
     }
     
     // Always include daily wellness practices if no other resources match
@@ -235,6 +261,15 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     
     setFilteredResources(relevantResources);
   }, [embeddingPoints]);
+  
+  // Find trigger matches for a specific resource
+  const getResourceTriggerMatches = (resourceTitle: string): string[] => {
+    const resourceIndex = resources.findIndex(r => r.title === resourceTitle);
+    if (resourceIndex === -1) return [];
+    
+    const match = triggerMatches.find(m => m.resourceIndex === resourceIndex);
+    return match ? match.matchedWords : [];
+  };
   
   const handleResourceClick = (resource: ResourceItem) => {
     if (resource.link) {
@@ -312,39 +347,61 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
           
           {filteredResources.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-4">
-              {filteredResources.map((resource, index) => (
-                <div 
-                  key={index} 
-                  className="border rounded-lg p-4 hover:bg-lavender/30 transition-colors cursor-pointer"
-                  onClick={() => handleResourceClick(resource)}
-                >
-                  <h3 className="font-medium mb-2 text-black">{resource.title}</h3>
-                  <p className="text-sm text-black mb-3">{resource.description}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {resource.tags.map(tag => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                  {resource.emotionCategory && Object.keys(concernsByCategory).includes(resource.emotionCategory) && (
-                    <div className="mt-2">
-                      <Badge className="bg-orange/20 text-orange border-none">
-                        Addresses {resource.emotionCategory.toLowerCase()} concerns
-                      </Badge>
+              {filteredResources.map((resource, index) => {
+                const triggerMatches = getResourceTriggerMatches(resource.title);
+                return (
+                  <div 
+                    key={index} 
+                    className="border rounded-lg p-4 hover:bg-lavender/30 transition-colors cursor-pointer"
+                    onClick={() => handleResourceClick(resource)}
+                  >
+                    <h3 className="font-medium mb-2 text-black">{resource.title}</h3>
+                    <p className="text-sm text-black mb-3">{resource.description}</p>
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {resource.tags.map(tag => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
                     </div>
-                  )}
-                  {resource.link && (
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto text-sm text-orange mt-2" 
-                      onClick={() => window.open(resource.link, "_blank")}
-                    >
-                      Visit resource
-                    </Button>
-                  )}
-                </div>
-              ))}
+                    
+                    {resource.emotionCategory && Object.keys(concernsByCategory).includes(resource.emotionCategory) && (
+                      <div className="mt-2 mb-2">
+                        <Badge className="bg-orange/20 text-orange border-none">
+                          Addresses {resource.emotionCategory.toLowerCase()} concerns
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    {/* Show detected trigger words that matched this resource */}
+                    {triggerMatches.length > 0 && (
+                      <div className="mt-2 mb-2">
+                        <p className="text-xs font-medium text-gray-500 mb-1">Words that triggered this suggestion:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {triggerMatches.map((word, i) => (
+                            <Badge key={i} className="bg-orange/10 text-orange border-orange text-xs">
+                              {word}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {resource.link && (
+                      <Button 
+                        variant="link" 
+                        className="p-0 h-auto text-sm text-orange mt-2" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(resource.link, "_blank");
+                        }}
+                      >
+                        Visit resource
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">
