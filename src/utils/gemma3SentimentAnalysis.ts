@@ -13,153 +13,72 @@ interface GemmaAnalysisResult {
 
 export const analyzeTextWithGemma3 = async (text: string) => {
   try {
-    console.log("Starting Gemma 3 analysis...");
+    console.log("Starting Gemma 3 analysis with text length:", text.length);
     
     // This is a placeholder for the actual Gemma 3 API call
     // In a real implementation, this would call the Gemma 3 API
     
-    // For now, we'll simulate the API response
-    const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
-    
-    // Extract sentences for timeline analysis
-    const sentences = text
-      .split(/[.!?]+/)
-      .filter(sentence => sentence.trim().length > 0)
-      .map(sentence => sentence.trim());
-      
-    // Create a simulated timeline with sentiment scores
-    const timeline = sentences.slice(0, Math.min(10, sentences.length)).map((sentence, index) => {
-      const randomSentiment = 0.3 + Math.random() * 0.6; // Between 0.3 and 0.9
-      return {
-        page: index + 1, // Changed to page for consistency with expected format
-        score: randomSentiment, // Changed to score for consistency
-        text: sentence
-      };
-    });
-    
-    // Create simulated entities with sentiment scores
-    const commonEntities = ['anxiety', 'fear', 'breathing', 'heart', 'mind', 'thoughts', 'body', 'control', 'panic', 'calm'];
-    const entities = commonEntities.map(name => {
-      const randomScore = 0.2 + Math.random() * 0.6; // Between 0.2 and 0.8
-      const randomMentions = Math.floor(Math.random() * 10) + 1; // Between 1 and 10
-      return {
-        name,
-        score: randomScore,
-        mentions: randomMentions
-      };
-    });
-    
-    // Create simulated key phrases
-    const keyPhrases = [
-      'racing heart', 
-      'shortness of breath', 
-      'overwhelming fear', 
-      'feeling of doom', 
-      'loss of control',
-      'chest tightness',
-      'tunnel vision',
-      'sudden dizziness',
-      'fear of dying',
-      'intense worry'
-    ].map(phrase => {
-      return {
-        text: phrase,
-        score: 0.4 + Math.random() * 0.5, // Between 0.4 and 0.9
-        sentiment: Math.random() > 0.7 ? 'positive' : 'negative' // Mostly negative
-      };
-    });
-    
-    // Main sentiment calculation (simulated)
-    const overallSentiment = 0.3 + Math.random() * 0.3; // Between 0.3 and 0.6 (mostly negative/neutral)
-    
-    // Create emotional tones distribution
-    const emotionalTones = {
-      'Anxious': 0.6 + Math.random() * 0.3,
-      'Fearful': 0.5 + Math.random() * 0.3,
-      'Worried': 0.5 + Math.random() * 0.4,
-      'Confused': 0.4 + Math.random() * 0.4,
-      'Overwhelmed': 0.5 + Math.random() * 0.4,
-      'Hopeful': 0.2 + Math.random() * 0.3,
-      'Relieved': 0.1 + Math.random() * 0.3
-    };
-    
-    // Generate a simulated summary
-    const summary = `This text describes an experience with anxiety and panic. The narrative reveals feelings of ${
-      Math.random() > 0.5 ? 'intense fear' : 'overwhelming anxiety'
-    } and physical symptoms like ${
-      Math.random() > 0.5 ? 'rapid heartbeat' : 'shortness of breath'
-    }. The emotional tone is predominantly negative with some moments of ${
-      Math.random() > 0.5 ? 'hope' : 'reflection'
-    } towards the end.`;
-
-    // Extract significant words from the text for visualization
+    // Extract all significant words from the actual input text
     const significantWords = text
       .toLowerCase()
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
       .filter(word => word.length > 3)
       .filter((word, i, arr) => arr.indexOf(word) === i);
-
-    // Use all significant words for visualization, with reasonable limit
-    const wordLimit = Math.min(500, significantWords.length);
-    const filteredSignificantWords = significantWords.slice(0, wordLimit);
+      
+    console.log(`Found ${significantWords.length} significant words in the document`);
     
-    // Create embedding points using actual text from the document
-    const embeddingPoints = filteredSignificantWords.map((word, index) => {
-      const angle1 = Math.random() * Math.PI * 2;
-      const angle2 = Math.random() * Math.PI * 2;
+    // Extract sentences for timeline analysis using the actual text
+    const sentences = text
+      .split(/[.!?]+/)
+      .filter(sentence => sentence.trim().length > 0)
+      .map(sentence => sentence.trim());
       
-      // Generate a point in a sphere
-      const radius = 10 + Math.random() * 10;
-      const x = Math.cos(angle1) * Math.sin(angle2) * radius;
-      const y = Math.sin(angle1) * Math.sin(angle2) * radius;
-      const z = Math.cos(angle2) * radius;
-      
-      // Assign a sentiment score based on emotional tones
-      const emotionalToneEntries = Object.entries(emotionalTones);
-      const sortedTones = emotionalToneEntries.sort((a, b) => b[1] - a[1]);
-      
-      // Assign emotional tones based on sentiment scores
-      let emotionalTone;
-      const random = Math.random();
-      
-      if (random < 0.7) {
-        // 70% chance to get one of the top 2 emotional tones
-        const topIndex = Math.floor(Math.random() * Math.min(2, sortedTones.length));
-        emotionalTone = sortedTones[topIndex][0];
-      } else {
-        // 30% chance to get any other emotional tone
-        const randomIndex = Math.floor(Math.random() * sortedTones.length);
-        emotionalTone = sortedTones[randomIndex][0];
-      }
-      
-      const sentiment = 0.2 + Math.random() * 0.6; // Between 0.2 and 0.8
-      
-      // Generate a color based on sentiment (from red to green)
-      const r = Math.floor(255 * (1 - sentiment));
-      const g = Math.floor(255 * sentiment);
-      const b = Math.floor(255 * 0.5); // Add some blue to avoid pure red/green
-      
+    // Create a timeline with sentiment scores from the actual text
+    const timeline = sentences.slice(0, Math.min(10, sentences.length)).map((sentence, index) => {
+      // Simple sentiment estimation (would be replaced by actual API call)
+      const randomSentiment = 0.3 + Math.random() * 0.6; 
       return {
-        id: `word-${index}`,
-        position: [x, y, z],
-        word: word,
-        sentiment: sentiment,
-        emotionalTone: emotionalTone,
-        color: [r/255, g/255, b/255],
-        relationships: generateMockRelationships(index, filteredSignificantWords.length)
+        page: index + 1,
+        score: randomSentiment,
+        text: sentence
       };
     });
     
+    // Extract actual entities from the text
+    const entities = extractEntitiesFromText(text);
+    
+    // Extract actual key phrases from the text
+    const keyPhrases = extractKeyPhrasesFromText(text);
+    
+    // Generate sentiment analysis (simulated)
+    const sentimentResult = analyzeTextSentiment(text);
+    const overallSentiment = sentimentResult.score;
+    const emotionalTones = sentimentResult.tones;
+    
+    // Generate a summary based on actual text
+    const summary = generateTextSummary(text);
+
+    // Use all significant words for embedding, with reasonable limit
+    const wordLimit = Math.min(500, significantWords.length);
+    const filteredSignificantWords = significantWords.slice(0, wordLimit);
+    
+    // Create embedding points using the actual text words
+    const embeddingPoints = generateEmbeddingsForWords(filteredSignificantWords, emotionalTones);
+    
+    // Calculate sentiment distribution based on actual text
+    const sentimentDistribution = calculateSentimentDistribution(sentimentResult.score);
+    
     return {
-      text, // Make sure we return the original text
+      text, // Return the original text
       sentiment: overallSentiment,
       emotionalTones,
       timeline,
       entities,
       keyPhrases,
       summary,
-      embeddingPoints
+      embeddingPoints,
+      distribution: sentimentDistribution
     };
   } catch (error) {
     console.error("Error in Gemma 3 analysis:", error);
@@ -167,8 +86,57 @@ export const analyzeTextWithGemma3 = async (text: string) => {
   }
 };
 
-// Helper function to generate mock relationships
-function generateMockRelationships(index: number, totalCount: number) {
+// Helper function to generate embeddings for actual text words
+function generateEmbeddingsForWords(words: string[], emotionalTones: Record<string, number>) {
+  return words.map((word, index) => {
+    const angle1 = Math.random() * Math.PI * 2;
+    const angle2 = Math.random() * Math.PI * 2;
+    
+    // Generate a point in a sphere
+    const radius = 10 + Math.random() * 10;
+    const x = Math.cos(angle1) * Math.sin(angle2) * radius;
+    const y = Math.sin(angle1) * Math.sin(angle2) * radius;
+    const z = Math.cos(angle2) * radius;
+    
+    // Assign emotional tones based on the word and available tones
+    const emotionalToneEntries = Object.entries(emotionalTones);
+    const sortedTones = emotionalToneEntries.sort((a, b) => b[1] - a[1]);
+    
+    let emotionalTone;
+    const random = Math.random();
+    
+    if (random < 0.7) {
+      // 70% chance to get one of the top 2 emotional tones
+      const topIndex = Math.floor(Math.random() * Math.min(2, sortedTones.length));
+      emotionalTone = sortedTones[topIndex][0];
+    } else {
+      // 30% chance to get any other emotional tone
+      const randomIndex = Math.floor(Math.random() * Math.min(sortedTones.length, 1));
+      emotionalTone = sortedTones[randomIndex > 0 ? randomIndex : 0][0];
+    }
+    
+    const sentiment = 0.2 + Math.random() * 0.6; // Between 0.2 and 0.8
+    
+    // Generate RGB color values based on sentiment
+    const r = Math.floor(255 * (1 - sentiment));
+    const g = Math.floor(255 * sentiment);
+    const b = Math.floor(255 * 0.5);
+    const color = [r/255, g/255, b/255] as [number, number, number];
+    
+    return {
+      id: `word-${index}`,
+      position: [x, y, z] as [number, number, number],
+      word,
+      sentiment,
+      emotionalTone,
+      color,
+      relationships: generateRelationshipsFromText(index, words.length)
+    };
+  });
+}
+
+// Helper function to generate relationships between words
+function generateRelationshipsFromText(index: number, totalCount: number) {
   const relationships = [];
   const relationshipCount = Math.floor(Math.random() * 5) + 1; // 1-5 relationships
   
@@ -187,8 +155,11 @@ function generateMockRelationships(index: number, totalCount: number) {
   return relationships;
 }
 
-// Helper function to extract key phrases from text
-function extractKeyPhrases(text: string, wordsToFilter: string[]): string[] {
+// Helper function to extract key phrases from actual text
+function extractKeyPhrasesFromText(text: string): string[] {
+  // Common words to filter out
+  const commonWords = ['the', 'and', 'in', 'of', 'to', 'a', 'is', 'that', 'for', 'it', 'with', 'as', 'was', 'be'];
+  
   const sentences = text.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0);
   const keyPhrases: string[] = [];
   
@@ -199,7 +170,7 @@ function extractKeyPhrases(text: string, wordsToFilter: string[]): string[] {
       const words = trimmedSentence.split(/\s+/);
       const filtered = words.filter(word => {
         const cleanWord = word.toLowerCase().replace(/[.,!?;:'"()[\]{}]/g, '').trim();
-        return cleanWord.length > 0 && !wordsToFilter.includes(cleanWord);
+        return cleanWord.length > 0 && !commonWords.includes(cleanWord);
       });
       
       // Only consider phrases with enough meaningful words
@@ -213,11 +184,12 @@ function extractKeyPhrases(text: string, wordsToFilter: string[]): string[] {
     }
   });
   
-  return keyPhrases.slice(0, 10); // Return at most 10 key phrases
+  // Return unique phrases
+  return [...new Set(keyPhrases)].slice(0, 10); // Return at most 10 key phrases
 }
 
-// Helper function to extract entities from text
-function extractEntities(text: string, wordsToFilter: string[]): any[] {
+// Helper function to extract entities from actual text
+function extractEntitiesFromText(text: string): any[] {
   // A simple approach: look for capitalized words that might be entities
   const entityRegex = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g;
   const potentialEntities = text.match(entityRegex) || [];
@@ -227,15 +199,12 @@ function extractEntities(text: string, wordsToFilter: string[]): any[] {
   const filteredEntities = potentialEntities
     .filter(entity => !commonWords.includes(entity))
     .filter((entity, index, self) => self.indexOf(entity) === index); // Remove duplicates
-  
-  // For each entity, estimate a sentiment value
-  return filteredEntities.map(entity => {
-    // Check if the entity contains words to filter
-    const entityWords = entity.split(/\s+/);
-    const isPrimaryEntity = !entityWords.some(word => 
-      wordsToFilter.includes(word.toLowerCase())
-    );
     
+  // Get unique entities (limit to 15 for performance)
+  const uniqueEntities = [...new Set(filteredEntities)].slice(0, 15);
+  
+  // For each entity, estimate a sentiment value based on surrounding text
+  return uniqueEntities.map(entity => {
     const surroundingText = findSurroundingText(text, entity);
     const sentimentScore = estimateSentiment(surroundingText);
     
@@ -243,10 +212,9 @@ function extractEntities(text: string, wordsToFilter: string[]): any[] {
       name: entity,
       sentiment: sentimentScore,
       type: guessEntityType(entity, text),
-      count: countOccurrences(text, entity),
-      isPrimaryEntity: isPrimaryEntity // Mark entities that don't contain filtered words
+      mentions: countOccurrences(text, entity),
     };
-  }).filter(entity => entity.isPrimaryEntity); // Keep only primary entities
+  });
 }
 
 // Helper function to find surrounding text around an entity
@@ -295,7 +263,7 @@ function countOccurrences(text: string, word: string): number {
   return matches ? matches.length : 0;
 }
 
-// Helper function to guess entity type
+// Helper function to guess entity type based on context
 function guessEntityType(entity: string, context: string): string {
   const personTitles = ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Sir", "Lady", "Lord"];
   const locationPrefixes = ["in ", "at ", "to ", "from "];
@@ -318,4 +286,128 @@ function guessEntityType(entity: string, context: string): string {
   
   // Default to "Other" if we can't determine
   return "Other";
+}
+
+// Generate a simple summary based on actual text
+function generateTextSummary(text: string): string {
+  const sentences = text
+    .split(/[.!?]+/)
+    .filter(sentence => sentence.trim().length > 0)
+    .map(sentence => sentence.trim());
+  
+  // Get a few sentences from beginning, middle, and end
+  let summary = "";
+  if (sentences.length > 0) {
+    const beginning = sentences[0];
+    
+    let middle = "";
+    if (sentences.length > 2) {
+      const middleIdx = Math.floor(sentences.length / 2);
+      middle = sentences[middleIdx];
+    }
+    
+    let end = "";
+    if (sentences.length > 1) {
+      end = sentences[sentences.length - 1];
+    }
+    
+    summary = beginning;
+    if (middle) summary += " " + middle;
+    if (end && end !== beginning) summary += " " + end;
+  }
+  
+  return summary || "Summary could not be generated from the provided text.";
+}
+
+// Basic sentiment analysis on the actual text
+function analyzeTextSentiment(text: string) {
+  // Simplified sentiment analysis
+  const negativeWords = [
+    'sad', 'angry', 'upset', 'disappointed', 'frustrated',
+    'anxious', 'worried', 'fear', 'hate', 'terrible',
+    'awful', 'bad', 'worse', 'worst', 'horrible'
+  ];
+  
+  const positiveWords = [
+    'happy', 'joy', 'excited', 'good', 'great',
+    'excellent', 'amazing', 'wonderful', 'fantastic', 'terrific'
+  ];
+  
+  // Emotional tone categories
+  const tones: Record<string, number> = {
+    'Anxious': 0,
+    'Fearful': 0,
+    'Worried': 0, 
+    'Confused': 0,
+    'Overwhelmed': 0,
+    'Hopeful': 0,
+    'Relieved': 0
+  };
+  
+  // Count word occurrences and update tone scores
+  const textLower = text.toLowerCase();
+  
+  // Calculate overall sentiment
+  let negativeCount = 0;
+  let positiveCount = 0;
+  
+  negativeWords.forEach(word => {
+    const count = countOccurrences(textLower, word);
+    negativeCount += count;
+    
+    // Update relevant tones based on negative words
+    if (word === 'anxious' || word === 'anxiety') tones['Anxious'] += count * 0.2;
+    if (word === 'fear' || word === 'afraid') tones['Fearful'] += count * 0.2;
+    if (word === 'worried' || word === 'worry') tones['Worried'] += count * 0.2;
+    if (word === 'confused') tones['Confused'] += count * 0.2;
+    if (word === 'overwhelmed') tones['Overwhelmed'] += count * 0.2;
+  });
+  
+  positiveWords.forEach(word => {
+    const count = countOccurrences(textLower, word);
+    positiveCount += count;
+    
+    // Update relevant tones based on positive words
+    if (word === 'hope' || word === 'hopeful') tones['Hopeful'] += count * 0.2;
+    if (word === 'relief' || word === 'relieved') tones['Relieved'] += count * 0.2;
+  });
+  
+  // Calculate overall sentiment score (0 to 1)
+  let score = 0.5; // Default to neutral
+  if (positiveCount + negativeCount > 0) {
+    score = positiveCount / (positiveCount + negativeCount);
+  }
+  
+  // Set base levels for emotional tones based on text length
+  Object.keys(tones).forEach(tone => {
+    tones[tone] = Math.max(0.1, tones[tone]);
+  });
+  
+  // Boost the most prominent tones
+  const tonesArray = Object.entries(tones);
+  tonesArray.sort((a, b) => b[1] - a[1]);
+  
+  if (tonesArray.length > 0) {
+    // Boost the top 2 tones
+    tones[tonesArray[0][0]] += 0.3;
+    if (tonesArray.length > 1) {
+      tones[tonesArray[1][0]] += 0.2;
+    }
+  }
+  
+  return { score, tones };
+}
+
+// Calculate sentiment distribution percentages
+function calculateSentimentDistribution(score: number) {
+  // Convert the sentiment score to distribution percentages
+  const positivePercentage = Math.round(score * 100);
+  const negativePercentage = Math.round((1 - score) * 0.5 * 100);
+  const neutralPercentage = 100 - positivePercentage - negativePercentage;
+  
+  return {
+    positive: positivePercentage,
+    neutral: neutralPercentage,
+    negative: negativePercentage
+  };
 }

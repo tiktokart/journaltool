@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileDown, FileText, Calendar } from "lucide-react";
@@ -216,9 +215,6 @@ export const PdfExport = ({ sentimentData }: PdfExportProps) => {
         <CardTitle>Export Analysis</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground mb-4">
-          {t("exportDescription")}
-        </p>
         <div className="flex flex-col space-y-2">
           <Button
             onClick={exportToPdf}

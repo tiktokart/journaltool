@@ -41,11 +41,10 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Generate timeline
     const timeline = await generateTimeline(text);
     
-    // Generate embedding points with actual user data
-    // The error was here - passing true as a second parameter when it's not expected
+    // Generate embedding points with actual text data
     const embeddingPoints = await generateEmbeddingPoints(text);
     
-    console.log("Generated embedding points with user data:", embeddingPoints.length);
+    console.log("Generated embedding points:", embeddingPoints.length);
     
     // Make sure to include the entire text in the result
     return {
