@@ -1,9 +1,9 @@
-
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Point } from '@/types/embedding';
 import gsap from 'gsap';
+import { getHomepageEmotionColor } from '@/utils/colorUtils';
 
 interface EmbeddingSceneProps {
   points: Point[];
@@ -39,6 +39,7 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   selectedPoint,
   comparisonPoint,
   isCompareMode = false,
+  depressedJournalReference = false,
   onFocusEmotionalGroup,
   selectedEmotionalGroup,
   onResetView,
@@ -68,6 +69,9 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   const rotationRef = useRef<THREE.Vector3>(new THREE.Vector3(0.0001, 0.0002, 0));
   const filteredPointsRef = useRef<Point[]>([]);
   const activeEmotionalGroupsRef = useRef<string[]>([]);
+
+  // Determine if we're on the homepage
+  const isHomepage = window.location.pathname === '/';
 
   useEffect(() => {
     if (!points.length) return;
@@ -307,8 +311,26 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
       const isSelected = selectedPoint && point.id === selectedPoint.id;
       const isComparison = comparisonPoint && point.id === comparisonPoint.id;
       
+      // Check if we should use homepage-specific colors
+      let color: THREE.Color;
+      
+      if (isHomepage && point.emotionalTone) {
+        // Use our custom colors for homepage emotional groups
+        const homepageColor = getHomepageEmotionColor(point.emotionalTone, true);
+        if (homepageColor) {
+          // Convert hex to THREE.Color
+          color = new THREE.Color(homepageColor);
+        } else {
+          // Fallback to the point's original color
+          color = new THREE.Color(point.color[0], point.color[1], point.color[2]);
+        }
+      } else {
+        // Use the default color from point data for dashboard
+        color = new THREE.Color(point.color[0], point.color[1], point.color[2]);
+      }
+      
       const material = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(point.color[0], point.color[1], point.color[2]),
+        color: color,
         transparent: true,
         opacity: 0.8
       });

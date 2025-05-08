@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { WellbeingResources } from './WellbeingResources';
 import { getEmotionColor as getBertEmotionColor } from '../utils/bertSentimentAnalysis';
+import { getHomepageEmotionColor } from '@/utils/colorUtils';
+import { useLocation } from 'react-router-dom';
 
 // Helper function to convert hex color string to [r,g,b] tuple
 const hexToRgbTuple = (hex: string): [number, number, number] => {
@@ -46,6 +48,8 @@ export const DocumentEmbedding = ({
   wordCount
 }: DocumentEmbeddingProps) => {
   const { t } = useLanguage();
+  const location = useLocation();
+  const isHomepage = location.pathname === '/';
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
@@ -65,7 +69,15 @@ export const DocumentEmbedding = ({
 
   // Unified color function for emotional tones - ensuring consistency across the app
   const getUnifiedEmotionColor = (emotion: string): string => {
-    // Prioritize BERT emotional colors for consistency
+    // For homepage, use our special random pastel colors
+    if (isHomepage) {
+      const homepageColor = getHomepageEmotionColor(emotion, true);
+      if (homepageColor) {
+        return homepageColor;
+      }
+    }
+    
+    // For dashboard or fallback, use the standard colors
     const bertColor = getBertEmotionColor(emotion);
     if (bertColor !== "#95A5A6") { // Not the default gray
       return bertColor;
