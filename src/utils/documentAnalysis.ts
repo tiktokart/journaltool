@@ -9,7 +9,7 @@ import { extractTextFromPdf } from './pdfExtraction';
 
 export const analyzePdfContent = async (file: File, pdfText: string) => {
   try {
-    console.log("Starting PDF analysis...");
+    console.log("Starting PDF analysis with BERT...");
     
     // Use the text provided directly if available, otherwise extract from PDF
     let text = pdfText;
@@ -44,7 +44,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Generate embedding points with actual text data
     const embeddingPoints = await generateEmbeddingPoints(text);
     
-    console.log("Analysis complete with the following data:");
+    console.log("BERT Analysis complete with the following data:");
     console.log(`- Word count: ${wordCount}`);
     console.log(`- Embedding points: ${embeddingPoints.length}`);
     console.log(`- Key phrases: ${keyPhrases.length}`);

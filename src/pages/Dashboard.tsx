@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,6 @@ import { Header } from "@/components/Header";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Point } from "@/types/embedding";
-import { generateMockPoints } from "@/utils/embeddingUtils";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
 import { WordComparisonController } from "@/components/WordComparisonController";
 import { ViewDetailedAnalysis } from "@/components/ViewDetailedAnalysis";
@@ -16,7 +16,6 @@ import { FileInfoDisplay } from "@/components/FileInfoDisplay";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
 import { PdfExport } from "@/components/PdfExport";
 import { TextEmotionViewer } from "@/components/TextEmotionViewer";
-import { analyzeTextWithGemma3 } from "@/utils/gemma3SentimentAnalysis";
 import { WellbeingResources } from "@/components/WellbeingResources";
 import { JournalInput } from "@/components/JournalInput";
 import { JournalCache } from "@/components/JournalCache";
@@ -39,7 +38,6 @@ const Dashboard = () => {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   const [visibleClusterCount, setVisibleClusterCount] = useState(8);
-  const [analysisMethod, setAnalysisMethod] = useState<"bert" | "gemma3">("bert");
   const [journalText, setJournalText] = useState<string>("");
   const [monthlyReflectionText, setMonthlyReflectionText] = useState<string>("");
 
@@ -47,21 +45,6 @@ const Dashboard = () => {
   const [dailyPlan, setDailyPlan] = useState<string>("");
   const [weeklyPlan, setWeeklyPlan] = useState<string>("");
   const [monthlyPlan, setMonthlyPlan] = useState<string>("");
-
-  // Load analysis method preference
-  useEffect(() => {
-    const storedMethod = localStorage.getItem("analysisMethod");
-    if (storedMethod === "gemma3" || storedMethod === "bert") {
-      setAnalysisMethod(storedMethod as "bert" | "gemma3");
-    }
-  }, []);
-
-  // Save analysis method preference
-  useEffect(() => {
-    if (analysisMethod) {
-      localStorage.setItem("analysisMethod", analysisMethod);
-    }
-  }, [analysisMethod]);
 
   // Load perfect life plans from local storage on component mount
   useEffect(() => {
@@ -158,7 +141,6 @@ const Dashboard = () => {
 
     setIsAnalyzing(true);
     setAnalysisComplete(false);
-    setAnalysisMethod("bert");
     
     try {
       toast.info("Starting document analysis with BERT...");
@@ -196,135 +178,6 @@ const Dashboard = () => {
     } catch (error) {
       toast.error("Error analyzing document with BERT");
       console.error("BERT analysis error:", error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const analyzeWithGemma3 = async () => {
-    if (!file && !pdfText) {
-      toast.error("Please upload a PDF file or enter journal text first");
-      return;
-    }
-
-    if (!pdfText || pdfText.trim().length === 0) {
-      toast.error("No readable text found to analyze");
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setAnalysisComplete(false);
-    setAnalysisMethod("gemma3");
-    
-    try {
-      toast.info("Starting document analysis with Gemma 3...");
-      
-      const gemma3Results = await analyzeTextWithGemma3(pdfText);
-      console.log("Gemma3 results received:", gemma3Results);
-      
-      // Extract significant words from the text for visualization
-      const significantWords = pdfText
-        .toLowerCase()
-        .replace(/[^\w\s]/g, ' ')
-        .split(/\s+/)
-        .filter(word => word.length > 3)
-        .filter((word, i, arr) => arr.indexOf(word) === i);
-      
-      // Use all significant words for visualization, with reasonable limit
-      const wordLimit = Math.min(500, significantWords.length);
-      const filteredSignificantWords = significantWords.slice(0, wordLimit);
-      
-      // Create embedding points using actual text from the document
-      const mockPoints = generateMockPoints(false, filteredSignificantWords.length);
-      
-      // Assign real words from the document to the points instead of random words
-      const embeddingPoints = mockPoints.map((point, index) => {
-        const emotionalToneEntries = Object.entries(gemma3Results.emotionalTones || {});
-        const sortedTones = emotionalToneEntries.sort((a, b) => b[1] - a[1]);
-        
-        // Assign emotional tones based on sentiment scores
-        let emotionalTone;
-        const random = Math.random();
-        
-        if (random < 0.7) {
-          // 70% chance to get one of the top 2 emotional tones
-          const topIndex = Math.floor(Math.random() * Math.min(2, sortedTones.length));
-          emotionalTone = sortedTones[topIndex][0];
-        } else {
-          // 30% chance to get any other emotional tone
-          const randomIndex = Math.floor(Math.random() * Math.min(sortedTones.length, 1));
-          emotionalTone = sortedTones[randomIndex > 0 ? randomIndex : 0][0];
-        }
-        
-        // Assign the actual word from the document
-        const wordIndex = index % filteredSignificantWords.length;
-        
-        return {
-          ...point,
-          word: filteredSignificantWords[wordIndex],
-          emotionalTone,
-          color: point.color, // Ensure color is included
-          relationships: mockPoints
-            .filter(p => p.id !== point.id)
-            .slice(0, 5)
-            .map(p => ({ id: p.id, strength: Math.random() }))
-        };
-      });
-      
-      // Calculate sentiment distribution
-      const positivePercentage = Math.round(gemma3Results.sentiment * 100);
-      const negativePercentage = Math.round((1 - gemma3Results.sentiment) * 0.5 * 100);
-      const neutralPercentage = 100 - positivePercentage - negativePercentage;
-      
-      const fileName = file ? file.name : `Journal_Entry_${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
-      const fileSize = file ? file.size : new Blob([pdfText]).size;
-      
-      const results = {
-        fileName,
-        fileSize,
-        wordCount: pdfText.split(/\s+/).length,
-        pdfTextLength: pdfText.length,
-        pdfText: pdfText,
-        text: pdfText, // Make sure to include the text property
-        sentiment: gemma3Results.sentiment,
-        summary: gemma3Results.summary || "Analysis complete with Gemma 3 model.",
-        embeddingPoints,
-        sourceDescription: "Analyzed with Gemma 3 Model",
-        overallSentiment: {
-          score: gemma3Results.sentiment,
-          label: gemma3Results.sentiment > 0.6 ? "Positive" : (gemma3Results.sentiment > 0.4 ? "Neutral" : "Negative")
-        },
-        distribution: {
-          positive: positivePercentage,
-          neutral: neutralPercentage,
-          negative: negativePercentage
-        },
-        timeline: gemma3Results.timeline || [],
-        entities: gemma3Results.entities || [],
-        keyPhrases: gemma3Results.keyPhrases || []
-      };
-      
-      console.log("Gemma 3 analysis results:", results);
-      setSentimentData(results);
-      setFilteredPoints(results.embeddingPoints || []);
-      setAnalysisComplete(true);
-      
-      // Make sure points are exposed to window for visualization connection
-      window.documentEmbeddingPoints = results.embeddingPoints;
-      
-      const uniqueResultWords = results.embeddingPoints
-        .map((point: Point) => point.word)
-        .filter((word: string, index: number, self: string[]) => 
-          word && self.indexOf(word) === index
-        )
-        .sort();
-      
-      setUniqueWords(uniqueResultWords);
-      
-      toast.success(`Gemma 3 analysis completed! Analyzed ${results.pdfTextLength} characters and found ${filteredSignificantWords.length} unique words.`);
-    } catch (error) {
-      toast.error("Error analyzing document with Gemma 3");
-      console.error("Gemma 3 analysis error:", error);
     } finally {
       setIsAnalyzing(false);
     }
@@ -489,7 +342,7 @@ const Dashboard = () => {
           {/* Document Analysis Section - With updated background */}
           <Card className="border border-border shadow-md bg-white">
             <CardHeader>
-              <CardTitle className="text-black">Document Analysis with Data Models</CardTitle>
+              <CardTitle className="text-black">Document Analysis with BERT Model</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-3 gap-6">
@@ -519,25 +372,12 @@ const Dashboard = () => {
                       disabled={(!file && !pdfText) || isAnalyzing}
                       className="w-full bg-orange hover:bg-orange/90 text-white"
                     >
-                      {isAnalyzing && analysisMethod === "bert" ? (
+                      {isAnalyzing ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Analyzing with BERT...
                         </>
                       ) : "Analyze with BERT"}
-                    </Button>
-                    <Button 
-                      onClick={analyzeWithGemma3} 
-                      disabled={(!file && !pdfText) || isAnalyzing}
-                      variant="outline"
-                      className="w-full border-orange text-orange hover:bg-orange/10"
-                    >
-                      {isAnalyzing && analysisMethod === "gemma3" ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Analyzing with Gemma 3...
-                        </>
-                      ) : "Analyze with Gemma 3"}
                     </Button>
                   </div>
                 </div>
