@@ -42,7 +42,8 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     const timeline = await generateTimeline(text);
     
     // Generate embedding points with actual user data
-    const embeddingPoints = await generateEmbeddingPoints(text, true); // Force using actual text
+    // The error was here - passing true as a second parameter when it's not expected
+    const embeddingPoints = await generateEmbeddingPoints(text);
     
     console.log("Generated embedding points with user data:", embeddingPoints.length);
     
