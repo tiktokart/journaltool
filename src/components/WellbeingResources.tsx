@@ -14,10 +14,16 @@ interface ResourceItem {
   tags: string[];
   link?: string;
   triggerWords: string[]; // Words that trigger this resource
+  emotionCategory?: string; // The emotion category this resource addresses
 }
 
 interface WellbeingResourcesProps {
   embeddingPoints: Point[];
+}
+
+interface DetectedConcern {
+  word: string;
+  category: string;
 }
 
 export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps) => {
@@ -28,7 +34,15 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
   const [needsSupport, setNeedsSupport] = useState<boolean>(false);
   const [emotionalTones, setEmotionalTones] = useState<Map<string, number>>(new Map());
   const [hasNegativeWords, setHasNegativeWords] = useState<boolean>(false);
-  const [detectedNegativeWords, setDetectedNegativeWords] = useState<string[]>([]);
+  const [detectedConcerns, setDetectedConcerns] = useState<DetectedConcern[]>([]);
+
+  // Define the negative emotion categories we want to detect
+  const negativeEmotionCategories = {
+    'Anger': ['angry', 'mad', 'furious', 'irritated', 'annoyed', 'rage', 'outraged', 'fury', 'hate', 'hatred'],
+    'Fear': ['afraid', 'scared', 'frightened', 'terrified', 'anxious', 'nervous', 'worried', 'panic', 'fear'],
+    'Disgust': ['disgusted', 'repulsed', 'revolted', 'nauseated', 'loathing', 'dislike', 'aversion', 'hate'],
+    'Sadness': ['sad', 'depressed', 'unhappy', 'miserable', 'gloomy', 'heartbroken', 'grief', 'despair', 'sorry']
+  };
 
   useEffect(() => {
     if (!embeddingPoints || embeddingPoints.length === 0) return;
@@ -41,7 +55,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     const avgSentiment = sentimentTotal / embeddingPoints.length;
     setAverageSentiment(avgSentiment);
     
-    // Check if there are any negative words in the text
+    // Check if there are any negative words in the text that match our categories
     const negativeWords = [
       'sad', 'angry', 'upset', 'disappointed', 'frustrated',
       'anxious', 'worried', 'fear', 'hate', 'terrible',
@@ -54,26 +68,33 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     
     const wordsInText = embeddingPoints.map(point => point.word?.toLowerCase()).filter(Boolean);
     
-    // Find all negative words in the text
-    const foundNegativeWordsList: string[] = [];
+    // Detect concerns with their categories
+    const foundConcerns: DetectedConcern[] = [];
+    
     wordsInText.forEach(word => {
-      if (word) {
-        negativeWords.forEach(negWord => {
-          if (word.includes(negWord) && !foundNegativeWordsList.includes(negWord)) {
-            foundNegativeWordsList.push(negWord);
+      if (!word) return;
+      
+      // Check each emotion category
+      Object.entries(negativeEmotionCategories).forEach(([category, keywords]) => {
+        keywords.forEach(keyword => {
+          if (word.includes(keyword) && !foundConcerns.some(c => c.word === keyword)) {
+            foundConcerns.push({
+              word: keyword,
+              category
+            });
           }
         });
-      }
+      });
     });
     
-    // Set the detected negative words
-    setDetectedNegativeWords(foundNegativeWordsList);
+    // Set the detected concerns
+    setDetectedConcerns(foundConcerns);
     
-    // Set if any negative words were found
-    const foundNegativeWords = foundNegativeWordsList.length > 0;
+    // Set if any negative words were found in our specific categories
+    const foundNegativeWords = foundConcerns.length > 0;
     setHasNegativeWords(foundNegativeWords);
     
-    // Only show support notice if sentiment is low AND there are negative words
+    // Only show support notice if sentiment is low AND there are negative words in our categories
     setNeedsSupport(avgSentiment < 0.4 && foundNegativeWords);
     
     // Count emotional tones
@@ -86,26 +107,36 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     });
     setEmotionalTones(emotions);
     
-    // Create a master list of all available resources with their trigger words
+    // Create a master list of all available resources with their trigger words and emotion categories
     const allResources: ResourceItem[] = [
       {
         title: "Immediate Support Resources",
         description: "If you're feeling overwhelmed, talking with someone can help. Crisis lines provide immediate support.",
         tags: ["crisis", "support", "immediate"],
         link: "https://988lifeline.org/",
-        triggerWords: ["overwhelm", "crisis", "suicid", "help", "desperate", "emergency", "panic", "hopeless"]
+        triggerWords: ["overwhelm", "crisis", "suicid", "help", "desperate", "emergency", "panic", "hopeless"],
+        emotionCategory: "Fear"
       },
       {
         title: "Managing Difficult Emotions",
         description: "Techniques like deep breathing, mindfulness, and gentle movement can help regulate emotions.",
         tags: ["self-care", "emotions", "regulation"],
-        triggerWords: ["sad", "depress", "anxious", "anxiet", "worry", "stress", "emotion", "feel", "overwhelm", "difficult"]
+        triggerWords: ["sad", "depress", "anxiet", "worry", "stress", "emotion", "feel", "overwhelm", "difficult"],
+        emotionCategory: "Sadness"
       },
       {
         title: "Healthy Expression of Anger",
         description: "Learn to recognize anger triggers and develop constructive ways to express and channel anger.",
         tags: ["anger", "management", "expression"],
-        triggerWords: ["anger", "angry", "mad", "rage", "furious", "frustrat", "irritat", "upset"]
+        triggerWords: ["anger", "angry", "mad", "rage", "furious", "frustrat", "irritat", "upset"],
+        emotionCategory: "Anger"
+      },
+      {
+        title: "Coping with Negative Feelings",
+        description: "Strategies for dealing with disgust, aversion, and other challenging emotions.",
+        tags: ["coping", "negative", "emotions"],
+        triggerWords: ["disgust", "hate", "avers", "loath", "repuls", "revolt", "nauseat"],
+        emotionCategory: "Disgust"
       },
       {
         title: "Daily Wellness Practices",
@@ -117,13 +148,18 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     
     setResources(allResources);
     
-    // Extract all words from embedding points
-    const relevantResources = allResources.filter(resource => {
-      // Check if any trigger word is present in the text
-      return resource.triggerWords.some(triggerWord => 
-        wordsInText.some(word => word && word.includes(triggerWord))
+    // Filter resources based on detected concerns
+    let relevantResources: ResourceItem[] = [];
+    
+    if (foundConcerns.length > 0) {
+      // Get the unique categories from our concerns
+      const detectedCategories = [...new Set(foundConcerns.map(c => c.category))];
+      
+      // Get resources that match these categories
+      relevantResources = allResources.filter(resource => 
+        resource.emotionCategory && detectedCategories.includes(resource.emotionCategory)
       );
-    });
+    }
     
     // If no specific resources match but sentiment is low AND there are negative words, add the general support resource
     if (relevantResources.length === 0 && avgSentiment < 0.4 && foundNegativeWords) {
@@ -131,6 +167,16 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
       if (supportResource) {
         relevantResources.push(supportResource);
       }
+    }
+    
+    // If no emotion-specific resources match, fall back to trigger word matching
+    if (relevantResources.length === 0) {
+      relevantResources = allResources.filter(resource => {
+        // Check if any trigger word is present in the text
+        return resource.triggerWords.some(triggerWord => 
+          wordsInText.some(word => word && word.includes(triggerWord))
+        );
+      });
     }
     
     // Always include daily wellness practices if no other resources match
@@ -155,6 +201,15 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
   if (!embeddingPoints || embeddingPoints.length === 0) {
     return null;
   }
+
+  // Group concerns by category for display
+  const concernsByCategory: Record<string, string[]> = {};
+  detectedConcerns.forEach(concern => {
+    if (!concernsByCategory[concern.category]) {
+      concernsByCategory[concern.category] = [];
+    }
+    concernsByCategory[concern.category].push(concern.word);
+  });
 
   return (
     <div>
@@ -181,17 +236,24 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
             </div>
           )}
           
-          {hasNegativeWords && detectedNegativeWords.length > 0 && (
+          {hasNegativeWords && Object.keys(concernsByCategory).length > 0 && (
             <div className="bg-gray-100 p-4 rounded-lg mb-4">
               <div className="flex items-start">
                 <AlertTriangle className="h-5 w-5 mr-2 text-orange mt-0.5" />
                 <div>
                   <p className="font-medium text-black">Detected concerns:</p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {detectedNegativeWords.map((word, index) => (
-                      <Badge key={index} variant="outline" className="bg-orange/10 text-orange border-orange">
-                        {word}
-                      </Badge>
+                  <div className="mt-2 space-y-2">
+                    {Object.entries(concernsByCategory).map(([category, words]) => (
+                      <div key={category} className="mb-2">
+                        <span className="text-sm font-medium text-gray-700">{category}:</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {words.map((word, index) => (
+                            <Badge key={index} variant="outline" className="bg-orange/10 text-orange border-orange">
+                              {word}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                   <p className="text-sm text-gray-600 mt-2">
@@ -219,6 +281,13 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
                       </Badge>
                     ))}
                   </div>
+                  {resource.emotionCategory && Object.keys(concernsByCategory).includes(resource.emotionCategory) && (
+                    <div className="mt-2">
+                      <Badge className="bg-orange/20 text-orange border-none">
+                        Addresses {resource.emotionCategory.toLowerCase()} concerns
+                      </Badge>
+                    </div>
+                  )}
                   {resource.link && (
                     <Button 
                       variant="link" 
