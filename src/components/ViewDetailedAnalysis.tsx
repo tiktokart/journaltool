@@ -53,7 +53,7 @@ export const ViewDetailedAnalysis = ({
     return `This document contains ${wordCount} words, ${sentenceCount} sentences, and approximately ${paragraphCount} paragraphs.`;
   };
   
-  // More comprehensive extraction of emotional actions/verbs from the text
+  // More comprehensive extraction of emotional actions/verbs from the text, excluding helping verbs and to be verbs
   const extractEmotionalTopics = (): EmotionalTopic[] => {
     if (!displayText) return [];
     
@@ -71,12 +71,21 @@ export const ViewDetailedAnalysis = ({
       "anticipation": ["planning", "preparation", "awaiting", "expectation", "prospect", "future", "hope", "countdown", "anticipate", "expect"]
     };
     
+    // List of helping verbs and to be verbs to exclude
+    const verbsToExclude = [
+      "is", "are", "am", "was", "were", "be", "being", "been", 
+      "have", "has", "had", "do", "does", "did",
+      "can", "could", "shall", "should", "will", "would", "may", "might", "must",
+      "get", "got", "getting", "goes", "going", "come", "comes", "coming"
+    ];
+    
     // Count actual instances of action verbs
     const actionVerbCounts: Record<string, number> = {};
     
     // First, parse through whole text to identify action verbs and count instances
     words.forEach(word => {
       if (word.length < 3) return; // Skip short words
+      if (verbsToExclude.includes(word)) return; // Skip helping verbs and to be verbs
       
       // Check if this word is in our emotion keywords lists
       for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
@@ -90,7 +99,7 @@ export const ViewDetailedAnalysis = ({
     // Count all words in the text (even those not in our predefined lists)
     const wordFrequency: Record<string, number> = {};
     words.forEach(word => {
-      if (word.length >= 3) { // Skip short words
+      if (word.length >= 3 && !verbsToExclude.includes(word)) { // Skip short words and excluded verbs
         wordFrequency[word] = (wordFrequency[word] || 0) + 1;
       }
     });
@@ -118,20 +127,20 @@ export const ViewDetailedAnalysis = ({
     
     // Add frequent words from the text that aren't in our predefined lists
     for (const [word, count] of Object.entries(wordFrequency)) {
-      if (count >= 3 && !combinedCounts[word]) {
+      if (count >= 2 && !combinedCounts[word] && !verbsToExclude.includes(word)) {  // Changed from 3 to 2 to be more sensitive
         combinedCounts[word] = count;
       }
     }
     
     // Get all action verbs that occur at least twice (loosened from 3+ times)
     return Object.entries(combinedCounts)
-      .filter(([_, count]) => count >= 2)  // Changed from 3 to 2 to make it more sensitive
+      .filter(([word, count]) => count >= 2 && !verbsToExclude.includes(word))  // Changed from 3 to 2 to be more sensitive
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10) // Limit to top 10
       .map(([topic, count]) => ({ topic, count: count as number }));
   };
   
-  // Improved extraction of main subjects/nouns from text using both counting and context
+  // Improved extraction of main subjects/nouns from text using both counting and context, excluding verbs
   const extractMainSubjects = (): MainSubject[] => {
     if (!displayText) return [];
     
@@ -150,6 +159,19 @@ export const ViewDetailedAnalysis = ({
       "art": ["creation", "music", "painting", "literature", "film", "culture", "expression", "beauty", "design", "art", "artist", "creativity"]
     };
     
+    // List of verbs to exclude as subjects
+    const verbsToExclude = [
+      "is", "are", "am", "was", "were", "be", "being", "been", 
+      "have", "has", "had", "do", "does", "did",
+      "can", "could", "shall", "should", "will", "would", "may", "might", "must",
+      "get", "got", "getting", "goes", "going", "come", "comes", "coming",
+      "say", "said", "says", "saying", "tell", "told", "tells", "telling",
+      "go", "went", "gone", "make", "made", "makes", "making",
+      "take", "took", "taken", "taking", "see", "saw", "seen", "seeing",
+      "know", "knew", "known", "knowing", "think", "thought", "thinking",
+      "use", "used", "using", "find", "found", "finding", "give", "gave", "given", "giving"
+    ];
+    
     // Track noun frequency and context
     const nounCounts: Record<string, number> = {};
     const nounContext: Record<string, number> = {};
@@ -160,7 +182,7 @@ export const ViewDetailedAnalysis = ({
     // Count all words in the text (even those not in our predefined lists)
     const wordFrequency: Record<string, number> = {};
     words.forEach(word => {
-      if (word.length >= 3) { // Skip short words
+      if (word.length >= 3 && !verbsToExclude.includes(word)) { // Skip short words and verbs
         wordFrequency[word] = (wordFrequency[word] || 0) + 1;
       }
     });
@@ -168,6 +190,7 @@ export const ViewDetailedAnalysis = ({
     // First check for words in our categorized lists
     words.forEach(word => {
       if (word.length < 3) return; // Skip short words
+      if (verbsToExclude.includes(word)) return; // Skip verbs
       
       // Check if this word is a known subject/noun
       for (const [category, nouns] of Object.entries(subjectCategories)) {
@@ -223,16 +246,16 @@ export const ViewDetailedAnalysis = ({
       combinedCounts[noun] = (combinedCounts[noun] || 0) + Math.floor(contextScore * 0.5);
     }
     
-    // Add frequent words from the text that aren't in our predefined lists
+    // Add frequent words from the text that aren't in our predefined lists and aren't verbs
     for (const [word, count] of Object.entries(wordFrequency)) {
-      if (count >= 2 && !combinedCounts[word]) {  // Changed from 3 to 2 to be more sensitive
+      if (count >= 2 && !combinedCounts[word] && !verbsToExclude.includes(word)) {
         combinedCounts[word] = count;
       }
     }
     
     // Get all nouns that appear at least twice (loosened from 3+ times)
     return Object.entries(combinedCounts)
-      .filter(([_, count]) => count >= 2)  // Changed from 3 to 2 to be more sensitive
+      .filter(([word, count]) => count >= 2 && !verbsToExclude.includes(word))
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8) // Limit to top 8
       .map(([subject, count]) => ({ subject, count: count as number }));
