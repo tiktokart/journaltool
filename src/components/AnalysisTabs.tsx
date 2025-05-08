@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,6 @@ import { Point } from "@/types/embedding";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { SentimentOverview } from "@/components/SentimentOverview";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
-import { EntitySentiment } from "@/components/EntitySentiment";
 import { KeyPhrases } from "@/components/KeyPhrases";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -70,7 +70,6 @@ export const AnalysisTabs = ({
   const hasEmbeddingData = sentimentData?.embeddingPoints && sentimentData.embeddingPoints.length > 0;
   const hasOverviewData = sentimentData?.overallSentiment && sentimentData?.distribution;
   const hasTimelineData = sentimentData?.timeline && sentimentData.timeline.length > 0;
-  const hasEntitiesData = sentimentData?.entities && sentimentData.entities.length > 0;
   const hasKeyPhrasesData = sentimentData?.keyPhrases && sentimentData.keyPhrases.length > 0;
 
   // Ensure we have text data for visualization
@@ -170,7 +169,6 @@ export const AnalysisTabs = ({
           <TabsTrigger value="embedding" className="min-w-max">{t("latentEmotionalAnalysisTab")}</TabsTrigger>
           <TabsTrigger value="overview" className="min-w-max">{t("overviewTab")}</TabsTrigger>
           <TabsTrigger value="timeline" className="min-w-max">{t("timelineTab")}</TabsTrigger>
-          <TabsTrigger value="themes" className="min-w-max">{t("themesTab")}</TabsTrigger>
           <TabsTrigger value="keyphrases" className="min-w-max">{t("keywordsTab")}</TabsTrigger>
         </TabsList>
       </div>
@@ -304,17 +302,6 @@ export const AnalysisTabs = ({
         ) : (
           <SentimentTimeline 
             data={sentimentData.timeline}
-            sourceDescription={sentimentData.sourceDescription}
-          />
-        )}
-      </TabsContent>
-      
-      <TabsContent value="themes" className="mt-6">
-        {!hasEntitiesData ? (
-          <DataMissingFallback tabName={t("themesTab")} />
-        ) : (
-          <EntitySentiment 
-            entities={sentimentData.entities}
             sourceDescription={sentimentData.sourceDescription}
           />
         )}

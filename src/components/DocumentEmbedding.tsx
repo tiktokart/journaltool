@@ -1,10 +1,8 @@
-
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
 import { generateMockPoints, getEmotionColor } from '../utils/embeddingUtils';
 import { HoverInfoPanel } from './embedding/HoverInfoPanel';
-import { EmotionsLegend } from './embedding/EmotionsLegend';
 import { ZoomControls } from './embedding/ZoomControls';
 import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
 import ParticleBackground from './embedding/ParticleBackground';
@@ -64,6 +62,18 @@ export const DocumentEmbedding = ({
   const [selectedEmotionalGroup, setSelectedEmotionalGroup] = useState<string | null>(null);
   const [isEmotionalGroupsOpen, setIsEmotionalGroupsOpen] = useState<boolean>(true);
   const [filterApplied, setFilterApplied] = useState<boolean>(false);
+
+  // Unified color function for emotional tones - ensuring consistency across the app
+  const getUnifiedEmotionColor = (emotion: string): string => {
+    // Prioritize BERT emotional colors for consistency
+    const bertColor = getBertEmotionColor(emotion);
+    if (bertColor !== "#95A5A6") { // Not the default gray
+      return bertColor;
+    }
+    
+    // Fall back to embedding utils color if BERT doesn't have a specific color
+    return getEmotionColor(emotion);
+  };
   
   useEffect(() => {
     if (focusOnWord !== currentFocusWord) {
@@ -93,18 +103,6 @@ export const DocumentEmbedding = ({
     }
   }, [focusOnWord, currentFocusWord, displayPoints]);
 
-  // Unified color function for emotional tones
-  const getUnifiedEmotionColor = (emotion: string): string => {
-    // Prioritize BERT emotional colors for consistency
-    const bertColor = getBertEmotionColor(emotion);
-    if (bertColor !== "#95A5A6") { // Not the default gray
-      return bertColor;
-    }
-    
-    // Fall back to embedding utils color if BERT doesn't have a specific color
-    return getEmotionColor(emotion);
-  };
-  
   useEffect(() => {
     if (points.length > 0) {
       console.log(`Setting display points with ${points.length} points from props`);
@@ -281,28 +279,6 @@ export const DocumentEmbedding = ({
     setFilterApplied(false);
     toast.info(t("viewReset"));
   };
-
-  useEffect(() => {
-    if (displayPoints.length > 0) {
-      (window as any).documentEmbeddingPoints = displayPoints;
-      console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
-      
-      // Add this debug message to verify points data
-      console.log("Sample words in visualization:", displayPoints.slice(0, 10).map(p => p.word).join(", "));
-      console.log("Points have emotionalTone:", displayPoints.some(p => p.emotionalTone));
-      
-      const uniqueGroups = new Set<string>();
-      displayPoints.forEach(point => {
-        if (point.emotionalTone) {
-          uniqueGroups.add(point.emotionalTone);
-        } else {
-          uniqueGroups.add("Neutral");
-        }
-      });
-      
-      setEmotionalGroups(Array.from(uniqueGroups).sort());
-    }
-  }, [displayPoints]);
   
   return (
     <div className="relative w-full h-full">
@@ -393,7 +369,7 @@ export const DocumentEmbedding = ({
       )}
       
       {emotionalGroups.length > 0 && (
-        <div className="absolute top-16 right-4 z-10 bg-yellow backdrop-blur-sm p-2 rounded-lg shadow-md border border-border">
+        <div className="absolute top-16 right-4 z-10 bg-card/80 backdrop-blur-sm p-2 rounded-lg shadow-md border border-border">
           <Collapsible 
             open={isEmotionalGroupsOpen} 
             onOpenChange={setIsEmotionalGroupsOpen}
@@ -402,7 +378,7 @@ export const DocumentEmbedding = ({
             <div className="flex items-center justify-between">
               <div className="text-xs font-semibold flex items-center">
                 <Target className="h-3 w-3 mr-1.5 text-orange" />
-                Jump to Emotional Groups
+                {t("jumpToEmotionalGroups")}
               </div>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -417,7 +393,7 @@ export const DocumentEmbedding = ({
             
             <CollapsibleContent className="mt-1 space-y-1">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs text-muted-foreground">Filter by Emotion</span>
+                <span className="text-xs text-muted-foreground">{t("filterByEmotion")}</span>
                 {selectedEmotionalGroup && (
                   <Button 
                     variant="ghost" 
@@ -454,8 +430,6 @@ export const DocumentEmbedding = ({
       {hoveredPoint && (
         <HoverInfoPanel point={hoveredPoint} />
       )}
-      
-      <EmotionsLegend />
       
       {sourceDescription && (
         <div className="absolute bottom-4 right-4 z-10 flex items-center text-xs bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md text-muted-foreground">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,6 +25,18 @@ export const TextEmotionViewer = ({
   const [showHighlights, setShowHighlights] = useState(true);
   const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
   const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal'>('minimal');
+
+  // Unified color function for emotional tones - ensuring consistency across the app
+  const getUnifiedEmotionColor = (emotion: string): string => {
+    // Prioritize BERT emotional colors for consistency
+    const bertColor = getBertEmotionColor(emotion);
+    if (bertColor !== "#95A5A6") { // Not the default gray
+      return bertColor;
+    }
+    
+    // Fall back to embedding utils color if BERT doesn't have a specific color
+    return getEmotionColor(emotion);
+  };
 
   useEffect(() => {
     // Use either provided embedding points or ones exposed on window by DocumentEmbedding
@@ -83,8 +94,8 @@ export const TextEmotionViewer = ({
             color = point.color;
           }
         } else {
-          // Otherwise get color based on emotion - try from both utils to ensure we have a color
-          color = getBertEmotionColor(emotion) || getEmotionColor(emotion);
+          // Otherwise get color based on emotion using the unified function
+          color = getUnifiedEmotionColor(emotion);
         }
         
         // Only add to map if we successfully identified a color
@@ -172,11 +183,11 @@ export const TextEmotionViewer = ({
             backgroundColor = segment.color.replace('rgb', 'rgba').replace(')', ', 0.3)');
           }
         } else {
-          // Fallback to emotion-based color
-          backgroundColor = getEmotionColor(segment.emotion) || getBertEmotionColor(segment.emotion);
+          // Fallback to emotion-based color using the unified function
+          backgroundColor = getUnifiedEmotionColor(segment.emotion);
         }
       } else {
-        backgroundColor = getEmotionColor(segment.emotion) || getBertEmotionColor(segment.emotion);
+        backgroundColor = getUnifiedEmotionColor(segment.emotion);
       }
       
       const color = "inherit";

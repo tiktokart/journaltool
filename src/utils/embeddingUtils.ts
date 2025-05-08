@@ -1,5 +1,6 @@
 import { Point } from '../types/embedding';
 import seedrandom from 'seedrandom';
+import { getEmotionColor as getBertEmotionColor } from '@/utils/bertSentimentAnalysis';
 
 // Create a deterministic random number generator
 const rng = seedrandom('embedding-seed-123');
@@ -10,6 +11,13 @@ const rng = seedrandom('embedding-seed-123');
  * @returns Hex color code
  */
 export const getEmotionColor = (emotionalTone: string): string => {
+  // Use BERT colors when available for consistency across the application
+  const bertColor = getBertEmotionColor(emotionalTone);
+  if (bertColor !== "#95A5A6") { // Not the default gray
+    return bertColor;
+  }
+
+  // Fallback to our own color mapping
   const emotions: Record<string, string> = {
     "Joyful": "#FFD700",     // Gold color for Joyful
     "Joy": "#FFD700",        // Gold color for Joy
@@ -329,8 +337,13 @@ export const isPDFFile = (file: File): boolean => {
 };
 
 export const getColorForEmotionalTone = (emotion: string): [number, number, number] => {
-  // Get the hex color from the emotion color function
-  const hexColor = getEmotionColor(emotion);
+  // Get the hex color by prioritizing the BERT colors when available
+  let hexColor = getBertEmotionColor(emotion);
+  
+  // If BERT returns the default gray, use our own color mapping
+  if (hexColor === "#95A5A6") {
+    hexColor = getEmotionColor(emotion);
+  }
   
   // Convert hex to RGB (0-1 range)
   const r = parseInt(hexColor.slice(1, 3), 16) / 255;
