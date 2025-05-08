@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/contexts/LanguageContext";
+import DarkModeToggle from "./DarkModeToggle";
 
 // Supported languages with their display names
 const LANGUAGES = {
@@ -46,6 +47,7 @@ export const Header = () => {
               <Link to="/dashboard" className="text-black hover:text-foreground transition-colors">
                 Dashboard
               </Link>
+              <DarkModeToggle />
             </nav>
             
             {/* Language Selector */}
@@ -99,6 +101,11 @@ export const Header = () => {
               >
                 Dashboard
               </Link>
+              
+              {/* Dark Mode Toggle in Mobile Menu */}
+              <div className="py-2">
+                <DarkModeToggle />
+              </div>
               
               {/* Mobile Language Selector */}
               <div className="border-t border-border pt-4 mt-2">
