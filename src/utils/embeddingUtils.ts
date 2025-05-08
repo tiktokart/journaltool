@@ -329,27 +329,13 @@ export const isPDFFile = (file: File): boolean => {
 };
 
 export const getColorForEmotionalTone = (emotion: string): [number, number, number] => {
-  const colors: Record<string, [number, number, number]> = {
-    "Joy": [0.8, 0.7, 0.2],
-    "Sadness": [0.2, 0.4, 0.8],
-    "Anger": [0.8, 0.2, 0.2],
-    "Fear": [0.2, 0.2, 0.8],
-    "Surprise": [0.8, 0.8, 0.2],
-    "Disgust": [0.2, 0.8, 0.2],
-    "Trust": [0.2, 0.8, 0.8],
-    "Anticipation": [0.8, 0.2, 0.8],
-    "Neutral": [0.5, 0.5, 0.5]
-  };
-
-  // Handle case insensitivity by converting to lowercase for comparison
-  // but maintaining the original casing for the map lookup
-  const normalizedEmotion = emotion.toLowerCase();
+  // Get the hex color from the emotion color function
+  const hexColor = getEmotionColor(emotion);
   
-  for (const key in colors) {
-    if (key.toLowerCase() === normalizedEmotion) {
-      return colors[key];
-    }
-  }
+  // Convert hex to RGB (0-1 range)
+  const r = parseInt(hexColor.slice(1, 3), 16) / 255;
+  const g = parseInt(hexColor.slice(3, 5), 16) / 255;
+  const b = parseInt(hexColor.slice(5, 7), 16) / 255;
   
-  return [0.5, 0.5, 0.5]; // Default to gray if no matching emotion
+  return [r, g, b];
 };
