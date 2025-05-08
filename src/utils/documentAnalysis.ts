@@ -26,23 +26,31 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Calculate total word count
     const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
     
-    // Generate summary
-    const summary = await generateSummary(text);
+    // Enhanced text preprocessing for better context analysis
+    // - Replace multiple spaces with single space
+    // - Ensure proper sentence boundaries for better context analysis
+    const processedText = text
+      .replace(/\s+/g, ' ')
+      .replace(/(\w)\.(\w)/g, '$1. $2') // Add space after periods between words
+      .trim();
     
-    // Calculate overall sentiment - this should now provide more balanced results
-    const { overallSentiment, distribution } = await calculateSentiment(text);
+    // Generate summary with enhanced contextual analysis
+    const summary = await generateSummary(processedText);
     
-    // Extract entities
-    const entities = await extractEntities(text);
+    // Calculate overall sentiment with improved balance
+    const { overallSentiment, distribution } = await calculateSentiment(processedText);
     
-    // Extract key phrases - focus on nouns, verbs and adjectives
-    const keyPhrases = await extractKeyPhrases(text);
+    // Extract entities with deeper contextual understanding
+    const entities = await extractEntities(processedText);
     
-    // Generate timeline with meaningful text markers instead of "Page X"
-    const timeline = await generateTimeline(text);
+    // Extract key phrases with focus on nouns and verbs that have contextual significance
+    const keyPhrases = await extractKeyPhrases(processedText);
     
-    // Generate embedding points with actual text data
-    const embeddingPoints = await generateEmbeddingPoints(text);
+    // Generate timeline with meaningful text markers
+    const timeline = await generateTimeline(processedText);
+    
+    // Generate embedding points with contextual relationships
+    const embeddingPoints = await generateEmbeddingPoints(processedText);
     
     console.log("BERT Analysis complete with the following stats:");
     console.log(`- Word count: ${wordCount}`);
@@ -61,7 +69,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
       fileSize: file ? file.size : new TextEncoder().encode(text).length,
       wordCount,
       pdfTextLength: text.length,
-      text,  // Include the full text for visualization
+      text: processedText, // Use the processed text for visualization
       embeddingPoints,
       summary,
       overallSentiment,
@@ -87,3 +95,4 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     throw error;
   }
 };
+

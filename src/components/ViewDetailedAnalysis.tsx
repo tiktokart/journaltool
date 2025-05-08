@@ -42,9 +42,12 @@ export const ViewDetailedAnalysis = ({
     return `This document contains ${wordCount} words, ${sentenceCount} sentences, and approximately ${paragraphCount} paragraphs.`;
   };
   
-  // Extract emotional topics from the text - focusing on nouns and actions
+  // More comprehensive extraction of emotional actions/verbs from the text
   const extractEmotionalTopics = () => {
     if (!displayText) return [];
+    
+    const sentences = displayText.toLowerCase().split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const words = displayText.toLowerCase().split(/\s+/);
     
     // Action verbs with emotional connections
     const emotionKeywords = {
@@ -57,43 +60,64 @@ export const ViewDetailedAnalysis = ({
       "anticipation": ["planning", "preparation", "awaiting", "expectation", "prospect", "future", "hope", "countdown", "anticipate", "expect"]
     };
     
-    // Count words in the text
-    const words = displayText.toLowerCase().split(/\s+/);
-    const wordCounts: Record<string, number> = {};
+    // Count actual instances of action verbs
+    const actionVerbCounts = {};
+    
+    // First, parse through whole text to identify action verbs and count instances
     words.forEach(word => {
-      const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
-      if (cleanWord && cleanWord.length > 2) {
-        wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
+      const cleanWord = word.replace(/[^\w]/g, '');
+      if (cleanWord.length < 3) return; // Skip short words
+      
+      // Check if this word is in our emotion keywords lists
+      for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
+        if (keywords.includes(cleanWord)) {
+          actionVerbCounts[cleanWord] = (actionVerbCounts[cleanWord] || 0) + 1;
+          break;
+        }
       }
     });
     
-    const foundEmotions: Record<string, number> = {};
-    
-    // Count occurrences of emotional action words (minimum 3 mentions)
-    Object.entries(emotionKeywords).forEach(([emotion, keywords]) => {
-      keywords.forEach(word => {
-        const count = wordCounts[word] || 0;
-        if (count >= 3) { // Only include if mentioned frequently
-          foundEmotions[word] = count;
-        }
-      });
+    // Analyze context for each sentence
+    const sentenceContext = {};
+    sentences.forEach(sentence => {
+      for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
+        keywords.forEach(keyword => {
+          if (sentence.includes(keyword)) {
+            // When we find a keyword in context, boost its count
+            if (actionVerbCounts[keyword]) {
+              sentenceContext[keyword] = (sentenceContext[keyword] || 0) + 1;
+            }
+          }
+        });
+      }
     });
     
-    return Object.entries(foundEmotions)
+    // Combine direct counts with contextual understanding
+    const combinedCounts = { ...actionVerbCounts };
+    for (const [word, contextCount] of Object.entries(sentenceContext)) {
+      combinedCounts[word] = (combinedCounts[word] || 0) + Math.floor(contextCount * 0.5); // Weight context slightly less than direct mentions
+    }
+    
+    // Get all action verbs that occur at least 3 times (or have strong contextual relevance)
+    return Object.entries(combinedCounts)
+      .filter(([_, count]) => count >= 3)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10) // Limit to top 10
       .map(([topic, count]) => ({ topic, count }));
   };
   
-  // Extract main subjects from text - focusing only on nouns mentioned frequently
+  // Improved extraction of main subjects/nouns from text using both counting and context
   const extractMainSubjects = () => {
     if (!displayText) return [];
+    
+    // Parse sentences for better contextual analysis
+    const sentences = displayText.toLowerCase().split(/[.!?]+/).filter(s => s.trim().length > 0);
     
     // Common noun subjects to look for
     const subjectCategories = {
       "family": ["family", "parent", "child", "sibling", "mother", "father", "daughter", "son", "home", "brother", "sister"],
       "work": ["job", "career", "office", "profession", "business", "company", "project", "task", "boss", "colleague", "meeting", "work"],
-      "education": ["learn", "study", "school", "university", "education", "knowledge", "degree", "class", "teacher", "student", "book", "course"],
+      "education": ["learn", "study", "school", "college", "university", "education", "knowledge", "degree", "class", "teacher", "student", "book", "course"],
       "health": ["health", "body", "illness", "wellness", "exercise", "doctor", "medicine", "hospital", "symptom", "disease", "therapy", "treatment"],
       "finance": ["money", "budget", "savings", "investment", "account", "expense", "income", "debt", "wealth", "bank", "cost", "finance"],
       "travel": ["journey", "destination", "vacation", "trip", "adventure", "exploration", "places", "transport", "hotel", "flight", "travel"],
@@ -101,29 +125,74 @@ export const ViewDetailedAnalysis = ({
       "art": ["creation", "music", "painting", "literature", "film", "culture", "expression", "beauty", "design", "art", "artist", "creativity"]
     };
     
-    // Count words in the text
+    // Track noun frequency and context
+    const nounCounts = {};
+    const nounContext = {};
+    
+    // Process every word in the text
     const words = displayText.toLowerCase().split(/\s+/);
-    const wordCounts: Record<string, number> = {};
     words.forEach(word => {
-      const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
-      if (cleanWord && cleanWord.length > 2) {
-        wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
+      const cleanWord = word.replace(/[^\w]/g, '');
+      if (cleanWord.length < 3) return; // Skip short words
+      
+      // Check if this word is a known subject/noun
+      for (const [category, nouns] of Object.entries(subjectCategories)) {
+        if (nouns.includes(cleanWord)) {
+          nounCounts[cleanWord] = (nounCounts[cleanWord] || 0) + 1;
+          break;
+        }
       }
     });
     
-    const foundSubjects: Record<string, number> = {};
+    // Track pronouns to identify important subjects
+    const pronouns = ["he", "she", "they", "it", "him", "her", "them", "his", "hers", "its", "their"];
+    const pronounReferences = {};
     
-    // Identify nouns mentioned frequently
-    Object.entries(subjectCategories).forEach(([category, nouns]) => {
-      nouns.forEach(noun => {
-        const count = wordCounts[noun] || 0;
-        if (count >= 3) { // Only include if mentioned frequently
-          foundSubjects[noun] = count;
+    // Find what nouns the pronouns are referring to (basic coreference resolution)
+    for (let i = 0; i < sentences.length; i++) {
+      const currentSentence = sentences[i];
+      const previousSentence = i > 0 ? sentences[i-1] : "";
+      
+      // Check for pronouns in this sentence
+      for (const pronoun of pronouns) {
+        if (currentSentence.includes(` ${pronoun} `)) {
+          // Find potential noun referents from current and previous sentences
+          const potentialReferents = Object.keys(nounCounts).filter(noun => 
+            previousSentence.includes(noun) || 
+            currentSentence.substring(0, currentSentence.indexOf(pronoun)).includes(noun)
+          );
+          
+          // If we found likely referents, strengthen their contextual importance
+          if (potentialReferents.length > 0) {
+            potentialReferents.forEach(noun => {
+              nounContext[noun] = (nounContext[noun] || 0) + 1;
+            });
+          }
         }
-      });
-    });
+      }
+      
+      // Check for subject-verb pairs to enhance contextual understanding
+      for (const noun of Object.keys(nounCounts)) {
+        if (currentSentence.includes(noun)) {
+          // If a noun appears as a subject (followed by a verb), strengthen its importance
+          const nounPosition = currentSentence.indexOf(noun);
+          const afterNoun = currentSentence.substring(nounPosition + noun.length);
+          if (/\s+(is|are|was|were|has|had|do|does|did|will|would|can|could|should)\s+/.test(afterNoun)) {
+            nounContext[noun] = (nounContext[noun] || 0) + 2; // Subject position is strong indicator
+          }
+        }
+      }
+    }
     
-    return Object.entries(foundSubjects)
+    // Combine direct counts with contextual understanding
+    const combinedCounts = { ...nounCounts };
+    for (const [noun, contextScore] of Object.entries(nounContext)) {
+      combinedCounts[noun] = (combinedCounts[noun] || 0) + Math.floor(contextScore * 0.5);
+    }
+    
+    // Get all nouns that appear at least 3 times (or have strong contextual relevance)
+    return Object.entries(combinedCounts)
+      .filter(([_, count]) => count >= 3)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8) // Limit to top 8
       .map(([subject, count]) => ({ subject, count }));
@@ -304,9 +373,9 @@ export const ViewDetailedAnalysis = ({
                     </div>
                   </div>
                   
-                  {/* Emotional Topics - Right Side */}
+                  {/* Emotional Actions - Right Side */}
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                    <h3 className="font-medium mb-4 text-black text-center">Emotional Actions & Topics</h3>
+                    <h3 className="font-medium mb-4 text-black text-center">Emotional Actions</h3>
                     {emotionalTopics.length > 0 ? (
                       <div className="flex flex-wrap gap-4 justify-center">
                         {emotionalTopics.map((item, index) => (
@@ -378,3 +447,4 @@ export const ViewDetailedAnalysis = ({
     </Card>
   );
 };
+

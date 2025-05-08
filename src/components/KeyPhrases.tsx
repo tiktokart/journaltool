@@ -25,7 +25,6 @@ export const KeyPhrases = ({ data = [], sourceDescription }: KeyPhrasesProps) =>
       return {
         phrase: item,
         score: 0.5, // Default middle score
-        mentions: 1
       };
     }
     // Already in KeyPhrase format
@@ -54,9 +53,6 @@ export const KeyPhrases = ({ data = [], sourceDescription }: KeyPhrasesProps) =>
             className={`${colorClass} hover:${colorClass} font-normal py-1 px-2`}
           >
             {phrase.phrase}
-            {phrase.mentions && phrase.mentions > 1 && (
-              <span className="ml-1 text-xs opacity-70">({phrase.mentions})</span>
-            )}
           </Badge>
         ))}
       </div>
