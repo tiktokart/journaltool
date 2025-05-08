@@ -200,6 +200,9 @@ export default function Index() {
           <h2 className="text-3xl font-bold mb-6 text-center text-black">
             Interactive Visualization
           </h2>
+          <p className="text-center mb-4 text-black">
+            This is a short analysis and visualization of a person's recounting of his experience in a panic attack.
+          </p>
           <Card className="border-0 shadow-md overflow-hidden">
             <CardContent className="p-0">
               <div className="h-[500px] w-full" style={{ backgroundColor: "#DFC5FE" }}>
@@ -213,9 +216,6 @@ export default function Index() {
               </div>
             </CardContent>
           </Card>
-          <p className="text-center mt-4 text-black">
-            This is a short analysis and visualization of a person's recounting of his experience in a panic attack.
-          </p>
         </div>
 
         {/* Word Comparison */}

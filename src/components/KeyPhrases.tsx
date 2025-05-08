@@ -1,110 +1,92 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Info } from "lucide-react";
+import { MessageSquare, Info } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+type KeyPhrase = {
+  phrase: string;
+  score: number;
+  mentions: number;
+};
+
 interface KeyPhrasesProps {
-  data: Array<{ 
-    text: string; 
-    sentiment: "positive" | "neutral" | "negative"; 
-    count: number 
-  }>;
+  data: KeyPhrase[];
   sourceDescription?: string;
-  maxWordsPerCategory?: number | null;
 }
 
-export const KeyPhrases = ({ 
-  data, 
-  sourceDescription, 
-  maxWordsPerCategory = 30
-}: KeyPhrasesProps) => {
+export const KeyPhrases = ({ data = [], sourceDescription }: KeyPhrasesProps) => {
   const { t } = useLanguage();
-  
-  // Group words by sentiment
-  const positiveItems = data.filter(item => item.sentiment === "positive");
-  const neutralItems = data.filter(item => item.sentiment === "neutral");
-  const negativeItems = data.filter(item => item.sentiment === "negative");
 
-  // Sort by count (frequency) within each category
-  const sortByCount = (a: typeof data[0], b: typeof data[0]) => b.count - a.count;
-  positiveItems.sort(sortByCount);
-  neutralItems.sort(sortByCount);
-  negativeItems.sort(sortByCount);
+  // Group phrases by approximate score range
+  const highImportance = data.filter(item => item.score >= 0.7);
+  const mediumImportance = data.filter(item => item.score >= 0.4 && item.score < 0.7);
+  const lowImportance = data.filter(item => item.score < 0.4);
 
-  // Get badge color based on sentiment
-  const getBadgeVariant = (sentiment: string) => {
-    switch (sentiment) {
-      case "positive": return "bg-sentiment-positive text-white hover:bg-sentiment-positive/90";
-      case "negative": return "bg-sentiment-negative text-white hover:bg-sentiment-negative/90";
-      default: return "bg-sentiment-neutral text-white hover:bg-sentiment-neutral/90";
-    }
-  };
+  // Helper to render phrase badges
+  const renderPhraseBadges = (phrases: KeyPhrase[], importance: "high" | "medium" | "low") => {
+    if (!phrases.length) return <p className="text-sm text-muted-foreground">{t("noKeyPhrasesFound")}</p>;
 
-  // Render word group - limit to maxWordsPerCategory
-  const renderWordGroup = (
-    items: typeof data, 
-    title: string, 
-    sentimentType: "positive" | "neutral" | "negative"
-  ) => {
-    // Limit the number of words to display per category
-    const displayItems = items.slice(0, maxWordsPerCategory || 30);
-    
-    // Get the correct "no words detected" message based on sentiment type
-    const getNoWordsMessage = () => {
-      if (sentimentType === "positive") return t("noPositiveWords");
-      if (sentimentType === "negative") return t("noNegativeWords");
-      return t("noNeutralWords");
-    };
-    
+    const colorClass = 
+      importance === "high" ? "bg-yellow text-black" : 
+      importance === "medium" ? "bg-yellow-soft text-black" : 
+      "bg-slate-100 text-slate-800";
+
     return (
-      <div>
-        <h3 className="font-medium text-lg mb-3">{title} ({items.length})</h3>
-        {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{getNoWordsMessage()}</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {displayItems.map((item, index) => (
-              <Badge 
-                key={index} 
-                className={`text-sm py-1.5 ${getBadgeVariant(item.sentiment)}`}
-                variant="secondary"
-              >
-                {item.text} ({item.count})
-              </Badge>
-            ))}
-            {items.length > (maxWordsPerCategory || 30) && (
-              <p className="text-xs text-muted-foreground mt-2 w-full">
-                + {items.length - (maxWordsPerCategory || 30)} {t("moreWordsNotShown").replace("{sentiment}", sentimentType)}
-              </p>
+      <div className="flex flex-wrap gap-2">
+        {phrases.map((phrase, index) => (
+          <Badge 
+            key={index} 
+            className={`${colorClass} hover:${colorClass} font-normal py-1 px-2`}
+          >
+            {phrase.phrase}
+            {phrase.mentions > 1 && (
+              <span className="ml-1 text-xs opacity-70">({phrase.mentions})</span>
             )}
-          </div>
-        )}
+          </Badge>
+        ))}
       </div>
     );
   };
 
   return (
-    <Card className="border-0 shadow-md w-full">
+    <Card className="border border-border shadow-md bg-light-lavender">
       <CardHeader>
-        <CardTitle>{t("commonWordsBySentiment")}</CardTitle>
+        <CardTitle className="flex items-center">
+          <MessageSquare className="h-5 w-5 mr-2 text-orange" />
+          {t("keyPhrasesAndThemes")}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6">
-          {renderWordGroup(positiveItems, t("positiveWords"), "positive")}
-          {renderWordGroup(neutralItems, t("neutralWords"), "neutral")}
-          {renderWordGroup(negativeItems, t("negativeWords"), "negative")}
-        </div>
-        <div className="mt-6 text-sm text-center text-muted-foreground">
-          {sourceDescription ? (
-            <div className="flex items-center justify-center">
-              <Info className="h-4 w-4 mr-1" />
-              {sourceDescription}
+        {data.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">{t("noKeyPhrasesExtracted")}</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium mb-2 text-black">{t("primaryThemes")}</h3>
+              {renderPhraseBadges(highImportance, "high")}
             </div>
-          ) : (
-            t("keywordsDescription")
-          )}
-        </div>
+            
+            <div>
+              <h3 className="text-lg font-medium mb-2 text-black">{t("secondaryThemes")}</h3>
+              {renderPhraseBadges(mediumImportance, "medium")}
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-medium mb-2 text-black">{t("tertiaryThemes")}</h3>
+              {renderPhraseBadges(lowImportance, "low")}
+            </div>
+          </div>
+        )}
+        
+        {sourceDescription && (
+          <div className="flex items-center justify-center mt-6 text-sm text-muted-foreground">
+            <Info className="h-4 w-4 mr-1" />
+            {sourceDescription}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

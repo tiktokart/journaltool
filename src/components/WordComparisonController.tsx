@@ -201,28 +201,6 @@ export const WordComparisonController = ({
             )}
           </div>
         </div>
-        
-        {availableEmotions.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            <span className="text-sm text-black mr-1 flex items-center">
-              Search by Emotion:
-            </span>
-            {availableEmotions.map(emotion => (
-              <Badge 
-                key={emotion}
-                variant="outline" 
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
-                style={{
-                  borderColor: getEmotionColor(emotion),
-                  backgroundColor: `${getEmotionColor(emotion)}20`
-                }}
-                onClick={() => handleEmotionFilter(emotion)}
-              >
-                {emotion}
-              </Badge>
-            ))}
-          </div>
-        )}
       </CardHeader>
       <CardContent>
         <WordComparison 

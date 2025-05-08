@@ -1,11 +1,19 @@
 
-// This is a new file that will override the read-only file's implementation
-
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LifeBuoy } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { Badge } from "@/components/ui/badge";
+import { Info, Heart } from "lucide-react";
 import { Point } from "@/types/embedding";
+import { toast } from "sonner";
+import { Button } from "./ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+interface ResourceItem {
+  title: string;
+  description: string;
+  tags: string[];
+  link?: string;
+}
 
 interface WellbeingResourcesProps {
   embeddingPoints: Point[];
@@ -13,122 +21,176 @@ interface WellbeingResourcesProps {
 
 export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps) => {
   const { t } = useLanguage();
-  const [resources, setResources] = useState<{ title: string; description: string; link: string }[]>([]);
-  
+  const [resources, setResources] = useState<ResourceItem[]>([]);
+  const [averageSentiment, setAverageSentiment] = useState<number>(0);
+  const [needsSupport, setNeedsSupport] = useState<boolean>(false);
+  const [emotionalTones, setEmotionalTones] = useState<Map<string, number>>(new Map());
+  const [monthlyReflection, setMonthlyReflection] = useState<string>("");
+
   useEffect(() => {
-    if (!embeddingPoints || embeddingPoints.length === 0) {
-      // Default resources when no data is available
-      setResources([
-        {
-          title: "Mindfulness Meditation",
-          description: "Regular mindfulness practice can help reduce stress and anxiety",
-          link: "https://www.mindful.org/meditation/mindfulness-getting-started/"
-        },
-        {
-          title: "Positive Psychology Exercises",
-          description: "Activities that promote positive emotions and wellbeing",
-          link: "https://positivepsychology.com/positive-psychology-exercises/"
-        },
-        {
-          title: "Stress Management Techniques",
-          description: "Learn effective ways to manage daily stress",
-          link: "https://www.helpguide.org/articles/stress/stress-management.htm"
-        }
-      ]);
-      return;
+    if (!embeddingPoints || embeddingPoints.length === 0) return;
+    
+    // Calculate average sentiment
+    let sentimentTotal = 0;
+    embeddingPoints.forEach(point => {
+      sentimentTotal += point.sentiment;
+    });
+    const avgSentiment = sentimentTotal / embeddingPoints.length;
+    setAverageSentiment(avgSentiment);
+    
+    // Identify if support is needed
+    setNeedsSupport(avgSentiment < 0.4);
+    
+    // Count emotional tones
+    const emotions = new Map<string, number>();
+    embeddingPoints.forEach(point => {
+      if (point.emotionalTone) {
+        const count = emotions.get(point.emotionalTone) || 0;
+        emotions.set(point.emotionalTone, count + 1);
+      }
+    });
+    setEmotionalTones(emotions);
+    
+    // Generate resources based on emotional tones and sentiment
+    const suggestedResources: ResourceItem[] = [];
+    
+    if (avgSentiment < 0.3) {
+      suggestedResources.push({
+        title: "Immediate Support Resources",
+        description: "If you're feeling overwhelmed, talking with someone can help. Crisis lines provide immediate support.",
+        tags: ["crisis", "support", "immediate"],
+        link: "https://988lifeline.org/"
+      });
     }
     
-    // Analyze the embedding points for emotional content to suggest targeted resources
-    const emotionalGroups = embeddingPoints.reduce((acc: {[key: string]: number}, point: Point) => {
-      const emotion = point.emotionalTone || "Neutral";
-      acc[emotion] = (acc[emotion] || 0) + 1;
-      return acc;
-    }, {});
+    if (emotions.has("Sadness") || emotions.has("Fear")) {
+      suggestedResources.push({
+        title: "Managing Difficult Emotions",
+        description: "Techniques like deep breathing, mindfulness, and gentle movement can help regulate emotions.",
+        tags: ["self-care", "emotions", "regulation"],
+      });
+    }
     
-    // Sort by most prevalent emotions
-    const sortedEmotions = Object.entries(emotionalGroups)
+    if (emotions.has("Anger")) {
+      suggestedResources.push({
+        title: "Healthy Expression of Anger",
+        description: "Learn to recognize anger triggers and develop constructive ways to express and channel anger.",
+        tags: ["anger", "management", "expression"],
+      });
+    }
+    
+    // Add general wellness resources
+    suggestedResources.push({
+      title: "Daily Wellness Practices",
+      description: "Small daily habits like walking outdoors, quality sleep, and connecting with others can improve wellbeing.",
+      tags: ["wellness", "habits", "daily"],
+    });
+    
+    // Generate monthly reflection
+    const emotionsArray = Array.from(emotions.entries())
       .sort((a, b) => b[1] - a[1])
-      .map(([emotion]) => emotion);
+      .slice(0, 3)
+      .map(entry => entry[0]);
+      
+    let reflection = "Monthly Reflection: ";
     
-    const selectedResources: { title: string; description: string; link: string }[] = [];
-    
-    // Add specific resources based on prevalent emotions
-    if (sortedEmotions.includes("Sadness") || sortedEmotions.includes("Fear") || sortedEmotions.includes("Anger")) {
-      selectedResources.push({
-        title: "Coping with Difficult Emotions",
-        description: "Strategies for managing sadness, fear, and anger",
-        link: "https://www.mind.org.uk/information-support/types-of-mental-health-problems/emotions/"
-      });
+    if (avgSentiment < 0.3) {
+      reflection += "This month appears challenging with predominant emotions of ";
+      reflection += emotionsArray.join(", ");
+      reflection += ". Consider seeking additional support and being gentle with yourself during this time.";
+    } else if (avgSentiment < 0.5) {
+      reflection += "This month shows mixed emotional patterns with ";
+      reflection += emotionsArray.join(", ");
+      reflection += " present in your entries. Focus on self-care and identifying specific triggers.";
+    } else {
+      reflection += "This month reflects generally positive patterns with ";
+      reflection += emotionsArray.join(", ");
+      reflection += " as prominent emotions. Continue practices that support your wellbeing.";
     }
     
-    if (sortedEmotions.includes("Anxiety") || sortedEmotions.includes("Fear")) {
-      selectedResources.push({
-        title: "Anxiety Self-Help Guide",
-        description: "Practical tools for reducing anxiety and worry",
-        link: "https://www.nhs.uk/mental-health/self-help/guides-tools-and-activities/depression-anxiety-self-assessment-quiz/"
-      });
-    }
-    
-    // Add mindfulness as a universally helpful resource
-    selectedResources.push({
-      title: "Mindfulness Techniques",
-      description: "Simple practices to stay grounded in the present moment",
-      link: "https://www.mindful.org/meditation/mindfulness-getting-started/"
-    });
-    
-    // Add positive psychology resource
-    selectedResources.push({
-      title: "Positive Journal Prompts",
-      description: "Journal prompts to cultivate gratitude and positive emotions",
-      link: "https://positivepsychology.com/gratitude-journal/"
-    });
-    
-    // Ensure we always show at least 3 resources
-    if (selectedResources.length < 3) {
-      selectedResources.push({
-        title: "General Wellbeing Resources",
-        description: "Tools and techniques for improving your overall wellbeing",
-        link: "https://www.helpguide.org/articles/mental-health/building-better-mental-health.htm"
-      });
-    }
-    
-    setResources(selectedResources);
+    setMonthlyReflection(reflection);
+    setResources(suggestedResources);
   }, [embeddingPoints]);
   
+  const handleResourceClick = (resource: ResourceItem) => {
+    if (resource.link) {
+      window.open(resource.link, "_blank");
+    } else {
+      toast.info(`Resource information: ${resource.description}`);
+    }
+  };
+
+  if (!embeddingPoints || embeddingPoints.length === 0) {
+    return null;
+  }
+
   return (
-    <Card className="border border-border shadow-md bg-light-lavender">
-      <CardHeader>
-        <CardTitle className="flex items-center text-xl text-orange">
-          <LifeBuoy className="h-5 w-5 mr-2 text-orange" />
-          Resources and Support
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-black mb-4">
-          {t("basedOnYourWriting")}
-        </p>
-        
-        <div className="grid gap-4 md:grid-cols-3">
-          {resources.map((resource, index) => (
-            <Card key={index} className="bg-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg text-black">{resource.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-black mb-2">{resource.description}</p>
-                <a 
-                  href={resource.link} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-orange hover:text-orange/80 text-sm font-medium"
-                >
-                  {t("learnMore")} →
-                </a>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div>
+      <Card className="border border-border shadow-md mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center text-xl">
+            <Heart className="h-5 w-5 mr-2 text-orange" />
+            Monthly Reflections
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-black mb-6">{monthlyReflection}</p>
+        </CardContent>
+      </Card>
+    
+      <Card className="border border-border shadow-md">
+        <CardHeader>
+          <CardTitle className="flex items-center text-xl">
+            <Heart className="h-5 w-5 mr-2 text-orange" />
+            Suggestions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {needsSupport && (
+            <div className="bg-yellow-soft p-4 rounded-lg mb-6">
+              <div className="flex items-start">
+                <Info className="h-5 w-5 mr-2 text-orange mt-0.5" />
+                <div>
+                  <p className="font-medium text-black">Support Notice</p>
+                  <p className="text-sm text-black mt-1">
+                    Your entries show patterns that may benefit from additional support. 
+                    Consider reaching out to a mental health professional.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            {resources.map((resource, index) => (
+              <div 
+                key={index} 
+                className="border rounded-lg p-4 hover:bg-lavender/30 transition-colors cursor-pointer"
+                onClick={() => handleResourceClick(resource)}
+              >
+                <h3 className="font-medium mb-2 text-black">{resource.title}</h3>
+                <p className="text-sm text-black mb-3">{resource.description}</p>
+                <div className="flex flex-wrap gap-1">
+                  {resource.tags.map(tag => (
+                    <Badge key={tag} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                {resource.link && (
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-sm text-orange mt-2" 
+                    onClick={() => window.open(resource.link, "_blank")}
+                  >
+                    Visit resource
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

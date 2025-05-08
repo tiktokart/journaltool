@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';
@@ -75,7 +74,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
         <div className="mb-3 p-4 rounded-full bg-muted/50">
           <GitCompareArrows className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-medium">{t("noWordsSelected")}</h3>
+        <h3 className="text-lg font-medium">No Words Selected</h3>
         <p className="text-sm text-muted-foreground mt-1 max-w-md">
           {sourceDescription ? (
             <>

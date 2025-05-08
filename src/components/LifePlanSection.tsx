@@ -95,7 +95,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
           </CardHeader>
           <CardContent>
             <Textarea 
-              placeholder={t("dailyLifeTextPlaceholder")}
+              placeholder="Type your routines, objectives, and goals"
               value={dailyLifeText}
               onChange={(e) => setDailyLifeText(e.target.value)}
               className="min-h-[150px] text-black"
@@ -118,7 +118,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
           </CardHeader>
           <CardContent>
             <Textarea 
-              placeholder={t("weeklyLifeTextPlaceholder")}
+              placeholder="Type your routines, objectives, and goals"
               value={weeklyLifeText}
               onChange={(e) => setWeeklyLifeText(e.target.value)}
               className="min-h-[150px] text-black"
@@ -141,7 +141,7 @@ export const LifePlanSection = ({ journalText }: LifePlanSectionProps) => {
           </CardHeader>
           <CardContent>
             <Textarea 
-              placeholder={t("monthlyLifeTextPlaceholder")}
+              placeholder="Type your routines, objectives, and goals"
               value={monthlyLifeText}
               onChange={(e) => setMonthlyLifeText(e.target.value)}
               className="min-h-[150px] text-black"
