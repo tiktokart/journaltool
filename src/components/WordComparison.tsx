@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Point } from '@/types/embedding';
 import { Card, CardContent } from '@/components/ui/card';

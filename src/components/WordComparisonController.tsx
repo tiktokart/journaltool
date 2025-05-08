@@ -132,11 +132,11 @@ export const WordComparisonController = ({
   };
 
   return (
-    <Card className="border border-border shadow-md" style={{ backgroundColor: "#DFC5FE" }}>
+    <Card className="border border-border shadow-md">
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-2">
-          <CardTitle className="flex items-center text-xl text-black">
-            <GitCompareArrows className="h-5 w-5 mr-2 text-orange" />
+          <CardTitle className="flex items-center text-xl">
+            <GitCompareArrows className="h-5 w-5 mr-2" />
             {t("wordComparison")}
           </CardTitle>
           
@@ -146,12 +146,12 @@ export const WordComparisonController = ({
               onOpenChange={setCompareSearchOpen}
             >
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 bg-orange text-white hover:bg-orange/90 border-orange">
+                <Button variant="outline" size="sm" className="h-9">
                   <Search className="h-4 w-4 mr-2" />
                   Add Word
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0" align="end" style={{ backgroundColor: "#DFC5FE" }}>
+              <PopoverContent className="w-[300px] p-0" align="end">
                 <Command>
                   <CommandInput 
                     placeholder={t("searchWords")} 
@@ -177,7 +177,7 @@ export const WordComparisonController = ({
                             />
                             <span>{point.word}</span>
                           </div>
-                          <span className="ml-auto text-xs text-black">
+                          <span className="ml-auto text-xs text-muted-foreground">
                             {point.emotionalTone ? t(point.emotionalTone.toLowerCase()) || point.emotionalTone : t("neutral")}
                           </span>
                         </CommandItem>
@@ -192,7 +192,7 @@ export const WordComparisonController = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-9 bg-orange text-white hover:bg-orange/90 border-orange"
+                className="h-9"
                 onClick={handleClearComparison}
               >
                 <X className="h-4 w-4 mr-2" />

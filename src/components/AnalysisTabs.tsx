@@ -20,6 +20,7 @@ import { EntitySentiment } from "@/components/EntitySentiment";
 import { KeyPhrases } from "@/components/KeyPhrases";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { TextEmotionViewer } from "@/components/TextEmotionViewer";
 
 interface AnalysisTabsProps {
   activeTab: string;
