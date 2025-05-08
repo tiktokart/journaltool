@@ -30,6 +30,20 @@ export const ViewDetailedAnalysis = ({
     ? displayText.substring(0, 150) + (displayText.length > 150 ? "..." : "") 
     : "";
   
+  // Generate a brief content overview based on the text
+  const generateContentOverview = () => {
+    if (!displayText) return t("noContentAvailable");
+    
+    const wordCount = displayText.split(/\s+/).length;
+    const sentenceCount = displayText.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+    const paragraphCount = displayText.split(/\n\s*\n/).filter(p => p.trim().length > 0).length;
+    
+    return t("contentOverview")
+      .replace("{wordCount}", wordCount.toString())
+      .replace("{sentenceCount}", sentenceCount.toString())
+      .replace("{paragraphCount}", paragraphCount.toString());
+  };
+  
   return (
     <Card className="mb-6 border border-border shadow-md bg-white">
       <CardHeader className="pb-3">
@@ -84,14 +98,13 @@ export const ViewDetailedAnalysis = ({
           </CollapsibleTrigger>
           
           <CollapsibleContent className="space-y-2">
-            {displaySummary && (
-              <div className="text-sm text-black leading-relaxed whitespace-pre-line mb-4">
-                <span className="font-medium">{t("summary")}:</span> {displaySummary}
-              </div>
-            )}
-            
             {displayText && (
               <>
+                <div className="text-sm text-black font-medium mb-1">{t("contentOverview")}:</div>
+                <div className="text-sm text-black leading-relaxed whitespace-pre-line mb-4">
+                  {generateContentOverview()}
+                </div>
+                
                 <div className="text-sm text-black font-medium mb-1">{t("fullText")}:</div>
                 <div className="text-sm text-black leading-relaxed whitespace-pre-line max-h-[400px] overflow-y-auto border border-border p-4 rounded-md bg-gray-50">
                   {displayText}
