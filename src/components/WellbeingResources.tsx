@@ -454,7 +454,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
                         </div>
                       )}
                       
-                      {/* Show detected trigger words that matched this resource */}
+                      {/* Show detected trigger words ONLY if matches exist */}
                       {triggerMatches.length > 0 && (
                         <div className="mt-2 mb-2">
                           <p className="text-xs font-medium text-gray-500 mb-1">Words that triggered this suggestion:</p>
