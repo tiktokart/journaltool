@@ -13,9 +13,16 @@ export const generateSummary = async (text: string): Promise<string> => {
     const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
     const firstSentences = sentences.slice(0, 3).join('. ');
     
-    const summary = `This document contains approximately ${text.length} characters and ${text.split(/\s+/).length} words. 
-    It begins with: "${firstSentences}". 
-    The text explores themes related to personal experiences and emotional states.`;
+    // Create a more informative summary
+    const wordCount = text.split(/\s+/).length;
+    const sentenceCount = sentences.length;
+    const paragraphCount = text.split(/\n\s*\n/).filter(p => p.trim().length > 0).length;
+    
+    const summary = `This document contains ${wordCount} words across ${sentenceCount} sentences and approximately ${paragraphCount} paragraphs.
+    
+It begins with: "${firstSentences}". 
+
+The text appears to discuss personal experiences and observations, with possible themes related to emotions, relationships, and daily life.`;
     
     return summary;
   } catch (error) {

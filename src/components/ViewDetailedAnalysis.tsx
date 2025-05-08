@@ -41,14 +41,11 @@ export const ViewDetailedAnalysis = ({
   const generateContentOverview = () => {
     if (!displayText) return t("noContentAvailable");
     
-    const wordCount = displayText.split(/\s+/).length;
+    const wordCount = displayText.split(/\s+/).filter(w => w.trim().length > 0).length;
     const sentenceCount = displayText.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
     const paragraphCount = displayText.split(/\n\s*\n/).filter(p => p.trim().length > 0).length;
     
-    return t("contentOverview")
-      .replace("{wordCount}", wordCount.toString())
-      .replace("{sentenceCount}", sentenceCount.toString())
-      .replace("{paragraphCount}", paragraphCount.toString());
+    return `This document contains ${wordCount} words, ${sentenceCount} sentences, and approximately ${paragraphCount} paragraphs.`;
   };
   
   // Extract emotional topics from the text
@@ -114,8 +111,6 @@ export const ViewDetailedAnalysis = ({
       .map(([topic, count]) => ({ topic, count }));
   };
   
-  const emotionalTopics = extractEmotionalTopics();
-  
   // Extract main subjects from text
   const extractMainSubjects = () => {
     if (!displayText) return [];
@@ -154,6 +149,7 @@ export const ViewDetailedAnalysis = ({
       .map(([subject, count]) => ({ subject, count }));
   };
   
+  const emotionalTopics = extractEmotionalTopics();
   const mainSubjects = extractMainSubjects();
   
   // Generate badge color based on topic
