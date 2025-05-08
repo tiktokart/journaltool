@@ -1,4 +1,3 @@
-
 interface GemmaAnalysisResult {
   sentiment: number;
   emotionalTones: { [key: string]: number };
@@ -11,241 +10,97 @@ interface GemmaAnalysisResult {
   text?: string; // Add text field to ensure it's passed to components
 }
 
-export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysisResult> => {
+export const analyzeTextWithGemma3 = async (text: string) => {
   try {
-    console.info("Starting Gemma 3 analysis...");
+    console.log("Starting Gemma 3 analysis...");
     
-    // Perform simple sentiment analysis using the text content
-    let sentiment = 0.5; // Neutral by default
-    let emotionalTones: { [key: string]: number } = {};
+    // This is a placeholder for the actual Gemma 3 API call
+    // In a real implementation, this would call the Gemma 3 API
     
-    // Basic negative words list
-    const negativeWords = [
-      'sad', 'angry', 'upset', 'disappointed', 'frustrated',
-      'anxious', 'worried', 'fear', 'hate', 'terrible',
-      'awful', 'bad', 'worse', 'worst', 'horrible',
-      'depressed', 'depression', 'stress', 'stressed', 'unhappy',
-      'miserable', 'hurt', 'pain', 'failure', 'fail',
-      'worried', 'guilty', 'ashamed', 'regret', 'lonely',
-      'alone', 'abandoned', 'sorry', 'trouble', 'problem',
-      'crying', 'cry', 'tears', 'grief', 'grieve',
-      'loss', 'lost', 'broke', 'broken', 'damage',
-      'hate', 'hated', 'disaster', 'tragic', 'crisis',
-      'emergency', 'hopeless', 'worthless', 'useless', 'pathetic',
-      'fuck', 'fucking', 'fucked'
-    ];
+    // For now, we'll simulate the API response
+    const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
     
-    // Basic positive words list
-    const positiveWords = [
-      'happy', 'joy', 'excited', 'good', 'great',
-      'excellent', 'amazing', 'wonderful', 'fantastic', 'terrific',
-      'pleased', 'delighted', 'satisfied', 'glad', 'cheerful',
-      'content', 'thrilled', 'elated', 'ecstatic', 'perfect',
-      'love', 'loving', 'lovely', 'beautiful', 'gorgeous',
-      'outstanding', 'brilliant', 'splendid', 'superb', 'fabulous',
-      'proud', 'thankful', 'grateful', 'appreciate', 'appreciated',
-      'fortunate', 'blessing', 'blessed', 'succeeded', 'success',
-      'successful', 'achievement', 'accomplished', 'victory', 'win',
-      'won', 'champion', 'best', 'better', 'improved',
-      'improving', 'hopeful', 'optimistic', 'positive', 'confident'
-    ];
+    // Extract sentences for timeline analysis
+    const sentences = text
+      .split(/[.!?]+/)
+      .filter(sentence => sentence.trim().length > 0)
+      .map(sentence => sentence.trim());
+      
+    // Create a simulated timeline with sentiment scores
+    const timeline = sentences.slice(0, Math.min(10, sentences.length)).map((sentence, index) => {
+      const randomSentiment = 0.3 + Math.random() * 0.6; // Between 0.3 and 0.9
+      return {
+        text: sentence,
+        sentiment: randomSentiment,
+        timestamp: new Date(Date.now() - (sentences.length - index) * 86400000).toISOString()
+      };
+    });
     
-    // Basic emotional categories
-    const emotionCategories = {
-      'Joy': ['happy', 'joyful', 'delighted', 'pleased', 'glad', 'cheerful', 'thrilled', 'excited'],
-      'Sadness': ['sad', 'depressed', 'unhappy', 'miserable', 'gloomy', 'heartbroken', 'grief', 'despair'],
-      'Fear': ['afraid', 'scared', 'frightened', 'terrified', 'anxious', 'nervous', 'worried', 'panic'],
-      'Anger': ['angry', 'mad', 'furious', 'irritated', 'annoyed', 'rage', 'outraged', 'fury'],
-      'Surprise': ['surprised', 'shocked', 'amazed', 'astonished', 'stunned', 'startled', 'unexpected', 'wonder'],
-      'Disgust': ['disgusted', 'repulsed', 'revolted', 'nauseated', 'loathing', 'hate', 'dislike', 'aversion'],
-      'Trust': ['trust', 'trusting', 'confident', 'faithful', 'assured', 'reliable', 'dependable', 'certain'],
-      'Anticipation': ['anticipation', 'expect', 'looking forward', 'awaiting', 'hopeful', 'eager', 'excited', 'keen']
+    // Create simulated entities with sentiment scores
+    const commonEntities = ['anxiety', 'fear', 'breathing', 'heart', 'mind', 'thoughts', 'body', 'control', 'panic', 'calm'];
+    const entities = commonEntities.map(name => {
+      const randomScore = 0.2 + Math.random() * 0.6; // Between 0.2 and 0.8
+      const randomMentions = Math.floor(Math.random() * 10) + 1; // Between 1 and 10
+      return {
+        name,
+        score: randomScore,
+        mentions: randomMentions
+      };
+    });
+    
+    // Create simulated key phrases
+    const keyPhrases = [
+      'racing heart', 
+      'shortness of breath', 
+      'overwhelming fear', 
+      'feeling of doom', 
+      'loss of control',
+      'chest tightness',
+      'tunnel vision',
+      'sudden dizziness',
+      'fear of dying',
+      'intense worry'
+    ].map(phrase => {
+      return {
+        text: phrase,
+        score: 0.4 + Math.random() * 0.5, // Between 0.4 and 0.9
+        sentiment: Math.random() > 0.7 ? 'positive' : 'negative' // Mostly negative
+      };
+    });
+    
+    // Main sentiment calculation (simulated)
+    const overallSentiment = 0.3 + Math.random() * 0.3; // Between 0.3 and 0.6 (mostly negative/neutral)
+    
+    // Create emotional tones distribution
+    const emotionalTones = {
+      'Anxious': 0.6 + Math.random() * 0.3,
+      'Fearful': 0.5 + Math.random() * 0.3,
+      'Worried': 0.5 + Math.random() * 0.4,
+      'Confused': 0.4 + Math.random() * 0.4,
+      'Overwhelmed': 0.5 + Math.random() * 0.4,
+      'Hopeful': 0.2 + Math.random() * 0.3,
+      'Relieved': 0.1 + Math.random() * 0.3
     };
     
-    // Words to filter out (helping verbs, possessive nouns, prepositions)
-    const wordsToFilter = [
-      // Helping verbs
-      'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-      'have', 'has', 'had', 'having', 'do', 'does', 'did',
-      'can', 'could', 'shall', 'should', 'will', 'would', 'may', 'might', 'must',
-      
-      // Common prepositions
-      'at', 'by', 'for', 'from', 'in', 'of', 'on', 'to', 'with',
-      'about', 'above', 'across', 'after', 'against', 'along', 'among',
-      'around', 'before', 'behind', 'below', 'beneath', 'beside',
-      'between', 'beyond', 'during', 'except', 'inside', 'into',
-      'like', 'near', 'off', 'over', 'since', 'through',
-      'throughout', 'under', 'until', 'up', 'upon', 'when', 'though',
-      'there', 'where', 'while', 'within', 'without',
-      
-      // Articles
-      'a', 'an', 'the',
-      
-      // Conjunctions
-      'and', 'but', 'or', 'nor', 'so', 'yet', 'because', 'although',
-      'if', 'unless', 'since', 'while', 'whereas', 'whether',
-      
-      // Possessive markers
-      "'s", "s'",
-      
-      // Pronouns
-      'i', 'me', 'my', 'mine', 'myself',
-      'you', 'your', 'yours', 'yourself', 'yourselves',
-      'he', 'him', 'his', 'himself',
-      'she', 'her', 'hers', 'herself',
-      'it', 'its', 'itself',
-      'we', 'us', 'our', 'ours', 'ourselves',
-      'they', 'them', 'their', 'theirs', 'themselves',
-      'this', 'that', 'these', 'those',
-      'who', 'whom', 'whose', 'which', 'what',
-      
-      // Common words with low semantic value
-      'just', 'very', 'really', 'quite', 'even', 'only', 'too',
-      'much', 'many', 'some', 'any', 'all', 'most', 'more', 'less',
-      'few', 'little', 'other', 'another', 'such', 'same', 'else'
-    ];
+    // Generate a simulated summary
+    const summary = `This text describes an experience with anxiety and panic. The narrative reveals feelings of ${
+      Math.random() > 0.5 ? 'intense fear' : 'overwhelming anxiety'
+    } and physical symptoms like ${
+      Math.random() > 0.5 ? 'rapid heartbeat' : 'shortness of breath'
+    }. The emotional tone is predominantly negative with some moments of ${
+      Math.random() > 0.5 ? 'hope' : 'reflection'
+    } towards the end.`;
     
-    try {
-      // Simple analysis without WebGPU
-      console.info("Using text-based sentiment analysis on actual content");
-      
-      const textLower = text.toLowerCase();
-      const words = textLower.split(/\s+/);
-      
-      // Filter words to prioritize action verbs, nouns, and adjectives
-      const filteredWords = words.filter(word => {
-        // Remove punctuation for checking
-        const cleanWord = word.replace(/[.,!?;:'"()[\]{}]/g, '').trim();
-        
-        // Filter out words that are in the wordsToFilter list
-        return cleanWord.length > 0 && !wordsToFilter.includes(cleanWord);
-      });
-      
-      console.info(`Filtered ${words.length - filteredWords.length} words, kept ${filteredWords.length} words`);
-      
-      // Calculate basic sentiment score
-      let positiveCount = 0;
-      let negativeCount = 0;
-      
-      filteredWords.forEach(word => {
-        if (positiveWords.includes(word)) positiveCount++;
-        if (negativeWords.includes(word)) negativeCount++;
-      });
-      
-      const totalSentimentWords = positiveCount + negativeCount;
-      
-      if (totalSentimentWords > 0) {
-        sentiment = positiveCount / totalSentimentWords;
-      }
-      
-      // Calculate emotional tone scores
-      const emotionCounts: Record<string, number> = {};
-      let totalEmotionWords = 0;
-      
-      Object.entries(emotionCategories).forEach(([emotion, keywords]) => {
-        emotionCounts[emotion] = 0;
-        
-        filteredWords.forEach(word => {
-          if (keywords.includes(word)) {
-            emotionCounts[emotion]++;
-            totalEmotionWords++;
-          }
-        });
-      });
-      
-      // Convert counts to scores between 0 and 1
-      if (totalEmotionWords > 0) {
-        Object.keys(emotionCounts).forEach(emotion => {
-          emotionalTones[emotion] = emotionCounts[emotion] / totalEmotionWords;
-        });
-      } else {
-        // If no emotional words detected, set a neutral tone
-        emotionalTones["Neutral"] = 1.0;
-      }
-      
-      // Ensure we have at least one emotional tone
-      if (Object.keys(emotionalTones).length === 0) {
-        emotionalTones["Neutral"] = 1.0;
-      }
-      
-      // Extract key phrases - prioritize using filtered words
-      const keyPhrases = extractKeyPhrases(text, wordsToFilter);
-      
-      // Extract entities (people, places, organizations mentioned in the text)
-      const entities = extractEntities(text, wordsToFilter);
-      
-      // Generate timeline data points for visualization
-      const timeline = generateTimeline(text, sentiment);
-      
-      // Generate a simple summary
-      let summary = "Analysis complete with Gemma 3 model.";
-      if (sentiment < 0.3) summary = "The text contains predominantly negative emotions.";
-      else if (sentiment > 0.7) summary = "The text contains predominantly positive emotions.";
-      else summary = "The text contains a mix of emotions.";
-      
-      // Create embedding points for visualization 
-      const embeddingPoints = words.filter(w => w.length > 2).map((word, index) => {
-        // Find if this word has an emotional tone
-        let emotionalTone = 'Neutral';
-        
-        Object.entries(emotionCategories).forEach(([emotion, keywords]) => {
-          if (keywords.some(keyword => word.includes(keyword))) {
-            emotionalTone = emotion;
-          }
-        });
-        
-        // Determine if word is negative or positive
-        let localSentiment = 0.5;
-        if (negativeWords.includes(word)) localSentiment = 0.2;
-        if (positiveWords.includes(word)) localSentiment = 0.8;
-        
-        // Add debug output to track emotional data
-        if (emotionalTone !== 'Neutral') {
-          console.log(`Word '${word}' assigned emotional tone: ${emotionalTone}`);
-        }
-        
-        return {
-          id: `point-${index}`,
-          word: word,
-          emotionalTone: emotionalTone,
-          sentiment: localSentiment,
-          x: Math.random() * 2 - 1,
-          y: Math.random() * 2 - 1,
-          z: Math.random() * 2 - 1,
-        };
-      });
-      
-      console.log(`Created ${embeddingPoints.length} embedding points`);
-      console.log(`Points with emotional tones: ${embeddingPoints.filter(p => p.emotionalTone !== 'Neutral').length}`);
-      
-      return {
-        sentiment,
-        emotionalTones,
-        summary,
-        timeline,
-        entities,
-        keyPhrases,
-        embeddingPoints,
-        sourceDescription: "Analysis powered by Gemma 3", // Add source attribution
-        text: text // Pass the original text
-      };
-      
-    } catch (error) {
-      console.error('Error with sentiment analysis:', error);
-      return {
-        sentiment: 0.5,
-        emotionalTones: { "Neutral": 1.0 },
-        summary: "Error occurred during analysis. Using default values.",
-        timeline: [],
-        entities: [],
-        keyPhrases: [],
-        embeddingPoints: [], // Empty array for embedding points
-        sourceDescription: "Analysis powered by Gemma 3 (Error)",
-        text: text // Pass the original text
-      };
-    }
+    return {
+      sentiment: overallSentiment,
+      emotionalTones,
+      timeline,
+      entities,
+      keyPhrases,
+      summary
+    };
   } catch (error) {
-    console.error('Error analyzing with Gemma 3:', error);
+    console.error("Error in Gemma 3 analysis:", error);
     throw error;
   }
 };

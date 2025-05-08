@@ -76,8 +76,12 @@ export const AnalysisTabs = ({
   const hasKeyPhrasesData = sentimentData?.keyPhrases && sentimentData.keyPhrases.length > 0;
 
   // Ensure we have text data for visualization
-  const hasTextData = sentimentData?.text && sentimentData.text.length > 0;
+  const hasTextData = sentimentData?.text && sentimentData.text.length > 0 || 
+                      sentimentData?.pdfText && sentimentData.pdfText.length > 0;
 
+  // Get the text content from either the text or pdfText property
+  const textContent = sentimentData?.text || sentimentData?.pdfText || "";
+  
   useEffect(() => {
     if (!sentimentData) return;
     
@@ -117,7 +121,8 @@ export const AnalysisTabs = ({
     };
   }, [open]);
   
-  const handleSelectWord = (word: string) => {
+  // Define the handleSelectWord function that was used above
+  function handleSelectWord(word: string) {
     setSearchTerm(word);
     setSelectedWord(word);
     setOpen(false);
@@ -145,13 +150,13 @@ export const AnalysisTabs = ({
         }
       }
     }
-  };
+  }
 
   // Fallback component when data is missing
   const DataMissingFallback = ({ tabName }: { tabName: string }) => (
     <Card className="border border-border shadow-md mt-4 bg-light-lavender">
       <CardContent className="flex flex-col items-center justify-center py-16">
-        <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
+        <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4 icon-dance" />
         <h3 className="text-lg font-medium mb-2">{t("noDataTabName").replace("{tabName}", tabName)}</h3>
         <p className="text-sm text-muted-foreground text-center max-w-md">
           {t("dataAvailableMissing")}
@@ -191,13 +196,13 @@ export const AnalysisTabs = ({
                       onClick={handleResetVisualization}
                       className="h-9"
                     >
-                      <RotateCcw className="h-4 w-4 mr-2" />
+                      <RotateCcw className="h-4 w-4 mr-2 icon-dance" />
                       {t("resetView")}
                     </Button>
                     
                     <div className="relative w-full md:w-64">
                       <div className="relative w-full">
-                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground icon-dance" />
                         <Input 
                           placeholder={t("searchWordsOrEmotions")}
                           className="pl-8 w-full pr-8"
@@ -241,7 +246,7 @@ export const AnalysisTabs = ({
                                     <CommandItem 
                                       key={word} 
                                       value={word}
-                                      onSelect={handleSelectWord}
+                                      onSelect={(value) => handleSelectWord(value)}
                                     >
                                       {word}
                                     </CommandItem>
@@ -255,7 +260,7 @@ export const AnalysisTabs = ({
                   </div>
                 </div>
                 <div className="text-sm font-normal flex items-center text-muted-foreground">
-                  <CircleDot className="h-4 w-4 mr-2" />
+                  <CircleDot className="h-4 w-4 mr-2 icon-dance" />
                   <span>{t("hoverOrClick")}</span>
                 </div>
                 {sentimentData?.sourceDescription && (
@@ -281,7 +286,7 @@ export const AnalysisTabs = ({
             {hasTextData && hasEmbeddingData && (
               <div className="mt-6">
                 <TextEmotionViewer
-                  pdfText={sentimentData.text}
+                  pdfText={textContent}
                   embeddingPoints={sentimentData.embeddingPoints}
                   sourceDescription={sentimentData.sourceDescription}
                 />

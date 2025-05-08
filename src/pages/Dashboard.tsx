@@ -274,6 +274,7 @@ const Dashboard = () => {
         wordCount: pdfText.split(/\s+/).length,
         pdfTextLength: pdfText.length,
         pdfText: pdfText,
+        text: pdfText, // Make sure to include the text property
         sentiment: gemma3Results.sentiment,
         summary: gemma3Results.summary || "Analysis complete with Gemma 3 model.",
         embeddingPoints,
