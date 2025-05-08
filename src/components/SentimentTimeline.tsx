@@ -96,7 +96,11 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                     return point?.time || `Section ${value}`;
                   }}
                   // Adjust angle for better readability if we have many points
-                  tick={{ angle: normalizedData.length > 7 ? -45 : 0, textAnchor: normalizedData.length > 7 ? 'end' : 'middle' }}
+                  tick={{ 
+                    fontSize: 12,
+                    textAnchor: normalizedData.length > 7 ? 'end' : 'middle',
+                    transform: normalizedData.length > 7 ? 'rotate(-45)' : 'rotate(0)'
+                  }}
                   height={60}
                 />
                 <YAxis 
@@ -104,17 +108,14 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   label={{ value: t("sentimentScore"), angle: -90, position: 'insideLeft', offset: -5 }}
                 />
                 <Tooltip 
-                  formatter={(value: number, name: string, props: any) => [
+                  formatter={(value: number) => [
                     `${t("score")}: ${value.toFixed(2)}`,
                     t("sentiment")
                   ]}
                   // Show time and event instead of just "Page X"
-                  labelFormatter={(label, payload) => {
-                    if (payload && payload.length > 0) {
-                      const point = normalizedData.find(d => d.page === label);
-                      return point?.time ? `${point.time}: ${point.event || ''}` : `Section ${label}`;
-                    }
-                    return `Section ${label}`;
+                  labelFormatter={(label) => {
+                    const point = normalizedData.find(d => d.page === label);
+                    return point?.time ? `${point.time}: ${point.event || ''}` : `Section ${label}`;
                   }}
                   contentStyle={{ 
                     borderRadius: '0.5rem',

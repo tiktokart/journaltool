@@ -96,7 +96,7 @@ export const EntitySentiment = ({ data = [], sourceDescription }: EntitySentimen
               {t("showingFilteredResults", { 
                 filtered: filteredData.length, 
                 total: normalizedData.length 
-              }) || `Showing ${filteredData.length} of ${normalizedData.length} themes`}
+              })}
             </Badge>
             <Button variant="outline" size="sm" onClick={() => setFilterTerm("")}>
               {t("clearFilter") || "Clear filter"}
@@ -139,7 +139,7 @@ export const EntitySentiment = ({ data = [], sourceDescription }: EntitySentimen
                   }}
                 />
                 <Tooltip 
-                  formatter={(value: number, name: string, props: any) => [
+                  formatter={(value: number) => [
                     `${t("score")}: ${value.toFixed(2)}`, 
                     t("sentiment")
                   ]}
