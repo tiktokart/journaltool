@@ -51,6 +51,9 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     console.log(`- Entities: ${entities.length}`);
     console.log(`- Timeline entries: ${timeline.length}`);
     
+    // Make the data available on window.documentEmbeddingPoints for other components
+    window.documentEmbeddingPoints = embeddingPoints;
+    
     // Make sure to include the entire text in the result
     return {
       fileName: file ? file.name : "Text Analysis",

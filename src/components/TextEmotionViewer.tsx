@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,35 +28,46 @@ export const TextEmotionViewer = ({
   const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal'>('minimal');
 
   useEffect(() => {
+    // Use either provided embedding points or ones exposed on window by DocumentEmbedding
+    const points = embeddingPoints?.length > 0 
+      ? embeddingPoints 
+      : window.documentEmbeddingPoints || [];
+      
+    console.log(`TextEmotionViewer: Using ${points.length} embedding points`);
+    
     if (!pdfText || pdfText.length === 0) {
       setHighlightedText([pdfText || ""]);
       return;
     }
 
-    if (embeddingPoints.length === 0) {
+    if (points.length === 0) {
       setHighlightedText([pdfText]);
       return;
     }
 
     // Process text with emotion highlighting
-    processTextWithEmotions();
+    if (showHighlights) {
+      processTextWithEmotions(points);
+    } else {
+      setHighlightedText([pdfText]);
+    }
   }, [pdfText, embeddingPoints, showHighlights, hideNonHighlighted, filteringLevel]);
 
-  const processTextWithEmotions = () => {
+  const processTextWithEmotions = (points: Point[]) => {
     if (!showHighlights) {
       setHighlightedText([pdfText]);
       return;
     }
 
-    console.log("Processing text with emotions, found points:", embeddingPoints.length);
+    console.log("Processing text with emotions, found points:", points.length);
     
     // Log some sample points to check if they have proper emotions and colors
-    const samplePoints = embeddingPoints.slice(0, 5);
+    const samplePoints = points.slice(0, 5);
     console.log("Sample points for highlighting:", samplePoints);
 
     // Create a map of words to their emotional tones and colors
     const wordEmotionMap = new Map();
-    embeddingPoints.forEach(point => {
+    points.forEach(point => {
       if (point.word) {
         // Ensure all points have emotion and color
         const emotion = point.emotionalTone || "Neutral";

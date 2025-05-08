@@ -1,5 +1,37 @@
-import { Point } from '@/types/embedding';
+import { Point } from '../types/embedding';
 import seedrandom from 'seedrandom';
+
+// Create a deterministic random number generator
+const rng = seedrandom('embedding-seed-123');
+
+/**
+ * Get color based on emotional tone
+ * @param emotionalTone The emotional tone
+ * @returns Hex color code
+ */
+export const getEmotionColor = (emotionalTone: string): string => {
+  const emotions: Record<string, string> = {
+    "Joyful": "#FFD700",     // Gold color for Joyful
+    "Joy": "#FFD700",        // Gold color for Joy
+    "Happy": "#2ECC71",      // Light Green
+    "Excited": "#F1C40F",    // Yellow
+    "Peaceful": "#3498DB",   // Blue
+    "Calm": "#2980B9",       // Dark Blue
+    "Neutral": "#95A5A6",    // Gray
+    "Anxious": "#E74C3C",    // Red
+    "Angry": "#C0392B",      // Dark Red
+    "Sad": "#9B59B6",        // Purple
+    "Depressed": "#8E44AD",  // Dark Purple
+    "Frustrated": "#E67E22", // Orange
+    "Confused": "#F39C12",   // Light Orange
+    "Scared": "#D35400",     // Burnt Orange
+    "Disgusted": "#6C3483",  // Violet
+    "Surprised": "#16A085",  // Teal
+    "Fearful": "#D35400"     // Burnt Orange (same as Scared)
+  };
+  
+  return emotions[emotionalTone] || "#95A5A6"; // Default to gray if not found
+};
 
 export const generateMockPoints = (
   depressedJournalReference: boolean = false,
@@ -221,32 +253,6 @@ export const generateMockPoints = (
   });
   
   return points;
-};
-
-export const getEmotionColor = (emotion: string): string => {
-  const colors: Record<string, string> = {
-    "Joy": "#FFC107", // Amber
-    "Sadness": "#2196F3", // Blue
-    "Anger": "#F44336", // Red
-    "Fear": "#9C27B0", // Purple
-    "Surprise": "#FF9800", // Orange
-    "Disgust": "#4CAF50", // Green
-    "Trust": "#3F51B5", // Indigo
-    "Anticipation": "#E91E63", // Pink
-    "Neutral": "#9E9E9E" // Gray
-  };
-
-  // Handle case insensitivity by converting to lowercase for comparison
-  // but maintaining the original casing for the map lookup
-  const normalizedEmotion = emotion.toLowerCase();
-  
-  for (const key in colors) {
-    if (key.toLowerCase() === normalizedEmotion) {
-      return colors[key];
-    }
-  }
-  
-  return "#9E9E9E"; // Default to gray if no matching emotion
 };
 
 export const generatePlaceholderPoint = (id: number): Point => {

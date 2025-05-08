@@ -7,6 +7,8 @@ import { Point } from "@/types/embedding";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getEmotionColor } from "@/utils/embeddingUtils";
+import { getEmotionColor as getBertEmotionColor } from "@/utils/bertSentimentAnalysis";
 
 interface ResourceItem {
   title: string;
@@ -21,7 +23,7 @@ interface ResourceItem {
 
 interface WellbeingResourcesProps {
   embeddingPoints: Point[];
-  sourceDescription?: string; // Add sourceDescription prop
+  sourceDescription?: string;
 }
 
 interface DetectedConcern {
@@ -78,18 +80,28 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     console.log(`WellbeingResources: Processing ${embeddingPoints.length} points`);
     console.log("Sample words:", embeddingPoints.slice(0, 5).map(p => p.word).join(", "));
     
+    // Extract all words to detect trigger words in the text
+    const wordsInText = embeddingPoints.map(point => point.word?.toLowerCase()).filter(Boolean);
+    const emotionalToneMap = new Map<string, number>();
+    
+    // Count emotional tones from embedding points
+    embeddingPoints.forEach(point => {
+      if (point.emotionalTone) {
+        const count = emotionalToneMap.get(point.emotionalTone) || 0;
+        emotionalToneMap.set(point.emotionalTone, count + 1);
+      }
+    });
+    
     // Calculate average sentiment
     let sentimentTotal = 0;
     embeddingPoints.forEach(point => {
-      sentimentTotal += point.sentiment || 0.5; // Default to neutral if sentiment is missing
+      sentimentTotal += point.sentiment || 0.5;
     });
     const avgSentiment = embeddingPoints.length > 0 ? sentimentTotal / embeddingPoints.length : 0.5;
     setAverageSentiment(avgSentiment);
+    setEmotionalTones(emotionalToneMap);
     
-    // Extract all words from the text
-    const wordsInText = embeddingPoints.map(point => point.word?.toLowerCase()).filter(Boolean);
-    
-    // Detect concerns with their categories
+    // Detect concerns based on emotion categories and words
     const foundConcerns: DetectedConcern[] = [];
     
     wordsInText.forEach(word => {
@@ -108,30 +120,35 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
       });
     });
     
-    // Set the detected concerns
-    setDetectedConcerns(foundConcerns);
-    
-    // Check for sensitive content related words - but don't display them in UI
-    const hasSensitiveContentConcerns = wordsInText.some(word => 
-      sensitiveKeywords.some(keyword => word && word.includes(keyword))
-    );
-    
-    // Set if any negative words were found in our specific categories
-    const foundNegativeWords = foundConcerns.length > 0;
-    setHasNegativeWords(foundNegativeWords);
-    
-    // Only show support notice if sentiment is low AND there are negative words in our categories
-    setNeedsSupport(avgSentiment < 0.4 && foundNegativeWords);
-    
-    // Count emotional tones
-    const emotions = new Map<string, number>();
+    // Also look for emotional tones in the embedding points
     embeddingPoints.forEach(point => {
-      if (point.emotionalTone) {
-        const count = emotions.get(point.emotionalTone) || 0;
-        emotions.set(point.emotionalTone, count + 1);
+      if (!point.emotionalTone) return;
+      
+      const emotionalTone = point.emotionalTone.toLowerCase();
+      
+      // Map emotional tones to our concern categories
+      let category = null;
+      if (emotionalTone.includes('angry') || emotionalTone.includes('rage') || emotionalTone.includes('frustrated')) {
+        category = 'Anger';
+      } else if (emotionalTone.includes('sad') || emotionalTone.includes('depress') || emotionalTone.includes('unhappy')) {
+        category = 'Sadness';
+      } else if (emotionalTone.includes('fear') || emotionalTone.includes('anxi') || emotionalTone.includes('worr')) {
+        category = 'Fear';
+      } else if (emotionalTone.includes('disgust') || emotionalTone.includes('hate')) {
+        category = 'Disgust';
+      }
+      
+      if (category && !foundConcerns.some(c => c.word === emotionalTone)) {
+        foundConcerns.push({
+          word: emotionalTone,
+          category
+        });
       }
     });
-    setEmotionalTones(emotions);
+    
+    setDetectedConcerns(foundConcerns);
+    setHasNegativeWords(foundConcerns.length > 0);
+    setNeedsSupport(avgSentiment < 0.4 && foundConcerns.length > 0);
     
     // Create a master list of all available resources with their trigger words and emotion categories
     const allResources: ResourceItem[] = [
@@ -237,33 +254,19 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
           "Ask your provider about self-help resources to complement professional care"
         ]
       },
+      // Add positive resources triggered by joyful emotions
       {
-        title: "Finding Treatment Resources",
-        description: "Find local treatment options for mental health and substance use disorders.",
-        tags: ["find help", "treatment", "local resources"],
-        link: "https://findtreatment.gov/",
-        triggerWords: ["find help", "treatment", "therapy", "counseling", "therapist", "professional"],
-        emotionCategory: "Sadness",
+        title: "Enhancing Joy and Happiness",
+        description: "Practices to amplify and sustain positive emotions in your daily life.",
+        tags: ["joy", "happiness", "positive"],
+        triggerWords: ["joy", "happy", "happi", "cheer", "delight", "content", "satisf", "excite", "grateful", "bliss"],
+        emotionCategory: "Joy",
         actionPlan: [
-          "Search for providers who specialize in your specific concerns",
-          "Check which therapists accept your insurance or offer sliding scale fees",
-          "Prepare for your first appointment by noting your symptoms and goals",
-          "Consider different therapy types (CBT, DBT, psychodynamic, etc.)",
-          "Schedule an initial consultation to assess fit with potential therapists"
-        ]
-      },
-      {
-        title: "Research-Based Approaches",
-        description: "Access data, research findings, and evidence-based approaches from mental health institutions.",
-        tags: ["research", "data", "evidence"],
-        link: "https://www.nimh.nih.gov/research/research-conducted-at-nimh/nimh-data-archive",
-        triggerWords: ["research", "evidence", "study", "data", "science", "experiment"],
-        actionPlan: [
-          "Explore current research on conditions you're experiencing",
-          "Look for clinical trials that may be recruiting participants",
-          "Learn about emerging treatments and their effectiveness",
-          "Use evidence-based self-help resources from reputable sources",
-          "Share relevant research with your healthcare providers"
+          "Start a gratitude journal to record three positive experiences each day",
+          "Schedule regular activities that bring you joy and fulfillment",
+          "Practice savoring - consciously enjoying positive experiences in the moment",
+          "Share your positive feelings with others to amplify their effect",
+          "Build a 'joy toolkit' of activities, memories, or items that lift your spirits"
         ]
       }
     ];
@@ -276,9 +279,10 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     allResources.forEach((resource, index) => {
       const matchedTriggerWords: string[] = [];
       
-      // Check each word in text against resource trigger words
-      wordsInText.forEach(word => {
-        if (!word) return;
+      // Check each embedding point against resource trigger words
+      embeddingPoints.forEach(point => {
+        if (!point.word) return;
+        const word = point.word.toLowerCase();
         
         // Check if any trigger word is contained in this word
         resource.triggerWords.forEach(trigger => {
@@ -286,6 +290,23 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
             matchedTriggerWords.push(word);
           }
         });
+        
+        // If resource has an emotion category, check if the point's emotional tone matches
+        if (resource.emotionCategory && point.emotionalTone) {
+          const pointEmotion = point.emotionalTone.toLowerCase();
+          const resourceEmotion = resource.emotionCategory.toLowerCase();
+          
+          if (pointEmotion.includes(resourceEmotion) || 
+              (resourceEmotion === 'joy' && (pointEmotion.includes('happy') || pointEmotion.includes('excite'))) ||
+              (resourceEmotion === 'anger' && pointEmotion.includes('frustrat')) ||
+              (resourceEmotion === 'sadness' && (pointEmotion.includes('depress') || pointEmotion.includes('unhappy'))) ||
+              (resourceEmotion === 'fear' && (pointEmotion.includes('anxi') || pointEmotion.includes('worr')))
+          ) {
+            if (!matchedTriggerWords.includes(`emotion:${pointEmotion}`)) {
+              matchedTriggerWords.push(`emotion:${pointEmotion}`);
+            }
+          }
+        }
       });
       
       // If we found matches, add to our matches array
@@ -299,16 +320,11 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     
     setTriggerMatches(matches);
     
-    // Always include daily wellness practices by default to ensure we show something
+    // Process resources to show to the user based on triggers and emotions
     let relevantResources: ResourceItem[] = [];
-    const wellnessResource = allResources.find(r => r.title === "Daily Wellness Practices");
-    if (wellnessResource) {
-      relevantResources.push(wellnessResource);
-    }
     
     // Add resources that match detected emotion categories
     if (foundConcerns.length > 0) {
-      // Get the unique categories from our concerns
       const detectedCategories = [...new Set(foundConcerns.map(c => c.category))];
       
       // Get resources that match these categories
@@ -324,15 +340,21 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
       });
     }
     
-    // Always include sensitive content-related resources if keywords are detected
-    if (hasSensitiveContentConcerns) {
-      const sensitiveResource = allResources.find(r => r.title === "Recovery Support");
-      if (sensitiveResource && !relevantResources.some(r => r.title === sensitiveResource.title)) {
-        relevantResources.push(sensitiveResource);
+    // Check for positive emotions - show joy resources if present
+    const hasJoyfulEmotions = Array.from(emotionalToneMap.keys()).some(emotion => 
+      emotion.toLowerCase().includes('joy') || 
+      emotion.toLowerCase().includes('happy') || 
+      emotion.toLowerCase().includes('excite')
+    );
+    
+    if (hasJoyfulEmotions) {
+      const joyResource = allResources.find(r => r.title === "Enhancing Joy and Happiness");
+      if (joyResource && !relevantResources.some(r => r.title === joyResource.title)) {
+        relevantResources.push(joyResource);
       }
     }
     
-    // Then add resources that have direct trigger word matches but aren't already included
+    // Add resources based on direct trigger word matches
     matches.forEach(match => {
       const matchedResource = allResources[match.resourceIndex];
       if (!relevantResources.some(r => r.title === matchedResource.title)) {
@@ -340,12 +362,10 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
       }
     });
     
-    // If no specific resources match but sentiment is low AND there are negative words, add the general support resource
-    if (relevantResources.length <= 1 && avgSentiment < 0.4 && foundNegativeWords) {
-      const supportResource = allResources.find(r => r.title === "Immediate Support Resources");
-      if (supportResource && !relevantResources.some(r => r.title === supportResource.title)) {
-        relevantResources.push(supportResource);
-      }
+    // Always include daily wellness practices to ensure we show something
+    const wellnessResource = allResources.find(r => r.title === "Daily Wellness Practices");
+    if (wellnessResource && !relevantResources.some(r => r.title === wellnessResource.title)) {
+      relevantResources.push(wellnessResource);
     }
     
     // Force expanded state of first action plan to ensure visibility
@@ -375,7 +395,24 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
     if (resourceIndex === -1) return [];
     
     const match = triggerMatches.find(m => m.resourceIndex === resourceIndex);
-    return match ? match.matchedWords.filter(word => !sensitiveKeywords.includes(word)) : [];
+    if (!match) return [];
+    
+    return match.matchedWords
+      .filter(word => !sensitiveKeywords.includes(word)) // Filter out sensitive keywords
+      .filter(word => !word.startsWith('emotion:')); // Filter out emotion prefixes for display
+  };
+  
+  // Get emotion triggers for a specific resource
+  const getResourceEmotionTriggers = (resourceTitle: string): string[] => {
+    const resourceIndex = resources.findIndex(r => r.title === resourceTitle);
+    if (resourceIndex === -1) return [];
+    
+    const match = triggerMatches.find(m => m.resourceIndex === resourceIndex);
+    if (!match) return [];
+    
+    return match.matchedWords
+      .filter(word => word.startsWith('emotion:'))
+      .map(word => word.replace('emotion:', ''));
   };
   
   const handleResourceClick = (resource: ResourceItem) => {
@@ -438,7 +475,7 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
             <div className="flex items-start">
               <AlertTriangle className="h-5 w-5 mr-2 text-orange mt-0.5" />
               <div>
-                <p className="font-medium text-black">Detected concerns:</p>
+                <p className="font-medium text-black">Detected emotions:</p>
                 <div className="mt-2 space-y-2">
                   {Object.entries(concernsByCategory).length > 0 ? (
                     Object.entries(concernsByCategory).map(([category, words]) => (
@@ -456,9 +493,34 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
                   ) : (
                     <p className="text-sm text-gray-600">No specific concerns detected.</p>
                   )}
+                  
+                  {Array.from(emotionalTones.entries()).length > 0 && (
+                    <div className="mt-3 border-t pt-3 border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Emotional tones in your text:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.from(emotionalTones.entries())
+                          .sort((a, b) => b[1] - a[1]) // Sort by frequency, most common first
+                          .map(([emotion, count], idx) => (
+                            <Badge 
+                              key={idx} 
+                              variant="outline" 
+                              style={{ 
+                                backgroundColor: `${getBertEmotionColor(emotion)}20`, 
+                                color: getBertEmotionColor(emotion),
+                                borderColor: getBertEmotionColor(emotion)
+                              }}
+                              className="flex items-center gap-1"
+                            >
+                              {emotion}
+                              <span className="ml-1 bg-white/20 rounded-full px-1 text-xs">{count}</span>
+                            </Badge>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                  The suggestions below provide general wellbeing resources.
+                  The suggestions below provide wellbeing resources based on detected emotions.
                 </p>
               </div>
             </div>
@@ -468,6 +530,7 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
             <div className="grid md:grid-cols-2 gap-4">
               {displayResources.map((resource, index) => {
                 const triggerMatches = getResourceTriggerMatches(resource.title);
+                const emotionTriggers = getResourceEmotionTriggers(resource.title);
                 const isExpanded = expandedPlans[resource.title] || false;
                 
                 return (
@@ -504,6 +567,31 @@ export const WellbeingResources = ({ embeddingPoints, sourceDescription }: Wellb
                                 {word}
                               </Badge>
                             ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Show detected emotions that triggered this resource */}
+                      {emotionTriggers.length > 0 && !resource.hideMatchedWords && (
+                        <div className="mt-2 mb-2">
+                          <p className="text-xs font-medium text-gray-500 mb-1">Emotions that triggered this suggestion:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {emotionTriggers.map((emotion, i) => {
+                              const emotionColor = getBertEmotionColor(emotion) || getEmotionColor(emotion);
+                              return (
+                                <Badge 
+                                  key={i} 
+                                  style={{
+                                    backgroundColor: `${emotionColor}20`,
+                                    color: emotionColor,
+                                    borderColor: emotionColor
+                                  }}
+                                  className="text-xs"
+                                >
+                                  {emotion}
+                                </Badge>
+                              );
+                            })}
                           </div>
                         </div>
                       )}

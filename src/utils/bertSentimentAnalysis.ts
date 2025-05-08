@@ -235,7 +235,8 @@ export const getSentimentColor = (score: number): string => {
  */
 export const getEmotionColor = (emotion: string): string => {
   const emotions: Record<string, string> = {
-    "Joy": "#27AE60",        // Green
+    "Joy": "#FFD700",        // Gold color for Joy
+    "Joyful": "#FFD700",     // Gold color for Joyful
     "Happy": "#2ECC71",      // Light Green
     "Excited": "#F1C40F",    // Yellow
     "Peaceful": "#3498DB",   // Blue
