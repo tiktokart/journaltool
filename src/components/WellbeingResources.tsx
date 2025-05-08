@@ -13,6 +13,7 @@ interface ResourceItem {
   description: string;
   tags: string[];
   link?: string;
+  triggerWords: string[]; // Words that trigger this resource
 }
 
 interface WellbeingResourcesProps {
@@ -22,6 +23,7 @@ interface WellbeingResourcesProps {
 export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps) => {
   const { t } = useLanguage();
   const [resources, setResources] = useState<ResourceItem[]>([]);
+  const [filteredResources, setFilteredResources] = useState<ResourceItem[]>([]);
   const [averageSentiment, setAverageSentiment] = useState<number>(0);
   const [needsSupport, setNeedsSupport] = useState<boolean>(false);
   const [emotionalTones, setEmotionalTones] = useState<Map<string, number>>(new Map());
@@ -50,42 +52,65 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     });
     setEmotionalTones(emotions);
     
-    // Generate resources based on emotional tones and sentiment
-    const suggestedResources: ResourceItem[] = [];
-    
-    if (avgSentiment < 0.3) {
-      suggestedResources.push({
+    // Create a master list of all available resources with their trigger words
+    const allResources: ResourceItem[] = [
+      {
         title: "Immediate Support Resources",
         description: "If you're feeling overwhelmed, talking with someone can help. Crisis lines provide immediate support.",
         tags: ["crisis", "support", "immediate"],
-        link: "https://988lifeline.org/"
-      });
-    }
-    
-    if (emotions.has("Sadness") || emotions.has("Fear")) {
-      suggestedResources.push({
+        link: "https://988lifeline.org/",
+        triggerWords: ["overwhelm", "crisis", "suicid", "help", "desperate", "emergency", "panic", "hopeless"]
+      },
+      {
         title: "Managing Difficult Emotions",
         description: "Techniques like deep breathing, mindfulness, and gentle movement can help regulate emotions.",
         tags: ["self-care", "emotions", "regulation"],
-      });
-    }
-    
-    if (emotions.has("Anger")) {
-      suggestedResources.push({
+        triggerWords: ["sad", "depress", "anxious", "anxiet", "worry", "stress", "emotion", "feel", "overwhelm", "difficult"]
+      },
+      {
         title: "Healthy Expression of Anger",
         description: "Learn to recognize anger triggers and develop constructive ways to express and channel anger.",
         tags: ["anger", "management", "expression"],
-      });
-    }
+        triggerWords: ["anger", "angry", "mad", "rage", "furious", "frustrat", "irritat", "upset"]
+      },
+      {
+        title: "Daily Wellness Practices",
+        description: "Small daily habits like walking outdoors, quality sleep, and connecting with others can improve wellbeing.",
+        tags: ["wellness", "habits", "daily"],
+        triggerWords: ["health", "well", "habit", "sleep", "routine", "exercise", "connect", "practice", "daily", "regular"]
+      }
+    ];
     
-    // Add general wellness resources
-    suggestedResources.push({
-      title: "Daily Wellness Practices",
-      description: "Small daily habits like walking outdoors, quality sleep, and connecting with others can improve wellbeing.",
-      tags: ["wellness", "habits", "daily"],
+    setResources(allResources);
+    
+    // Extract all words from embedding points
+    const wordsInText = embeddingPoints.map(point => point.word?.toLowerCase()).filter(Boolean);
+    
+    // Filter resources based on words present in the text
+    const relevantResources = allResources.filter(resource => {
+      // Check if any trigger word is present in the text
+      return resource.triggerWords.some(triggerWord => 
+        wordsInText.some(word => word && word.includes(triggerWord))
+      );
     });
     
-    setResources(suggestedResources);
+    // If no specific resources match but sentiment is low, add the general support resource
+    if (relevantResources.length === 0 && avgSentiment < 0.4) {
+      const supportResource = allResources.find(r => r.title === "Immediate Support Resources");
+      if (supportResource) {
+        relevantResources.push(supportResource);
+      }
+    }
+    
+    // Always include daily wellness practices if no other resources match
+    if (relevantResources.length === 0) {
+      const wellnessResource = allResources.find(r => r.title === "Daily Wellness Practices");
+      if (wellnessResource) {
+        relevantResources.push(wellnessResource);
+      }
+    }
+    
+    setFilteredResources(relevantResources);
   }, [embeddingPoints]);
   
   const handleResourceClick = (resource: ResourceItem) => {
@@ -125,34 +150,40 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
             </div>
           )}
           
-          <div className="grid md:grid-cols-2 gap-4">
-            {resources.map((resource, index) => (
-              <div 
-                key={index} 
-                className="border rounded-lg p-4 hover:bg-lavender/30 transition-colors cursor-pointer"
-                onClick={() => handleResourceClick(resource)}
-              >
-                <h3 className="font-medium mb-2 text-black">{resource.title}</h3>
-                <p className="text-sm text-black mb-3">{resource.description}</p>
-                <div className="flex flex-wrap gap-1">
-                  {resource.tags.map(tag => (
-                    <Badge key={tag} variant="outline" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
+          {filteredResources.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-4">
+              {filteredResources.map((resource, index) => (
+                <div 
+                  key={index} 
+                  className="border rounded-lg p-4 hover:bg-lavender/30 transition-colors cursor-pointer"
+                  onClick={() => handleResourceClick(resource)}
+                >
+                  <h3 className="font-medium mb-2 text-black">{resource.title}</h3>
+                  <p className="text-sm text-black mb-3">{resource.description}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {resource.tags.map(tag => (
+                      <Badge key={tag} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  {resource.link && (
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-sm text-orange mt-2" 
+                      onClick={() => window.open(resource.link, "_blank")}
+                    >
+                      Visit resource
+                    </Button>
+                  )}
                 </div>
-                {resource.link && (
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-sm text-orange mt-2" 
-                    onClick={() => window.open(resource.link, "_blank")}
-                  >
-                    Visit resource
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-4">
+              No specific suggestions available for this content.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
