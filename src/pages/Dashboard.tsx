@@ -592,6 +592,7 @@ const Dashboard = () => {
               <div className="mt-8 mb-4 bg-white rounded-lg p-4">
                 <WellbeingResources 
                   embeddingPoints={sentimentData.embeddingPoints}
+                  sourceDescription={sentimentData.sourceDescription} // Pass the sourceDescription
                 />
               </div>
               

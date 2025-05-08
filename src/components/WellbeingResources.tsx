@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ interface ResourceItem {
 
 interface WellbeingResourcesProps {
   embeddingPoints: Point[];
+  sourceDescription?: string; // Add sourceDescription prop
 }
 
 interface DetectedConcern {
@@ -31,7 +33,7 @@ interface TriggerMatch {
   matchedWords: string[];
 }
 
-export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps) => {
+export const WellbeingResources = ({ embeddingPoints, sourceDescription }: WellbeingResourcesProps) => {
   const { t } = useLanguage();
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [filteredResources, setFilteredResources] = useState<ResourceItem[]>([]);
@@ -517,6 +519,14 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
             <p className="text-center text-muted-foreground py-4">
               Keep working on your self. You are doing good.
             </p>
+          )}
+
+          {/* Add source description display */}
+          {sourceDescription && (
+            <div className="mt-6 flex items-center justify-center text-sm text-muted-foreground">
+              <Info className="h-4 w-4 mr-1" />
+              {sourceDescription}
+            </div>
           )}
         </CardContent>
       </Card>
