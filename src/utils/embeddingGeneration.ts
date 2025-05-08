@@ -1,89 +1,67 @@
 
-import { Point } from "@/types/embedding";
-import seedrandom from "seedrandom";
+import { Point } from '../types/embedding';
+
+interface EmbeddingPoint {
+  position: [number, number, number];
+  word: string;
+  sentiment: number;
+  emotionalTone: string;
+}
 
 /**
- * Generates embedding points for visualization based on the document text
- * @param text The document text to analyze
- * @returns Array of 3D points representing the document's semantic space
+ * Generates embedding points for visualization
+ * @param text The document text to visualize
+ * @returns Array of points with semantic information
  */
 export const generateEmbeddingPoints = async (text: string): Promise<Point[]> => {
   try {
     console.log("Generating embedding points for text:", text.substring(0, 100) + "...");
     
-    // Extract significant words from the text
-    const significantWords = text
-      .toLowerCase()
-      .replace(/[^\w\s]/g, ' ')
-      .split(/\s+/)
-      .filter(word => word.length > 3)
-      .filter((word, i, arr) => arr.indexOf(word) === i);
+    // This is a placeholder for an actual embedding API call
+    // In a real implementation, this would use a language model to generate embeddings
+    const words = extractSignificantWords(text, 100);
     
-    // Use text as seed for random number generation to ensure consistency
-    const seed = text.length.toString();
-    const rng = seedrandom(seed);
-    
-    // Simple emotion categories
-    const emotions = [
-      "Joy", "Sadness", "Anger", "Fear", "Surprise", 
-      "Anticipation", "Trust", "Disgust", "Neutral"
-    ];
-    
-    // Generate 3D points for visualization
     const points: Point[] = [];
     
-    // Limit the number of points to avoid overwhelming the visualization
-    const maxPoints = Math.min(500, significantWords.length);
+    // Simple emotional tones to assign to different words
+    const emotionalTones = [
+      "Joyful", "Sad", "Angry", "Fearful", "Surprised", 
+      "Disgusted", "Neutral", "Anxious", "Excited", "Calm"
+    ];
     
-    for (let i = 0; i < maxPoints; i++) {
-      // Get a word from our significant words list
-      // If we run out, just use the index as a string
-      const word = i < significantWords.length ? significantWords[i] : `word_${i}`;
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const angle1 = Math.random() * Math.PI * 2;
+      const angle2 = Math.random() * Math.PI * 2;
       
-      // Generate a 3D position
-      const position: [number, number, number] = [
-        (rng() * 2 - 1) * 15, // x: -15 to 15
-        (rng() * 2 - 1) * 15, // y: -15 to 15
-        (rng() * 2 - 1) * 15  // z: -15 to 15
-      ];
+      // Generate a point in a sphere
+      const radius = 10 + Math.random() * 10;
+      const x = Math.cos(angle1) * Math.sin(angle2) * radius;
+      const y = Math.sin(angle1) * Math.sin(angle2) * radius;
+      const z = Math.cos(angle2) * radius;
       
-      // Generate a sentiment score (0 to 1)
-      const sentiment = rng() * 0.6 + 0.2; // 0.2 to 0.8
+      // Assign a random sentiment score
+      const sentiment = Math.random();
       
-      // Assign an emotional tone
-      const emotionalTone = emotions[Math.floor(rng() * emotions.length)];
+      // Assign a random emotional tone
+      const emotionalTone = emotionalTones[Math.floor(Math.random() * emotionalTones.length)];
       
-      // Generate RGB color based on emotional tone
-      const r = rng() * 0.8 + 0.2; // 0.2 to 1.0
-      const g = rng() * 0.8 + 0.2; // 0.2 to 1.0
-      const b = rng() * 0.8 + 0.2; // 0.2 to 1.0
-      const color: [number, number, number] = [r, g, b];
+      // Generate a color based on sentiment (from red to green)
+      const r = Math.floor(255 * (1 - sentiment));
+      const g = Math.floor(255 * sentiment);
+      const b = Math.floor(255 * 0.5); // Add some blue to avoid pure red/green
       
-      // Create point with a unique ID
+      // Create a point with the generated values
       const point: Point = {
-        id: `p${i}`,
-        position,
+        id: `word-${i}`,
+        position: [x, y, z],
         word,
         sentiment,
         emotionalTone,
-        color // Adding the required color property
+        color: [r/255, g/255, b/255],
+        relationships: generateRelationships(i, words.length)
       };
       
-      // Add relationships with other points (between 3-7 relationships)
-      const relationshipsCount = Math.floor(rng() * 4) + 3;
-      const relationships = [];
-      
-      for (let j = 0; j < relationshipsCount; j++) {
-        const targetIndex = Math.floor(rng() * maxPoints);
-        if (targetIndex !== i) {
-          relationships.push({
-            id: `p${targetIndex}`,
-            strength: rng() * 0.7 + 0.3 // 0.3 to 1.0
-          });
-        }
-      }
-      
-      point.relationships = relationships;
       points.push(point);
     }
     
@@ -93,3 +71,51 @@ export const generateEmbeddingPoints = async (text: string): Promise<Point[]> =>
     return [];
   }
 };
+
+// Helper function to extract significant words from the text
+function extractSignificantWords(text: string, limit: number): string[] {
+  // Split the text into words
+  const words = text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .split(/\s+/)
+    .filter(word => word.length > 3); // Filter out short words
+  
+  // Count word frequencies
+  const wordFrequency: Record<string, number> = {};
+  words.forEach(word => {
+    if (wordFrequency[word]) {
+      wordFrequency[word]++;
+    } else {
+      wordFrequency[word] = 1;
+    }
+  });
+  
+  // Sort words by frequency
+  const sortedWords = Object.keys(wordFrequency).sort(
+    (a, b) => wordFrequency[b] - wordFrequency[a]
+  );
+  
+  // Return the top N words, but at most the limit
+  return sortedWords.slice(0, Math.min(sortedWords.length, limit));
+}
+
+// Helper function to generate relationships between points
+function generateRelationships(index: number, totalPoints: number) {
+  const relationships = [];
+  const relationshipCount = Math.floor(Math.random() * 5) + 1; // 1-5 relationships
+  
+  for (let i = 0; i < relationshipCount; i++) {
+    let relatedIndex;
+    do {
+      relatedIndex = Math.floor(Math.random() * totalPoints);
+    } while (relatedIndex === index);
+    
+    relationships.push({
+      id: `word-${relatedIndex}`,
+      strength: Math.random() * 0.8 + 0.2 // Between 0.2 and 1.0
+    });
+  }
+  
+  return relationships;
+}

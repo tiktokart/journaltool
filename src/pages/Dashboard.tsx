@@ -10,7 +10,7 @@ import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
 import { WordComparisonController } from "@/components/WordComparisonController";
-import { DocumentSummary } from "@/components/DocumentSummary";
+import { ViewDetailedAnalysis } from "@/components/ViewDetailedAnalysis";
 import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
 import { FileInfoDisplay } from "@/components/FileInfoDisplay";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
@@ -42,6 +42,11 @@ const Dashboard = () => {
   const [analysisMethod, setAnalysisMethod] = useState<"bert" | "gemma3">("bert");
   const [journalText, setJournalText] = useState<string>("");
   const [monthlyReflectionText, setMonthlyReflectionText] = useState<string>("");
+
+  // Perfect Life Plan state variables
+  const [dailyPlan, setDailyPlan] = useState<string>("");
+  const [weeklyPlan, setWeeklyPlan] = useState<string>("");
+  const [monthlyPlan, setMonthlyPlan] = useState<string>("");
 
   // Load analysis method preference
   useEffect(() => {
@@ -160,10 +165,11 @@ const Dashboard = () => {
       const results = await analyzePdfContent(file!, pdfText);
       console.log("BERT Analysis results:", results);
       
-      // Add pdfText to the results object for PDF export
+      // Add pdfText to the results object for PDF export and ensure text property
       const resultsWithText = {
         ...results,
-        pdfText: pdfText
+        pdfText: pdfText,
+        text: pdfText || results.text // Ensure we have text property available
       };
       
       setSentimentData(resultsWithText);
@@ -178,6 +184,9 @@ const Dashboard = () => {
         .sort();
       
       setUniqueWords(words);
+      
+      // Make sure points are exposed to window for visualization connection
+      window.documentEmbeddingPoints = results.embeddingPoints;
       
       if (results.pdfTextLength > 0) {
         toast.success(`BERT analysis completed! Analyzed ${results.pdfTextLength} characters of text.`);
@@ -211,6 +220,7 @@ const Dashboard = () => {
       toast.info("Starting document analysis with Gemma 3...");
       
       const gemma3Results = await analyzeTextWithGemma3(pdfText);
+      console.log("Gemma3 results received:", gemma3Results);
       
       // Extract significant words from the text for visualization
       const significantWords = pdfText
@@ -229,7 +239,7 @@ const Dashboard = () => {
       
       // Assign real words from the document to the points instead of random words
       const embeddingPoints = mockPoints.map((point, index) => {
-        const emotionalToneEntries = Object.entries(gemma3Results.emotionalTones);
+        const emotionalToneEntries = Object.entries(gemma3Results.emotionalTones || {});
         const sortedTones = emotionalToneEntries.sort((a, b) => b[1] - a[1]);
         
         // Assign emotional tones based on sentiment scores
@@ -242,21 +252,18 @@ const Dashboard = () => {
           emotionalTone = sortedTones[topIndex][0];
         } else {
           // 30% chance to get any other emotional tone
-          const randomIndex = Math.floor(Math.random() * sortedTones.length);
-          emotionalTone = sortedTones[randomIndex][0];
+          const randomIndex = Math.floor(Math.random() * Math.min(sortedTones.length, 1));
+          emotionalTone = sortedTones[randomIndex > 0 ? randomIndex : 0][0];
         }
         
         // Assign the actual word from the document
         const wordIndex = index % filteredSignificantWords.length;
         
-        // Keep the existing color from the mock point
-        const { color } = point;
-        
         return {
           ...point,
           word: filteredSignificantWords[wordIndex],
           emotionalTone,
-          color, // Ensure color is included
+          color: point.color, // Ensure color is included
           relationships: mockPoints
             .filter(p => p.id !== point.id)
             .slice(0, 5)
@@ -301,6 +308,9 @@ const Dashboard = () => {
       setSentimentData(results);
       setFilteredPoints(results.embeddingPoints || []);
       setAnalysisComplete(true);
+      
+      // Make sure points are exposed to window for visualization connection
+      window.documentEmbeddingPoints = results.embeddingPoints;
       
       const uniqueResultWords = results.embeddingPoints
         .map((point: Point) => point.word)
@@ -403,11 +413,6 @@ const Dashboard = () => {
       setAnalysisComplete(false);
     }
   };
-
-  // Perfect Life Plan state variables
-  const [dailyPlan, setDailyPlan] = useState<string>("");
-  const [weeklyPlan, setWeeklyPlan] = useState<string>("");
-  const [monthlyPlan, setMonthlyPlan] = useState<string>("");
 
   return (
     <div className="min-h-screen flex flex-col bg-yellow">
@@ -552,7 +557,12 @@ const Dashboard = () => {
               </div>
               
               <div className="bg-white p-4 rounded-lg mb-4">
-                <DocumentSummary summary={sentimentData.summary || "Analysis complete."} />
+                <ViewDetailedAnalysis 
+                  summary={sentimentData.summary} 
+                  text={sentimentData.text || sentimentData.pdfText}
+                  wordCount={sentimentData.wordCount}
+                  sourceDescription={sentimentData.sourceDescription}
+                />
               </div>
               
               <div className="bg-white p-4 rounded-lg mb-4">
