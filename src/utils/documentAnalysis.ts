@@ -29,7 +29,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Generate summary
     const summary = await generateSummary(text);
     
-    // Calculate overall sentiment
+    // Calculate overall sentiment - this should now provide more balanced results
     const { overallSentiment, distribution } = await calculateSentiment(text);
     
     // Extract entities

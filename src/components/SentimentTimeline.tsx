@@ -78,7 +78,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={normalizedData}
-                margin={{ top: 20, right: 30, left: 0, bottom: 30 }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
               >
                 <defs>
                   <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
@@ -105,8 +105,9 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                 />
                 <YAxis 
                   domain={[0, 1]} 
-                  label={{ value: t("sentimentScore"), angle: -90, position: 'insideLeft', offset: -5 }}
+                  label={{ value: t("sentimentScore"), position: 'insideLeft', offset: 5 }}
                   ticks={[0, 0.2, 0.4, 0.6, 0.8, 1]}
+                  width={40}
                 />
                 <Tooltip 
                   formatter={(value: number) => [

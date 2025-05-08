@@ -130,13 +130,7 @@ export const EntitySentiment = ({ data = [], sourceDescription }: EntitySentimen
                   dataKey="name" 
                   tick={{ fontSize: 12 }}
                   width={150}
-                  label={{ 
-                    value: t("themes") || "Themes", 
-                    angle: -90, 
-                    position: 'insideLeft',
-                    offset: 5,
-                    style: { textAnchor: 'middle' }
-                  }}
+                  label={{ value: t("themes") || "Themes", position: 'insideLeft' }}
                 />
                 <Tooltip 
                   formatter={(value: number) => [
