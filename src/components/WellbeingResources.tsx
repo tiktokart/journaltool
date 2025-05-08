@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Info, Heart } from "lucide-react";
+import { Info, Heart, AlertTriangle } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
@@ -28,6 +28,7 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
   const [needsSupport, setNeedsSupport] = useState<boolean>(false);
   const [emotionalTones, setEmotionalTones] = useState<Map<string, number>>(new Map());
   const [hasNegativeWords, setHasNegativeWords] = useState<boolean>(false);
+  const [detectedNegativeWords, setDetectedNegativeWords] = useState<string[]>([]);
 
   useEffect(() => {
     if (!embeddingPoints || embeddingPoints.length === 0) return;
@@ -52,10 +53,24 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
     ];
     
     const wordsInText = embeddingPoints.map(point => point.word?.toLowerCase()).filter(Boolean);
-    const foundNegativeWords = wordsInText.some(word => 
-      negativeWords.some(negWord => word && word.includes(negWord))
-    );
     
+    // Find all negative words in the text
+    const foundNegativeWordsList: string[] = [];
+    wordsInText.forEach(word => {
+      if (word) {
+        negativeWords.forEach(negWord => {
+          if (word.includes(negWord) && !foundNegativeWordsList.includes(negWord)) {
+            foundNegativeWordsList.push(negWord);
+          }
+        });
+      }
+    });
+    
+    // Set the detected negative words
+    setDetectedNegativeWords(foundNegativeWordsList);
+    
+    // Set if any negative words were found
+    const foundNegativeWords = foundNegativeWordsList.length > 0;
     setHasNegativeWords(foundNegativeWords);
     
     // Only show support notice if sentiment is low AND there are negative words
@@ -160,6 +175,27 @@ export const WellbeingResources = ({ embeddingPoints }: WellbeingResourcesProps)
                   <p className="text-sm text-black mt-1">
                     Your entries show patterns that may benefit from additional support. 
                     Consider reaching out to a mental health professional.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {hasNegativeWords && detectedNegativeWords.length > 0 && (
+            <div className="bg-gray-100 p-4 rounded-lg mb-4">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 mr-2 text-orange mt-0.5" />
+                <div>
+                  <p className="font-medium text-black">Detected concerns:</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {detectedNegativeWords.map((word, index) => (
+                      <Badge key={index} variant="outline" className="bg-orange/10 text-orange border-orange">
+                        {word}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    The suggestions below address these concerns.
                   </p>
                 </div>
               </div>
