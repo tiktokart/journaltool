@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { getEmotionColor } from "@/utils/embeddingUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Badge } from "@/components/ui/badge";
+import { useLocation } from "react-router-dom";
+import { getHomepageEmotionColor } from "@/utils/colorUtils";
 
 interface WordComparisonControllerProps {
   points: Point[];
@@ -32,6 +34,31 @@ export const WordComparisonController = ({
   const [availableEmotions, setAvailableEmotions] = useState<string[]>([]);
   const { t, language } = useLanguage();
   const [forceUpdate, setForceUpdate] = useState(0);
+  const location = useLocation();
+  const isHomepage = location.pathname === '/';
+
+  // Get the correct color for a point based on the current page
+  const getPointColor = (point: Point): string => {
+    // For homepage, use our special random pastel colors
+    if (isHomepage && point.emotionalTone) {
+      const homepageColor = getHomepageEmotionColor(point.emotionalTone, true);
+      if (homepageColor) {
+        return homepageColor;
+      }
+    }
+    
+    // For other pages or fallback, use the standard colors
+    if (point.emotionalTone) {
+      return getEmotionColor(point.emotionalTone);
+    }
+    
+    // If no emotional tone or color in RGB format, convert to hex
+    if (point.color && Array.isArray(point.color)) {
+      return `rgb(${Math.round(point.color[0] * 255)}, ${Math.round(point.color[1] * 255)}, ${Math.round(point.color[2] * 255)})`;
+    }
+    
+    return '#95A5A6'; // Default gray if no color information is available
+  };
 
   // Update search results and extract available emotions when points change
   useEffect(() => {
@@ -169,11 +196,7 @@ export const WordComparisonController = ({
                           <div className="flex items-center">
                             <div 
                               className="w-3 h-3 rounded-full mr-2" 
-                              style={{ 
-                                backgroundColor: point.emotionalTone 
-                                  ? getEmotionColor(point.emotionalTone)
-                                  : `rgb(${point.color[0] * 255}, ${point.color[1] * 255}, ${point.color[2] * 255})` 
-                              }} 
+                              style={{ backgroundColor: getPointColor(point) }} 
                             />
                             <span>{point.word}</span>
                           </div>

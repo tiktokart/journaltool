@@ -7,6 +7,8 @@ import { ArrowLeftRight, X, Search, GitCompareArrows, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { getEmotionColor, getSentimentLabel } from '@/utils/embeddingUtils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLocation } from 'react-router-dom';
+import { getHomepageEmotionColor } from '@/utils/colorUtils';
 
 interface WordComparisonProps {
   words: Point[];
@@ -30,6 +32,8 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
 }) => {
   const { t, language } = useLanguage();
   const [forceUpdate, setForceUpdate] = useState<number>(0);
+  const location = useLocation();
+  const isHomepage = location.pathname === '/';
 
   // Force re-render on language change
   useEffect(() => {
@@ -50,6 +54,29 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
       document.removeEventListener('mousedown', handleDocumentClick);
     };
   }, []);
+
+  // Function to get the correct color for the word based on location
+  const getWordColor = (point: Point): string => {
+    if (isHomepage && point.emotionalTone) {
+      // For homepage, use our special random pastel colors
+      const homepageColor = getHomepageEmotionColor(point.emotionalTone, true);
+      if (homepageColor) {
+        return homepageColor;
+      }
+    }
+    
+    // For other pages or fallback, use the standard colors
+    if (point.emotionalTone) {
+      return getEmotionColor(point.emotionalTone);
+    }
+    
+    // If no emotional tone or color in RGB format, convert to hex
+    if (point.color && Array.isArray(point.color)) {
+      return `rgb(${Math.round(point.color[0] * 255)}, ${Math.round(point.color[1] * 255)}, ${Math.round(point.color[2] * 255)})`;
+    }
+    
+    return '#95A5A6'; // Default gray if no color information is available
+  };
 
   // Translate sentiment label
   const getTranslatedSentiment = (sentiment: string): string => {
@@ -122,11 +149,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
             <div className="flex items-center gap-2 mb-3">
               <div 
                 className="w-4 h-4 rounded-full" 
-                style={{ 
-                  backgroundColor: word.emotionalTone 
-                    ? getEmotionColor(word.emotionalTone)
-                    : `rgb(${word.color[0] * 255}, ${word.color[1] * 255}, ${word.color[2] * 255})` 
-                }} 
+                style={{ backgroundColor: getWordColor(word) }}
               />
               <h3 className="font-bold truncate">{word.word}</h3>
             </div>
@@ -181,11 +204,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                       <div className="flex items-center gap-2">
                         <div 
                           className="w-3 h-3 rounded-full" 
-                          style={{ 
-                            backgroundColor: word1.emotionalTone 
-                              ? getEmotionColor(word1.emotionalTone)
-                              : `rgb(${word1.color[0] * 255}, ${word1.color[1] * 255}, ${word1.color[2] * 255})` 
-                          }} 
+                          style={{ backgroundColor: getWordColor(word1) }}
                         />
                         <span className="font-bold">{word1.word}</span>
                       </div>
@@ -193,11 +212,7 @@ export const WordComparison: React.FC<WordComparisonProps> = ({
                       <div className="flex items-center gap-2">
                         <div 
                           className="w-3 h-3 rounded-full" 
-                          style={{ 
-                            backgroundColor: word2.emotionalTone 
-                              ? getEmotionColor(word2.emotionalTone)
-                              : `rgb(${word2.color[0] * 255}, ${word2.color[1] * 255}, ${word2.color[2] * 255})` 
-                          }} 
+                          style={{ backgroundColor: getWordColor(word2) }}
                         />
                         <span className="font-bold">{word2.word}</span>
                       </div>
