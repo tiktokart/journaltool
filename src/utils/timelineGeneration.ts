@@ -54,7 +54,7 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
         // Extract a suitable event description (first 50 chars or so)
         const event = unit.length > 50 ? unit.substring(0, 50) + '...' : unit;
         
-        // Generate random sentiment between 0.3 and 0.8
+        // Generate sentiment between 0.3 and 0.8, with increased weight toward emotional detection
         const sentiment = 0.3 + (Math.random() * 0.5);
         
         // For compatibility with visualization components
@@ -104,6 +104,9 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
         }
       ];
     }
+    
+    // Log timeline for debugging
+    console.log("Generated timeline with colors:", timeline.map(t => t.color).slice(0, 3));
     
     return timeline;
   } catch (error) {

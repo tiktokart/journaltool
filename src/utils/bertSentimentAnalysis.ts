@@ -1,4 +1,3 @@
-
 import { pipeline } from "@huggingface/transformers";
 
 // Cache for the sentiment analysis pipeline to avoid reloading the model
@@ -213,4 +212,45 @@ export const getSentimentLabel = (score: number): string => {
   if (score >= 0.4) return "Neutral";
   if (score >= 0.25) return "Negative";
   return "Very Negative";
+};
+
+/**
+ * Get a color for a sentiment score - ensures emotions always have a color
+ * @param score Normalized sentiment score (0-1)
+ * @returns Color string in hex format
+ */
+export const getSentimentColor = (score: number): string => {
+  if (score >= 0.7) return "#27AE60"; // Very Positive - Green
+  if (score >= 0.5) return "#3498DB"; // Positive - Blue
+  if (score >= 0.4) return "#F39C12"; // Neutral - Orange
+  if (score >= 0.25) return "#E67E22"; // Negative - Dark Orange
+  return "#E74C3C"; // Very Negative - Red
+};
+
+/**
+ * Map emotional tone to a color
+ * @param emotion Emotional tone label
+ * @returns Color string in hex format
+ */
+export const getEmotionColor = (emotion: string): string => {
+  const emotions: Record<string, string> = {
+    "Joy": "#27AE60",        // Green
+    "Happy": "#2ECC71",      // Light Green
+    "Excited": "#F1C40F",    // Yellow
+    "Peaceful": "#3498DB",   // Blue
+    "Calm": "#2980B9",       // Dark Blue
+    "Neutral": "#95A5A6",    // Gray
+    "Anxious": "#E74C3C",    // Red
+    "Angry": "#C0392B",      // Dark Red
+    "Sad": "#9B59B6",        // Purple
+    "Depressed": "#8E44AD",  // Dark Purple
+    "Frustrated": "#E67E22", // Orange
+    "Confused": "#F39C12",   // Light Orange
+    "Scared": "#D35400",     // Burnt Orange
+    "Disgusted": "#6C3483",  // Violet
+    "Surprised": "#16A085",  // Teal
+  };
+  
+  // Return the color for the emotion or default to gray if not found
+  return emotions[emotion] || "#95A5A6";
 };

@@ -6,6 +6,7 @@ import { Highlighter, Eye, EyeOff } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Point } from "@/types/embedding";
 import { getEmotionColor } from "@/utils/embeddingUtils";
+import { getEmotionColor as getBertEmotionColor } from "@/utils/bertSentimentAnalysis";
 import { Toggle } from "@/components/ui/toggle";
 
 interface TextEmotionViewerProps {
@@ -64,14 +65,14 @@ export const TextEmotionViewer = ({
           // If point has a color array, use it
           if (Array.isArray(point.color)) {
             const [r, g, b] = point.color;
-            color = [r, g, b];
+            color = `rgb(${Math.round(r*255)}, ${Math.round(g*255)}, ${Math.round(b*255)})`;
           } else {
             // If it's already a string, use it directly
             color = point.color;
           }
         } else {
-          // Otherwise get color based on emotion
-          color = getEmotionColor(emotion);
+          // Otherwise get color based on emotion - try from both utils to ensure we have a color
+          color = getEmotionColor(emotion) || getBertEmotionColor(emotion);
         }
         
         wordEmotionMap.set(point.word.toLowerCase(), {
@@ -90,7 +91,7 @@ export const TextEmotionViewer = ({
     ] : [];
 
     // Split text into words while preserving whitespace and punctuation
-    const textSegments: { text: string; emotion: string | null; color?: [number, number, number] | string }[] = [];
+    const textSegments: { text: string; emotion: string | null; color?: string }[] = [];
     
     // Regular expression that matches words
     const wordRegex = /[a-zA-Z0-9']+/g;
@@ -147,20 +148,20 @@ export const TextEmotionViewer = ({
       // Use the color from the segment if available
       let backgroundColor;
       if (segment.color) {
-        if (Array.isArray(segment.color)) {
-          const [r, g, b] = segment.color;
-          backgroundColor = `rgba(${r*255}, ${g*255}, ${b*255}, 0.3)`;
-        } else if (typeof segment.color === 'string') {
-          // If color is already a string (like "#FF0000"), use it with reduced opacity
-          backgroundColor = segment.color.startsWith('#') 
-            ? segment.color + '4D'  // Add 30% opacity (4D in hex)
-            : segment.color;
+        if (typeof segment.color === 'string') {
+          // Add transparency to the color if it's a hex color
+          if (segment.color.startsWith('#')) {
+            backgroundColor = segment.color + '4D';  // Add 30% opacity (4D in hex)
+          } else {
+            // For rgb format, add opacity
+            backgroundColor = segment.color.replace('rgb', 'rgba').replace(')', ', 0.3)');
+          }
         } else {
           // Fallback to emotion-based color
-          backgroundColor = getEmotionColor(segment.emotion);
+          backgroundColor = getEmotionColor(segment.emotion) || getBertEmotionColor(segment.emotion);
         }
       } else {
-        backgroundColor = getEmotionColor(segment.emotion);
+        backgroundColor = getEmotionColor(segment.emotion) || getBertEmotionColor(segment.emotion);
       }
       
       const color = "inherit";
