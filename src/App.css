@@ -26,22 +26,9 @@ body {
   background-color: #fef7cd;
 }
 
-.bg-purple {
-  background-color: #DFC5FE;
-}
-
 /* Orange color for buttons and accents */
 .bg-orange {
   background-color: #e56e00;
-}
-
-/* Consistent lavender color */
-.bg-lavender {
-  background-color: #DFC5FE;
-}
-
-.bg-light-lavender {
-  background-color: #EAD5FF;
 }
 
 .text-truncate {
@@ -74,12 +61,6 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
-/* Updated to use lavender color and black text */
-.relationship-analysis-tag {
-  background-color: #DFC5FE !important;
-  color: #000 !important;
-}
-
 /* Color for emotional tones in visualization */
 .emotional-tone-yellow {
   color: #f6df60;
@@ -93,7 +74,7 @@ body {
 
 /* Background for Jump to Emotional Groups section */
 .emotional-groups-panel {
-  background-color: rgba(223, 197, 254, 0.95);
+  background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(200, 200, 200, 0.2);
 }

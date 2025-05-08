@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUploader } from "@/components/FileUploader";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
-import { Loader2, FileText } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { generateMockPoints } from "@/utils/embeddingUtils";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
@@ -19,7 +19,7 @@ import { analyzeTextWithGemma3 } from "@/utils/gemma3SentimentAnalysis";
 import { WellbeingResources } from "@/components/WellbeingResources";
 import { JournalInput } from "@/components/JournalInput";
 import { JournalCache } from "@/components/JournalCache";
-import { LifePlanSection } from "@/components/LifePlanSection";
+import { MonthlyReflections } from "@/components/MonthlyReflections";
 import { v4 as uuidv4 } from 'uuid';
 
 const Dashboard = () => {
@@ -32,12 +32,13 @@ const Dashboard = () => {
   const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
-  const [pdfText, setPdfText] = useState<string>(""); 
+  const [pdfText, setPdfText] = useState<string>("");
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   const [visibleClusterCount, setVisibleClusterCount] = useState(8);
   const [analysisMethod, setAnalysisMethod] = useState<"bert" | "gemma3">("bert");
   const [journalText, setJournalText] = useState<string>("");
+  const [monthlyReflectionText, setMonthlyReflectionText] = useState<string>("");
 
   // Load analysis method preference
   useEffect(() => {
@@ -109,17 +110,8 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddToLifePlan = (category: 'daily' | 'weekly' | 'monthly') => {
-    // This function is passed down to JournalInput and will trigger the LifePlanSection
-    // to add the current journal text to the specified category
-    if (!journalText || journalText.trim().length === 0) {
-      toast.error("Please enter some text in the journal first");
-      return;
-    }
-    
-    // We handle the actual adding in the LifePlanSection component
-    // This function is just a bridge to show that the action was triggered
-    toast.success(`Journal entry added to ${category} life plan`);
+  const handleAddToMonthlyReflection = (text: string) => {
+    setMonthlyReflectionText(text);
   };
 
   const analyzeSentiment = async () => {
@@ -382,26 +374,44 @@ const Dashboard = () => {
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
-          {/* Life Plan Section - Moved above Journal Input */}
-          <div className="bg-lavender p-4 rounded-lg">
-            <LifePlanSection journalText={journalText} />
+          {/* Perfect Life and Monthly Reflections - Side by Side */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-white p-4 rounded-lg">
+              <h2 className="text-2xl font-bold mb-4 text-black">What does your Perfect Life Look Like?</h2>
+              <Card className="bg-white border border-border shadow-md">
+                <CardContent className="pt-6">
+                  <Textarea 
+                    placeholder="Type your vision of your perfect life here..."
+                    className="min-h-[150px] text-black"
+                  />
+                  <Button 
+                    className="mt-2 bg-orange hover:bg-orange/90 w-full text-white"
+                  >
+                    Save Changes
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="bg-white p-4 rounded-lg">
+              <MonthlyReflections journalText={monthlyReflectionText} />
+            </div>
           </div>
           
           {/* Journal Input Section */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-lavender p-4 rounded-lg">
+            <div className="bg-white p-4 rounded-lg">
               <JournalInput 
-                onJournalEntrySubmit={handleJournalEntrySubmit} 
-                onAddToLifePlan={handleAddToLifePlan}
+                onJournalEntrySubmit={handleJournalEntrySubmit}
+                onAddToMonthlyReflection={handleAddToMonthlyReflection}
               />
             </div>
-            <div className="bg-lavender p-4 rounded-lg">
+            <div className="bg-white p-4 rounded-lg">
               <JournalCache onSelectEntry={handleCachedEntrySelect} />
             </div>
           </div>
           
-          {/* Document Analysis Section - With lavender background */}
-          <Card className="border border-border shadow-md bg-lavender">
+          {/* Document Analysis Section - With updated background */}
+          <Card className="border border-border shadow-md bg-white">
             <CardHeader>
               <CardTitle className="text-black">Document Analysis with Data Models</CardTitle>
             </CardHeader>
@@ -411,7 +421,7 @@ const Dashboard = () => {
                   <FileUploader onFilesAdded={handleFileUpload} />
                 </div>
                 <div className="flex flex-col gap-4">
-                  <div className="p-4 bg-white/30 rounded-lg">
+                  <div className="p-4 bg-yellow/30 rounded-lg">
                     <h3 className="font-medium mb-2 text-black">Selected File</h3>
                     <p className="text-sm text-black">
                       {file ? file.name : "No file selected"}
@@ -462,7 +472,7 @@ const Dashboard = () => {
           {/* Analysis Results Section */}
           {sentimentData && (
             <div className="animate-fade-in">
-              <div className="bg-lavender p-4 rounded-lg mb-4">
+              <div className="bg-white p-4 rounded-lg mb-4">
                 <FileInfoDisplay 
                   fileName={sentimentData.fileName}
                   fileSize={sentimentData.fileSize}
@@ -470,11 +480,11 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="bg-lavender p-4 rounded-lg mb-4">
+              <div className="bg-white p-4 rounded-lg mb-4">
                 <DocumentSummary summary={sentimentData.summary || "Analysis complete."} />
               </div>
               
-              <div className="bg-lavender p-4 rounded-lg mb-4">
+              <div className="bg-white p-4 rounded-lg mb-4">
                 <AnalysisTabs 
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
@@ -505,7 +515,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4">
+              <div className="mt-8 mb-4 bg-white rounded-lg p-4">
                 <TextEmotionViewer 
                   pdfText={pdfText}
                   embeddingPoints={sentimentData.embeddingPoints}
@@ -513,13 +523,13 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4">
+              <div className="mt-8 mb-4 bg-white rounded-lg p-4">
                 <WellbeingResources 
                   embeddingPoints={sentimentData.embeddingPoints}
                 />
               </div>
               
-              <div className="mt-8 mb-4 bg-lavender rounded-lg p-4">
+              <div className="mt-8 mb-4 bg-white rounded-lg p-4">
                 <WordComparisonController 
                   points={sentimentData.embeddingPoints}
                   selectedPoint={selectedPoint}
@@ -528,7 +538,7 @@ const Dashboard = () => {
                 />
               </div>
               
-              <div className="mt-8 bg-lavender p-4 rounded-lg">
+              <div className="mt-8 bg-white p-4 rounded-lg">
                 <PdfExport sentimentData={sentimentData} />
               </div>
             </div>

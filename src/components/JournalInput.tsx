@@ -8,10 +8,10 @@ import { Mic, FileText, Calendar } from "lucide-react";
 
 interface JournalInputProps {
   onJournalEntrySubmit: (text: string) => void;
-  onAddToLifePlan?: (category: 'daily' | 'weekly' | 'monthly') => void;
+  onAddToMonthlyReflection?: (text: string) => void;
 }
 
-export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalInputProps) => {
+export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }: JournalInputProps) => {
   const [journalText, setJournalText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
@@ -72,15 +72,15 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
     }
   };
 
-  const handleAddToLifePlan = (category: 'daily' | 'weekly' | 'monthly') => {
+  const handleAddToMonthlyReflection = () => {
     if (journalText.trim().length < 10) {
-      toast.error("Please enter at least 10 characters to add to your life plan");
+      toast.error("Please enter at least 10 characters to add to your monthly reflection");
       return;
     }
 
-    if (onAddToLifePlan) {
-      onAddToLifePlan(category);
-      toast.success(`Added to your ${category} life plan`);
+    if (onAddToMonthlyReflection) {
+      onAddToMonthlyReflection(journalText);
+      toast.success("Added to your monthly reflections");
     }
   };
 
@@ -105,7 +105,7 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
             <Button
               onClick={handleSubmit}
               disabled={journalText.trim().length < 10}
-              className="text-black"
+              className="text-black bg-orange text-white"
             >
               Submit for Analysis
             </Button>
@@ -131,36 +131,17 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToLifePlan }: JournalI
             )}
           </div>
           
-          {onAddToLifePlan && (
+          {onAddToMonthlyReflection && (
             <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-sm mb-2 font-medium text-black">Add to Life Plan:</p>
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="secondary"
-                  onClick={() => handleAddToLifePlan('daily')}
+                  onClick={handleAddToMonthlyReflection}
                   disabled={journalText.trim().length < 10}
                   className="flex items-center gap-1 text-black"
                 >
                   <Calendar className="h-4 w-4" />
-                  Daily
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleAddToLifePlan('weekly')}
-                  disabled={journalText.trim().length < 10}
-                  className="flex items-center gap-1 text-black"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Weekly
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleAddToLifePlan('monthly')}
-                  disabled={journalText.trim().length < 10}
-                  className="flex items-center gap-1 text-black"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Monthly
+                  Add to Monthly Reflections
                 </Button>
               </div>
             </div>

@@ -37,7 +37,7 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
   };
   
   return (
-    <div className="absolute bottom-4 left-4 bg-card p-3 rounded-lg shadow-md max-w-xs z-10 border border-border">
+    <div className="absolute bottom-4 left-4 bg-white p-3 rounded-lg shadow-md max-w-xs z-10 border border-border">
       <div className="flex items-center mb-2">
         <div 
           className="w-3 h-3 rounded-full mr-2" 
@@ -54,7 +54,7 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
           <span className="text-xs font-medium block mb-1">{t("relatedConcepts")}:</span>
           <div className="flex flex-wrap gap-1">
             {point.keywords.map((keyword, idx) => (
-              <span key={idx} className="text-xs bg-accent px-1.5 py-0.5 rounded-full">{keyword}</span>
+              <span key={idx} className="text-xs bg-orange px-1.5 py-0.5 rounded-full text-white">{keyword}</span>
             ))}
           </div>
         </div>
@@ -73,7 +73,7 @@ export const HoverInfoPanel = ({ point }: HoverInfoPanelProps) => {
           <div className="grid grid-cols-2 gap-1">
             {point.relationships.map((rel, idx) => (
               <li key={idx} className="text-xs flex items-center">
-                <div className="w-1 h-1 rounded-full bg-primary mr-1"></div>
+                <div className="w-1 h-1 rounded-full bg-orange mr-1"></div>
                 <span>{rel.word || `${t("connection") || "Connection"} ${idx + 1}`}</span>
               </li>
             ))}

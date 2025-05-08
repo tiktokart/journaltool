@@ -10,19 +10,19 @@
     --background: 48 90% 90%;
     --foreground: 29 100% 48%;
 
-    --card: 269 50% 15%;
+    --card: 0 0% 100%;
     --card-foreground: 0 0% 0%;
 
-    --popover: 269 50% 15%;
+    --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
 
     --primary: 46 91% 67%;
     --primary-foreground: 0 0% 0%;
 
-    --secondary: 277 33% 56%;
+    --secondary: 0 0% 95%;
     --secondary-foreground: 0 0% 0%;
 
-    --muted: 269 30% 25%;
+    --muted: 0 0% 95%;
     --muted-foreground: 0 0% 0%;
 
     --accent: 29 100% 48%;
@@ -31,19 +31,19 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 46 91% 67%;
 
-    --border: 269 30% 30%;
+    --border: 0 0% 90%;
     --input: 0 0% 0%;
     --ring: 46 91% 67%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 269 50% 12%;
+    --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 46 91% 67%;
     --sidebar-primary: 46 91% 67%;
-    --sidebar-primary-foreground: 269 50% 15%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 29 100% 48%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 269 30% 30%;
+    --sidebar-border: 0 0% 90%;
     --sidebar-ring: 46 91% 67%;
   }
 }
@@ -63,19 +63,19 @@
   }
   
   .card-gradient {
-    @apply bg-gradient-to-br from-card to-muted/80 backdrop-blur-sm;
+    @apply bg-gradient-to-br from-white to-gray-100 backdrop-blur-sm;
   }
   
   .glass-panel {
-    @apply bg-purple/10 backdrop-blur-md border border-purple/20 shadow-lg;
+    @apply bg-white/95 backdrop-blur-md border border-gray-200 shadow-lg;
   }
   
   .relationship-analysis {
-    @apply bg-orange-950/30 border border-orange-300/30;
+    @apply bg-orange-100/30 border border-orange-300/30;
   }
   
   .relationship-analysis-panel {
-    @apply bg-black/40 text-black rounded-md p-2;
+    @apply bg-white text-black rounded-md p-2;
   }
   
   .relationship-analysis-heading {
@@ -87,6 +87,6 @@
   }
   
   .relationship-analysis-tag {
-    @apply bg-purple/70 text-black px-2 py-1 rounded-full text-xs;
+    @apply bg-white text-black px-2 py-1 rounded-full text-xs;
   }
 }

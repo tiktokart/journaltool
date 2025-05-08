@@ -11,7 +11,7 @@ export const DocumentSummary = ({ summary }: DocumentSummaryProps) => {
   const { t } = useLanguage();
   
   return (
-    <Card className="mb-6 border border-border shadow-md bg-lavender">
+    <Card className="mb-6 border border-border shadow-md bg-white">
       <CardHeader className="pb-3">
         <div className="flex items-center">
           <BookOpen className="h-5 w-5 mr-2 text-orange" />

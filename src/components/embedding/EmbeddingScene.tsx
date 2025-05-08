@@ -121,12 +121,12 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     }
     const camera = cameraRef.current!;
     
-    rendererRef.current = new THREE.WebGLRenderer({ 
+    const renderer = new THREE.WebGLRenderer({ 
       antialias: true, 
       alpha: true,
       preserveDrawingBuffer: true
     });
-    const renderer = rendererRef.current!;
+    rendererRef.current = renderer;
     
     if (!containerRef.current) return;
     const containerWidth = containerRef.current.clientWidth;
