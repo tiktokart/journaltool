@@ -5,6 +5,7 @@ interface TimelineEvent {
   sentiment?: number;
   page?: number;
   score?: number;
+  color?: string; // Add color property
 }
 
 /**
@@ -33,6 +34,15 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
       'tomorrow', 'morning', 'afternoon', 'evening', 'night'
     ];
     
+    // Color mapping for emotional tones
+    const getColorForSentiment = (score: number): string => {
+      if (score >= 0.7) return "#27AE60"; // Positive - Green
+      if (score >= 0.6) return "#3498DB"; // Neutral-positive - Blue
+      if (score >= 0.4) return "#F39C12"; // Neutral - Orange
+      if (score >= 0.3) return "#E67E22"; // Neutral-negative - Dark Orange
+      return "#E74C3C"; // Negative - Red
+    };
+    
     textUnits.forEach((unit, index) => {
       // Look for time expressions in the text
       const hasTimeExpression = timeExpressions.some(expr => 
@@ -51,12 +61,16 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
         const page = index + 1;
         const score = sentiment;
         
+        // Add color based on sentiment score
+        const color = getColorForSentiment(sentiment);
+        
         timeline.push({
           time: `Point ${index + 1}`, // For text display
           page, // For visualization (x-axis)
           score, // For visualization (y-axis)
           event: event.trim(),
-          sentiment
+          sentiment,
+          color // Add color property for visualization
         });
       }
     });
@@ -64,9 +78,30 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
     // Ensure we have at least a few events
     if (timeline.length < 3) {
       return [
-        { time: "Beginning", page: 1, score: 0.65, event: "Starting point of the narrative", sentiment: 0.65 },
-        { time: "Middle", page: 2, score: 0.45, event: "Development of key themes and emotions", sentiment: 0.45 },
-        { time: "End", page: 3, score: 0.55, event: "Resolution and reflection on experiences", sentiment: 0.55 }
+        { 
+          time: "Beginning", 
+          page: 1, 
+          score: 0.65, 
+          event: "Starting point of the narrative", 
+          sentiment: 0.65,
+          color: getColorForSentiment(0.65)
+        },
+        { 
+          time: "Middle", 
+          page: 2, 
+          score: 0.45, 
+          event: "Development of key themes and emotions", 
+          sentiment: 0.45,
+          color: getColorForSentiment(0.45)
+        },
+        { 
+          time: "End", 
+          page: 3, 
+          score: 0.55, 
+          event: "Resolution and reflection on experiences", 
+          sentiment: 0.55,
+          color: getColorForSentiment(0.55)
+        }
       ];
     }
     
@@ -74,7 +109,13 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
   } catch (error) {
     console.error("Error generating timeline:", error);
     return [
-      { time: "Error", page: 1, score: 0.5, event: "Timeline could not be generated" }
+      { 
+        time: "Error", 
+        page: 1, 
+        score: 0.5, 
+        event: "Timeline could not be generated",
+        color: "#808080" // Gray color for error state
+      }
     ];
   }
 };

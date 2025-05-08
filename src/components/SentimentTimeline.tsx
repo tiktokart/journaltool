@@ -5,7 +5,11 @@ import { Info } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SentimentTimelineProps {
-  data: Array<{ page: number; score: number }>;
+  data: Array<{ 
+    page: number; 
+    score: number;
+    color?: string;  // Added color property
+  }>;
   sourceDescription?: string; // Add this to show where data came from
 }
 
@@ -94,12 +98,14 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   fill="url(#colorScore)" 
                   dot={(props: any) => {
                     const { cx, cy, payload } = props;
+                    // Use the provided color if available, otherwise fall back to calculated color
+                    const dotColor = payload.color || getColor(payload.score);
                     return (
                       <circle 
                         cx={cx} 
                         cy={cy} 
                         r={5} 
-                        fill={getColor(payload.score)} 
+                        fill={dotColor} 
                         stroke="white" 
                         strokeWidth={2} 
                       />

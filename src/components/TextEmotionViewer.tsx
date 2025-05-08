@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Text, Highlighter, Eye, EyeOff } from "lucide-react";
+import { Highlighter, Eye, EyeOff } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Point } from "@/types/embedding";
 import { getEmotionColor } from "@/utils/embeddingUtils";
@@ -47,16 +46,42 @@ export const TextEmotionViewer = ({
       return;
     }
 
+    console.log("Processing text with emotions, found points:", embeddingPoints.length);
+    
+    // Log some sample points to check if they have proper emotions and colors
+    const samplePoints = embeddingPoints.slice(0, 5);
+    console.log("Sample points for highlighting:", samplePoints);
+
     // Create a map of words to their emotional tones and colors
     const wordEmotionMap = new Map();
     embeddingPoints.forEach(point => {
-      if (point.word && point.emotionalTone) {
+      if (point.word) {
+        // Ensure all points have emotion and color
+        const emotion = point.emotionalTone || "Neutral";
+        let color;
+        
+        if (point.color) {
+          // If point has a color array, use it
+          if (Array.isArray(point.color)) {
+            const [r, g, b] = point.color;
+            color = [r, g, b];
+          } else {
+            // If it's already a string, use it directly
+            color = point.color;
+          }
+        } else {
+          // Otherwise get color based on emotion
+          color = getEmotionColor(emotion);
+        }
+        
         wordEmotionMap.set(point.word.toLowerCase(), {
-          emotion: point.emotionalTone,
-          color: point.color || getEmotionColor(point.emotionalTone)
+          emotion,
+          color
         });
       }
     });
+
+    console.log("Word emotion map size:", wordEmotionMap.size);
 
     // Words to filter out - significantly reduced filtering, only the most common/basic words
     const wordsToFilter = filteringLevel === 'minimal' ? [
@@ -65,7 +90,7 @@ export const TextEmotionViewer = ({
     ] : [];
 
     // Split text into words while preserving whitespace and punctuation
-    const textSegments: { text: string; emotion: string | null; color?: [number, number, number] }[] = [];
+    const textSegments: { text: string; emotion: string | null; color?: [number, number, number] | string }[] = [];
     
     // Regular expression that matches words
     const wordRegex = /[a-zA-Z0-9']+/g;
@@ -119,14 +144,25 @@ export const TextEmotionViewer = ({
         return segment.text;
       }
 
-      // Use the color from the point if available, otherwise get color for emotion
+      // Use the color from the segment if available
       let backgroundColor;
       if (segment.color) {
-        const [r, g, b] = segment.color;
-        backgroundColor = `rgba(${r*255}, ${g*255}, ${b*255}, 0.3)`;
+        if (Array.isArray(segment.color)) {
+          const [r, g, b] = segment.color;
+          backgroundColor = `rgba(${r*255}, ${g*255}, ${b*255}, 0.3)`;
+        } else if (typeof segment.color === 'string') {
+          // If color is already a string (like "#FF0000"), use it with reduced opacity
+          backgroundColor = segment.color.startsWith('#') 
+            ? segment.color + '4D'  // Add 30% opacity (4D in hex)
+            : segment.color;
+        } else {
+          // Fallback to emotion-based color
+          backgroundColor = getEmotionColor(segment.emotion);
+        }
       } else {
         backgroundColor = getEmotionColor(segment.emotion);
       }
+      
       const color = "inherit";
 
       return (
@@ -149,7 +185,7 @@ export const TextEmotionViewer = ({
       <Card className="border border-border shadow-md bg-white">
         <CardHeader>
           <CardTitle className="flex items-center text-xl">
-            <Text className="h-5 w-5 mr-2 text-primary" />
+            <Highlighter className="h-5 w-5 mr-2 text-primary" />
             {t("Document Text Visualization")}
           </CardTitle>
         </CardHeader>

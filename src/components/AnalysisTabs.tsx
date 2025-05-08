@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -283,21 +282,11 @@ export const AnalysisTabs = ({
               </CardContent>
             </Card>
             
-            {/* Add the TextEmotionViewer component to ensure connection with visualizations */}
+            {/* Add the TextEmotionViewer component - we keep only this one instance */}
             {hasTextData && hasEmbeddingData && (
               <div className="mt-6">
                 <TextEmotionViewer
                   pdfText={textContent}
-                  embeddingPoints={sentimentData.embeddingPoints}
-                  sourceDescription={sentimentData.sourceDescription}
-                />
-              </div>
-            )}
-            
-            {/* Add WellbeingResources component with proper data connection */}
-            {hasEmbeddingData && (
-              <div className="mt-6">
-                <WellbeingResources
                   embeddingPoints={sentimentData.embeddingPoints}
                   sourceDescription={sentimentData.sourceDescription}
                 />
