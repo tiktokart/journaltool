@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -14,6 +13,7 @@ import { Button } from './ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { WellbeingResources } from './WellbeingResources';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -98,8 +98,9 @@ export const DocumentEmbedding = ({
       (window as any).documentEmbeddingPoints = displayPoints;
       console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
       
-      const sampleWords = displayPoints.slice(0, 10).map(p => p.word);
-      console.log("Sample words in visualization:", sampleWords.join(", "));
+      // Add this debug message to verify points data
+      console.log("Sample words in visualization:", displayPoints.slice(0, 10).map(p => p.word).join(", "));
+      console.log("Points have emotionalTone:", displayPoints.some(p => p.emotionalTone));
       
       const uniqueGroups = new Set<string>();
       displayPoints.forEach(point => {
@@ -389,6 +390,15 @@ export const DocumentEmbedding = ({
         <div className="absolute bottom-4 right-4 z-10 flex items-center text-xs bg-card/80 backdrop-blur-sm px-2 py-1 rounded-md text-muted-foreground">
           <Info className="h-3.5 w-3.5 mr-1" />
           {sourceDescription}
+        </div>
+      )}
+      
+      {displayPoints.length > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 z-10 transform translate-y-full transition-transform duration-300 hover:translate-y-0">
+          <WellbeingResources 
+            embeddingPoints={displayPoints} 
+            sourceDescription={sourceDescription} 
+          />
         </div>
       )}
     </div>

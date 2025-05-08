@@ -6,8 +6,9 @@ interface GemmaAnalysisResult {
   timeline?: any[];
   entities?: any[];
   keyPhrases?: string[];
-  embeddingPoints?: any[]; // Add this field to match the expected structure
-  sourceDescription?: string; // Add this field to ensure source description is passed
+  embeddingPoints?: any[];
+  sourceDescription?: string;
+  text?: string; // Add text field to ensure it's passed to components
 }
 
 export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysisResult> => {
@@ -183,7 +184,6 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
       else summary = "The text contains a mix of emotions.";
       
       // Create embedding points for visualization 
-      // This is crucial for the suggestions to work properly
       const embeddingPoints = words.filter(w => w.length > 2).map((word, index) => {
         // Find if this word has an emotional tone
         let emotionalTone = 'Neutral';
@@ -199,6 +199,11 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
         if (negativeWords.includes(word)) localSentiment = 0.2;
         if (positiveWords.includes(word)) localSentiment = 0.8;
         
+        // Add debug output to track emotional data
+        if (emotionalTone !== 'Neutral') {
+          console.log(`Word '${word}' assigned emotional tone: ${emotionalTone}`);
+        }
+        
         return {
           id: `point-${index}`,
           word: word,
@@ -210,6 +215,9 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
         };
       });
       
+      console.log(`Created ${embeddingPoints.length} embedding points`);
+      console.log(`Points with emotional tones: ${embeddingPoints.filter(p => p.emotionalTone !== 'Neutral').length}`);
+      
       return {
         sentiment,
         emotionalTones,
@@ -218,7 +226,8 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
         entities,
         keyPhrases,
         embeddingPoints,
-        sourceDescription: "Analysis powered by Gemma 3" // Add source attribution
+        sourceDescription: "Analysis powered by Gemma 3", // Add source attribution
+        text: text // Pass the original text
       };
       
     } catch (error) {
@@ -231,7 +240,8 @@ export const analyzeTextWithGemma3 = async (text: string): Promise<GemmaAnalysis
         entities: [],
         keyPhrases: [],
         embeddingPoints: [], // Empty array for embedding points
-        sourceDescription: "Analysis powered by Gemma 3 (Error)"
+        sourceDescription: "Analysis powered by Gemma 3 (Error)",
+        text: text // Pass the original text
       };
     }
   } catch (error) {
