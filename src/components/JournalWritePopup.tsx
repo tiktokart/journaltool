@@ -4,24 +4,50 @@ import { v4 as uuidv4 } from 'uuid';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Mic, MicOff, Upload, FileText } from "lucide-react";
+import { X, Mic, MicOff, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { extractTextFromPdf } from "@/utils/pdfExtraction";
 
 interface JournalWritePopupProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  onSubmitJournal?: (journalText: string, addToMonthlyReflection: boolean) => void;
   onJournalCreated?: (journalText: string) => void;
   isDisabled?: boolean;
 }
 
-const JournalWritePopup = ({ onJournalCreated, isDisabled = false }: JournalWritePopupProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+const JournalWritePopup = ({ 
+  onJournalCreated, 
+  isDisabled = false,
+  isOpen: externalIsOpen,
+  onClose,
+  onSubmitJournal
+}: JournalWritePopupProps) => {
+  // Use external isOpen state if provided, otherwise manage internally
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const [journalText, setJournalText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [addToMonthlyReflection, setAddToMonthlyReflection] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<any>(null);
+
+  // Handle dialog close
+  const handleClose = () => {
+    // Use external onClose if provided, otherwise use internal state
+    if (onClose) {
+      onClose();
+    } else {
+      setInternalIsOpen(false);
+    }
+    // Reset state
+    setJournalText("");
+    setAddToMonthlyReflection(false);
+    stopRecording();
+  };
 
   // Create speech recognition instance
   useEffect(() => {
@@ -110,6 +136,14 @@ const JournalWritePopup = ({ onJournalCreated, isDisabled = false }: JournalWrit
     }
     
     try {
+      // Use the callback function if provided
+      if (onSubmitJournal) {
+        onSubmitJournal(journalText, addToMonthlyReflection);
+        handleClose();
+        return;
+      }
+
+      // Legacy functionality when onSubmitJournal is not provided
       // Create new journal entry
       const newEntry = {
         id: uuidv4(),
@@ -138,8 +172,7 @@ const JournalWritePopup = ({ onJournalCreated, isDisabled = false }: JournalWrit
       }
       
       // Reset and close
-      setJournalText("");
-      setIsOpen(false);
+      handleClose();
       
       toast.success("Journal entry saved");
     } catch (error) {
@@ -177,16 +210,18 @@ const JournalWritePopup = ({ onJournalCreated, isDisabled = false }: JournalWrit
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button 
-          size="lg" 
-          className="w-full max-w-md"
-          disabled={isDisabled}
-        >
-          Write in your journal
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose ? onClose : setInternalIsOpen}>
+      {!externalIsOpen && (
+        <DialogTrigger asChild>
+          <Button 
+            size="lg" 
+            className="w-full max-w-md"
+            disabled={isDisabled}
+          >
+            Write in your journal
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
@@ -221,7 +256,7 @@ const JournalWritePopup = ({ onJournalCreated, isDisabled = false }: JournalWrit
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 className="rounded-full bg-gray-100 text-gray-600"
               >
                 <X className="h-4 w-4" />
@@ -244,6 +279,21 @@ const JournalWritePopup = ({ onJournalCreated, isDisabled = false }: JournalWrit
             className="min-h-[200px] p-4"
           />
         </div>
+
+        {onSubmitJournal && (
+          <div className="flex items-center mb-4">
+            <input
+              type="checkbox"
+              id="add-to-monthly"
+              checked={addToMonthlyReflection}
+              onChange={(e) => setAddToMonthlyReflection(e.target.checked)}
+              className="mr-2"
+            />
+            <label htmlFor="add-to-monthly" className="text-sm">
+              Add to monthly reflection
+            </label>
+          </div>
+        )}
         
         <div className="flex justify-end">
           <Button
