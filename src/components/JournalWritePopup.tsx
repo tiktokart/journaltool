@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Mic, MicOff, Upload, FilePdf } from "lucide-react";
+import { X, Mic, MicOff, Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { extractTextFromPdf } from "@/utils/pdfExtraction";
 
@@ -188,7 +187,7 @@ const JournalWritePopup = ({
                     <>Uploading...</>
                   ) : (
                     <>
-                      <FilePdf className="h-4 w-4" /> 
+                      <FileText className="h-4 w-4" /> 
                       {uploadedFile ? uploadedFile.name : "Upload PDF"}
                     </>
                   )}
