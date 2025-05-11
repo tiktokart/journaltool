@@ -30,6 +30,7 @@ const JournalWritePopup = ({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingError, setRecordingError] = useState<string | null>(null);
   const [addToMonthlyReflection, setAddToMonthlyReflection] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState("");
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -45,6 +46,7 @@ const JournalWritePopup = ({
     }
     // Reset state
     setJournalText("");
+    setInterimTranscript("");
     setAddToMonthlyReflection(false);
     stopRecording();
   };
@@ -59,6 +61,7 @@ const JournalWritePopup = ({
         recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.continuous = true;
         recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'en-US'; // Use user's browser language
         
         recognitionRef.current.onresult = (event: any) => {
           let interimTranscript = '';
@@ -73,9 +76,13 @@ const JournalWritePopup = ({
             }
           }
           
+          // Update interim transcript for real-time feedback
+          setInterimTranscript(interimTranscript);
+          
           // Only update if there's new text to add
           if (finalTranscript) {
             setJournalText(prev => prev + finalTranscript);
+            setInterimTranscript('');
           }
         };
         
@@ -98,7 +105,6 @@ const JournalWritePopup = ({
 
   // Start audio recording
   const startRecording = async () => {
-    setJournalText("");
     setRecordingError(null);
     
     try {
@@ -125,12 +131,19 @@ const JournalWritePopup = ({
       recognitionRef.current.stop();
     }
     
+    if (interimTranscript) {
+      setJournalText(prev => prev + " " + interimTranscript);
+      setInterimTranscript("");
+    }
+    
     setIsRecording(false);
   };
 
   // Save journal entry
   const saveJournalEntry = () => {
-    if (!journalText.trim()) {
+    const textToSave = journalText.trim() + (interimTranscript ? " " + interimTranscript.trim() : "");
+    
+    if (!textToSave) {
       toast.error("Cannot save empty journal entry");
       return;
     }
@@ -138,7 +151,7 @@ const JournalWritePopup = ({
     try {
       // Use the callback function if provided
       if (onSubmitJournal) {
-        onSubmitJournal(journalText, addToMonthlyReflection);
+        onSubmitJournal(textToSave, addToMonthlyReflection);
         handleClose();
         return;
       }
@@ -147,7 +160,7 @@ const JournalWritePopup = ({
       // Create new journal entry
       const newEntry = {
         id: uuidv4(),
-        text: journalText.trim(),
+        text: textToSave,
         date: new Date().toISOString()
       };
       
@@ -168,7 +181,7 @@ const JournalWritePopup = ({
       
       // Callback if provided
       if (onJournalCreated) {
-        onJournalCreated(journalText);
+        onJournalCreated(textToSave);
       }
       
       // Reset and close
@@ -215,10 +228,10 @@ const JournalWritePopup = ({
         <DialogTrigger asChild>
           <Button 
             size="lg" 
-            className="w-full max-w-md bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg shadow-md"
+            className="w-full max-w-md bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md"
             disabled={isDisabled}
           >
-            Write
+            Start Writing
           </Button>
         </DialogTrigger>
       )}
@@ -278,6 +291,13 @@ const JournalWritePopup = ({
             placeholder="How are you feeling today?"
             className="min-h-[200px] p-4"
           />
+          
+          {/* Show interim transcript while recording */}
+          {isRecording && interimTranscript && (
+            <div className="mt-2 p-2 bg-green-50 rounded text-gray-700 italic">
+              {interimTranscript}...
+            </div>
+          )}
         </div>
 
         {onSubmitJournal && (
@@ -298,8 +318,8 @@ const JournalWritePopup = ({
         <div className="flex justify-end">
           <Button
             onClick={saveJournalEntry}
-            disabled={!journalText.trim()}
-            className="bg-purple-600 hover:bg-purple-700"
+            disabled={!journalText.trim() && !interimTranscript.trim()}
+            className="bg-green-600 hover:bg-green-700"
           >
             Save Entry
           </Button>

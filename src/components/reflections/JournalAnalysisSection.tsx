@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, BarChart2, PieChart, LineChart } from "lucide-react";
+import { ChevronRight, BarChart2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { 
   Accordion,
@@ -18,6 +19,7 @@ import JournalSentimentSummary from "./JournalSentimentSummary";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Card } from "@/components/ui/card";
 import MentalHealthSuggestions from "../suggestions/MentalHealthSuggestions";
+import { TextEmotionViewer } from "@/components/TextEmotionViewer";
 
 interface JournalAnalysisSectionProps {
   journalEntries: any[];
@@ -117,15 +119,22 @@ const JournalAnalysisSection = ({
       }
     });
     
+    // Fix the parameter naming issue by using different names
     return Object.entries(wordCount)
-      .filter(([, count]) => count > 1) // Only words that appear more than once
-      .sort(([, countA], [, countB]) => Number(countB) - Number(countA))
+      .filter(([_, count]) => count > 1) // Only words that appear more than once
+      .sort(([_wordA, countA], [_wordB, countB]) => Number(countB) - Number(countA))
       .slice(0, 20)
       .map(([word]) => word);
   };
 
+  // Get combined text for all journal entries for visualization
+  const getAllJournalText = () => {
+    return journalEntries.map(entry => entry.text).join("\n\n");
+  };
+
   const embeddingPoints = generateEmotionalEmbeddings();
   const keywords = extractKeywords();
+  const allJournalText = getAllJournalText();
 
   return (
     <div className="mt-6">
@@ -232,6 +241,15 @@ const JournalAnalysisSection = ({
                             depressedJournalReference={overallSentimentChange.includes("negative")}
                           />
                         </div>
+                      </div>
+
+                      <div className="border rounded-md p-3 bg-white">
+                        <h4 className="font-medium mb-2">Text Emotion Visualization</h4>
+                        <TextEmotionViewer 
+                          pdfText={allJournalText} 
+                          embeddingPoints={embeddingPoints}
+                          sourceDescription="Emotional highlighting of journal content"
+                        />
                       </div>
                       
                       <Card className="p-3">

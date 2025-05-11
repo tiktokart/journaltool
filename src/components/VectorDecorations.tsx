@@ -3,7 +3,7 @@ import React from "react";
 
 export interface VectorDecorationsProps {
   className?: string;
-  type?: string;
+  type?: "default" | "home" | "dashboard";
 }
 
 const VectorDecorations: React.FC<VectorDecorationsProps> = ({ 
@@ -25,6 +25,14 @@ const VectorDecorations: React.FC<VectorDecorationsProps> = ({
         <>
           <div className="absolute top-20 right-10 w-20 h-20 rounded-full bg-green-100 opacity-30"></div>
           <div className="absolute bottom-10 left-20 w-32 h-16 rounded-full bg-purple-100 opacity-30"></div>
+        </>
+      )}
+      
+      {type === "dashboard" && (
+        <>
+          <div className="absolute top-5 right-5 w-32 h-32 rounded-full bg-blue-100 opacity-20"></div>
+          <div className="absolute bottom-20 left-10 w-24 h-24 rounded-full bg-green-100 opacity-20"></div>
+          <div className="absolute top-40 left-1/3 w-20 h-20 rounded-full bg-yellow-100 opacity-20"></div>
         </>
       )}
     </div>
