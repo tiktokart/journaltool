@@ -1,10 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MonthlyReflectionCard } from "./reflections/MonthlyReflectionCard";
-import JournalAnalysisSection from "./reflections/JournalAnalysisSection";
 
 interface MonthlyReflection {
   id: string;
@@ -241,22 +241,11 @@ export const MonthlyReflections = ({
   };
 
   return (
-    <>
-      <MonthlyReflectionCard 
-        reflections={reflections} 
-        onDelete={handleDelete}
-        onClearAll={handleClearAll}
-        currentMonth={currentMonth}
-      />
-      
-      <JournalAnalysisSection 
-        journalEntries={journalEntries}
-        timelineData={timelineData}
-        overallSentimentChange={overallSentimentChange}
-        averageSentiment={averageSentiment}
-        getSentimentColor={getSentimentColor}
-        refreshTrigger={internalRefreshTrigger}
-      />
-    </>
+    <MonthlyReflectionCard 
+      reflections={reflections} 
+      onDelete={handleDelete}
+      onClearAll={handleClearAll}
+      currentMonth={currentMonth}
+    />
   );
 };

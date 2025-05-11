@@ -3,8 +3,9 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Mic, MicOff } from "lucide-react";
+import { X, Mic, MicOff, Upload, FilePdf } from "lucide-react";
 import { toast } from "sonner";
+import { extractTextFromPdf } from "@/utils/pdfExtraction";
 
 interface JournalWritePopupProps {
   isOpen: boolean;
@@ -20,6 +21,8 @@ const JournalWritePopup = ({
   const [journalText, setJournalText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [addToMonthly, setAddToMonthly] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   
   // Speech recognition setup
   const startRecording = () => {
@@ -87,7 +90,41 @@ const JournalWritePopup = ({
     onSubmitJournal(journalText, addToMonthly);
     setJournalText("");
     setAddToMonthly(false);
+    setUploadedFile(null);
     onClose();
+  };
+  
+  // Handle PDF upload
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.type !== 'application/pdf') {
+      toast.error("Please upload a PDF file");
+      return;
+    }
+    
+    try {
+      setIsUploading(true);
+      setUploadedFile(file);
+      
+      // Extract text from PDF
+      const extractedText = await extractTextFromPdf(file);
+      
+      // Append or set the extracted text to the journal text
+      if (journalText.trim().length > 0) {
+        setJournalText(prev => `${prev}\n\nFrom PDF "${file.name}":\n${extractedText}`);
+      } else {
+        setJournalText(`From PDF "${file.name}":\n${extractedText}`);
+      }
+      
+      toast.success("PDF text extracted successfully");
+    } catch (error) {
+      console.error("Error uploading PDF:", error);
+      toast.error("Failed to extract text from PDF");
+    } finally {
+      setIsUploading(false);
+    }
   };
   
   return (
@@ -124,17 +161,48 @@ const JournalWritePopup = ({
             </Button>
           </div>
           
-          <div className="flex items-center mt-4">
-            <input 
-              type="checkbox" 
-              id="add-to-monthly" 
-              className="mr-2"
-              checked={addToMonthly}
-              onChange={() => setAddToMonthly(!addToMonthly)}
-            />
-            <label htmlFor="add-to-monthly" className="text-sm text-gray-700">
-              Add to Monthly Reflections
-            </label>
+          <div className="flex flex-wrap items-center mt-4 gap-4">
+            <div className="flex items-center">
+              <input 
+                type="checkbox" 
+                id="add-to-monthly" 
+                className="mr-2"
+                checked={addToMonthly}
+                onChange={() => setAddToMonthly(!addToMonthly)}
+              />
+              <label htmlFor="add-to-monthly" className="text-sm text-gray-700">
+                Add to Monthly Reflections
+              </label>
+            </div>
+            
+            {/* Add PDF upload functionality */}
+            <div className="flex-1">
+              <label htmlFor="pdf-upload" className="flex items-center justify-center">
+                <Button 
+                  variant="outline" 
+                  className="border-dashed border-green-300 flex gap-2"
+                  disabled={isUploading}
+                  onClick={() => document.getElementById('pdf-upload')?.click()}
+                >
+                  {isUploading ? (
+                    <>Uploading...</>
+                  ) : (
+                    <>
+                      <FilePdf className="h-4 w-4" /> 
+                      {uploadedFile ? uploadedFile.name : "Upload PDF"}
+                    </>
+                  )}
+                </Button>
+                <input 
+                  type="file" 
+                  id="pdf-upload" 
+                  className="hidden" 
+                  accept=".pdf"
+                  onChange={handlePdfUpload}
+                  onClick={(e) => (e.currentTarget.value = '')} // Reset input value on click
+                />
+              </label>
+            </div>
           </div>
           
           <div className="mt-6 flex justify-end">

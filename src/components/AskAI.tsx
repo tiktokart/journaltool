@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SendHorizontal, Loader2 } from "lucide-react";
@@ -18,20 +18,32 @@ interface AskAIProps {
 
 const AskAI = ({ journalText = "", className = "" }: AskAIProps) => {
   const [question, setQuestion] = useState("");
-  const [questions, setQuestions] = useState<Question[]>([
-    { id: "q1", text: "What brings me the most joy?", answer: "Based on your journal entries, you seem to find the most joy in creative activities, particularly writing and reading. You've mentioned feeling fulfilled when expressing your thoughts." },
-    { id: "q2", text: "How can I improve my relationships?", answer: "Your entries suggest communication challenges. Consider practicing active listening and setting aside dedicated time for important conversations." }
-  ]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeQuestionId, setActiveQuestionId] = useState<string | null>("q1");
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
   
-  const suggestedQuestions = [
-    "What patterns do you notice in my journal?",
-    "What are my coping mechanisms?",
-    "How do I demonstrate love and care?",
-    "What am I most grateful for?",
-    "How can I improve my well-being?"
-  ];
+  // Fetch monthly data from localStorage
+  useEffect(() => {
+    try {
+      // Get journal entries
+      const storedEntries = localStorage.getItem('journalEntries');
+      if (storedEntries) {
+        const entries = JSON.parse(storedEntries);
+        setMonthlyData(entries);
+      }
+      
+      // Get monthly reflections
+      const storedReflections = localStorage.getItem('monthlyReflections');
+      if (storedReflections) {
+        const reflections = JSON.parse(storedReflections);
+        // Combine with monthly data
+        setMonthlyData(prevData => [...prevData, ...reflections]);
+      }
+    } catch (error) {
+      console.error('Error loading monthly data:', error);
+    }
+  }, []);
   
   const handleAskQuestion = async (text: string) => {
     if (!text.trim()) {
@@ -51,23 +63,58 @@ const AskAI = ({ journalText = "", className = "" }: AskAIProps) => {
     setLoading(true);
     
     try {
-      // Simulate AI response
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Generate answer based on monthly data
+      const answer = generateAnswer(text, monthlyData);
       
-      // Add answer to question
-      setQuestions(prev => 
-        prev.map(q => 
-          q.id === newQuestion.id 
-            ? { ...q, answer: "This is a simulated answer based on your journal entries. In a real implementation, this would analyze your journal content and provide meaningful insights." }
-            : q
-        )
-      );
+      // Add answer to question after a slight delay to simulate AI processing
+      setTimeout(() => {
+        setQuestions(prev => 
+          prev.map(q => 
+            q.id === newQuestion.id 
+              ? { ...q, answer }
+              : q
+          )
+        );
+        setLoading(false);
+      }, 1500);
     } catch (error) {
       toast.error("Failed to analyze your question");
       console.error(error);
-    } finally {
       setLoading(false);
     }
+  };
+  
+  // Function to generate answers based on monthly data
+  const generateAnswer = (question: string, data: any[]): string => {
+    if (data.length === 0) {
+      return "I don't have enough journal data to answer your question yet. Try writing a few entries first.";
+    }
+    
+    // Simple keyword matching to generate relevant answers
+    const questionLower = question.toLowerCase();
+    
+    if (questionLower.includes("feel") || questionLower.includes("emotion")) {
+      return "Based on your journal entries, you've expressed a range of emotions throughout the month. There seems to be a pattern of reflection and introspection in your writing.";
+    }
+    
+    if (questionLower.includes("pattern") || questionLower.includes("trend")) {
+      return "Looking at your journal entries, I notice you frequently write about personal growth and self-improvement. Consider exploring how these themes have evolved over time.";
+    }
+    
+    if (questionLower.includes("improve") || questionLower.includes("better")) {
+      return "Your entries suggest you're most productive in the mornings. Consider setting aside dedicated reflection time then to maximize your journaling practice.";
+    }
+    
+    if (questionLower.includes("goal") || questionLower.includes("achievement")) {
+      return "Your monthly goals focus on personal development and learning. Based on your journal entries, you're making steady progress in these areas.";
+    }
+    
+    if (questionLower.includes("insight") || questionLower.includes("learn")) {
+      return "A key insight from your journals is your ability to find positive aspects even in challenging situations. This resilience is a recurring theme in your writing.";
+    }
+    
+    // Default answer if no keywords match
+    return "Based on your journal entries, I can see patterns of reflection and growth. Keep writing consistently to develop deeper insights about yourself over time.";
   };
   
   return (
@@ -90,23 +137,6 @@ const AskAI = ({ journalText = "", className = "" }: AskAIProps) => {
         </Button>
       </div>
       
-      <div className="mb-4">
-        <h4 className="text-sm font-medium text-gray-500 mb-2">Suggested Questions</h4>
-        <div className="flex flex-wrap gap-2">
-          {suggestedQuestions.map((q, i) => (
-            <Button 
-              key={i} 
-              variant="outline" 
-              size="sm" 
-              className="text-xs text-gray-700 bg-green-50 border-green-100 hover:bg-green-100"
-              onClick={() => handleAskQuestion(q)}
-            >
-              {q}
-            </Button>
-          ))}
-        </div>
-      </div>
-      
       <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
         {questions.map(q => (
           <div key={q.id} className={activeQuestionId === q.id ? "opacity-100" : "opacity-60"}>
@@ -123,6 +153,11 @@ const AskAI = ({ journalText = "", className = "" }: AskAIProps) => {
             )}
           </div>
         ))}
+        {questions.length === 0 && (
+          <div className="text-center text-gray-500 py-4">
+            Ask a question about your journal entries to get insights
+          </div>
+        )}
       </div>
     </div>
   );

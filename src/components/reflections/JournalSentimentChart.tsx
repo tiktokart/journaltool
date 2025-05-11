@@ -1,19 +1,24 @@
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 
 interface JournalSentimentChartProps {
-  timelineData: any[];
+  timelineData: {
+    date: string;
+    sentiment: number;
+  }[];
 }
 
 const JournalSentimentChart = ({ timelineData }: JournalSentimentChartProps) => {
-  // Custom tooltip for the chart
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  // Add minimal styling for chart appearance
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const sentimentText = payload[0].value >= 0.5 ? "Positive" : "Negative";
+      const data = payload[0].payload;
       return (
-        <div className="bg-white p-2 border border-gray-200 shadow-md rounded-md">
-          <p className="text-sm">{`Date: ${label}`}</p>
-          <p className="text-sm">{`Sentiment: ${payload[0].value} (${sentimentText})`}</p>
+        <div className="bg-white p-2 border border-gray-200 shadow-sm rounded-md">
+          <p className="text-xs font-medium">{data.date}</p>
+          <p className="text-xs">
+            Sentiment: {(data.sentiment * 100).toFixed(0)}%
+          </p>
         </div>
       );
     }
@@ -24,33 +29,26 @@ const JournalSentimentChart = ({ timelineData }: JournalSentimentChartProps) => 
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
         data={timelineData}
-        margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
+        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
       >
-        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
         <XAxis 
           dataKey="date" 
-          tick={{ fontSize: 12 }}
-          padding={{ left: 10, right: 10 }}
+          tick={{ fontSize: 10 }} 
+          tickLine={false} 
+          axisLine={{ stroke: '#eaeaea' }}
         />
         <YAxis 
+          hide={true} 
           domain={[0, 1]} 
-          tick={{ fontSize: 12 }}
-          tickFormatter={(v) => v.toFixed(1)}
-          label={{ 
-            value: 'Sentiment', 
-            angle: -90, 
-            position: 'insideLeft',
-            style: { textAnchor: 'middle' }
-          }}
         />
         <Tooltip content={<CustomTooltip />} />
         <Line
           type="monotone"
           dataKey="sentiment"
-          stroke="#9b87f5"
+          stroke="#27AE60"
           strokeWidth={2}
-          dot={{ r: 4, fill: "#9b87f5" }}
-          activeDot={{ r: 6, fill: "#7E69AB" }}
+          dot={{ fill: '#27AE60', r: 4 }}
+          activeDot={{ fill: '#219653', r: 6 }}
         />
       </LineChart>
     </ResponsiveContainer>

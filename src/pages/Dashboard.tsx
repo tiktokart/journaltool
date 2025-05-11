@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -93,7 +92,7 @@ const Goals = () => {
   );
 };
 
-// Import MonthlyReflections and JournalAnalysisSection (already exists)
+// Import MonthlyReflections and JournalAnalysisSection
 import { MonthlyReflections } from "@/components/MonthlyReflections";
 import JournalAnalysisSection from "@/components/reflections/JournalAnalysisSection";
 

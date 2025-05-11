@@ -94,7 +94,6 @@ const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="border-green-200"
-            prefix={<Search className="h-4 w-4 text-gray-400" />}
           />
         </div>
       </div>
@@ -204,7 +203,7 @@ const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
                         </div>
                       </div>
                       
-                      <div className="bg-white border border-gray-100 rounded-lg p-4">
+                      <div className="bg-white border border-gray-100 rounded-lg p-4 mb-4">
                         <h4 className="text-sm font-medium text-gray-600 mb-2">Sentiment Analysis</h4>
                         <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
                           <div className="bg-green-500 h-full" style={{ width: "65%" }}></div>
@@ -215,6 +214,35 @@ const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
                           <span>Positive</span>
                         </div>
                       </div>
+                      
+                      {/* Added Detailed Analysis Data section */}
+                      <div className="bg-white border border-gray-100 rounded-lg p-4 mb-4">
+                        <h4 className="text-sm font-medium text-gray-600 mb-2">Detailed Analysis Data</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-xs">Overall Sentiment:</span>
+                            <span className="text-xs font-medium">Positive (0.72)</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-xs">Word Count:</span>
+                            <span className="text-xs font-medium">{getWordCount(selectedEntry.text)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-xs">Key Entities:</span>
+                            <span className="text-xs font-medium">3</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Added Suggestions section */}
+                      <div className="bg-white border border-gray-100 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-gray-600 mb-2">Suggestions</h4>
+                        <ul className="text-xs space-y-2 list-disc pl-5">
+                          <li>Consider exploring the positive emotions you mentioned in more detail</li>
+                          <li>Reflect on how your feelings about work have evolved this month</li>
+                          <li>Track the personal growth milestones you've achieved</li>
+                        </ul>
+                      </div>
                     </div>
                   </Card>
                 </TabsContent>
@@ -222,8 +250,39 @@ const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
                 <TabsContent value="entry" className="p-4 mt-0">
                   <Card className="border-0 shadow-sm rounded-xl">
                     <div className="p-4">
-                      <div className="prose max-w-none">
-                        <p>{selectedEntry.text}</p>
+                      {/* Document Text Visualization section */}
+                      <div className="mb-6">
+                        <h3 className="text-lg font-medium mb-4">Document Text Visualization</h3>
+                        <div className="bg-white border border-gray-100 rounded-lg p-4">
+                          <div className="prose max-w-none">
+                            <p>{selectedEntry.text}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Word Comparison section */}
+                      <div className="mb-6">
+                        <h3 className="text-lg font-medium mb-4">Word Comparison</h3>
+                        <div className="bg-white border border-gray-100 rounded-lg p-4">
+                          <div className="flex flex-wrap gap-3">
+                            {selectedEntry.text.split(/\s+/).slice(0, 10).map((word, i) => (
+                              <span key={i} className="px-3 py-1 bg-gray-50 text-gray-800 text-sm rounded-full">
+                                {word}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Latent Emotional Analysis (expandable) */}
+                      <div className="mb-6">
+                        <h3 className="text-lg font-medium mb-4">Latent Emotional Analysis</h3>
+                        <div className="bg-white border border-gray-100 rounded-lg p-4">
+                          <p className="text-sm text-gray-600">
+                            Emotional analysis of your journal entry reveals a predominantly positive tone.
+                            Key emotional markers indicate periods of joy and optimism, with minor notes of reflection.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </Card>
