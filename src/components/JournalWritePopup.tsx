@@ -1,7 +1,6 @@
-
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from 'uuid';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { X, Mic, MicOff, FileText } from "lucide-react";
@@ -224,7 +223,7 @@ const JournalWritePopup = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose ? onClose : setInternalIsOpen}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="w-1/3 sm:max-w-[33%] mx-auto">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
             <span>Write in your journal</span>
@@ -253,15 +252,6 @@ const JournalWritePopup = ({
                 ) : (
                   <Mic className="h-4 w-4" />
                 )}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={handleClose}
-                className="rounded-full bg-gray-100 text-gray-600"
-              >
-                <X className="h-4 w-4" />
               </Button>
             </div>
           </DialogTitle>

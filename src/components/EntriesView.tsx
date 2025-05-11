@@ -1,4 +1,4 @@
-// Fix the TypeError: Type 'Element' is not assignable to type 'string'
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
@@ -43,6 +43,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [sentimentTimeline, setSentimentTimeline] = useState<any[]>([]);
   const [embeddingPoints, setEmbeddingPoints] = useState<Point[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Update filtered entries when entries or search query changes
@@ -316,7 +317,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
               </CardContent>
             </Card>
             
-            <Tabs defaultValue="overview" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="analysis">Analysis</TabsTrigger>
@@ -472,10 +473,11 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           <p>Generating visualization...</p>
                         </div>
                       ) : (
-                        <div className="h-[300px] border border-gray-200 rounded-md">
-                          {/* Placeholder for text visualization */}
-                          <div className="flex items-center justify-center h-full text-gray-500">
-                            <p>Text visualization preview</p>
+                        <div className="h-[300px] border border-gray-200 rounded-md p-4">
+                          <div className="h-full overflow-auto">
+                            <pre className="whitespace-pre-wrap text-sm">
+                              {selectedEntry.text}
+                            </pre>
                           </div>
                         </div>
                       )}
@@ -488,10 +490,41 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                     </CardHeader>
                     <CardContent>
                       <div className="h-[200px] border border-gray-200 rounded-md">
-                        {/* Placeholder for word comparison */}
-                        <div className="flex items-center justify-center h-full text-gray-500">
-                          <p>Word comparison visualization</p>
-                        </div>
+                        {isProcessing ? (
+                          <div className="flex items-center justify-center h-full">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-full p-4">
+                            <div className="text-center">
+                              <p className="text-gray-500 mb-2">Word frequency analysis</p>
+                              <div className="flex flex-wrap gap-2 justify-center">
+                                {Array.from(
+                                  selectedEntry.text
+                                    .split(/\s+/)
+                                    .filter(word => word.length > 3)
+                                    .reduce((map, word) => {
+                                      map.set(word.toLowerCase(), (map.get(word.toLowerCase()) || 0) + 1);
+                                      return map;
+                                    }, new Map())
+                                )
+                                .sort((a, b) => b[1] - a[1])
+                                .slice(0, 10)
+                                .map(([word, count], index) => (
+                                  <div 
+                                    key={index}
+                                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs flex items-center"
+                                  >
+                                    <span>{word}</span>
+                                    <span className="ml-1 bg-blue-200 rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                                      {count}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
