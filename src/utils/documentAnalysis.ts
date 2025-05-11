@@ -128,7 +128,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
             color
           };
         })
-        .sort((a, b) => (b.weight * Math.abs(b.sentiment)) - (a.weight * Math.abs(a.sentiment)));
+        .sort((a, b) => (b.weight! * Math.abs(b.sentiment)) - (a.weight! * Math.abs(a.sentiment)));
     }
     
     console.log("BERT analysis complete, found keywords:", bertAnalysis.keywords?.length || 0);

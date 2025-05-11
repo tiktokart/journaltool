@@ -80,6 +80,10 @@ const EmbeddingScene = ({
   // Animation state
   const [animationTimestamp, setAnimationTimestamp] = useState<number>(0);
   const animationSpeed = useRef<number>(0.002);
+  
+  // Create local camera and controls if not provided
+  const localCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const localControlsRef = useRef<OrbitControls | null>(null);
 
   // Setup Three.js scene
   useEffect(() => {
@@ -100,8 +104,13 @@ const EmbeddingScene = ({
       1000
     );
     camera.position.z = 30;
+    
+    // Use provided camera ref or local ref
     if (cameraRef.current === null) {
-      cameraRef.current = camera;
+      // Store the camera in the provided ref
+      if (cameraRef) {
+        localCameraRef.current = camera;
+      }
     }
     
     // Set up the renderer
@@ -115,13 +124,17 @@ const EmbeddingScene = ({
     rendererRef.current = renderer;
     
     // Add OrbitControls for camera interaction
-    if (isInteractive && cameraRef.current) {
-      const controls = new OrbitControls(cameraRef.current, renderer.domElement);
+    if (isInteractive) {
+      const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
       controls.rotateSpeed = 0.7;
+      
+      // Use provided controls ref or local ref
       if (controlsRef.current === null) {
-        controlsRef.current = controls;
+        if (controlsRef) {
+          localControlsRef.current = controls;
+        }
       }
     }
     
@@ -140,15 +153,12 @@ const EmbeddingScene = ({
     
     // Handle window resize
     const handleResize = () => {
-      if (!cameraRef.current || !rendererRef.current || !container) return;
-      
-      const camera = cameraRef.current;
-      const renderer = rendererRef.current;
+      if (!camera || !rendererRef.current || !container) return;
       
       camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
       
-      renderer.setSize(container.clientWidth, container.clientHeight);
+      rendererRef.current.setSize(container.clientWidth, container.clientHeight);
     };
     
     window.addEventListener('resize', handleResize);
@@ -157,7 +167,9 @@ const EmbeddingScene = ({
     const animate = () => {
       requestAnimationFrame(animate);
       
-      if (controlsRef.current) {
+      if (localControlsRef.current) {
+        localControlsRef.current.update();
+      } else if (controlsRef.current) {
         controlsRef.current.update();
       }
       
@@ -167,8 +179,8 @@ const EmbeddingScene = ({
       }
       
       // Update the scene
-      if (rendererRef.current && cameraRef.current && sceneRef.current) {
-        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      if (rendererRef.current && camera && sceneRef.current) {
+        rendererRef.current.render(sceneRef.current, camera);
       }
       
       // Update timestamp for animation effects
@@ -180,12 +192,14 @@ const EmbeddingScene = ({
     // Cleanup function
     return () => {
       // Remove the canvas from the DOM
-      if (containerRef.current && containerRef.current.contains(renderer.domElement)) {
-        containerRef.current.removeChild(renderer.domElement);
+      if (containerRef.current && rendererRef.current && containerRef.current.contains(rendererRef.current.domElement)) {
+        containerRef.current.removeChild(rendererRef.current.domElement);
       }
       
       // Dispose of Three.js resources
-      renderer.dispose();
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
       
       window.removeEventListener('resize', handleResize);
       
@@ -206,6 +220,8 @@ const EmbeddingScene = ({
     
     const scene = sceneRef.current;
     const renderer = rendererRef.current;
+    const camera = cameraRef.current || localCameraRef.current;
+    if (!camera) return;
     
     // Remove existing point cloud if it exists
     if (pointsMeshRef.current) {
@@ -219,41 +235,41 @@ const EmbeddingScene = ({
     const geometry = new THREE.BufferGeometry();
     
     // Extract positions and colors from points data
-    const positions = new Float32Array(points.length * 3);
-    const colors = new Float32Array(points.length * 3);
-    const sizes = new Float32Array(points.length);
+    const positionsArray = new Float32Array(points.length * 3);
+    const colorsArray = new Float32Array(points.length * 3);
+    const sizesArray = new Float32Array(points.length);
     
     for (let i = 0; i < points.length; i++) {
       const point = points[i];
       
       // Set position
-      positions[i * 3] = point.position[0];
-      positions[i * 3 + 1] = point.position[1];
-      positions[i * 3 + 2] = point.position[2];
+      positionsArray[i * 3] = point.position[0];
+      positionsArray[i * 3 + 1] = point.position[1];
+      positionsArray[i * 3 + 2] = point.position[2];
       
       // Set color
       if (typeof point.color === 'string') {
         const color = new THREE.Color(point.color);
-        colors[i * 3] = color.r;
-        colors[i * 3 + 1] = color.g;
-        colors[i * 3 + 2] = color.b;
+        colorsArray[i * 3] = color.r;
+        colorsArray[i * 3 + 1] = color.g;
+        colorsArray[i * 3 + 2] = color.b;
       } else if (Array.isArray(point.color)) {
-        colors[i * 3] = point.color[0];
-        colors[i * 3 + 1] = point.color[1];
-        colors[i * 3 + 2] = point.color[2];
+        colorsArray[i * 3] = point.color[0];
+        colorsArray[i * 3 + 1] = point.color[1];
+        colorsArray[i * 3 + 2] = point.color[2];
       } else {
-        colors[i * 3] = 1;
-        colors[i * 3 + 1] = 1;
-        colors[i * 3 + 2] = 1;
+        colorsArray[i * 3] = 1;
+        colorsArray[i * 3 + 1] = 1;
+        colorsArray[i * 3 + 2] = 1;
       }
       
       // Set size
-      sizes[i] = point.size || 1;
+      sizesArray[i] = point.size || 1;
     }
     
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute('position', new THREE.BufferAttribute(positionsArray, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizesArray, 1));
     
     // Define the point cloud material
     const material = new THREE.PointsMaterial({
@@ -270,15 +286,15 @@ const EmbeddingScene = ({
     scene.add(pointsMesh);
     
     // Initial render
-    renderer.render(scene, cameraRef.current as THREE.Camera);
+    renderer.render(scene, camera);
     
     // Function to handle visibility based on emotional group
     const updatePointVisibility = () => {
       if (!pointsMeshRef.current || !pointsMeshRef.current.geometry) return;
       
-      const positions = pointsMeshRef.current.geometry.attributes.position.array;
-      const colors = pointsMeshRef.current.geometry.attributes.color.array;
-      const sizes = pointsMeshRef.current.geometry.attributes.size.array;
+      const positions = pointsMeshRef.current.geometry.attributes.position.array as Float32Array;
+      const colors = pointsMeshRef.current.geometry.attributes.color.array as Float32Array;
+      const sizes = pointsMeshRef.current.geometry.attributes.size.array as Float32Array;
       
       for (let i = 0; i < points.length; i++) {
         const point = points[i];
@@ -340,7 +356,7 @@ const EmbeddingScene = ({
       pointsMeshRef.current.geometry.attributes.size.needsUpdate = true;
       pointsMeshRef.current.geometry.attributes.color.needsUpdate = true;
       
-      renderer.render(scene, cameraRef.current as THREE.Camera);
+      renderer.render(scene, camera);
     };
     
     updatePointVisibility();
@@ -352,7 +368,7 @@ const EmbeddingScene = ({
     
     // Handle raycasting and hover effects
     const handleMouseMove = (event: MouseEvent) => {
-      if (!containerRef.current || !cameraRef.current || !pointsMeshRef.current) return;
+      if (!containerRef.current || !camera || !pointsMeshRef.current) return;
       
       const containerBounds = containerRef.current.getBoundingClientRect();
       
@@ -361,7 +377,7 @@ const EmbeddingScene = ({
       mouseRef.current.y = -((event.clientY - containerBounds.top) / containerBounds.height) * 2 + 1;
       
       // Update the raycaster with the mouse position
-      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
       
       // Calculate objects intersecting the raycaster
       const intersects = raycasterRef.current.intersectObject(pointsMeshRef.current);
@@ -381,7 +397,7 @@ const EmbeddingScene = ({
     
     // Handle point selection on click
     const handlePointClick = (event: MouseEvent) => {
-      if (!containerRef.current || !cameraRef.current || !pointsMeshRef.current) return;
+      if (!containerRef.current || !camera || !pointsMeshRef.current) return;
       
       event.preventDefault();
       
@@ -392,7 +408,7 @@ const EmbeddingScene = ({
       mouseRef.current.y = -((event.clientY - containerBounds.top) / containerBounds.height) * 2 + 1;
       
       // Update the raycaster with the mouse position
-      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
       
       // Calculate objects intersecting the raycaster
       const intersects = raycasterRef.current.intersectObject(pointsMeshRef.current);
@@ -408,7 +424,7 @@ const EmbeddingScene = ({
     };
     
     // Add event listeners for mouse interaction
-    if (isInteractive) {
+    if (isInteractive && containerRef.current) {
       containerRef.current.addEventListener('mousemove', handleMouseMove);
       containerRef.current.addEventListener('click', handlePointClick);
     }
