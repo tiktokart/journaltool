@@ -17,7 +17,7 @@ interface ResourceDatabase {
 }
 
 const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({ journalEntries }) => {
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<ResourceDatabase[]>([]);
 
   // Define our resource databases
   const databases: ResourceDatabase[] = [
@@ -91,12 +91,14 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({ journ
     
     // Extract emotional keywords from journal text
     const emotionAnalysis = extractEmotionalKeywords(allJournalText);
-    const emotionalKeywords = emotionAnalysis.keywords.map(k => k.word);
-    const emotionCounts = emotionAnalysis.emotionCounts;
+    
+    // Check if emotionAnalysis is available and has the expected properties
+    const emotionalKeywords = emotionAnalysis?.keywords?.map(k => k.word) || [];
+    const emotionCounts = emotionAnalysis?.emotionCounts || {};
     
     // Find common words and themes in journal entries
     const words = allJournalText.toLowerCase().split(/\s+/);
-    const wordFrequency = {};
+    const wordFrequency: Record<string, number> = {};
     
     words.forEach(word => {
       if (word.length > 3) {

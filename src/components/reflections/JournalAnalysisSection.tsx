@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, BarChart2, PieChart, LineChart } from "lucide-react";
@@ -110,7 +109,7 @@ const JournalAnalysisSection = ({
     
     const allText = journalEntries.map(entry => entry.text).join(" ");
     const words = allText.toLowerCase().split(/\s+/);
-    const wordCount = {};
+    const wordCount: Record<string, number> = {};
     
     words.forEach(word => {
       if (word.length > 4) {
@@ -119,8 +118,8 @@ const JournalAnalysisSection = ({
     });
     
     return Object.entries(wordCount)
-      .filter(([_, count]) => count > 1) // Only words that appear more than once
-      .sort(([_, countA], [_, countB]) => Number(countB) - Number(countA))
+      .filter(([, count]) => count > 1) // Only words that appear more than once
+      .sort(([, countA], [, countB]) => Number(countB) - Number(countA))
       .slice(0, 20)
       .map(([word]) => word);
   };

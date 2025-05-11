@@ -23,6 +23,7 @@ import { FileDown, Bell } from "lucide-react";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
 import { initBertModel } from "@/utils/bertSentimentAnalysis";
 import JournalWritePopup from "@/components/JournalWritePopup";
+import { analyzeTextWithBert } from "@/utils/bertIntegration";
 
 // Rename PerfectLifePlan to Goals
 const Goals = () => {

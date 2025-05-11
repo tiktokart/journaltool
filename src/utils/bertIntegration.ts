@@ -49,117 +49,109 @@ export async function analyzeTextWithBert(text: string) {
       } else if (questionPart.toLowerCase().includes("improve") || questionPart.toLowerCase().includes("better")) {
         response = "Looking at your journaling patterns, you might benefit from writing at consistent times. Your entries suggest you're most reflective in the evenings - that could be an ideal time for deeper insights.";
       } else if (questionPart.toLowerCase().includes("pattern") || questionPart.toLowerCase().includes("notice")) {
-        response = "I've noticed patterns of self-reflection and growth in your journal entries. You tend to be more analytical when discussing personal relationships and more emotionally expressive when writing about your goals.";
+        response = "I've noticed patterns of self-reflection and growth in your journal entries. You tend to be more analytical when discussing personal relationships and more emotionally expressive when writing about your daily activities.";
       } else {
-        response = "Based on analyzing your journal entries, I can see themes of personal growth and self-awareness emerging. Continue with regular journaling to develop these insights further.";
+        response = "Based on your journal entries, I can see that you're making progress in your personal reflection journey. Consider focusing on what brings you joy and how you might incorporate more of those elements into your daily routine.";
       }
     } else {
-      // This is general text analysis
-      response = `The text has been analyzed and shows a predominantly ${emotionalTone.toLowerCase()} tone.`;
-      
-      if (emotionalTone === "Positive") {
-        response += " There are expressions of optimism, satisfaction, and positive outlook.";
-      } else if (emotionalTone === "Negative") {
-        response += " There are indications of challenges, concerns, or emotional difficulties.";
-      } else {
-        response += " The content is balanced between different emotional states.";
-      }
+      // This is a text/document analysis
+      response = `Analysis complete. The text contains predominantly ${emotionalTone.toLowerCase()} sentiment.`;
     }
     
     return {
       text: response,
-      sentiment: sentimentResult.overallSentiment,
-      emotionalTone: emotionalTone
+      emotionalTone,
+      sentiment: sentimentResult.overallSentiment.score,
+      distribution: sentimentResult.distribution
     };
   } catch (error) {
     console.error("Error analyzing text with BERT:", error);
-    throw error;
+    return {
+      text: "I couldn't analyze this text properly. Please try again later.",
+      emotionalTone: "Neutral",
+      sentiment: 0.5,
+      distribution: { positive: 33, neutral: 34, negative: 33 }
+    };
   }
 }
 
 /**
- * Analyze journal entries in batch
- * @param entries Array of journal entry texts
- * @returns Promise with array of analysis results
- */
-export async function analyzeJournalEntries(entries: string[]) {
-  try {
-    console.log(`Analyzing ${entries.length} journal entries with BERT`);
-    
-    const results = await Promise.all(
-      entries.map(entry => analyzeTextWithBert(entry))
-    );
-    
-    console.log("Batch analysis complete:", results);
-    return results;
-  } catch (error) {
-    console.error("Error in batch journal analysis:", error);
-    throw error;
-  }
-}
-
-/**
- * Extract emotional keywords from text
+ * Extracts emotional keywords from text
  * @param text Text to analyze
- * @returns Array of emotional keywords
+ * @returns Object containing emotional keywords and counts
  */
 export function extractEmotionalKeywords(text: string) {
-  // Basic emotional keywords extraction
-  const emotionalWords = [
-    // Positive emotions
-    { word: 'happy', emotion: 'Joy' },
-    { word: 'joy', emotion: 'Joy' },
-    { word: 'excited', emotion: 'Joy' },
-    { word: 'glad', emotion: 'Joy' },
-    { word: 'content', emotion: 'Contentment' },
-    { word: 'peaceful', emotion: 'Contentment' },
-    { word: 'relaxed', emotion: 'Contentment' },
-    { word: 'calm', emotion: 'Contentment' },
-    { word: 'confident', emotion: 'Confidence' },
-    { word: 'proud', emotion: 'Confidence' },
-    { word: 'motivated', emotion: 'Confidence' },
-    { word: 'inspired', emotion: 'Confidence' },
+  try {
+    // Placeholder implementation for extracting emotional keywords
+    // In a real implementation, this would use BERT or another model
     
-    // Negative emotions
-    { word: 'sad', emotion: 'Sadness' },
-    { word: 'depressed', emotion: 'Sadness' },
-    { word: 'unhappy', emotion: 'Sadness' },
-    { word: 'miserable', emotion: 'Sadness' },
-    { word: 'anxious', emotion: 'Anxiety' },
-    { word: 'nervous', emotion: 'Anxiety' },
-    { word: 'worried', emotion: 'Anxiety' },
-    { word: 'stressed', emotion: 'Anxiety' },
-    { word: 'angry', emotion: 'Anger' },
-    { word: 'frustrated', emotion: 'Anger' },
-    { word: 'irritated', emotion: 'Anger' },
-    { word: 'annoyed', emotion: 'Anger' },
-    { word: 'fearful', emotion: 'Fear' },
-    { word: 'scared', emotion: 'Fear' },
-    { word: 'afraid', emotion: 'Fear' },
-    { word: 'terrified', emotion: 'Fear' },
-    { word: 'confused', emotion: 'Confusion' },
-    { word: 'uncertain', emotion: 'Confusion' },
-    { word: 'unsure', emotion: 'Confusion' },
-    { word: 'perplexed', emotion: 'Confusion' },
-  ];
-
-  // Tokenize input text
-  const words = text.toLowerCase().split(/\W+/).filter(word => word.length > 2);
-  
-  // Find emotional keywords
-  const found = words
-    .map(word => emotionalWords.find(ew => ew.word === word))
-    .filter(match => match !== undefined);
-  
-  // Count occurrences of each emotion
-  const emotions = found.reduce((acc, curr) => {
-    const emotion = curr.emotion;
-    acc[emotion] = (acc[emotion] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-  
-  return {
-    keywords: found,
-    emotionCounts: emotions
-  };
+    // Common emotional words as a simple dictionary
+    const emotionalWords = {
+      "joy": "positive",
+      "happy": "positive",
+      "excited": "positive",
+      "grateful": "positive",
+      "satisfied": "positive",
+      "proud": "positive",
+      "calm": "positive",
+      "relaxed": "positive",
+      "sad": "negative",
+      "angry": "negative",
+      "frustrated": "negative",
+      "anxious": "negative",
+      "worried": "negative",
+      "scared": "negative",
+      "stressed": "negative",
+      "depressed": "negative",
+      "confused": "neutral",
+      "surprised": "neutral",
+      "curious": "neutral",
+      "interested": "neutral",
+    };
+    
+    const words = text.toLowerCase().split(/\s+/);
+    const emotionCounts: Record<string, number> = {
+      positive: 0,
+      negative: 0, 
+      neutral: 0
+    };
+    
+    const foundKeywords: Array<{word: string, category: string, count: number}> = [];
+    const wordCounts: Record<string, number> = {};
+    
+    // Count occurrences of emotional words
+    words.forEach(word => {
+      const cleanWord = word.replace(/[^\w]/g, '');
+      if (cleanWord in emotionalWords) {
+        const category = emotionalWords[cleanWord as keyof typeof emotionalWords];
+        emotionCounts[category]++;
+        
+        if (!wordCounts[cleanWord]) {
+          wordCounts[cleanWord] = 0;
+        }
+        wordCounts[cleanWord]++;
+      }
+    });
+    
+    // Create keywords array
+    Object.entries(wordCounts).forEach(([word, count]) => {
+      const category = emotionalWords[word as keyof typeof emotionalWords];
+      foundKeywords.push({
+        word,
+        category,
+        count
+      });
+    });
+    
+    return {
+      keywords: foundKeywords.sort((a, b) => b.count - a.count),
+      emotionCounts
+    };
+  } catch (error) {
+    console.error("Error extracting emotional keywords:", error);
+    return {
+      keywords: [],
+      emotionCounts: { positive: 0, negative: 0, neutral: 0 }
+    };
+  }
 }
