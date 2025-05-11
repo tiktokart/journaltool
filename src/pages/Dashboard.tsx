@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -9,6 +8,7 @@ import MonthlyCalendar from "@/components/MonthlyCalendar";
 import EntriesView from "@/components/EntriesView";
 import VectorDecorations from "@/components/VectorDecorations";
 import { format, isSameDay } from "date-fns";
+import { v4 as uuidv4 } from "uuid";
 import {
   Dialog,
   DialogContent,

@@ -3,9 +3,10 @@ import React from 'react';
 
 interface VectorDecorationsProps {
   className?: string;
+  type?: string; // Add the type prop to the interface
 }
 
-const VectorDecorations: React.FC<VectorDecorationsProps> = ({ className = '' }) => {
+const VectorDecorations: React.FC<VectorDecorationsProps> = ({ className = '', type = 'default' }) => {
   return (
     <div className={`${className} select-none`}>
       {/* Top-left decoration */}
@@ -71,8 +72,8 @@ const VectorDecorations: React.FC<VectorDecorationsProps> = ({ className = '' })
             y2="48"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stopColor="#9b87f5" />
-            <stop offset="1" stopColor="#9b87f5" stopOpacity="0" />
+            <stop stopColor={type === 'home' ? '#4CAF50' : '#9b87f5'} />
+            <stop offset="1" stopColor={type === 'home' ? '#4CAF50' : '#9b87f5'} stopOpacity="0" />
           </linearGradient>
         </defs>
       </svg>
@@ -92,7 +93,7 @@ const VectorDecorations: React.FC<VectorDecorationsProps> = ({ className = '' })
           fillOpacity="0.2"
         />
         <path
-          d="M96 60C96 80.9868 78.9868 98 58 98C37.0132 98 20 80.9868 20 60C20 39.0132 37.0132 22 58 22C78.9868 22 96 39.0132 96 60Z"
+          d="M96 60C96 80.9868 78.9868 98 58 98C37.0132 98 20 39.0132 20 60C20 39.0132 37.0132 22 58 22C78.9868 22 96 39.0132 96 60Z"
           stroke="currentColor"
           strokeWidth="2"
         />
@@ -125,22 +126,43 @@ const VectorDecorations: React.FC<VectorDecorationsProps> = ({ className = '' })
         >
           <path
             d="M60 110C87.6142 110 110 87.6142 110 60C110 32.3858 87.6142 10 60 10C32.3858 10 10 32.3858 10 60C10 87.6142 32.3858 110 60 110Z"
-            fill="#9b87f5"
+            fill={type === 'home' ? "#4CAF50" : "#9b87f5"}
             fillOpacity="0.2"
           />
           <path
             d="M45 45C45 40.5817 48.5817 37 53 37H67C71.4183 37 75 40.5817 75 45V75C75 79.4183 71.4183 83 67 83H53C48.5817 83 45 79.4183 45 75V45Z"
-            stroke="#9b87f5"
+            stroke={type === 'home' ? "#4CAF50" : "#9b87f5"}
             strokeWidth="2"
           />
           <path
             d="M50 50H70M50 60H65M50 70H60"
-            stroke="#9b87f5"
+            stroke={type === 'home' ? "#4CAF50" : "#9b87f5"}
             strokeWidth="2"
             strokeLinecap="round"
           />
         </svg>
       </div>
+
+      {/* Add home-specific elements if type is 'home' */}
+      {type === 'home' && (
+        <>
+          <div className="absolute top-1/4 right-1/4">
+            <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M70 130C103.137 130 130 103.137 130 70C130 36.8629 103.137 10 70 10C36.8629 10 10 36.8629 10 70C10 103.137 36.8629 130 70 130Z"
+                fill="#4CAF50"
+                fillOpacity="0.1"
+              />
+              <path
+                d="M70 90C81.0457 90 90 81.0457 90 70C90 58.9543 81.0457 50 70 50C58.9543 50 50 58.9543 50 70C50 81.0457 58.9543 90 70 90Z"
+                stroke="#4CAF50"
+                strokeWidth="2"
+                strokeDasharray="4 4"
+              />
+            </svg>
+          </div>
+        </>
+      )}
     </div>
   );
 };
