@@ -1,235 +1,200 @@
 
-import { calculateSentiment } from './sentimentAnalysis';
+interface KeywordAnalysis {
+  word: string;
+  sentiment: number;
+  tone?: string;
+  relatedConcepts?: string[];
+  frequency?: number;
+  color?: [number, number, number];
+}
 
-/**
- * BERT fine-tuning rules for emotional content analysis
- */
-const BERT_RULES = {
-  FOCUS_EMOTIONAL: true,      // Focus on emotional content analysis
-  IDENTIFY_PATTERNS: true,    // Identify latent patterns in text
-  RECOGNIZE_TRIGGERS: true,   // Recognize emotional triggers
-  PROVIDE_SUPPORTIVE: true,   // Provide supportive responses
-  MAINTAIN_PRIVACY: true      // Maintain user privacy
+interface BertAnalysisResult {
+  keywords: KeywordAnalysis[];
+  overallSentiment: number;
+  overallTone: string;
+}
+
+const stopWords = [
+  'the', 'a', 'an', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 
+  'in', 'out', 'with', 'about', 'against', 'before', 'after', 'during', 'he', 'she', 
+  'it', 'they', 'we', 'you', 'i', 'me', 'him', 'her', 'them', 'us', 'is', 'am', 'are',
+  'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+  'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'can', 'could', 'uh', 'um',
+  'eh', 'oh', 'ah', 'hmm', 'like', 'just', 'very', 'really', 'so', 'then'
+];
+
+// Bright, visible color palette for emotional tones
+const emotionalColors = {
+  Joy: [1, 0.9, 0.2] as [number, number, number],        // Bright Yellow
+  Sadness: [0.2, 0.6, 1] as [number, number, number],     // Bright Blue
+  Anxiety: [1, 0.5, 0.1] as [number, number, number],     // Bright Orange
+  Contentment: [0.2, 0.9, 0.4] as [number, number, number], // Bright Green
+  Confusion: [0.8, 0.4, 1] as [number, number, number],   // Bright Purple
+  Anger: [1, 0.2, 0.2] as [number, number, number],       // Bright Red
+  Fear: [0.9, 0.2, 0.9] as [number, number, number],      // Bright Magenta
+  Surprise: [0.2, 1, 1] as [number, number, number],      // Bright Cyan
+  Neutral: [0.8, 0.8, 0.8] as [number, number, number],   // Bright Gray
 };
 
-/**
- * Analyze text using BERT model
- * @param text Text to analyze
- * @returns Promise with analysis results
- */
-export async function analyzeTextWithBert(text: string) {
+export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisResult> => {
   try {
-    console.log("Analyzing text with BERT model");
+    console.log("Analyzing text with BERT:", text.substring(0, 100) + "...");
     
-    // Since we don't have an actual BERT model running in the browser,
-    // we'll use our sentiment analysis as a proxy and enhance the results
-    const sentimentResult = await calculateSentiment(text);
-    
-    let emotionalTone;
-    if (sentimentResult.overallSentiment.score > 0.65) {
-      emotionalTone = "Positive";
-    } else if (sentimentResult.overallSentiment.score < 0.35) {
-      emotionalTone = "Negative";
-    } else {
-      emotionalTone = "Neutral";
+    if (!text || typeof text !== 'string') {
+      throw new Error("Invalid text provided for analysis");
     }
     
-    // Generate a simulated BERT response based on the text and sentiment
-    let response = "";
+    // Extract and clean words
+    const words = text.split(/\s+/)
+      .map(word => word.replace(/[^\w]/g, '').toLowerCase())
+      .filter(word => word.length > 3 && !stopWords.includes(word));
     
-    if (text.includes("QUESTION:") && text.includes("CONTEXT:")) {
-      // This is a question for the chatbot
-      const questionPart = text.split("QUESTION:")[1].split("\n")[0].trim();
-      const contextPart = text.split("CONTEXT:")[1].trim();
-      
-      // Extract emotion keywords from the context to create more personalized responses
-      const emotionKeywords = extractEmotionalKeywords(contextPart);
-      const topKeywords = emotionKeywords.keywords.slice(0, 3).map(k => k.word);
-      
-      // Generate answer using keywords and sentiment
-      if (questionPart.toLowerCase().includes("feel") || questionPart.toLowerCase().includes("emotion")) {
-        if (sentimentResult.overallSentiment.score > 0.6) {
-          response = `Based on your journal entries, I notice a generally positive emotional state. You've expressed feelings of ${topKeywords.join(', ')} in several entries.`;
-        } else if (sentimentResult.overallSentiment.score < 0.4) {
-          response = `Your journal entries suggest you've been experiencing some challenging emotions lately. I notice themes of ${topKeywords.join(', ')}. Consider reflecting on what might be contributing to these feelings.`;
-        } else {
-          response = `Your emotional state appears balanced based on your journal entries, with both positive moments and some challenges around ${topKeywords.join(', ')}.`;
-        }
-      } else if (questionPart.toLowerCase().includes("improve") || questionPart.toLowerCase().includes("better")) {
-        response = `Looking at your journaling patterns and emotional expressions like ${topKeywords.join(', ')}, you might benefit from writing at consistent times. Your entries suggest you're most reflective in the evenings - that could be an ideal time for deeper insights.`;
-      } else if (questionPart.toLowerCase().includes("pattern") || questionPart.toLowerCase().includes("notice")) {
-        response = `I've noticed patterns of self-reflection and growth in your journal entries. You tend to be more analytical when discussing personal relationships and more emotionally expressive with words like ${topKeywords.join(', ')} when writing about your daily activities.`;
-      } else {
-        response = `Based on your journal entries with themes of ${topKeywords.join(', ')}, I can see that you're making progress in your personal reflection journey. Consider focusing on what brings you joy and how you might incorporate more of those elements into your daily routine.`;
-      }
-    } else {
-      // This is a text/document analysis
-      // Extract emotional keywords for better analysis
-      const emotionKeywords = extractEmotionalKeywords(text);
-      const keywordList = emotionKeywords.keywords.slice(0, 5).map(k => k.word).join(", ");
-      
-      response = `Analysis complete. The text contains predominantly ${emotionalTone.toLowerCase()} sentiment with key emotional themes of ${keywordList}.`;
+    // Count word frequency
+    const wordFrequency: Record<string, number> = {};
+    for (const word of words) {
+      wordFrequency[word] = (wordFrequency[word] || 0) + 1;
     }
     
-    return {
-      text: response,
-      emotionalTone,
-      sentiment: sentimentResult.overallSentiment.score,
-      distribution: sentimentResult.distribution
-    };
-  } catch (error) {
-    console.error("Error analyzing text with BERT:", error);
-    return {
-      text: "I couldn't analyze this text properly. Please try again later.",
-      emotionalTone: "Neutral",
-      sentiment: 0.5,
-      distribution: { positive: 33, neutral: 34, negative: 33 }
-    };
-  }
-}
-
-/**
- * Extracts emotional keywords from text
- * @param text Text to analyze
- * @returns Object containing emotional keywords and counts
- */
-export function extractEmotionalKeywords(text: string) {
-  try {
-    // Common emotional words as an improved dictionary for better analysis
-    const emotionalWords: Record<string, string> = {
+    // Get unique words sorted by frequency
+    const uniqueWords = [...new Set(words)]
+      .filter(word => wordFrequency[word] > 1 || word.length > 5)
+      .sort((a, b) => wordFrequency[b] - wordFrequency[a])
+      .slice(0, 50); // Limit to top 50 words
+    
+    // Perform contextual analysis
+    // In a real implementation, this would use an actual BERT model
+    const keywords: KeywordAnalysis[] = [];
+    let totalSentiment = 0;
+    
+    // Map of words to common emotional associations for contextual analysis
+    const emotionalAssociations: Record<string, { tone: string, sentiment: number }> = {
       // Positive emotions
-      "joy": "positive",
-      "happy": "positive",
-      "excited": "positive",
-      "grateful": "positive",
-      "satisfied": "positive",
-      "proud": "positive",
-      "calm": "positive",
-      "relaxed": "positive",
-      "peaceful": "positive",
-      "hopeful": "positive",
-      "optimistic": "positive",
-      "confident": "positive",
-      "content": "positive",
-      "love": "positive",
-      "enthusiastic": "positive",
-      "inspired": "positive",
+      "happy": { tone: "Joy", sentiment: 0.8 },
+      "joy": { tone: "Joy", sentiment: 0.9 },
+      "love": { tone: "Joy", sentiment: 0.85 },
+      "peaceful": { tone: "Contentment", sentiment: 0.75 },
+      "calm": { tone: "Contentment", sentiment: 0.7 },
+      "excited": { tone: "Joy", sentiment: 0.8 },
+      "hopeful": { tone: "Joy", sentiment: 0.75 },
+      "grateful": { tone: "Contentment", sentiment: 0.8 },
+      "relaxed": { tone: "Contentment", sentiment: 0.7 },
       
       // Negative emotions
-      "sad": "negative",
-      "angry": "negative",
-      "frustrated": "negative",
-      "anxious": "negative",
-      "worried": "negative",
-      "scared": "negative",
-      "stressed": "negative",
-      "depressed": "negative",
-      "overwhelmed": "negative",
-      "disappointed": "negative",
-      "lonely": "negative",
-      "afraid": "negative",
-      "upset": "negative",
-      "grief": "negative",
-      "shame": "negative",
-      "guilt": "negative",
+      "sad": { tone: "Sadness", sentiment: 0.2 },
+      "angry": { tone: "Anger", sentiment: 0.15 },
+      "anxious": { tone: "Anxiety", sentiment: 0.25 },
+      "fear": { tone: "Fear", sentiment: 0.2 },
+      "worried": { tone: "Anxiety", sentiment: 0.3 },
+      "stressed": { tone: "Anxiety", sentiment: 0.25 },
+      "depressed": { tone: "Sadness", sentiment: 0.1 },
+      "confused": { tone: "Confusion", sentiment: 0.4 },
+      "frustrated": { tone: "Anger", sentiment: 0.25 },
       
-      // Neutral emotions
-      "confused": "neutral",
-      "surprised": "neutral",
-      "curious": "neutral",
-      "interested": "neutral",
-      "reflective": "neutral",
-      "contemplative": "neutral",
-      "uncertain": "neutral",
-      "questioning": "neutral",
-      "thoughtful": "neutral",
-      "pensive": "neutral",
+      // Neutral/mixed emotions
+      "surprised": { tone: "Surprise", sentiment: 0.5 },
+      "curious": { tone: "Surprise", sentiment: 0.6 },
+      "thinking": { tone: "Neutral", sentiment: 0.5 },
+      "wondering": { tone: "Confusion", sentiment: 0.45 },
     };
     
-    const words = text.toLowerCase().split(/\s+/);
-    const emotionCounts: Record<string, number> = {
-      positive: 0,
-      negative: 0, 
-      neutral: 0
-    };
-    
-    const foundKeywords: Array<{word: string, category: string, count: number}> = [];
-    const wordCounts: Record<string, number> = {};
-    
-    // Count occurrences of emotional words
-    words.forEach(word => {
-      const cleanWord = word.replace(/[^\w]/g, '');
-      if (cleanWord in emotionalWords) {
-        const category = emotionalWords[cleanWord];
-        emotionCounts[category]++;
+    // Generate fake context windows around each unique word for analysis
+    for (const word of uniqueWords) {
+      const contextWindow = text
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((_, i, arr) => i < arr.indexOf(word) + 5 && i > arr.indexOf(word) - 5)
+        .join(' ');
+      
+      // Simple sentiment analysis based on contextual associations
+      let sentiment = 0.5; // Neutral by default
+      let tone = "Neutral";
+      const relatedConcepts: string[] = [];
+      
+      // Check for direct emotional associations
+      if (emotionalAssociations[word]) {
+        sentiment = emotionalAssociations[word].sentiment;
+        tone = emotionalAssociations[word].tone;
+      } else {
+        // Check for emotional words in context
+        let emotionalWordCount = 0;
+        let totalEmotionalSentiment = 0;
         
-        if (!wordCounts[cleanWord]) {
-          wordCounts[cleanWord] = 0;
-        }
-        wordCounts[cleanWord]++;
-      }
-    });
-    
-    // Create keywords array
-    Object.entries(wordCounts).forEach(([word, count]) => {
-      const category = emotionalWords[word];
-      foundKeywords.push({
-        word,
-        category,
-        count
-      });
-    });
-    
-    // If no emotional words found, try to extract common important words
-    if (foundKeywords.length === 0) {
-      const allWords: Record<string, number> = {};
-      words.forEach(word => {
-        const cleanWord = word.replace(/[^\w]/g, '');
-        if (cleanWord.length > 4) { // Only consider words with 5+ characters
-          if (!allWords[cleanWord]) {
-            allWords[cleanWord] = 0;
+        for (const emotionalWord of Object.keys(emotionalAssociations)) {
+          if (contextWindow.includes(emotionalWord)) {
+            emotionalWordCount++;
+            totalEmotionalSentiment += emotionalAssociations[emotionalWord].sentiment;
+            tone = emotionalAssociations[emotionalWord].tone;
+            
+            // Add as a related concept if it's not the word itself
+            if (emotionalWord !== word) {
+              relatedConcepts.push(emotionalWord);
+            }
           }
-          allWords[cleanWord]++;
         }
+        
+        if (emotionalWordCount > 0) {
+          sentiment = totalEmotionalSentiment / emotionalWordCount;
+        } else {
+          // Generate pseudo-random but consistent sentiment based on word
+          const hash = Array.from(word).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+          sentiment = 0.3 + ((hash % 50) / 100);
+          
+          // Assign emotional tone based on sentiment range
+          if (sentiment > 0.65) tone = "Joy";
+          else if (sentiment > 0.6) tone = "Contentment";
+          else if (sentiment < 0.35) tone = "Sadness";
+          else if (sentiment < 0.4) tone = "Anxiety";
+          else tone = "Neutral";
+        }
+      }
+      
+      // Get color for this emotional tone
+      const color = emotionalColors[tone] || emotionalColors.Neutral;
+      
+      // Find related words based on co-occurrence in the text
+      const wordIndex = words.indexOf(word);
+      const surroundingWords = words
+        .slice(Math.max(0, wordIndex - 10), wordIndex + 10)
+        .filter(w => w !== word && w.length > 3);
+        
+      // Add some surrounding words to related concepts
+      if (relatedConcepts.length < 3) {
+        const additionalConcepts = surroundingWords
+          .filter(w => !relatedConcepts.includes(w))
+          .slice(0, 3 - relatedConcepts.length);
+          
+        relatedConcepts.push(...additionalConcepts);
+      }
+      
+      keywords.push({
+        word,
+        sentiment,
+        tone,
+        relatedConcepts,
+        frequency: wordFrequency[word],
+        color
       });
       
-      // Get top words
-      Object.entries(allWords)
-        .sort(([, countA], [, countB]) => countB - countA)
-        .slice(0, 5)
-        .forEach(([word, count]) => {
-          foundKeywords.push({
-            word,
-            category: "neutral",
-            count
-          });
-        });
+      totalSentiment += sentiment;
     }
     
+    // Calculate overall sentiment
+    const overallSentiment = keywords.length > 0 ? totalSentiment / keywords.length : 0.5;
+    
+    // Determine overall emotional tone
+    let overallTone = "Neutral";
+    if (overallSentiment > 0.65) overallTone = "Joy";
+    else if (overallSentiment > 0.6) overallTone = "Contentment";
+    else if (overallSentiment < 0.35) overallTone = "Sadness";
+    else if (overallSentiment < 0.4) overallTone = "Anxiety";
+    
     return {
-      keywords: foundKeywords.sort((a, b) => b.count - a.count),
-      emotionCounts
+      keywords,
+      overallSentiment,
+      overallTone
     };
   } catch (error) {
-    console.error("Error extracting emotional keywords:", error);
-    return {
-      keywords: [],
-      emotionCounts: { positive: 0, negative: 0, neutral: 0 }
-    };
+    console.error("Error in BERT analysis:", error);
+    throw error;
   }
-}
-
-/**
- * Get the sentiment distribution for a text
- * @param text Text to analyze
- * @returns Distribution of positive, negative, and neutral sentiment
- */
-export async function getSentimentDistribution(text: string) {
-  try {
-    const result = await calculateSentiment(text);
-    return result.distribution;
-  } catch (error) {
-    console.error("Error getting sentiment distribution:", error);
-    return { positive: 33, neutral: 34, negative: 33 };
-  }
-}
+};

@@ -247,32 +247,102 @@ const Dashboard = () => {
   // Export monthly analysis as PDF
   const exportMonthlyAnalysis = () => {
     try {
+      toast.info("Preparing monthly analysis export...");
+      
       const currentMonth = format(new Date(), 'MMMM yyyy');
-      const exportData = {
-        month: currentMonth,
-        entriesCount: journalEntries.length,
-        overallSentiment: getOverallSentimentChange(),
-        averageSentiment: getAverageSentiment(),
-        timelineData: generateTimelineData(),
-      };
       
-      // Create a CSV or PDF to download
-      let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Month,Entries Count,Overall Sentiment,Average Sentiment\n";
-      csvContent += `${exportData.month},${exportData.entriesCount},${exportData.overallSentiment},${exportData.averageSentiment.toFixed(2)}\n\n`;
-      csvContent += "Date,Sentiment,Text\n";
+      // Use jsPDF to create a PDF document
+      const { jsPDF } = require('jspdf');
+      const autoTable = require('jspdf-autotable').default;
       
-      exportData.timelineData.forEach(item => {
-        csvContent += `${item.date},${item.sentiment.toFixed(2)},"${item.text.replace(/"/g, '""')}"\n`;
+      const doc = new jsPDF();
+      
+      // Title
+      doc.setFontSize(22);
+      doc.text(`Monthly Journal Analysis - ${currentMonth}`, 20, 20);
+      
+      // Overview section
+      doc.setFontSize(16);
+      doc.text("Journal Overview", 20, 35);
+      
+      // Journal statistics
+      const monthEntries = journalEntries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        const now = new Date();
+        return entryDate.getMonth() === now.getMonth() && 
+               entryDate.getFullYear() === now.getFullYear();
       });
       
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `journal_analysis_${currentMonth.replace(' ', '_')}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      autoTable(doc, {
+        startY: 40,
+        head: [["Metric", "Value"]],
+        body: [
+          ["Total Entries", monthEntries.length.toString()],
+          ["Overall Sentiment", getOverallSentimentChange()],
+          ["Average Sentiment", getAverageSentiment().toFixed(2)],
+        ],
+      });
+      
+      // Timeline data
+      const timelineTableEndY = (doc as any).lastAutoTable?.finalY || 70;
+      doc.setFontSize(16);
+      doc.text("Sentiment Timeline", 20, timelineTableEndY + 10);
+      
+      const timelineData = generateTimelineData();
+      const timelineRows = timelineData.map(item => [
+        item.date,
+        item.sentiment.toFixed(2),
+        item.text.substring(0, 50) + (item.text.length > 50 ? "..." : "")
+      ]);
+      
+      autoTable(doc, {
+        startY: timelineTableEndY + 15,
+        head: [["Date", "Sentiment", "Entry Preview"]],
+        body: timelineRows,
+      });
+      
+      // Monthly Journal Summary
+      const entryTableEndY = (doc as any).lastAutoTable?.finalY || 140;
+      if (entryTableEndY > 200) {
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.text("Monthly Journal Summary", 20, 20);
+      } else {
+        doc.setFontSize(16);
+        doc.text("Monthly Journal Summary", 20, entryTableEndY + 10);
+      }
+      
+      // Get stored monthly reflections
+      const storedReflections = localStorage.getItem('monthlyReflections');
+      const reflections = storedReflections ? JSON.parse(storedReflections) : [];
+      
+      // Get most recent reflection for current month
+      const currentMonthReflections = reflections.filter((ref: any) => {
+        const refDate = new Date(ref.date);
+        const now = new Date();
+        return refDate.getMonth() === now.getMonth() && 
+               refDate.getFullYear() === now.getFullYear();
+      });
+      
+      const latestReflection = currentMonthReflections[0];
+      
+      if (latestReflection) {
+        const summaryStartY = entryTableEndY > 200 ? 30 : entryTableEndY + 20;
+        doc.setFontSize(12);
+        doc.text(latestReflection.text.substring(0, 1000) + 
+          (latestReflection.text.length > 1000 ? "..." : ""),
+          20, 
+          summaryStartY, 
+          { maxWidth: 170 }
+        );
+      } else {
+        const summaryStartY = entryTableEndY > 200 ? 30 : entryTableEndY + 20;
+        doc.setFontSize(12);
+        doc.text("No monthly reflection available for this month.", 20, summaryStartY);
+      }
+      
+      // Save the PDF
+      doc.save(`monthly-analysis-${currentMonth.replace(/\s+/g, '-')}.pdf`);
       
       toast.success(`Monthly analysis for ${currentMonth} exported successfully`);
     } catch (error) {

@@ -9,6 +9,7 @@ import { DocumentEmbedding } from './DocumentEmbedding';
 import MentalHealthSuggestions from './suggestions/MentalHealthSuggestions';
 import { WordComparisonController } from './WordComparisonController';
 import { analyzeTextWithBert } from '@/utils/bertIntegration';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface EntriesViewProps {
   entries: any[];
@@ -22,6 +23,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
   const [currentPage, setCurrentPage] = useState(0);
   const [embeddingPoints, setEmbeddingPoints] = useState<Point[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
   const entriesPerPage = 10;
   
   // Filter entries by search query
@@ -157,7 +159,19 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
     }
     
     // Fallback: Generate embeddings from text directly
-    const words = entry.text.split(/\s+/).filter((word: string) => word.length > 3);
+    const words = String(entry.text).split(/\s+/)
+      .filter((word: string) => {
+        const cleanWord = String(word).toLowerCase().replace(/[^\w]/g, '');
+        // Exclude prepositions, helping verbs, conjunctions, pronouns, and filler words
+        const excludedWords = ['the', 'a', 'an', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 
+                              'in', 'out', 'with', 'about', 'against', 'before', 'after', 'during', 'he', 'she', 
+                              'it', 'they', 'we', 'you', 'i', 'me', 'him', 'her', 'them', 'us', 'is', 'am', 'are',
+                              'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+                              'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'can', 'could', 'uh', 'um',
+                              'eh', 'oh', 'ah', 'hmm', 'like', 'just', 'very', 'really', 'so', 'then'];
+        return cleanWord.length > 3 && !excludedWords.includes(cleanWord);
+      });
+    
     const uniqueWords = Array.from(new Set(words));
     const points: Point[] = [];
     
@@ -167,7 +181,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
     // Create a mapping of word to frequency count
     const wordCounts: Record<string, number> = {};
     words.forEach((word: string) => {
-      const cleanWord = word.replace(/[^\w]/g, '').toLowerCase();
+      const cleanWord = String(word).replace(/[^\w]/g, '').toLowerCase();
       if (cleanWord.length > 3) {
         wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
       }
@@ -211,35 +225,35 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
           sentiment = 0.4 + (hash % 20) / 100;
       }
       
-      // Create color based on emotional tone
+      // Create color based on emotional tone - using more vibrant colors for better visibility
       let color: [number, number, number];
       switch(emotionalTone) {
         case 'Joy':
-          color = [1, 0.9, 0.4]; // Yellow
+          color = [1, 0.9, 0.2]; // Brighter Yellow
           break;
         case 'Sadness':
-          color = [0.4, 0.6, 0.9]; // Blue
+          color = [0.2, 0.6, 1]; // Brighter Blue
           break;
         case 'Anxiety':
-          color = [0.9, 0.5, 0.2]; // Orange
+          color = [1, 0.5, 0.1]; // Brighter Orange
           break;
         case 'Contentment':
-          color = [0.5, 0.9, 0.5]; // Green
+          color = [0.2, 0.9, 0.4]; // Brighter Green
           break;
         case 'Confusion':
-          color = [0.7, 0.5, 0.9]; // Purple
+          color = [0.8, 0.4, 1]; // Brighter Purple
           break;
         case 'Anger':
-          color = [0.9, 0.3, 0.3]; // Red
+          color = [1, 0.2, 0.2]; // Brighter Red
           break;
         case 'Fear':
-          color = [0.7, 0.3, 0.7]; // Dark Purple
+          color = [0.9, 0.2, 0.9]; // Brighter Magenta
           break;
         case 'Surprise':
-          color = [0.4, 0.9, 0.9]; // Cyan
+          color = [0.2, 1, 1]; // Brighter Cyan
           break;
         default:
-          color = [0.7, 0.7, 0.7]; // Gray
+          color = [0.8, 0.8, 0.8]; // Brighter Gray
       }
       
       points.push({
@@ -339,91 +353,278 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
       <div className="w-2/3 h-full overflow-y-auto">
         {currentEntry ? (
           <div className="p-6">
-            <div className="mb-4">
-              <div className="text-lg font-medium text-black">
-                {format(new Date(currentEntry.date), 'MMMM d, yyyy')}
+            <div className="mb-4 flex justify-between items-center">
+              <div>
+                <div className="text-lg font-medium text-black">
+                  {format(new Date(currentEntry.date), 'MMMM d, yyyy')}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {format(new Date(currentEntry.date), 'h:mm a')}
+                </div>
               </div>
-              <div className="text-sm text-gray-500">
-                {format(new Date(currentEntry.date), 'h:mm a')}
-              </div>
+              <Button
+                onClick={() => {
+                  // Export BERT analysis of this entry as PDF
+                  try {
+                    const { jsPDF } = require('jspdf');
+                    const autoTable = require('jspdf-autotable').default;
+                    
+                    const doc = new jsPDF();
+                    
+                    // Title
+                    doc.setFontSize(18);
+                    doc.text("Journal Entry Analysis", 20, 20);
+                    
+                    // Entry date and time
+                    doc.setFontSize(14);
+                    doc.text("Entry Information", 20, 30);
+                    
+                    const entryDate = format(new Date(currentEntry.date), 'MMMM d, yyyy');
+                    const entryTime = format(new Date(currentEntry.date), 'h:mm a');
+                    
+                    autoTable(doc, {
+                      startY: 35,
+                      head: [["Property", "Value"]],
+                      body: [
+                        ["Date", entryDate],
+                        ["Time", entryTime],
+                        ["Word Count", currentEntry.text.split(/\s+/).length.toString()],
+                      ],
+                    });
+                    
+                    // Entry content
+                    const firstTableEndY = (doc as any).lastAutoTable?.finalY || 60;
+                    doc.setFontSize(14);
+                    doc.text("Journal Content", 20, firstTableEndY + 10);
+                    doc.setFontSize(11);
+                    doc.text(currentEntry.text.substring(0, 1000) + 
+                      (currentEntry.text.length > 1000 ? "..." : ""), 
+                      20, 
+                      firstTableEndY + 20, 
+                      { maxWidth: 170 }
+                    );
+                    
+                    // Emotional analysis
+                    let yPos = firstTableEndY + 80;
+                    if (yPos > 250) {
+                      doc.addPage();
+                      yPos = 20;
+                    }
+                    
+                    doc.setFontSize(14);
+                    doc.text("Emotional Analysis", 20, yPos);
+                    
+                    if (embeddingPoints && embeddingPoints.length > 0) {
+                      // Group by emotional tone
+                      const emotionalGroups: Record<string, number> = {};
+                      embeddingPoints.forEach(point => {
+                        if (point.emotionalTone) {
+                          emotionalGroups[point.emotionalTone] = (emotionalGroups[point.emotionalTone] || 0) + 1;
+                        }
+                      });
+                      
+                      const emotionalData = Object.entries(emotionalGroups)
+                        .map(([tone, count]) => [tone, count.toString()]);
+                      
+                      autoTable(doc, {
+                        startY: yPos + 5,
+                        head: [["Emotion", "Frequency"]],
+                        body: emotionalData,
+                      });
+                      
+                      // Top keywords
+                      const topWordsTableEndY = (doc as any).lastAutoTable?.finalY || (yPos + 40);
+                      doc.setFontSize(14);
+                      doc.text("Top Keywords", 20, topWordsTableEndY + 10);
+                      
+                      const topWords = embeddingPoints
+                        .sort((a, b) => ((b.frequency || 1) - (a.frequency || 1)))
+                        .slice(0, 10)
+                        .map(point => [point.word, (point.frequency || 1).toString()]);
+                      
+                      autoTable(doc, {
+                        startY: topWordsTableEndY + 15,
+                        head: [["Word", "Frequency"]],
+                        body: topWords,
+                      });
+                    }
+                    
+                    // Save the PDF
+                    doc.save(`journal-entry-${entryDate.replace(/\s+/g, '-')}.pdf`);
+                  } catch (error) {
+                    console.error("Error exporting PDF:", error);
+                    alert("Failed to export PDF. Please try again.");
+                  }
+                }}
+                variant="outline"
+                className="border-purple-200 text-purple-800 hover:bg-purple-50"
+              >
+                Share
+              </Button>
             </div>
             
             <div className="p-5 bg-gray-50 rounded-lg mb-6">
               <p className="whitespace-pre-line">{currentEntry.text}</p>
             </div>
             
-            {/* Latent Emotional Analysis */}
+            {/* Tab Navigation for Analysis */}
             <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3">Latent Emotional Analysis</h3>
-              
-              <div className="h-[300px] w-full bg-gray-50 rounded-lg overflow-hidden mb-4">
-                <DocumentEmbedding 
-                  points={embeddingPoints} 
-                  isInteractive={true} 
-                  onPointClick={handlePointSelection}
-                  selectedPoint={selectedPoint}
-                  depressedJournalReference={false}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="border rounded-lg p-3">
-                  <h4 className="font-medium text-sm mb-2">Emotional Distribution</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['Joy', 'Sadness', 'Anxiety', 'Contentment', 'Confusion', 'Anger', 'Fear', 'Surprise']
-                      .map(emotion => {
-                        const count = embeddingPoints.filter(p => p.emotionalTone === emotion).length;
-                        if (count === 0) return null;
-                        
-                        return (
-                          <div key={emotion} className="flex items-center">
-                            <div className={`w-3 h-3 rounded-full mr-2 ${
-                              emotion === "Joy" ? "bg-yellow-400" :
-                              emotion === "Sadness" ? "bg-blue-400" :
-                              emotion === "Anxiety" ? "bg-orange-400" :
-                              emotion === "Contentment" ? "bg-green-400" :
-                              emotion === "Confusion" ? "bg-purple-400" :
-                              emotion === "Anger" ? "bg-red-400" :
-                              emotion === "Fear" ? "bg-purple-700" :
-                              "bg-cyan-400"
-                            }`}></div>
-                            <span className="text-sm">{emotion}: {count}</span>
-                          </div>
-                        );
-                      }).filter(Boolean)}
-                  </div>
-                </div>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList>
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="embedding">Latent Emotional Analysis</TabsTrigger>
+                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                  <TabsTrigger value="keywords">Keywords</TabsTrigger>
+                </TabsList>
                 
-                <div className="border rounded-lg p-3">
-                  <h4 className="font-medium text-sm mb-2">Top Words</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {embeddingPoints
-                      .sort((a, b) => ((b.frequency || 1) - (a.frequency || 1)))
-                      .slice(0, 10)
-                      .map(point => (
-                        <div 
-                          key={point.id} 
-                          className="px-2 py-1 bg-gray-100 rounded-full text-xs cursor-pointer hover:bg-gray-200"
-                          onClick={() => handlePointSelection(point)}
-                          style={{
-                            backgroundColor: `rgba(${Math.round(point.color[0] * 255)}, ${Math.round(point.color[1] * 255)}, ${Math.round(point.color[2] * 255)}, 0.3)`,
-                          }}
-                        >
-                          {point.word}{point.frequency && point.frequency > 1 ? ` (${point.frequency})` : ''}
+                <TabsContent value="overview">
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium mb-3">Journal Analysis Overview</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="border rounded-lg p-3">
+                        <h4 className="font-medium text-sm mb-2">Emotional Distribution</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {['Joy', 'Sadness', 'Anxiety', 'Contentment', 'Confusion', 'Anger', 'Fear', 'Surprise']
+                            .map(emotion => {
+                              const count = embeddingPoints.filter(p => p.emotionalTone === emotion).length;
+                              if (count === 0) return null;
+                              
+                              return (
+                                <div key={emotion} className="flex items-center">
+                                  <div className={`w-3 h-3 rounded-full mr-2 ${
+                                    emotion === "Joy" ? "bg-yellow-400" :
+                                    emotion === "Sadness" ? "bg-blue-400" :
+                                    emotion === "Anxiety" ? "bg-orange-400" :
+                                    emotion === "Contentment" ? "bg-green-400" :
+                                    emotion === "Confusion" ? "bg-purple-400" :
+                                    emotion === "Anger" ? "bg-red-400" :
+                                    emotion === "Fear" ? "bg-purple-700" :
+                                    "bg-cyan-400"
+                                  }`}></div>
+                                  <span className="text-sm">{emotion}: {count}</span>
+                                </div>
+                              );
+                            }).filter(Boolean)}
                         </div>
-                      ))}
+                      </div>
+                      
+                      <div className="border rounded-lg p-3">
+                        <h4 className="font-medium text-sm mb-2">Top Words</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {embeddingPoints
+                            .sort((a, b) => ((b.frequency || 1) - (a.frequency || 1)))
+                            .slice(0, 10)
+                            .map(point => (
+                              <div 
+                                key={point.id} 
+                                className="px-2 py-1 bg-gray-100 rounded-full text-xs cursor-pointer hover:bg-gray-200"
+                                onClick={() => handlePointSelection(point)}
+                                style={{
+                                  backgroundColor: `rgba(${Math.round(point.color[0] * 255)}, ${Math.round(point.color[1] * 255)}, ${Math.round(point.color[2] * 255)}, 0.3)`,
+                                }}
+                              >
+                                {point.word}{point.frequency && point.frequency > 1 ? ` (${point.frequency})` : ''}
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-              
-              {/* Word Comparison */}
-              <WordComparisonController
-                points={embeddingPoints}
-                selectedPoint={selectedPoint}
-                sourceDescription="Words from this journal entry"
-                calculateRelationship={calculateRelationship}
-              />
+                </TabsContent>
+                
+                <TabsContent value="embedding">
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium mb-3">Latent Emotional Analysis</h3>
+                    
+                    <div className="h-[300px] w-full bg-gray-50 rounded-lg overflow-hidden mb-4">
+                      <DocumentEmbedding 
+                        points={embeddingPoints} 
+                        isInteractive={true} 
+                        onPointClick={handlePointSelection}
+                        selectedPoint={selectedPoint}
+                        depressedJournalReference={false}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="timeline">
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium mb-3">Emotional Timeline</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="h-[200px] flex items-end">
+                        {embeddingPoints.slice(0, 20).map((point, index) => (
+                          <div 
+                            key={point.id}
+                            className="flex-1 flex flex-col items-center justify-end cursor-pointer group"
+                            onClick={() => handlePointSelection(point)}
+                          >
+                            <div className="text-xs opacity-0 group-hover:opacity-100 absolute mb-2 bg-white p-1 rounded shadow">
+                              {point.word}
+                            </div>
+                            <div 
+                              className="w-4 rounded-t transition-all duration-300 group-hover:opacity-80"
+                              style={{
+                                height: `${Math.max(30, point.sentiment * 150)}px`,
+                                backgroundColor: `rgb(${Math.round(point.color[0] * 255)}, ${Math.round(point.color[1] * 255)}, ${Math.round(point.color[2] * 255)})`,
+                              }}
+                            ></div>
+                            <div className="text-[8px] mt-1 text-gray-500">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="keywords">
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium mb-3">Keywords Analysis</h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      {embeddingPoints
+                        .sort((a, b) => ((b.frequency || 1) - (a.frequency || 1)))
+                        .slice(0, 20)
+                        .map(point => (
+                          <div 
+                            key={point.id}
+                            className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                            onClick={() => handlePointSelection(point)}
+                          >
+                            <div className="flex items-center">
+                              <div 
+                                className="w-4 h-4 rounded-full mr-2" 
+                                style={{
+                                  backgroundColor: `rgb(${Math.round(point.color[0] * 255)}, ${Math.round(point.color[1] * 255)}, ${Math.round(point.color[2] * 255)})`,
+                                }}
+                              ></div>
+                              <span>{point.word}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="text-xs bg-gray-100 px-2 py-1 rounded-full mr-2">
+                                {point.emotionalTone}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {point.frequency && point.frequency > 1 ? `${point.frequency}×` : ''}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
+            
+            {/* Word Comparison */}
+            <WordComparisonController
+              points={embeddingPoints}
+              selectedPoint={selectedPoint}
+              sourceDescription="Words from this journal entry"
+              calculateRelationship={calculateRelationship}
+            />
             
             {/* Mental Health Suggestions based on current entry */}
             <MentalHealthSuggestions journalEntries={[currentEntry]} />
