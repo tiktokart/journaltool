@@ -11,6 +11,8 @@ import { getEmotionColor as getBertEmotionColor } from "@/utils/bertSentimentAna
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface TextEmotionViewerProps {
   pdfText: string;
@@ -32,6 +34,7 @@ export const TextEmotionViewer = ({
   const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal'>('minimal');
   const [localBertAnalysis, setLocalBertAnalysis] = useState<any>(bertAnalysis);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Unified color function for emotional tones - ensuring consistency across the app
   const getUnifiedEmotionColor = (emotion: string): string => {
@@ -305,62 +308,77 @@ export const TextEmotionViewer = ({
   }
 
   return (
-    <Card className="border border-border shadow-md bg-white">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <CardTitle className="flex items-center text-xl font-pacifico">
-            <Highlighter className="h-5 w-5 mr-2 text-primary" />
-            {t("Document Text Visualization")}
-          </CardTitle>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={showHighlights ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowHighlights(!showHighlights)}
-              className="self-start bg-purple-600 hover:bg-purple-700 text-white font-georgia"
-            >
-              {showHighlights ? t("Hide Emotional Highlights") : t("Show Emotional Highlights")}
-            </Button>
-            {showHighlights && (
-              <>
-                <Toggle
-                  pressed={hideNonHighlighted}
-                  onPressedChange={setHideNonHighlighted}
-                  size="sm"
-                  aria-label="Toggle non-highlighted words visibility"
-                  className="self-start font-georgia"
-                >
-                  {hideNonHighlighted ? (
-                    <EyeOff className="h-4 w-4 mr-1" />
-                  ) : (
-                    <Eye className="h-4 w-4 mr-1" />
-                  )}
-                  {hideNonHighlighted ? t("Show All Text") : t("Hide Non-Highlighted")}
-                </Toggle>
-                <Toggle
-                  pressed={filteringLevel === 'none'}
-                  onPressedChange={(pressed) => setFilteringLevel(pressed ? 'none' : 'minimal')}
-                  size="sm"
-                  aria-label="Toggle filtering level"
-                  className="self-start font-georgia"
-                >
-                  {filteringLevel === 'none' ? "No Filtering" : "Minimal Filtering"}
-                </Toggle>
-              </>
-            )}
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+      <Card className="border border-border shadow-md bg-white">
+        <CardHeader className="pb-0">
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center text-xl font-pacifico">
+              <Highlighter className="h-5 w-5 mr-2 text-primary" />
+              {t("Document Text Visualization")}
+            </CardTitle>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-9 p-0">
+                {isOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
           </div>
-        </div>
-        {sourceDescription && (
-          <p className="text-sm text-muted-foreground mt-1 font-georgia">{sourceDescription}</p>
-        )}
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[350px] rounded border border-border p-4">
-          <div className="text-sm whitespace-pre-wrap font-georgia">
-            {highlightedText}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+          {sourceDescription && (
+            <p className="text-sm text-muted-foreground mt-1 font-georgia">{sourceDescription}</p>
+          )}
+        </CardHeader>
+        <CollapsibleContent>
+          <CardHeader className="pt-2 pb-3">
+            <div className="flex flex-wrap gap-2 mt-2">
+              <Button
+                variant={showHighlights ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowHighlights(!showHighlights)}
+                className="self-start bg-purple-600 hover:bg-purple-700 text-white font-georgia"
+              >
+                {showHighlights ? t("Hide Emotional Highlights") : t("Show Emotional Highlights")}
+              </Button>
+              {showHighlights && (
+                <>
+                  <Toggle
+                    pressed={hideNonHighlighted}
+                    onPressedChange={setHideNonHighlighted}
+                    size="sm"
+                    aria-label="Toggle non-highlighted words visibility"
+                    className="self-start font-georgia"
+                  >
+                    {hideNonHighlighted ? (
+                      <EyeOff className="h-4 w-4 mr-1" />
+                    ) : (
+                      <Eye className="h-4 w-4 mr-1" />
+                    )}
+                    {hideNonHighlighted ? t("Show All Text") : t("Hide Non-Highlighted")}
+                  </Toggle>
+                  <Toggle
+                    pressed={filteringLevel === 'none'}
+                    onPressedChange={(pressed) => setFilteringLevel(pressed ? 'none' : 'minimal')}
+                    size="sm"
+                    aria-label="Toggle filtering level"
+                    className="self-start font-georgia"
+                  >
+                    {filteringLevel === 'none' ? "No Filtering" : "Minimal Filtering"}
+                  </Toggle>
+                </>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[350px] rounded border border-border p-4">
+              <div className="text-sm whitespace-pre-wrap font-georgia">
+                {highlightedText}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };

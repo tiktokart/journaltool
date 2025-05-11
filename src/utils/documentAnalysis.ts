@@ -8,12 +8,28 @@ import { generateEmbeddingPoints } from './embeddingGeneration';
 import { extractTextFromPdf } from './pdfExtraction';
 import { analyzeTextWithBert } from './bertIntegration';
 
-// Common prepositions and articles to filter out
+// Expanded stopwords list including common prepositions, articles, and PDF-related terms
 const stopWords = [
+  // Basic stopwords
   'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 
   'about', 'in', 'under', 'over', 'with', 'without', 'during', 'before', 'after', 'of',
-  'pdf', 'document', 'file', 'text', 'page', 'content'
+  // PDF-related words
+  'pdf', 'document', 'file', 'text', 'page', 'content',
+  // Additional common stopwords that don't carry emotional weight
+  'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 
+  'this', 'that', 'these', 'those', 'there', 'here', 'where',
+  'who', 'whom', 'which', 'what', 'whose', 'when', 'why', 'how',
+  'all', 'any', 'some', 'many', 'few', 'most', 'no', 'every'
 ];
+
+// Part-of-speech weights to prioritize certain types of words
+const posWeights = {
+  VERB: 2.5,     // Action verbs get highest priority
+  NOUN: 2.0,     // Nouns are important for context
+  ADJ: 1.8,      // Adjectives often carry emotional content
+  ADV: 1.5,      // Adverbs can modify emotional intensity
+  DEFAULT: 1.0   // All other types get normal weight
+};
 
 // Identify common PDF metadata patterns
 const pdfMetadataRegex = /from\s+pdf|pdf\s+file|document\s+name|file\s+name|page\s+\d+/gi;
@@ -55,11 +71,51 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     
     // Filter out stop words and common PDF metadata terms from BERT keywords
     if (bertAnalysis.keywords && Array.isArray(bertAnalysis.keywords)) {
-      bertAnalysis.keywords = bertAnalysis.keywords.filter(keyword => {
-        const word = keyword.word?.toLowerCase();
-        return word && word.length > 2 && !stopWords.includes(word) && 
-               !word.match(/pdf|document|file|page|content/);
-      });
+      // Filter and prioritize words based on type and importance
+      bertAnalysis.keywords = bertAnalysis.keywords
+        .filter(keyword => {
+          const word = keyword.word?.toLowerCase();
+          return word && 
+                 word.length > 2 && 
+                 !stopWords.includes(word) && 
+                 !word.match(/pdf|document|file|page|content/);
+        })
+        .map(keyword => {
+          // Apply POS-based weights to emphasize action words and nouns
+          const wordType = keyword.pos || 'DEFAULT';
+          const weight = posWeights[wordType] || posWeights.DEFAULT;
+          
+          // Boost the sentiment score based on word type
+          const adjustedSentiment = keyword.sentiment * weight;
+          
+          // Enhance color intensity for important words
+          const colorIntensity = Math.min(1.0, Math.abs(adjustedSentiment) * weight);
+          
+          // Determine base color from sentiment
+          let r = 0, g = 0, b = 0;
+          if (adjustedSentiment > 0) {
+            // Positive: green-tinted
+            g = Math.floor(200 * colorIntensity) + 55;
+            r = Math.floor(100 * colorIntensity);
+            b = Math.floor(100 * colorIntensity);
+          } else {
+            // Negative: red-tinted
+            r = Math.floor(200 * colorIntensity) + 55;
+            g = Math.floor(100 * colorIntensity);
+            b = Math.floor(100 * colorIntensity);
+          }
+          
+          // Convert to hex color
+          const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+          
+          return {
+            ...keyword,
+            sentiment: adjustedSentiment,
+            weight,
+            color
+          };
+        })
+        .sort((a, b) => (b.weight * Math.abs(b.sentiment)) - (a.weight * Math.abs(a.sentiment)));
     }
     
     console.log("BERT analysis complete, found keywords:", bertAnalysis.keywords?.length || 0);

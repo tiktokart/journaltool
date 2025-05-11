@@ -148,15 +148,21 @@ export const DocumentEmbedding = ({
   }, [displayPoints]);
   
   const handleZoomIn = () => {
-    zoomIn(cameraRef.current);
+    if (cameraRef.current) {
+      zoomIn(cameraRef.current);
+    }
   };
   
   const handleZoomOut = () => {
-    zoomOut(cameraRef.current);
+    if (cameraRef.current) {
+      zoomOut(cameraRef.current);
+    }
   };
   
   const handleResetZoom = () => {
-    resetZoom(cameraRef.current, controlsRef.current);
+    if (cameraRef.current && controlsRef.current) {
+      resetZoom(cameraRef.current, controlsRef.current);
+    }
   };
   
   const handlePointHover = (point: Point | null) => {

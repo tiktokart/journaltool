@@ -1,8 +1,9 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, CircleDot, RotateCcw, AlertTriangle } from "lucide-react";
+import { Search, X, CircleDot, RotateCcw, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { 
   Command,
   CommandEmpty,
@@ -20,6 +21,7 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import MentalHealthSuggestions from "@/components/suggestions/MentalHealthSuggestions";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface AnalysisTabsProps {
   activeTab: string;
@@ -67,6 +69,9 @@ export const AnalysisTabs = ({
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
+  const [isOverviewOpen, setIsOverviewOpen] = useState(false);
+  const [isEmbeddingOpen, setIsEmbeddingOpen] = useState(false);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
 
   // Check if the required data for each tab is available
   const hasEmbeddingData = sentimentData?.embeddingPoints && sentimentData.embeddingPoints.length > 0;
@@ -173,146 +178,216 @@ export const AnalysisTabs = ({
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
       <div className="overflow-x-auto">
         <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto bg-white">
-          <TabsTrigger value="embedding" className="min-w-max">{t("latentEmotionalAnalysisTab")}</TabsTrigger>
           <TabsTrigger value="overview" className="min-w-max">{t("overviewTab")}</TabsTrigger>
+          <TabsTrigger value="embedding" className="min-w-max">{t("latentEmotionalAnalysisTab")}</TabsTrigger>
           <TabsTrigger value="timeline" className="min-w-max">{t("timelineTab")}</TabsTrigger>
           <TabsTrigger value="keyphrases" className="min-w-max">{t("keywordsTab")}</TabsTrigger>
         </TabsList>
       </div>
+      
+      <TabsContent value="overview" className="mt-6">
+        {!hasOverviewData ? (
+          <DataMissingFallback tabName={t("overviewTab")} />
+        ) : (
+          <Collapsible open={isOverviewOpen} onOpenChange={setIsOverviewOpen} className="w-full">
+            <div className="flex justify-between items-center pb-2">
+              <h2 className="text-xl font-bold text-purple-900">{t("overviewTab")}</h2>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-9 p-0">
+                  {isOverviewOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent>
+              <SentimentOverview 
+                data={{
+                  overallSentiment: sentimentData.overallSentiment,
+                  distribution: sentimentData.distribution,
+                  fileName: sentimentData.fileName
+                }}
+                sourceDescription={sentimentData.sourceDescription}
+              />
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+      </TabsContent>
       
       <TabsContent value="embedding" className="mt-6">
         {!hasEmbeddingData ? (
           <DataMissingFallback tabName={t("embedding")} />
         ) : (
           <>
-            <Card className="border border-border shadow-md overflow-hidden bg-white">
-              <CardHeader className="z-10">
-                <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-                  <CardTitle className="flex items-center">
-                    <span>{t("latentEmotionalAnalysis")}</span>
-                  </CardTitle>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={handleResetVisualization}
-                      className="h-9"
-                    >
-                      <RotateCcw className="h-4 w-4 mr-2 icon-dance" />
-                      {t("resetView")}
-                    </Button>
-                    
-                    <div className="relative w-full md:w-64">
-                      <div className="relative w-full">
-                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground icon-dance" />
-                        <Input 
-                          placeholder={t("searchWordsOrEmotions")}
-                          className="pl-8 w-full pr-8"
-                          value={searchTerm}
-                          onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                          }}
-                          onFocus={() => {
-                            if (uniqueWords.length > 0) {
-                              setOpen(true);
-                            }
-                          }}
-                        />
-                        {searchTerm && (
-                          <button 
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                            onClick={handleClearSearch}
-                          >
-                            <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                          </button>
-                        )}
-                      </div>
-                      {uniqueWords.length > 0 && open && (
-                        <div 
-                          ref={searchDropdownRef}
-                          className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
+            <Collapsible open={isOverviewOpen} onOpenChange={setIsOverviewOpen} className="w-full mb-6">
+              <div className="flex justify-between items-center pb-2">
+                <h2 className="text-xl font-bold text-purple-900">{t("overviewTab")}</h2>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-9 p-0">
+                    {isOverviewOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent>
+                <SentimentOverview 
+                  data={{
+                    overallSentiment: sentimentData.overallSentiment,
+                    distribution: sentimentData.distribution,
+                    fileName: sentimentData.fileName
+                  }}
+                  sourceDescription={sentimentData.sourceDescription}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+            
+            <Collapsible open={isEmbeddingOpen} onOpenChange={setIsEmbeddingOpen} className="w-full">
+              <div className="flex justify-between items-center pb-2">
+                <h2 className="text-xl font-bold text-purple-900">{t("latentEmotionalAnalysis")}</h2>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-9 p-0">
+                    {isEmbeddingOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent>
+                <Card className="border border-border shadow-md overflow-hidden bg-white">
+                  <CardHeader className="z-10">
+                    <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
+                      <CardTitle className="flex items-center">
+                        <span>{t("latentEmotionalAnalysis")}</span>
+                      </CardTitle>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleResetVisualization}
+                          className="h-9"
                         >
-                          <Command>
-                            <CommandInput 
-                              placeholder={t("searchWords")}
+                          <RotateCcw className="h-4 w-4 mr-2 icon-dance" />
+                          {t("resetView")}
+                        </Button>
+                        
+                        <div className="relative w-full md:w-64">
+                          <div className="relative w-full">
+                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground icon-dance" />
+                            <Input 
+                              placeholder={t("searchWordsOrEmotions")}
+                              className="pl-8 w-full pr-8"
                               value={searchTerm}
-                              onValueChange={setSearchTerm}
+                              onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                              }}
+                              onFocus={() => {
+                                if (uniqueWords.length > 0) {
+                                  setOpen(true);
+                                }
+                              }}
                             />
-                            <CommandList>
-                              <CommandEmpty>{t("noResultsFound")}</CommandEmpty>
-                              <CommandGroup>
-                                {uniqueWords
-                                  .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
-                                  .slice(0, 100)
-                                  .map((word) => (
-                                    <CommandItem 
-                                      key={word} 
-                                      value={word}
-                                      onSelect={(value) => handleSelectWord(value)}
-                                    >
-                                      {word}
-                                    </CommandItem>
-                                  ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
+                            {searchTerm && (
+                              <button 
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                                onClick={handleClearSearch}
+                              >
+                                <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </button>
+                            )}
+                          </div>
+                          {uniqueWords.length > 0 && open && (
+                            <div 
+                              ref={searchDropdownRef}
+                              className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
+                            >
+                              <Command>
+                                <CommandInput 
+                                  placeholder={t("searchWords")}
+                                  value={searchTerm}
+                                  onValueChange={setSearchTerm}
+                                />
+                                <CommandList>
+                                  <CommandEmpty>{t("noResultsFound")}</CommandEmpty>
+                                  <CommandGroup>
+                                    {uniqueWords
+                                      .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
+                                      .slice(0, 100)
+                                      .map((word) => (
+                                        <CommandItem 
+                                          key={word} 
+                                          value={word}
+                                          onSelect={(value) => handleSelectWord(value)}
+                                        >
+                                          {word}
+                                        </CommandItem>
+                                      ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="text-sm font-normal flex items-center text-muted-foreground">
-                  <CircleDot className="h-4 w-4 mr-2 icon-dance" />
-                  <span>{t("hoverOrClick")}</span>
-                </div>
-                {sentimentData?.sourceDescription && (
-                  <p className="text-sm mt-2 text-black">{sentimentData.sourceDescription}</p>
-                )}
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="h-[500px] relative">
-                  <DocumentEmbedding 
-                    points={filteredPoints}
-                    onPointClick={handlePointClick}
-                    isInteractive={true}
-                    focusOnWord={selectedWord || null}
-                    sourceDescription={sentimentData.sourceDescription}
-                    onResetView={handleResetVisualization}
-                    visibleClusterCount={visibleClusterCount}
-                    bertAnalysis={sentimentData.bertAnalysis || bertAnalysis}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="text-sm font-normal flex items-center text-muted-foreground">
+                      <CircleDot className="h-4 w-4 mr-2 icon-dance" />
+                      <span>{t("hoverOrClick")}</span>
+                    </div>
+                    {sentimentData?.sourceDescription && (
+                      <p className="text-sm mt-2 text-black">{sentimentData.sourceDescription}</p>
+                    )}
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="h-[500px] relative">
+                      <DocumentEmbedding 
+                        points={filteredPoints}
+                        onPointClick={handlePointClick}
+                        isInteractive={true}
+                        focusOnWord={selectedWord || null}
+                        sourceDescription={sentimentData.sourceDescription}
+                        onResetView={handleResetVisualization}
+                        visibleClusterCount={visibleClusterCount}
+                        bertAnalysis={sentimentData.bertAnalysis || bertAnalysis}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </CollapsibleContent>
+            </Collapsible>
             
             {/* Suggestions section based on BERT analysis */}
-            <div className="mt-8">
-              <h2 className="text-xl font-bold text-purple-900 mb-4">Detailed Analysis Data</h2>
-              {/* If we have BERT data or text content, show suggestions */}
-              {(hasBertData || hasTextData) && (
-                <MentalHealthSuggestions 
-                  journalEntries={journalEntries}
-                  bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
-                />
-              )}
-            </div>
+            <Collapsible open={isSuggestionsOpen} onOpenChange={setIsSuggestionsOpen} className="w-full mt-8">
+              <div className="flex justify-between items-center pb-2">
+                <h2 className="text-xl font-bold text-purple-900">Suggestions Based on Analysis</h2>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-9 p-0">
+                    {isSuggestionsOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent>
+                {/* If we have BERT data or text content, show suggestions */}
+                {(hasBertData || hasTextData) && (
+                  <MentalHealthSuggestions 
+                    journalEntries={journalEntries}
+                    bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
+                  />
+                )}
+              </CollapsibleContent>
+            </Collapsible>
           </>
-        )}
-      </TabsContent>
-      
-      <TabsContent value="overview" className="mt-6">
-        {!hasOverviewData ? (
-          <DataMissingFallback tabName={t("overviewTab")} />
-        ) : (
-          <SentimentOverview 
-            data={{
-              overallSentiment: sentimentData.overallSentiment,
-              distribution: sentimentData.distribution,
-              fileName: sentimentData.fileName
-            }}
-            sourceDescription={sentimentData.sourceDescription}
-          />
         )}
       </TabsContent>
       

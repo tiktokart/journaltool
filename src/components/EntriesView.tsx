@@ -84,37 +84,45 @@ const EntriesView = ({ entries, onSelectEntry }) => {
         
         <TabsContent value="all" className="flex-1 m-0">
           <ScrollArea className="h-full p-4">
-            {Object.entries(groupedEntries).map(([month, monthEntries]) => (
-              <div key={month} className="mb-8 last:mb-0">
-                <h3 className="text-lg font-medium mb-3 text-purple-700">{month}</h3>
-                {monthEntries.filter(entry => {
-                  return searchTerm === "" || entry.text.toLowerCase().includes(searchTerm.toLowerCase());
-                }).map(entry => (
-                  <Card key={entry.id} className="mb-3 overflow-hidden hover:shadow-md transition-shadow">
-                    <CardHeader className="p-3 bg-purple-50 flex flex-row items-center justify-between">
-                      <div className="font-medium">{format(parseISO(entry.date), "MMMM d, yyyy - h:mm a")}</div>
-                      <div className="flex items-center space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
-                          onClick={() => handleDeleteClick(entry)}
-                        >
-                          <span className="sr-only">Delete</span>
-                          ×
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent 
-                      className="p-3 cursor-pointer"
-                      onClick={() => onSelectEntry(entry)}
-                    >
-                      <p className="line-clamp-3 text-sm">{entry.text}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ))}
+            {Object.entries(groupedEntries).map(([month, monthEntries]) => {
+              const entriesForMonth = monthEntries.filter(entry => {
+                return searchTerm === "" || entry.text.toLowerCase().includes(searchTerm.toLowerCase());
+              });
+              
+              if (entriesForMonth.length === 0) {
+                return null;
+              }
+              
+              return (
+                <div key={month} className="mb-8 last:mb-0">
+                  <h3 className="text-lg font-medium mb-3 text-purple-700">{month}</h3>
+                  {entriesForMonth.map(entry => (
+                    <Card key={entry.id} className="mb-3 overflow-hidden hover:shadow-md transition-shadow">
+                      <CardHeader className="p-3 bg-purple-50 flex flex-row items-center justify-between">
+                        <div className="font-medium">{format(parseISO(entry.date), "MMMM d, yyyy - h:mm a")}</div>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                            onClick={() => handleDeleteClick(entry)}
+                          >
+                            <span className="sr-only">Delete</span>
+                            ×
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent 
+                        className="p-3 cursor-pointer"
+                        onClick={() => onSelectEntry(entry)}
+                      >
+                        <p className="line-clamp-3 text-sm">{entry.text}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })}
             
             {filteredEntries.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
