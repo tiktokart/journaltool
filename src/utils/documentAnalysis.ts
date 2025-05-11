@@ -1,3 +1,4 @@
+
 import { generateSummary } from './summaryGeneration';
 import { calculateSentiment } from './sentimentAnalysis';
 import { extractEntities } from './entityExtraction';
@@ -43,8 +44,8 @@ interface KeywordAnalysis {
   tone?: string;
   relatedConcepts?: string[];
   frequency?: number;
-  color?: string | [number, number, number] | number[]; // Updated to match accepted color formats
-  weight?: number; // Added to support weight property
+  color?: string | [number, number, number] | number[]; // Updated to handle multiple color formats
+  weight?: number;
 }
 
 export const analyzePdfContent = async (file: File, pdfText: string) => {
@@ -128,7 +129,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
             color
           };
         })
-        .sort((a, b) => (b.weight! * Math.abs(b.sentiment)) - (a.weight! * Math.abs(a.sentiment)));
+        .sort((a, b) => ((b.weight || 0) * Math.abs(b.sentiment)) - ((a.weight || 0) * Math.abs(a.sentiment)));
     }
     
     console.log("BERT analysis complete, found keywords:", bertAnalysis.keywords?.length || 0);

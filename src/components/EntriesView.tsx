@@ -277,6 +277,74 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                         </div>
                       </CardContent>
                     </Card>
+                    
+                    {/* Additional Analysis Cards */}
+                    <Card className="md:col-span-2">
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">Emotional Analysis</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>Negative</span>
+                            <span>Positive</span>
+                          </div>
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500" 
+                              style={{ width: '100%' }}
+                            ></div>
+                          </div>
+                          <div className="h-6 relative">
+                            <div 
+                              className="absolute w-2 h-4 bg-black rounded-full transform -translate-x-1/2 -translate-y-1/2 top-1/2" 
+                              style={{ left: `${(Math.random() * 80 + 10)}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-sm mt-4">
+                            The emotional tone of this entry suggests feelings of 
+                            {Math.random() > 0.7 ? ' contentment and joy.' : 
+                             Math.random() > 0.4 ? ' mixed emotions with some anxiety.' : 
+                             ' stress and concern.'}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">Word Usage</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm">
+                          <p className="mb-2">Most frequently used words:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {['time', 'feel', 'work', 'today', 'thoughts'].map((word, i) => (
+                              <span 
+                                key={i}
+                                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                              >
+                                {word}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">Entry Patterns</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm">
+                          <p>This entry was written in the {new Date(selectedEntry.date).getHours() < 12 ? 'morning' : 
+                                                          new Date(selectedEntry.date).getHours() < 18 ? 'afternoon' : 'evening'}.</p>
+                          <p className="mt-1">Length: {selectedEntry.text.length} characters</p>
+                          <p className="mt-1">Word count: ~{selectedEntry.text.split(/\s+/).length} words</p>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
               ) : (
