@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
@@ -11,7 +10,6 @@ import { JournalInput } from "@/components/JournalInput";
 import { JournalCache } from "@/components/JournalCache";
 import DocumentAnalysisPanel from "@/components/dashboard/DocumentAnalysisPanel";
 import AnalysisResults from "@/components/dashboard/AnalysisResults";
-import { CircleDecoration, LeafDecoration, WaveDecoration, TriangleDecoration } from "@/components/VectorDecorations";
 
 const Dashboard = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -264,25 +262,15 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-green relative">
-      {/* Vector decorations */}
-      <CircleDecoration className="w-64 h-64 -top-20 -right-20 opacity-10" />
-      <LeafDecoration className="bottom-40 -right-10" />
-      <TriangleDecoration className="-bottom-10 -left-10 rotate-180" />
-      <WaveDecoration className="w-48 h-24 top-40 -left-10 opacity-10" />
-      
+    <div className="min-h-screen flex flex-col bg-yellow">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col gap-8">
-          {/* Perfect Life and Monthly Reflections - Side by Side with rounded corners */}
+          {/* Perfect Life and Monthly Reflections - Side by Side */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="relative">
-              <CircleDecoration className="w-20 h-20 -top-5 -left-5" />
-              <PerfectLifePlan />
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-md relative">
-              <WaveDecoration className="w-32 h-16 -top-5 -right-5 opacity-10" />
+            <PerfectLifePlan />
+            <div className="bg-white p-4 rounded-lg">
               <MonthlyReflections 
                 journalText={monthlyReflectionText} 
                 refreshTrigger={refreshReflectionsTrigger}
@@ -291,17 +279,15 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Journal Input Section with rounded corners */}
+          {/* Journal Input Section */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-md relative">
-              <TriangleDecoration className="-bottom-5 -right-5 rotate-45" />
+            <div className="bg-white p-4 rounded-lg">
               <JournalInput 
                 onJournalEntrySubmit={handleJournalEntrySubmit}
                 onAddToMonthlyReflection={handleAddToMonthlyReflection}
               />
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-md relative">
-              <LeafDecoration className="-top-5 -right-5" />
+            <div className="bg-white p-4 rounded-lg">
               <JournalCache 
                 onSelectEntry={handleCachedEntrySelect} 
                 refreshTrigger={refreshJournalTrigger}
@@ -309,48 +295,42 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Document Analysis Section with rounded corners */}
-          <div className="relative">
-            <CircleDecoration className="w-24 h-24 -bottom-5 -right-5" />
-            <DocumentAnalysisPanel
-              file={file}
-              pdfText={pdfText}
-              isAnalyzing={isAnalyzing}
-              onFileUpload={handleFileUpload}
-              onAnalyzeClick={analyzeSentiment}
-            />
-          </div>
+          {/* Document Analysis Section */}
+          <DocumentAnalysisPanel
+            file={file}
+            pdfText={pdfText}
+            isAnalyzing={isAnalyzing}
+            onFileUpload={handleFileUpload}
+            onAnalyzeClick={analyzeSentiment}
+          />
 
-          {/* Analysis Results Section with rounded corners */}
+          {/* Analysis Results Section */}
           {sentimentData && (
-            <div className="relative">
-              <WaveDecoration className="w-40 h-20 -top-5 -left-5 opacity-10" />
-              <AnalysisResults
-                sentimentData={sentimentData}
-                pdfText={pdfText}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                selectedPoint={selectedPoint}
-                setSelectedPoint={setSelectedPoint}
-                selectedWord={selectedWord}
-                setSelectedWord={setSelectedWord}
-                filteredPoints={filteredPoints}
-                setFilteredPoints={setFilteredPoints}
-                uniqueWords={uniqueWords}
-                connectedPoints={connectedPoints}
-                setConnectedPoints={setConnectedPoints}
-                visibleClusterCount={visibleClusterCount}
-                setVisibleClusterCount={setVisibleClusterCount}
-                handlePointClick={handlePointClick}
-                handleResetVisualization={handleResetVisualization}
-                handleClearSearch={handleClearSearch}
-                calculateRelationship={calculateRelationship}
-                onJournalEntryAdded={handleJournalEntryAdded}
-                onMonthlyReflectionAdded={handleMonthlyReflectionAdded}
-              />
-            </div>
+            <AnalysisResults
+              sentimentData={sentimentData}
+              pdfText={pdfText}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedPoint={selectedPoint}
+              setSelectedPoint={setSelectedPoint}
+              selectedWord={selectedWord}
+              setSelectedWord={setSelectedWord}
+              filteredPoints={filteredPoints}
+              setFilteredPoints={setFilteredPoints}
+              uniqueWords={uniqueWords}
+              connectedPoints={connectedPoints}
+              setConnectedPoints={setConnectedPoints}
+              visibleClusterCount={visibleClusterCount}
+              setVisibleClusterCount={setVisibleClusterCount}
+              handlePointClick={handlePointClick}
+              handleResetVisualization={handleResetVisualization}
+              handleClearSearch={handleClearSearch}
+              calculateRelationship={calculateRelationship}
+              onJournalEntryAdded={handleJournalEntryAdded}
+              onMonthlyReflectionAdded={handleMonthlyReflectionAdded}
+            />
           )}
         </div>
       </main>

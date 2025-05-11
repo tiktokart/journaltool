@@ -15,7 +15,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { BarChart as RecBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DocumentSummary } from "@/components/DocumentSummary";
-import { CircleDecoration, WaveDecoration, TriangleDecoration, LeafDecoration, ArrowButton } from "@/components/VectorDecorations";
 
 export default function Index() {
   const { theme, setTheme } = useTheme();
@@ -87,33 +86,27 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-green">
+    <div className="min-h-screen bg-yellow">
       <Header />
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center max-w-3xl mx-auto mb-12 relative">
-          {/* Decorative vector elements */}
-          <CircleDecoration className="w-32 h-32 top-0 -left-16 opacity-20" />
-          <TriangleDecoration className="top-10 -right-20" />
-          <LeafDecoration className="bottom-0 -left-20" />
-          <WaveDecoration className="w-40 h-20 -bottom-10 right-0 opacity-10" />
-          
+        <div className="text-center max-w-3xl mx-auto mb-12">
           <h1 className="text-5xl font-bold mb-6 text-black">Welcome to Your Life Planner</h1>
           <p className="text-xl mb-8 text-black">
             Plan your perfect life, analyze your thoughts, and track your emotional well-being.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <ArrowButton direction="right">
+            <Button asChild size="lg" className="bg-orange hover:bg-orange-dark text-black">
               <Link to="/dashboard">Go to Dashboard</Link>
-            </ArrowButton>
+            </Button>
           </div>
         </div>
 
-        {/* Feature highlights with icons - updated to rounded corners */}
+        {/* Feature highlights with icons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="border-0 shadow-md bg-white rounded-xl">
+          <Card className="border-0 shadow-md bg-white">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
-                <Target className="h-5 w-5 mr-2 text-lime icon-dance" />
+                <Target className="h-5 w-5 mr-2 text-orange icon-dance" />
                 Emotional Insights
               </CardTitle>
             </CardHeader>
@@ -124,11 +117,10 @@ export default function Index() {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-md bg-white rounded-xl relative overflow-hidden">
-            <CircleDecoration className="w-24 h-24 -bottom-10 -right-10" />
+          <Card className="border-0 shadow-md bg-white">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
-                <Book className="h-5 w-5 mr-2 text-lime icon-dance" />
+                <Book className="h-5 w-5 mr-2 text-orange icon-dance" />
                 Journal Tracker
               </CardTitle>
             </CardHeader>
@@ -139,10 +131,10 @@ export default function Index() {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-md bg-white rounded-xl">
+          <Card className="border-0 shadow-md bg-white">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-xl text-black">
-                <BarChart className="h-5 w-5 mr-2 text-lime icon-dance" />
+                <BarChart className="h-5 w-5 mr-2 text-orange icon-dance" />
                 Sentiment Analysis
               </CardTitle>
             </CardHeader>
@@ -154,18 +146,15 @@ export default function Index() {
           </Card>
         </div>
 
-        {/* Mental Health Statistics - updated with rounded corners and vector decorations */}
-        <div className="mb-12 relative">
-          <TriangleDecoration className="-top-10 -left-10 rotate-45" />
-          <WaveDecoration className="w-40 h-20 -bottom-10 -right-10 opacity-10" />
-          
+        {/* Mental Health Statistics */}
+        <div className="mb-12">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold text-black">
               Mental Health Insights
             </h2>
           </div>
           
-          <Card className="border-0 shadow-md bg-white rounded-xl overflow-hidden">
+          <Card className="border-0 shadow-md bg-white">
             <CardHeader>
               <CardTitle className="text-black">Mental Health Statistics</CardTitle>
               <p className="text-sm text-black">Key facts about mental health prevalence and impact on daily life</p>
@@ -232,20 +221,17 @@ export default function Index() {
           </Card>
         </div>
 
-        {/* 3D Visualization - updated with rounded corners */}
-        <div className="mb-12 relative">
-          <CircleDecoration className="w-48 h-48 -top-20 -right-20" />
-          <LeafDecoration className="-bottom-10 -left-10" />
-          
+        {/* 3D Visualization */}
+        <div className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-center text-black">
             Interactive Visualization
           </h2>
           <p className="text-center mb-4 text-black">
             This is a short analysis and visualization of a generated person's recounting of his experience in a panic attack.
           </p>
-          <Card className="border-0 shadow-md overflow-hidden rounded-xl">
+          <Card className="border-0 shadow-md overflow-hidden">
             <CardContent className="p-0">
-              <div className="h-[500px] w-full bg-white rounded-xl">
+              <div className="h-[500px] w-full bg-white">
                 <DocumentEmbedding 
                   points={points}
                   onPointClick={setSelectedPoint}
@@ -257,17 +243,17 @@ export default function Index() {
             </CardContent>
           </Card>
           
-          {/* Collapsible Detailed Analysis Section - updated with rounded corners */}
+          {/* Collapsible Detailed Analysis Section */}
           <div className="mt-6">
             <Collapsible
               open={isCollapsibleOpen}
               onOpenChange={setIsCollapsibleOpen}
-              className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white"
+              className="border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white"
             >
               <CollapsibleTrigger asChild>
-                <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 rounded-t-xl">
+                <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50">
                   <div className="flex items-center">
-                    <FileText className="h-5 w-5 mr-2 text-lime icon-dance" />
+                    <FileText className="h-5 w-5 mr-2 text-orange icon-dance" />
                     <span className="font-medium text-black">View Detailed Analysis Data</span>
                   </div>
                   {isCollapsibleOpen ? (
@@ -356,16 +342,13 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Word Comparison - updated with rounded corners */}
-        <div className="mb-12 relative">
-          <CircleDecoration className="w-20 h-20 -top-10 right-10" />
-          <WaveDecoration className="w-32 h-20 -bottom-5 -left-5 opacity-10" />
-          
+        {/* Word Comparison */}
+        <div className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-center text-black flex items-center justify-center">
-            <GitCompareArrows className="h-6 w-6 mr-2 text-lime icon-dance" />
+            <GitCompareArrows className="h-6 w-6 mr-2 text-orange icon-dance" />
             Word Comparison
           </h2>
-          <div className="bg-white p-6 rounded-xl shadow-md">
+          <div className="bg-white p-4 rounded-lg shadow-md">
             <WordComparisonController 
               points={points}
               selectedPoint={selectedPoint}

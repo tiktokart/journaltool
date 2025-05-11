@@ -1,4 +1,3 @@
-
 body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -18,16 +17,12 @@ body {
   background-color: #E74C3C;
 }
 
-.bg-green {
-  background-color: #4CAF50;
+.bg-yellow {
+  background-color: #f6df60;
 }
 
-.bg-green-soft {
-  background-color: #E8F5E9;
-}
-
-.bg-lime {
-  background-color: #8BC34A;
+.bg-yellow-soft {
+  background-color: #fef7cd;
 }
 
 /* Orange color for buttons and accents */
@@ -91,8 +86,8 @@ body {
 }
 
 /* Color for emotional tones in visualization */
-.emotional-tone-green {
-  color: #4CAF50;
+.emotional-tone-yellow {
+  color: #f6df60;
 }
 
 /* Bold text for life plan sections */
@@ -106,12 +101,11 @@ body {
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(4px);
   border: 1px solid rgba(200, 200, 200, 0.2);
-  border-radius: 1rem;
 }
 
 /* Gray mode style - Header kept the same */
-.gray-mode header.bg-green {
-  background-color: #4CAF50;
+.gray-mode header.bg-yellow {
+  background-color: #f6df60;
 }
 
 /* Wave Animation Styles */
@@ -121,8 +115,7 @@ body {
   height: 100%;
   opacity: 0.6;
   left: 0;
-  background: linear-gradient(to bottom, transparent 70%, rgba(76, 175, 80, 0.5) 100%);
-  border-radius: 0 0 1rem 1rem;
+  background: linear-gradient(to bottom, transparent 70%, rgba(30, 174, 219, 0.5) 100%);
 }
 
 .wave1 {
@@ -164,39 +157,4 @@ body {
 .gray-mode [data-state="checked"].bg-\[#C8C8C9\] {
   background-color: #C8C8C9;
   box-shadow: 0 0 5px rgba(150, 150, 150, 0.7);
-}
-
-/* Vector decorations */
-.vector-decoration {
-  position: absolute;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.vector-circle {
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(139, 195, 74, 0.2), rgba(76, 175, 80, 0.1));
-}
-
-.vector-wave {
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(139, 195, 74, 0.2), rgba(76, 175, 80, 0.1));
-  transform: scaleX(2);
-}
-
-.arrow-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  background-color: #4CAF50;
-  color: white;
-  border-radius: 2rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.arrow-button:hover {
-  background-color: #2E7D32;
-  transform: translateY(-2px);
 }
