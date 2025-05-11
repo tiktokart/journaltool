@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
-import AskAI from "@/components/AskAI";
 import MonthlyCalendar from "@/components/MonthlyCalendar";
 import EntriesView from "@/components/EntriesView";
 import VectorDecorations from "@/components/VectorDecorations";
@@ -669,12 +668,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Ask AI Section at the bottom */}
-            <div className="mt-8">
-              <AskAI 
-                journalText={journalEntries.map(entry => entry.text).join(" ")}
-              />
-            </div>
+            {/* AskAI Section has been removed as requested */}
           </>
         )}
         

@@ -36,6 +36,17 @@ const posWeights = {
 // Identify common PDF metadata patterns
 const pdfMetadataRegex = /from\s+pdf|pdf\s+file|document\s+name|file\s+name|page\s+\d+/gi;
 
+// Define keywordAnalysis interface matching what BERT provides
+interface KeywordAnalysis {
+  word: string;
+  sentiment: number;
+  pos?: string;
+  tone?: string;
+  relatedConcepts?: string[];
+  frequency?: number;
+  color?: string;
+}
+
 export const analyzePdfContent = async (file: File, pdfText: string) => {
   try {
     console.log("Starting PDF analysis with BERT...");
@@ -85,7 +96,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
         .map(keyword => {
           // Apply POS-based weights to emphasize action words and nouns
           const wordType = keyword.pos || 'DEFAULT';
-          const weight = posWeights[wordType] || posWeights.DEFAULT;
+          const weight = posWeights[wordType as keyof typeof posWeights] || posWeights.DEFAULT;
           
           // Boost the sentiment score based on word type
           const adjustedSentiment = keyword.sentiment * weight;
@@ -138,7 +149,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     const timeline = await generateTimeline(processedText);
     
     // Generate embedding points with contextual relationships, using BERT keywords if available
-    const embeddingPoints = await generateEmbeddingPoints(processedText, bertAnalysis);
+    const embeddingPoints = await generateEmbeddingPoints(processedText);
     
     console.log("BERT Analysis complete with the following stats:");
     console.log(`- Word count: ${wordCount}`);

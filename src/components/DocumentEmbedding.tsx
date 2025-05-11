@@ -1,3 +1,4 @@
+
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -270,6 +271,69 @@ export const DocumentEmbedding = ({
     setFilterApplied(false);
     toast.info(t("viewReset"));
   };
+
+  useEffect(() => {
+    if (focusOnWord !== currentFocusWord) {
+      setCurrentFocusWord(focusOnWord);
+      
+      if (focusOnWord && displayPoints.length > 0) {
+        const focusedPoint = displayPoints.find(p => p.word === focusOnWord);
+        if (focusedPoint && focusedPoint.relationships) {
+          const sortedRelationships = [...focusedPoint.relationships]
+            .sort((a, b) => b.strength - a.strength)
+            .slice(0, 3);
+            
+          const connected = sortedRelationships
+            .map(rel => displayPoints.find(p => p.id === rel.id))
+            .filter(p => p !== undefined) as Point[];
+            
+          setConnectedPoints(connected);
+          if (focusedPoint) {
+            setSelectedPoint(focusedPoint);
+          }
+        } else {
+          setConnectedPoints([]);
+        }
+      } else {
+        setConnectedPoints([]);
+      }
+    }
+  }, [focusOnWord, currentFocusWord, displayPoints]);
+
+  useEffect(() => {
+    if (points.length > 0) {
+      console.log(`Setting display points with ${points.length} points from props`);
+      const normalizedPoints = normalizePoints(points);
+      const pointsWithCorrectColors = enrichPoints(normalizedPoints, isHomepage);
+      setDisplayPoints(pointsWithCorrectColors);
+      
+      // Export points to window for TextEmotionViewer to access
+      window.documentEmbeddingPoints = pointsWithCorrectColors;
+    } else if (generatedPoints.length === 0) {
+      console.log("Generating mock points");
+      const mockPoints = generateMockPoints(depressedJournalReference);
+      const normalizedMockPoints = normalizePoints(mockPoints);
+      setGeneratedPoints(normalizedMockPoints);
+      setDisplayPoints(normalizedMockPoints);
+      
+      // Export points to window for TextEmotionViewer to access
+      window.documentEmbeddingPoints = normalizedMockPoints;
+    }
+  }, [points, depressedJournalReference, generatedPoints.length, isHomepage]);
+  
+  useEffect(() => {
+    if (displayPoints.length > 0) {
+      (window as any).documentEmbeddingPoints = displayPoints;
+      console.log(`DocumentEmbedding: Exposed ${displayPoints.length} points`);
+      
+      // Add this debug message to verify points data
+      console.log("Sample words in visualization:", displayPoints.slice(0, 10).map(p => p.word).join(", "));
+      console.log("Points have emotionalTone:", displayPoints.some(p => p.emotionalTone));
+      
+      const uniqueGroups = extractEmotionalGroups(displayPoints);
+      setEmotionalGroups(uniqueGroups);
+    }
+  }, [displayPoints]);
   
   return (
     <div className="relative w-full h-full">
@@ -307,7 +371,7 @@ export const DocumentEmbedding = ({
         selectedEmotionalGroup={selectedEmotionalGroup}
         onResetView={handleResetView}
         visibleClusterCount={visibleClusterCount}
-        showAllPoints={true}
+        showAllPoints={showAllPoints}
       />
       
       {isInteractive && (

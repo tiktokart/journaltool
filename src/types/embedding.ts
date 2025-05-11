@@ -7,7 +7,7 @@ export interface Point {
   x?: number;
   y?: number;
   z?: number;
-  position?: number[]; // Added for compatibility
+  position: number[]; // Made required to fix type error
   size?: number;
   color?: string | [number, number, number]; // Accepts either string or RGB array
   emotionalTone?: string; // The emotional tone associated with the point
@@ -16,6 +16,8 @@ export interface Point {
   selected?: boolean; // Whether the point is currently selected
   hidden?: boolean; // Whether the point should be hidden
   distance?: number; // Distance from selected point (for comparison)
+  id?: string | number; // Unique identifier for the point
+  relationships?: { id: string | number; strength: number }[]; // Connections to other points
   [key: string]: any; // Allow for additional properties
 }
 
