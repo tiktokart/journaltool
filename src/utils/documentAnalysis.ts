@@ -37,6 +37,7 @@ const posWeights = {
 const pdfMetadataRegex = /from\s+pdf|pdf\s+file|document\s+name|file\s+name|page\s+\d+/gi;
 
 // Define keywordAnalysis interface matching what BERT provides
+// Updated to support different color formats
 interface KeywordAnalysis {
   word: string;
   sentiment: number;
@@ -44,7 +45,7 @@ interface KeywordAnalysis {
   tone?: string;
   relatedConcepts?: string[];
   frequency?: number;
-  color?: string | [number, number, number] | number[]; // Updated to handle multiple color formats
+  color?: string | [number, number, number] | number[]; // Support multiple color formats
   weight?: number;
 }
 

@@ -8,6 +8,14 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { ChevronDown, ChevronUp, Search, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { TextEmotionViewer } from './TextEmotionViewer';
+import { DocumentSummary } from './DocumentSummary';
+import { SentimentOverview } from './SentimentOverview';
+import { SentimentTimeline } from './SentimentTimeline';
+import { KeyPhrases } from './KeyPhrases';
+import { EntitySentiment } from './EntitySentiment';
+import { analyzeTextWithBert } from '@/utils/bertIntegration';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 interface Entry {
   id: string;
@@ -29,6 +37,10 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [weeklyEntries, setWeeklyEntries] = useState<{[key: string]: Entry[]}>({});
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date()));
+  const [bertAnalysis, setBertAnalysis] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [documentStats, setDocumentStats] = useState({ wordCount: 0, sentenceCount: 0, paragraphCount: 0 });
+  const [mainSubjects, setMainSubjects] = useState<string[]>([]);
 
   useEffect(() => {
     // Filter entries based on search query and selected date
@@ -72,6 +84,55 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
     
     setWeeklyEntries(entriesByDay);
   }, [entries, searchQuery, selectedDate, currentWeekStart]);
+
+  // Analyze entry text with BERT when entry changes
+  useEffect(() => {
+    const analyzeEntry = async () => {
+      if (!selectedEntry) {
+        setBertAnalysis(null);
+        setDocumentStats({ wordCount: 0, sentenceCount: 0, paragraphCount: 0 });
+        setMainSubjects([]);
+        return;
+      }
+      
+      setIsAnalyzing(true);
+      try {
+        // Calculate document stats
+        const text = selectedEntry.text;
+        const words = text.split(/\s+/).filter(w => w.length > 0);
+        const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+        
+        setDocumentStats({
+          wordCount: words.length,
+          sentenceCount: sentences.length,
+          paragraphCount: Math.max(1, paragraphs.length)
+        });
+        
+        // Run BERT analysis
+        console.log("Analyzing entry with BERT...");
+        const analysis = await analyzeTextWithBert(selectedEntry.text);
+        setBertAnalysis(analysis);
+        
+        // Extract main subjects (most significant keywords)
+        if (analysis.keywords && Array.isArray(analysis.keywords)) {
+          const subjects = analysis.keywords
+            .filter(kw => Math.abs(kw.sentiment) > 0.3)
+            .slice(0, 10)
+            .map(kw => kw.word);
+          setMainSubjects(subjects);
+        }
+        
+        console.log("BERT analysis complete");
+      } catch (error) {
+        console.error("Error analyzing entry:", error);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+    
+    analyzeEntry();
+  }, [selectedEntry]);
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -213,13 +274,42 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
               {selectedEntry ? (
                 <div>
                   <div className="mb-4">
-                    <h2 className="text-xl font-semibold mb-1">
-                      {format(new Date(selectedEntry.date), 'MMMM d, yyyy - h:mm a')}
+                    <h2 className="text-xl font-semibold mb-1 font-pacifico">
+                      Journal Entry
                     </h2>
-                    <div className="w-16 h-1 bg-purple-400"></div>
+                    <p className="text-gray-600">
+                      {format(new Date(selectedEntry.date), 'MMMM d, yyyy - h:mm a')}
+                    </p>
+                    <div className="w-16 h-1 bg-purple-400 mt-1"></div>
                   </div>
-                  <div className="prose max-w-none">
-                    <p className="whitespace-pre-wrap">{selectedEntry.text}</p>
+                  
+                  <Collapsible defaultOpen={true} className="mb-4">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-purple-50 rounded-lg font-medium">
+                      <span className="font-pacifico">Entry Content</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="p-4 border border-t-0 rounded-b-lg">
+                        <div className="prose max-w-none font-georgia">
+                          <p className="whitespace-pre-wrap">{selectedEntry.text}</p>
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      className="border-purple-200 text-purple-700"
+                    >
+                      Export as PDF
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="border-red-200 text-red-700"
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </div>
               ) : (
@@ -242,110 +332,271 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
             <TabsContent value="analysis" className="flex-grow overflow-y-auto p-4">
               {selectedEntry ? (
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">Entry Analysis</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card>
-                      <CardHeader className="py-3">
-                        <CardTitle className="text-sm font-medium">Sentiment</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-green-500" 
-                            style={{ width: `${Math.random() * 100}%` }}
-                          ></div>
-                        </div>
-                        <p className="mt-2 text-sm">
-                          This entry has a {Math.random() > 0.5 ? 'positive' : 'negative'} sentiment overall.
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="py-3">
-                        <CardTitle className="text-sm font-medium">Key Topics</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <span 
-                              key={i}
-                              className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full"
-                            >
-                              Topic {i + 1}
-                            </span>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    {/* Additional Analysis Cards */}
-                    <Card className="md:col-span-2">
-                      <CardHeader className="py-3">
-                        <CardTitle className="text-sm font-medium">Emotional Analysis</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="flex justify-between text-xs text-gray-500">
-                            <span>Negative</span>
-                            <span>Positive</span>
+                  <div className="mb-4">
+                    <h2 className="text-xl font-semibold mb-1 font-pacifico">
+                      Detailed Analysis Data
+                    </h2>
+                    <p className="text-gray-600">
+                      In-depth analysis of your journal entry
+                    </p>
+                    <div className="w-16 h-1 bg-purple-400 mt-1"></div>
+                  </div>
+                  
+                  {isAnalyzing ? (
+                    <div className="flex justify-center items-center h-64">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700 mb-4"></div>
+                      <p className="ml-3 text-gray-600">Analyzing with BERT...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div className="bg-white p-4 rounded-lg border shadow-sm">
+                          <h3 className="text-lg font-medium mb-3">Content Overview</h3>
+                          <div>
+                            <p className="mb-4">Document Statistics</p>
+                            <p className="text-gray-700 mb-1">
+                              This document contains {documentStats.wordCount} words, 
+                              {documentStats.sentenceCount} sentences, and 
+                              approximately {documentStats.paragraphCount} paragraphs.
+                            </p>
                           </div>
-                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500" 
-                              style={{ width: '100%' }}
-                            ></div>
+                          
+                          <div className="mt-6">
+                            <p className="mb-4">Document Structure</p>
+                            <div className="grid grid-cols-3 gap-4 text-center">
+                              <div>
+                                <p className="text-3xl font-bold">{documentStats.wordCount}</p>
+                                <p className="text-sm text-gray-600">Words</p>
+                              </div>
+                              <div>
+                                <p className="text-3xl font-bold text-purple-600">{documentStats.sentenceCount}</p>
+                                <p className="text-sm text-gray-600">Sentences</p>
+                              </div>
+                              <div>
+                                <p className="text-3xl font-bold text-blue-600">
+                                  {documentStats.paragraphCount}
+                                </p>
+                                <p className="text-sm text-gray-600">Paragraphs</p>
+                              </div>
+                            </div>
                           </div>
-                          <div className="h-6 relative">
-                            <div 
-                              className="absolute w-2 h-4 bg-black rounded-full transform -translate-x-1/2 -translate-y-1/2 top-1/2" 
-                              style={{ left: `${(Math.random() * 80 + 10)}%` }}
-                            ></div>
-                          </div>
-                          <p className="text-sm mt-4">
-                            The emotional tone of this entry suggests feelings of 
-                            {Math.random() > 0.7 ? ' contentment and joy.' : 
-                             Math.random() > 0.4 ? ' mixed emotions with some anxiety.' : 
-                             ' stress and concern.'}
-                          </p>
                         </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader className="py-3">
-                        <CardTitle className="text-sm font-medium">Word Usage</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-sm">
-                          <p className="mb-2">Most frequently used words:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {['time', 'feel', 'work', 'today', 'thoughts'].map((word, i) => (
-                              <span 
-                                key={i}
-                                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                        
+                        <div className="bg-white p-4 rounded-lg border shadow-sm">
+                          <h3 className="text-lg font-medium mb-3">Emotional Analysis</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {bertAnalysis?.keywords?.slice(0, 5).map((keyword: any, i: number) => (
+                              <div 
+                                key={i} 
+                                className="px-3 py-2 rounded-full text-white text-sm"
+                                style={{ 
+                                  backgroundColor: keyword.color || 
+                                    (keyword.sentiment > 0 ? '#68D391' : '#FC8181')
+                                }}
                               >
-                                {word}
+                                {keyword.word}
+                              </div>
+                            ))}
+                            {(!bertAnalysis?.keywords || bertAnalysis.keywords.length === 0) && (
+                              <p className="text-gray-500">No emotional keywords detected</p>
+                            )}
+                          </div>
+                          
+                          <div className="mt-6">
+                            <h4 className="text-md font-medium mb-2">Main Subjects</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {mainSubjects.map((subject, index) => (
+                                <span
+                                  key={index}
+                                  className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                                >
+                                  {subject}
+                                </span>
+                              ))}
+                              {mainSubjects.length === 0 && (
+                                <p className="text-gray-500">No main subjects detected</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Collapsible sections for expanded analysis */}
+                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
+                        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <h3 className="text-lg font-medium font-pacifico">Latent Emotional Analysis</h3>
+                          <ChevronDown className="h-5 w-5" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <div className="bg-gray-50 rounded-lg p-5">
+                            {bertAnalysis ? (
+                              <TextEmotionViewer 
+                                pdfText={selectedEntry.text}
+                                bertAnalysis={bertAnalysis}
+                              />
+                            ) : (
+                              <p className="text-center text-gray-500 py-4">
+                                No emotional analysis available
+                              </p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+
+                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
+                        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <h3 className="text-lg font-medium font-pacifico">Word Comparison</h3>
+                          <ChevronDown className="h-5 w-5" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <p className="text-gray-700 mb-4">
+                            Compare the emotional relationships between key words in your entry.
+                          </p>
+                          {bertAnalysis?.keywords?.length > 5 ? (
+                            <div className="grid grid-cols-3 gap-3">
+                              {bertAnalysis.keywords.slice(0, 9).map((kw: any, i: number) => (
+                                <div key={i} className="flex items-center bg-gray-50 p-2 rounded-lg">
+                                  <div 
+                                    className="w-3 h-3 rounded-full mr-2"
+                                    style={{ backgroundColor: kw.color || "#aaaaaa" }}
+                                  ></div>
+                                  <span className="text-sm">{kw.word}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-center text-gray-500">
+                              Not enough keywords for meaningful comparison
+                            </p>
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
+
+                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
+                        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <h3 className="text-lg font-medium font-pacifico">Overview</h3>
+                          <ChevronDown className="h-5 w-5" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-green-50 p-4 rounded-lg">
+                              <h4 className="font-medium mb-2">Overall Sentiment</h4>
+                              <p className="text-xl font-semibold mb-1">
+                                {bertAnalysis?.sentiment?.label || "Neutral"}
+                              </p>
+                              <p className="text-gray-700">
+                                Score: {Math.round((bertAnalysis?.sentiment?.score || 0.5) * 100)}%
+                              </p>
+                              <div className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full ${bertAnalysis?.sentiment?.score > 0.6 ? 'bg-green-500' : 
+                                    bertAnalysis?.sentiment?.score < 0.4 ? 'bg-red-500' : 'bg-yellow-500'}`}
+                                  style={{ width: `${Math.round((bertAnalysis?.sentiment?.score || 0.5) * 100)}%` }}
+                                ></div>
+                              </div>
+                              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>Negative</span>
+                                <span>Neutral</span>
+                                <span>Positive</span>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-blue-50 p-4 rounded-lg">
+                              <h4 className="font-medium mb-2">Sentiment Distribution</h4>
+                              <div className="space-y-4">
+                                <div>
+                                  <div className="flex justify-between mb-1 text-sm">
+                                    <span>Positive</span>
+                                    <span>{bertAnalysis?.distribution?.positive || 0}%</span>
+                                  </div>
+                                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-green-500"
+                                      style={{ width: `${bertAnalysis?.distribution?.positive || 0}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <div className="flex justify-between mb-1 text-sm">
+                                    <span>Neutral</span>
+                                    <span>{bertAnalysis?.distribution?.neutral || 0}%</span>
+                                  </div>
+                                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-blue-400"
+                                      style={{ width: `${bertAnalysis?.distribution?.neutral || 0}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <div className="flex justify-between mb-1 text-sm">
+                                    <span>Negative</span>
+                                    <span>{bertAnalysis?.distribution?.negative || 0}%</span>
+                                  </div>
+                                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-red-500"
+                                      style={{ width: `${bertAnalysis?.distribution?.negative || 0}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+
+                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
+                        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <h3 className="text-lg font-medium font-pacifico">Timeline</h3>
+                          <ChevronDown className="h-5 w-5" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <p className="text-gray-500 text-center py-4">
+                            Timeline visualization would go here
+                          </p>
+                        </CollapsibleContent>
+                      </Collapsible>
+
+                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
+                        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <h3 className="text-lg font-medium font-pacifico">Keywords</h3>
+                          <ChevronDown className="h-5 w-5" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <div className="flex flex-wrap gap-2">
+                            {bertAnalysis?.keywords?.map((keyword: any, i: number) => (
+                              <span 
+                                key={i} 
+                                className="px-3 py-1 rounded-full text-sm"
+                                style={{ 
+                                  backgroundColor: keyword.color ? `${keyword.color}33` : '#f3f4f6',
+                                  color: keyword.color ? keyword.color : '#374151',
+                                  border: `1px solid ${keyword.color || '#e5e7eb'}`
+                                }}
+                              >
+                                {keyword.word}
                               </span>
                             ))}
+                            {(!bertAnalysis?.keywords || bertAnalysis.keywords.length === 0) && (
+                              <p className="text-center text-gray-500 w-full py-4">
+                                No keywords extracted
+                              </p>
+                            )}
                           </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+
+                      <div className="mt-8">
+                        <h3 className="text-lg font-medium mb-3 font-pacifico">Full Text</h3>
+                        <div className="p-4 bg-gray-50 rounded-lg border">
+                          <pre className="whitespace-pre-wrap text-sm font-georgia">{selectedEntry.text}</pre>
                         </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader className="py-3">
-                        <CardTitle className="text-sm font-medium">Entry Patterns</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-sm">
-                          <p>This entry was written in the {new Date(selectedEntry.date).getHours() < 12 ? 'morning' : 
-                                                          new Date(selectedEntry.date).getHours() < 18 ? 'afternoon' : 'evening'}.</p>
-                          <p className="mt-1">Length: {selectedEntry.text.length} characters</p>
-                          <p className="mt-1">Word count: ~{selectedEntry.text.split(/\s+/).length} words</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="h-full flex items-center justify-center">
@@ -357,52 +608,6 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
         </div>
       </div>
     </div>
-  );
-};
-
-const EntryCard: React.FC<{
-  entry: Entry;
-  onClick?: () => void;
-}> = ({ entry, onClick }) => {
-  const [expanded, setExpanded] = useState(false);
-  
-  const toggleExpanded = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpanded(!expanded);
-  };
-  
-  const formattedDate = format(new Date(entry.date), 'MMM d, yyyy - h:mm a');
-  const previewText = entry.text.length > 120 && !expanded 
-    ? `${entry.text.substring(0, 120)}...` 
-    : entry.text;
-  
-  return (
-    <Card 
-      className="cursor-pointer hover:border-primary/50 transition-colors"
-      onClick={onClick}
-    >
-      <CardHeader className="py-3">
-        <CardTitle className="text-sm font-medium flex justify-between items-center">
-          <span className="text-gray-700">{formattedDate}</span>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={toggleExpanded}
-          >
-            {expanded ? 
-              <ChevronUp className="h-4 w-4" /> : 
-              <ChevronDown className="h-4 w-4" />
-            }
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="py-2">
-        <p className="text-sm">
-          {previewText}
-        </p>
-      </CardContent>
-    </Card>
   );
 };
 
