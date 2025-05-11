@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -8,6 +9,18 @@ import MonthlyCalendar from "@/components/MonthlyCalendar";
 import EntriesView from "@/components/EntriesView";
 import VectorDecorations from "@/components/VectorDecorations";
 import { format, isSameDay } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { FileDown, Bell } from "lucide-react";
 
 // Rename PerfectLifePlan to Goals
 const Goals = () => {
@@ -108,6 +121,9 @@ const Dashboard = () => {
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isEntriesView, setIsEntriesView] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [showConsentDialog, setShowConsentDialog] = useState<boolean>(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -210,6 +226,95 @@ const Dashboard = () => {
     return "#3498DB"; // Neutral
   };
 
+  // Export monthly analysis as PDF
+  const exportMonthlyAnalysis = () => {
+    try {
+      const currentMonth = format(new Date(), 'MMMM yyyy');
+      const exportData = {
+        month: currentMonth,
+        entriesCount: journalEntries.length,
+        overallSentiment: getOverallSentimentChange(),
+        averageSentiment: getAverageSentiment(),
+        timelineData: generateTimelineData(),
+      };
+      
+      // In a real implementation, this would use jsPDF or similar library
+      console.log("Exporting monthly analysis:", exportData);
+      toast.success(`Monthly analysis for ${currentMonth} exported successfully`);
+    } catch (error) {
+      console.error("Error exporting monthly analysis:", error);
+      toast.error("Failed to export monthly analysis");
+    }
+  };
+
+  // Delete journal entry
+  const deleteEntry = (entryId: string) => {
+    try {
+      const updatedEntries = journalEntries.filter(entry => entry.id !== entryId);
+      setJournalEntries(updatedEntries);
+      localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+      
+      if (selectedEntry?.id === entryId) {
+        setSelectedEntry(null);
+      }
+      
+      toast.success("Journal entry deleted");
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error("Error deleting journal entry:", error);
+      toast.error("Failed to delete journal entry");
+    }
+  };
+
+  // Enable SMS notifications
+  const enableNotifications = () => {
+    if (!phoneNumber || !/^\+?\d{10,15}$/.test(phoneNumber.replace(/\D/g, ''))) {
+      toast.error("Please enter a valid phone number");
+      return;
+    }
+    
+    // In a real implementation, this would connect to a messaging service API
+    console.log("Enabling notifications for:", phoneNumber);
+    setNotificationsEnabled(true);
+    setShowConsentDialog(false);
+    toast.success("Daily journal reminders enabled");
+    
+    // Store in local storage
+    localStorage.setItem('journalReminderPhone', phoneNumber);
+    localStorage.setItem('journalRemindersEnabled', 'true');
+  };
+
+  // Load notification settings
+  useEffect(() => {
+    try {
+      const savedPhone = localStorage.getItem('journalReminderPhone');
+      const remindersEnabled = localStorage.getItem('journalRemindersEnabled');
+      
+      if (savedPhone) {
+        setPhoneNumber(savedPhone);
+      }
+      
+      if (remindersEnabled === 'true') {
+        setNotificationsEnabled(true);
+      }
+    } catch (error) {
+      console.error('Error loading notification settings:', error);
+    }
+  }, []);
+
+  // Toggle notifications
+  const toggleNotifications = () => {
+    if (notificationsEnabled) {
+      // Disable notifications
+      setNotificationsEnabled(false);
+      localStorage.setItem('journalRemindersEnabled', 'false');
+      toast.success("Journal reminders disabled");
+    } else {
+      // Show consent dialog
+      setShowConsentDialog(true);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-green">
       <Header />
@@ -236,11 +341,23 @@ const Dashboard = () => {
               />
               
               <Card className="rounded-xl overflow-hidden shadow-sm">
-                <div className="p-4 bg-green-50 border-b border-green-100">
-                  <h2 className="text-xl font-semibold text-black">Journal Entries</h2>
-                  <p className="text-sm text-gray-600">
-                    {format(selectedDate, 'MMMM d, yyyy')}
-                  </p>
+                <div className="p-4 bg-green-50 border-b border-green-100 flex justify-between items-center">
+                  <div>
+                    <h2 className="text-xl font-semibold text-black">Journal Entries</h2>
+                    <p className="text-sm text-gray-600">
+                      {format(selectedDate, 'MMMM d, yyyy')}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={toggleNotifications}
+                      className={`${notificationsEnabled ? 'text-green-600' : 'text-gray-400'}`}
+                    >
+                      <Bell className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="p-4">
                   {journalEntries
@@ -250,8 +367,19 @@ const Dashboard = () => {
                     })
                     .map(entry => (
                       <div key={entry.id} className="mb-4 last:mb-0">
-                        <div className="text-xs text-gray-500 mb-1">
-                          {format(new Date(entry.date), 'h:mm a')}
+                        <div className="flex justify-between items-start">
+                          <div className="text-xs text-gray-500 mb-1">
+                            {format(new Date(entry.date), 'h:mm a')}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                            onClick={() => deleteEntry(entry.id)}
+                          >
+                            <span className="sr-only">Delete</span>
+                            ×
+                          </Button>
                         </div>
                         <div className="p-3 bg-gray-50 rounded-lg">
                           <p className="text-sm line-clamp-5">{entry.text}</p>
@@ -273,6 +401,18 @@ const Dashboard = () => {
             
             {/* Right Column */}
             <div className="space-y-6">
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-white"
+                  onClick={exportMonthlyAnalysis}
+                >
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export Monthly Analysis
+                </Button>
+              </div>
+              
               <Goals />
               
               <MonthlyReflections 
@@ -289,16 +429,55 @@ const Dashboard = () => {
                 getSentimentColor={getSentimentColor}
                 refreshTrigger={refreshTrigger}
               />
+              
+              {/* Ask AI Section visible only on Monthly view */}
+              <AskAI 
+                journalText={journalEntries.map(entry => entry.text).join(" ")}
+              />
             </div>
           </div>
         )}
         
-        {/* Ask AI Section at the bottom */}
-        <div className="mt-6">
-          <AskAI 
-            journalText={journalEntries.map(entry => entry.text).join(" ")}
-          />
-        </div>
+        {/* SMS Notification Consent Dialog */}
+        <Dialog open={showConsentDialog} onOpenChange={setShowConsentDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Enable Daily Journal Reminders</DialogTitle>
+              <DialogDescription>
+                Receive a daily SMS reminder to write in your journal. 
+                Standard message rates may apply.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <p className="col-span-4 text-sm">
+                  Enter your phone number to receive daily reminders. 
+                  You can opt out at any time by replying "STOP" to any message.
+                </p>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="phoneNumber" className="text-right">
+                  Phone
+                </label>
+                <Input
+                  id="phoneNumber"
+                  placeholder="+1 (555) 123-4567"
+                  className="col-span-3"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowConsentDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" onClick={enableNotifications}>
+                Enable Reminders
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

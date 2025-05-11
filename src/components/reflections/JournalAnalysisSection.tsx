@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/collapsible";
 import JournalSentimentChart from "./JournalSentimentChart";
 import JournalSentimentSummary from "./JournalSentimentSummary";
+import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 
 interface JournalAnalysisSectionProps {
   journalEntries: any[];
@@ -76,7 +77,7 @@ const JournalAnalysisSection = ({
                 />
               </div>
               
-              {/* Add Emotional Analysis Accordion below */}
+              {/* Emotional Analysis Accordion */}
               <Accordion type="single" collapsible className="mt-6">
                 <AccordionItem value="emotional-analysis">
                   <AccordionTrigger className="text-green-700 hover:text-green-800">
@@ -128,6 +129,27 @@ const JournalAnalysisSection = ({
                       {journalEntries.length === 0 && (
                         <p className="text-sm text-gray-500">No journal entries to analyze.</p>
                       )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                {/* Add Latent Emotional Analysis Accordion */}
+                <AccordionItem value="latent-emotional-analysis">
+                  <AccordionTrigger className="text-green-700 hover:text-green-800">
+                    Latent Emotional Analysis
+                  </AccordionTrigger>
+                  <AccordionContent className="p-2">
+                    <div className="space-y-4">
+                      <div className="border rounded-md p-3 bg-white">
+                        <h4 className="font-medium mb-2">3D Visualization</h4>
+                        <div className="h-[300px] w-full bg-gray-50 rounded-lg overflow-hidden">
+                          <DocumentEmbedding 
+                            points={[]} 
+                            isInteractive={true} 
+                            depressedJournalReference={overallSentimentChange.includes("negative")}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>

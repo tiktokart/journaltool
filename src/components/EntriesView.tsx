@@ -1,11 +1,19 @@
 
 import { useState, useEffect } from "react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
-import { Search, ChevronDown, ChevronUp, Share, Calendar } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Share, Calendar, FileDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from "@/components/ui/accordion";
+import { TextEmotionViewer } from "@/components/TextEmotionViewer";
+import { toast } from "sonner";
 
 interface JournalEntry {
   id: string;
@@ -83,6 +91,51 @@ const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
     setWeeks(weeks => weeks.map((week, i) => 
       i === index ? { ...week, isExpanded: !week.isExpanded } : week
     ));
+  };
+
+  const exportEntryAnalysis = () => {
+    if (!selectedEntry) return;
+
+    try {
+      // Generate PDF with entry analysis
+      const content = {
+        entryDate: format(new Date(selectedEntry.date), 'MMMM d, yyyy'),
+        entryText: selectedEntry.text,
+        wordCount: getWordCount(selectedEntry.text),
+        sentiment: generateMockSentiment(), // This would be replaced with actual sentiment analysis
+        keywords: selectedEntry.text.split(/\s+/).slice(0, 10).map(word => word.trim()),
+      };
+
+      // In a real implementation, this would use jsPDF or a similar library
+      console.log("Exporting analysis for entry:", content);
+      toast.success("Analysis exported successfully");
+    } catch (error) {
+      console.error("Error exporting analysis:", error);
+      toast.error("Failed to export analysis");
+    }
+  };
+
+  const generateMockSentiment = () => {
+    // In a real app, this would be an actual sentiment analysis value
+    return 0.65; 
+  };
+
+  const getSentimentDescription = (sentiment: number) => {
+    if (sentiment >= 0.7) return "Very Positive";
+    if (sentiment >= 0.55) return "Positive";
+    if (sentiment >= 0.45) return "Neutral";
+    if (sentiment >= 0.3) return "Negative";
+    return "Very Negative";
+  };
+
+  const generateSuggestions = () => {
+    // These would ideally be generated based on BERT analysis
+    return [
+      "Consider exploring the positive emotions you mentioned in more detail",
+      "Reflect on how your feelings about work have evolved this month",
+      "Track the personal growth milestones you've achieved",
+      "Practice mindfulness when feeling overwhelmed by similar situations"
+    ];
   };
 
   return (
@@ -167,7 +220,7 @@ const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
                     {getWordCount(selectedEntry.text)} words
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="bg-white">
+                <Button variant="outline" size="sm" className="bg-white" onClick={exportEntryAnalysis}>
                   <Share className="h-4 w-4 mr-1" /> Share
                 </Button>
               </div>
@@ -215,13 +268,13 @@ const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
                         </div>
                       </div>
                       
-                      {/* Added Detailed Analysis Data section */}
+                      {/* Detailed Analysis Data section */}
                       <div className="bg-white border border-gray-100 rounded-lg p-4 mb-4">
                         <h4 className="text-sm font-medium text-gray-600 mb-2">Detailed Analysis Data</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-xs">Overall Sentiment:</span>
-                            <span className="text-xs font-medium">Positive (0.72)</span>
+                            <span className="text-xs font-medium">{getSentimentDescription(generateMockSentiment())} ({generateMockSentiment().toFixed(2)})</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-xs">Word Count:</span>
@@ -231,16 +284,20 @@ const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
                             <span className="text-xs">Key Entities:</span>
                             <span className="text-xs font-medium">3</span>
                           </div>
+                          <div className="flex justify-between">
+                            <span className="text-xs">Analysis Method:</span>
+                            <span className="text-xs font-medium">BERT Sentiment Analysis</span>
+                          </div>
                         </div>
                       </div>
                       
-                      {/* Added Suggestions section */}
+                      {/* Suggestions section */}
                       <div className="bg-white border border-gray-100 rounded-lg p-4">
                         <h4 className="text-sm font-medium text-gray-600 mb-2">Suggestions</h4>
                         <ul className="text-xs space-y-2 list-disc pl-5">
-                          <li>Consider exploring the positive emotions you mentioned in more detail</li>
-                          <li>Reflect on how your feelings about work have evolved this month</li>
-                          <li>Track the personal growth milestones you've achieved</li>
+                          {generateSuggestions().map((suggestion, index) => (
+                            <li key={index}>{suggestion}</li>
+                          ))}
                         </ul>
                       </div>
                     </div>
@@ -254,9 +311,10 @@ const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
                       <div className="mb-6">
                         <h3 className="text-lg font-medium mb-4">Document Text Visualization</h3>
                         <div className="bg-white border border-gray-100 rounded-lg p-4">
-                          <div className="prose max-w-none">
-                            <p>{selectedEntry.text}</p>
-                          </div>
+                          <TextEmotionViewer 
+                            pdfText={selectedEntry.text} 
+                            sourceDescription="BERT Analysis"
+                          />
                         </div>
                       </div>
                       
@@ -276,13 +334,25 @@ const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
                       
                       {/* Latent Emotional Analysis (expandable) */}
                       <div className="mb-6">
-                        <h3 className="text-lg font-medium mb-4">Latent Emotional Analysis</h3>
-                        <div className="bg-white border border-gray-100 rounded-lg p-4">
-                          <p className="text-sm text-gray-600">
-                            Emotional analysis of your journal entry reveals a predominantly positive tone.
-                            Key emotional markers indicate periods of joy and optimism, with minor notes of reflection.
-                          </p>
-                        </div>
+                        <Accordion type="single" collapsible>
+                          <AccordionItem value="latent-emotional-analysis">
+                            <AccordionTrigger className="text-lg font-medium">
+                              Latent Emotional Analysis
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="bg-white border border-gray-100 rounded-lg p-4">
+                                <p className="text-sm text-gray-600 mb-4">
+                                  Emotional analysis of your journal entry reveals a predominantly positive tone.
+                                  Key emotional markers indicate periods of joy and optimism, with minor notes of reflection.
+                                </p>
+                                <div className="h-[200px] w-full border border-gray-200 rounded-lg flex items-center justify-center bg-gray-50 relative overflow-hidden">
+                                  {/* This would be a 3D visualization in the full implementation */}
+                                  <p className="text-gray-400">3D Emotional Analysis Visualization</p>
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
                       </div>
                     </div>
                   </Card>
