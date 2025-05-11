@@ -21,61 +21,61 @@ export const HappinessInfographic = () => {
     // Intentional Activity suggestions (80%)
     { 
       category: 'Intentional Activity', 
-      text: 'Practice gratitude daily by writing down three things you're thankful for.',
+      text: "Practice gratitude daily by writing down three things you're thankful for.",
       type: 'intentional'
     },
     { 
       category: 'Intentional Activity', 
-      text: 'Engage in acts of kindness. Research shows helping others boosts your own happiness.',
+      text: "Engage in acts of kindness. Research shows helping others boosts your own happiness.",
       type: 'intentional'
     },
     { 
       category: 'Intentional Activity', 
-      text: 'Exercise regularly for at least 30 minutes, 3-4 times per week to increase endorphins.',
+      text: "Exercise regularly for at least 30 minutes, 3-4 times per week to increase endorphins.",
       type: 'intentional'
     },
     { 
       category: 'Intentional Activity', 
-      text: 'Practice mindfulness meditation for 10 minutes daily to enhance present-moment awareness.',
+      text: "Practice mindfulness meditation for 10 minutes daily to enhance present-moment awareness.",
       type: 'intentional'
     },
     { 
       category: 'Intentional Activity', 
-      text: 'Nurture your social connections. Spend quality time with friends and family weekly.',
+      text: "Nurture your social connections. Spend quality time with friends and family weekly.",
       type: 'intentional' 
     },
     { 
       category: 'Intentional Activity', 
-      text: 'Set meaningful goals aligned with your personal values and track your progress.',
+      text: "Set meaningful goals aligned with your personal values and track your progress.",
       type: 'intentional'
     },
     { 
       category: 'Intentional Activity', 
-      text: 'Find work that engages your strengths and provides a sense of purpose.',
+      text: "Find work that engages your strengths and provides a sense of purpose.",
       type: 'intentional'
     },
     { 
       category: 'Intentional Activity', 
-      text: 'Practice optimism by visualizing positive future scenarios and outcomes.',
+      text: "Practice optimism by visualizing positive future scenarios and outcomes.",
       type: 'intentional'
     },
     
     // Life Circumstances suggestions (20%)
     { 
       category: 'Life Circumstances', 
-      text: 'Consider whether your living environment supports your wellbeing and values.',
+      text: "Consider whether your living environment supports your wellbeing and values.",
       type: 'circumstance'
     },
     { 
       category: 'Life Circumstances', 
-      text: 'If possible, reduce your commute time to increase available personal time.',
+      text: "If possible, reduce your commute time to increase available personal time.",
       type: 'circumstance'
     },
     
     // Genetics suggestion (one suggestion)
     { 
       category: 'Genetics', 
-      text: 'Consider a DNA test to understand your genetic predispositions for certain mood tendencies.',
+      text: "Consider a DNA test to understand your genetic predispositions for certain mood tendencies.",
       type: 'genetics'
     }
   ];
