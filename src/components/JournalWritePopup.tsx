@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -223,10 +224,10 @@ const JournalWritePopup = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose ? onClose : setInternalIsOpen}>
-      <DialogContent className="w-1/3 sm:max-w-[33%] mx-auto">
+      <DialogContent className="w-1/3 max-w-[33%] mx-auto font-georgia">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
-            <span>Write in your journal</span>
+            <span className="font-pacifico">Write in your journal</span>
             <div className="flex space-x-2">
               <label htmlFor="pdf-upload" className="cursor-pointer">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 hover:bg-green-200">
@@ -268,19 +269,19 @@ const JournalWritePopup = ({
             value={journalText}
             onChange={(e) => setJournalText(e.target.value)}
             placeholder="How are you feeling today?"
-            className="min-h-[200px] p-4"
+            className="min-h-[200px] p-4 font-georgia"
           />
           
           {/* Show interim transcript while recording */}
           {isRecording && interimTranscript && (
-            <div className="mt-2 p-2 bg-green-50 rounded text-gray-700 italic">
+            <div className="mt-2 p-2 bg-green-50 rounded text-gray-700 italic font-georgia">
               {interimTranscript}...
             </div>
           )}
         </div>
 
         {onSubmitJournal && (
-          <div className="flex items-center mb-4">
+          <div className="flex items-center mb-4 font-georgia">
             <input
               type="checkbox"
               id="add-to-monthly"
@@ -298,7 +299,7 @@ const JournalWritePopup = ({
           <Button
             onClick={saveJournalEntry}
             disabled={!journalText.trim() && !interimTranscript.trim()}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 font-georgia"
           >
             Save Entry
           </Button>

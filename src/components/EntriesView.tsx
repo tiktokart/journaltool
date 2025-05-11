@@ -11,7 +11,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { format, parseISO } from "date-fns";
-import { Pencil, Trash2, Download, Search, AlertTriangle } from "lucide-react";
+import { Pencil, Trash2, Download, Search, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import DeleteEntryConfirm from "./DeleteEntryConfirm";
 import { SentimentTimeline } from "./SentimentTimeline";
@@ -22,6 +22,7 @@ import { extractKeyPhrases } from "@/utils/keyPhraseExtraction";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
 import { Point } from "@/types/embedding";
 import { generateEmbeddingPoints } from "@/utils/embeddingGeneration";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface JournalEntry {
   id: string;
@@ -45,6 +46,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [entryContentExpanded, setEntryContentExpanded] = useState(true);
 
   // Update filtered entries when entries or search query changes
   useEffect(() => {
@@ -279,8 +281,8 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
           <div className="p-6">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-2xl font-semibold">Journal Entry</h2>
-                <p className="text-gray-500">
+                <h2 className="text-2xl font-pacifico">Journal Entry</h2>
+                <p className="text-gray-500 font-georgia">
                   {format(new Date(selectedEntry.date), "MMMM dd, yyyy 'at' h:mm a")}
                 </p>
               </div>
@@ -289,7 +291,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                   variant="outline" 
                   size="sm"
                   onClick={exportEntryToPDF}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 font-georgia"
                 >
                   <Download className="h-4 w-4" />
                   Export as PDF
@@ -297,7 +299,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 font-georgia"
                   onClick={() => setDeleteConfirmOpen(true)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -306,33 +308,46 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
               </div>
             </div>
             
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle className="text-xl">Entry Content</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="whitespace-pre-wrap">
-                  {selectedEntry.text}
-                </div>
-              </CardContent>
-            </Card>
+            <Collapsible
+              open={entryContentExpanded}
+              onOpenChange={setEntryContentExpanded}
+              className="mb-8"
+            >
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-xl font-pacifico">Entry Content</CardTitle>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      {entryContentExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </CollapsibleTrigger>
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent>
+                    <div className="whitespace-pre-wrap font-georgia">
+                      {selectedEntry.text}
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="analysis">Analysis</TabsTrigger>
-                <TabsTrigger value="entry">Entry</TabsTrigger>
+                <TabsTrigger value="overview" className="font-pacifico">Overview</TabsTrigger>
+                <TabsTrigger value="analysis" className="font-pacifico">Analysis</TabsTrigger>
+                <TabsTrigger value="entry" className="font-pacifico">Entry</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Entry Overview</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="font-pacifico">Entry Overview</CardTitle>
+                    <CardDescription className="font-georgia">
                       A summary of insights from your journal entry
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="font-georgia">
                     {isProcessing ? (
                       <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
@@ -341,12 +356,12 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                     ) : (
                       <div className="space-y-6">
                         <div>
-                          <h3 className="text-lg font-medium mb-2">Word Count</h3>
+                          <h3 className="text-lg font-medium mb-2 font-pacifico">Word Count</h3>
                           <p>{selectedEntry.text.split(/\s+/).filter(Boolean).length} words</p>
                         </div>
                         
                         <div>
-                          <h3 className="text-lg font-medium mb-2">Emotional Tone</h3>
+                          <h3 className="text-lg font-medium mb-2 font-pacifico">Emotional Tone</h3>
                           <div className="flex items-center">
                             <div className="w-full bg-gray-200 rounded-full h-2.5">
                               <div 
@@ -362,7 +377,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                         </div>
                         
                         <div>
-                          <h3 className="text-lg font-medium mb-2">Common Themes</h3>
+                          <h3 className="text-lg font-medium mb-2 font-pacifico">Common Themes</h3>
                           <div className="flex flex-wrap gap-2">
                             {keywordResults.slice(0, 5).map((keyword, index) => (
                               <span 
@@ -388,12 +403,12 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                 <div className="space-y-6">
                   <Card className="min-h-[300px]">
                     <CardHeader>
-                      <CardTitle>View Detailed Analysis Data</CardTitle>
-                      <CardDescription>
+                      <CardTitle className="font-pacifico">View Detailed Analysis Data</CardTitle>
+                      <CardDescription className="font-georgia">
                         In-depth analysis of your journal entry
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="font-georgia">
                       {isProcessing ? (
                         <div className="text-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
@@ -402,7 +417,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                       ) : (
                         <div className="space-y-8">
                           <div>
-                            <h3 className="text-lg font-medium mb-4">Sentiment Timeline</h3>
+                            <h3 className="text-lg font-medium mb-4 font-pacifico">Sentiment Timeline</h3>
                             {sentimentTimeline.length > 0 ? (
                               <div className="h-[300px]">
                                 <SentimentTimeline data={sentimentTimeline} />
@@ -415,7 +430,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           </div>
                           
                           <div>
-                            <h3 className="text-lg font-medium mb-4">Key Phrases</h3>
+                            <h3 className="text-lg font-medium mb-4 font-pacifico">Key Phrases</h3>
                             {keywordResults.length > 0 ? (
                               <KeyPhrases data={keywordResults} />
                             ) : (
@@ -426,13 +441,13 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           </div>
                           
                           <div>
-                            <h3 className="text-lg font-medium mb-4">Suggestions</h3>
+                            <h3 className="text-lg font-medium mb-4 font-pacifico">Suggestions</h3>
                             {keywordResults.length > 0 ? (
                               <div className="space-y-4">
                                 {keywordResults.slice(0, 3).map((keyword, index) => (
                                   <Card key={index}>
                                     <CardContent className="pt-6">
-                                      <h4 className="font-medium mb-2">
+                                      <h4 className="font-medium mb-2 font-pacifico">
                                         Based on "{typeof keyword === 'object' ? keyword.phrase : keyword}"
                                       </h4>
                                       <p className="text-sm text-gray-600">
@@ -464,9 +479,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                 <div className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Document Text Visualization</CardTitle>
+                      <CardTitle className="font-pacifico">Document Text Visualization</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="font-georgia">
                       {isProcessing ? (
                         <div className="text-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
@@ -486,9 +501,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                   
                   <Card>
                     <CardHeader>
-                      <CardTitle>Word Comparison</CardTitle>
+                      <CardTitle className="font-pacifico">Word Comparison</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="font-georgia">
                       <div className="h-[200px] border border-gray-200 rounded-md">
                         {isProcessing ? (
                           <div className="flex items-center justify-center h-full">
@@ -531,9 +546,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                   
                   <Card>
                     <CardHeader>
-                      <CardTitle>Latent Emotional Analysis</CardTitle>
+                      <CardTitle className="font-pacifico">Latent Emotional Analysis</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="font-georgia">
                       {isProcessing ? (
                         <div className="text-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
@@ -569,8 +584,8 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
               <div className="mb-4">
                 <Pencil className="h-12 w-12 mx-auto text-gray-300" />
               </div>
-              <h3 className="text-xl font-medium mb-1">No Entry Selected</h3>
-              <p>Select a journal entry from the list to view its details</p>
+              <h3 className="text-xl font-medium mb-1 font-pacifico">No Entry Selected</h3>
+              <p className="font-georgia">Select a journal entry from the list to view its details</p>
             </div>
           </div>
         )}

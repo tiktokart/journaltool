@@ -22,7 +22,10 @@ const stopWords = [
   'it', 'they', 'we', 'you', 'i', 'me', 'him', 'her', 'them', 'us', 'is', 'am', 'are',
   'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
   'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'can', 'could', 'uh', 'um',
-  'eh', 'oh', 'ah', 'hmm', 'like', 'just', 'very', 'really', 'so', 'then'
+  'eh', 'oh', 'ah', 'hmm', 'like', 'just', 'very', 'really', 'so', 'then', 
+  'of', 'as', 'if', 'that', 'what', 'when', 'where', 'why', 'how', 'because', 'since',
+  'while', 'although', 'though', 'whether', 'which', 'whose', 'whom', 'this', 'these',
+  'those', 'there', 'here', 'who'
 ];
 
 // Bright, visible color palette for emotional tones

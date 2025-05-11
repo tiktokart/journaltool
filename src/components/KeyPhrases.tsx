@@ -12,7 +12,7 @@ type KeyPhrase = {
 
 interface KeyPhrasesProps {
   data?: string[] | KeyPhrase[];
-  keywords?: any[];  // Add this property to support the older API
+  keywords?: any[];  // Support for the older API
   sourceDescription?: string;
 }
 
@@ -56,7 +56,7 @@ export const KeyPhrases = ({ data = [], keywords = [], sourceDescription }: KeyP
 
   // Helper to render phrase badges
   const renderPhraseBadges = (phrases: KeyPhrase[], importance: "high" | "medium" | "low") => {
-    if (!phrases.length) return <p className="text-sm text-muted-foreground">{t("noKeyPhrasesFound")}</p>;
+    if (!phrases.length) return <p className="text-sm text-muted-foreground font-georgia">{t("noKeyPhrasesFound")}</p>;
 
     const colorClass = 
       importance === "high" ? "bg-yellow text-black" : 
@@ -68,7 +68,7 @@ export const KeyPhrases = ({ data = [], keywords = [], sourceDescription }: KeyP
         {phrases.map((phrase, index) => (
           <Badge 
             key={index} 
-            className={`${colorClass} hover:${colorClass} font-normal py-1 px-2`}
+            className={`${colorClass} hover:${colorClass} font-normal py-1 px-2 font-georgia`}
           >
             {phrase.phrase}
           </Badge>
@@ -80,7 +80,7 @@ export const KeyPhrases = ({ data = [], keywords = [], sourceDescription }: KeyP
   return (
     <Card className="border border-border shadow-md bg-light-lavender">
       <CardHeader>
-        <CardTitle className="flex items-center">
+        <CardTitle className="flex items-center font-pacifico">
           <MessageSquare className="h-5 w-5 mr-2 text-orange" />
           Key Phrases and Themes
         </CardTitle>
@@ -88,29 +88,29 @@ export const KeyPhrases = ({ data = [], keywords = [], sourceDescription }: KeyP
       <CardContent>
         {normalizedData.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">{t("noKeyPhrasesExtracted")}</p>
+            <p className="text-muted-foreground font-georgia">{t("noKeyPhrasesExtracted")}</p>
           </div>
         ) : (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-medium mb-2 text-black">Primary Themes</h3>
+              <h3 className="text-lg font-medium mb-2 text-black font-pacifico">Primary Themes</h3>
               {renderPhraseBadges(highImportance, "high")}
             </div>
             
             <div>
-              <h3 className="text-lg font-medium mb-2 text-black">Secondary Themes</h3>
+              <h3 className="text-lg font-medium mb-2 text-black font-pacifico">Secondary Themes</h3>
               {renderPhraseBadges(mediumImportance, "medium")}
             </div>
             
             <div>
-              <h3 className="text-lg font-medium mb-2 text-black">Tertiary Themes</h3>
+              <h3 className="text-lg font-medium mb-2 text-black font-pacifico">Tertiary Themes</h3>
               {renderPhraseBadges(lowImportance, "low")}
             </div>
           </div>
         )}
         
         {sourceDescription && (
-          <div className="flex items-center justify-center mt-6 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center mt-6 text-sm text-muted-foreground font-georgia">
             <Info className="h-4 w-4 mr-1" />
             {sourceDescription}
           </div>
