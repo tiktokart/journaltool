@@ -15,14 +15,14 @@ import { format, parseISO } from "date-fns";
 import { Pencil, Trash2, Download, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import DeleteEntryConfirm from "./DeleteEntryConfirm";
-import SentimentTimeline from "./SentimentTimeline";
-import KeyPhrases from "./KeyPhrases";
-import DocumentEmbedding from "./DocumentEmbedding";
+import { SentimentTimeline } from "./SentimentTimeline";
+import { KeyPhrases } from "./KeyPhrases";
+import { DocumentEmbedding } from "./DocumentEmbedding";
 import { jsPDF } from "jspdf";
-import { extractKeywords } from "@/utils/keyPhraseExtraction";
+import { extractKeyPhrases } from "@/utils/keyPhraseExtraction";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
 import { Point } from "@/types/embedding";
-import { generateEmbedding } from "@/utils/embeddingGeneration";
+import { generateEmbeddingPoints } from "@/utils/embeddingGeneration";
 
 interface JournalEntry {
   id: string;
@@ -111,7 +111,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
       setIsProcessing(true);
       
       // Extract keywords
-      const keywords = await extractKeywords(entry.text);
+      const keywords = await extractKeyPhrases(entry.text);
       setKeywordResults(keywords);
       
       // Generate sentiment timeline for this entry
@@ -119,7 +119,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
       const timeline = [
         {
           date: format(new Date(entry.date), "MMM dd"),
-          sentiment: sentiment.score || 0,
+          sentiment: sentiment.overallSentiment || 0,
         }
       ];
       setSentimentTimeline(timeline);
@@ -144,85 +144,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
       }
       
       // Generate embedding using utility function
-      const embedding = await generateEmbedding(text);
-      
-      // Simple tokenization to get words
-      const words = text.split(/\s+/).filter(word => word.trim().length > 1);
-      const wordSet = new Set(words.map(word => word.toLowerCase()));
-      
-      // Count word frequencies
-      const wordCounts: {[key: string]: number} = {};
-      words.forEach(word => {
-        const cleanWord = word.toLowerCase().replace(/[^\w\s]|_/g, "");
-        if (cleanWord.length > 0) {
-          wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
-        }
-      });
-      
-      // Create points for visualization
-      const points: Point[] = [];
-      
-      // Process the keywords to add to visualization
-      keywordResults.forEach((keyword, index) => {
-        if (typeof keyword === 'object' && keyword.text) {
-          const cleanWord = keyword.text.toLowerCase().replace(/[^\w\s]|_/g, "");
-          
-          // Generate a color based on sentiment (if available)
-          // Higher sentiment = more green, lower = more red
-          const sentiment = keyword.sentiment || 0.5;
-          const color: [number, number, number] = [
-            Math.max(0, 1 - sentiment),
-            Math.min(1, sentiment),
-            0.2
-          ];
-          
-          points.push({
-            id: `keyword-${index}`,
-            position: [Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1],
-            text: keyword.text,
-            sentiment: keyword.sentiment || 0.5,
-            emotionalTone: keyword.tone || 'Neutral',
-            keywords: keyword.relatedConcepts || [],
-            color: keyword.color || [0.8, 0.8, 0.2] as [number, number, number], // Brighter default color
-            frequency: keyword.frequency || 1
-          } as Point);
-        }
-      });
-      
-      // Add remaining common words if not enough points yet
-      if (points.length < 30) {
-        const topWords = Object.entries(wordCounts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 30 - points.length);
-        
-        topWords.forEach(([word, count]) => {
-          const exists = points.some(p => p.text.toLowerCase() === word.toLowerCase());
-          if (!exists && word.length > 3) {
-            // Random position in visualization space
-            const position: [number, number, number] = [
-              Math.random() * 2 - 1, 
-              Math.random() * 2 - 1, 
-              Math.random() * 2 - 1
-            ];
-            
-            // Neutral sentiment by default
-            const color: [number, number, number] = [0.5, 0.5, 0.7];
-            
-            points.push({
-              id: `word-${word}`,
-              position,
-              text: word,
-              sentiment: 0.5,
-              emotionalTone: 'Neutral',
-              keywords: [],
-              color,
-              frequency: count
-            } as Point);
-          }
-        });
-      }
-      
+      const points = await generateEmbeddingPoints(text);
       setEmbeddingPoints(points);
+      
     } catch (error) {
       console.error("Error generating embedding visualization:", error);
       toast.error("Failed to generate visualization");
@@ -252,10 +176,10 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
       
       // Sentiment score
       doc.setFontSize(14);
-      doc.text(`Sentiment Score: ${bertAnalysis.score.toFixed(2)}`, 20, 40);
+      doc.text(`Sentiment Score: ${bertAnalysis.overallSentiment?.toFixed(2) || "N/A"}`, 20, 40);
       
       // Emotional tone
-      doc.text(`Emotional Tone: ${bertAnalysis.sentiment}`, 20, 50);
+      doc.text(`Emotional Tone: ${bertAnalysis.emotionalTone || "N/A"}`, 20, 50);
       
       // Journal text
       doc.setFontSize(12);
@@ -269,7 +193,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
       doc.setFontSize(14);
       doc.text("BERT Analysis:", 20, 85 + textHeight);
       
-      const analysisText = bertAnalysis.text || "No detailed analysis available";
+      const analysisText = bertAnalysis.analysis || "No detailed analysis available";
       const splitAnalysis = doc.splitTextToSize(analysisText, 170);
       doc.setFontSize(12);
       doc.text(splitAnalysis, 20, 95 + textHeight);
@@ -282,9 +206,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
         
         let yPosition = 30;
         keywordResults.slice(0, 10).forEach((keyword, index) => {
-          if (typeof keyword === 'object' && keyword.text) {
+          if (typeof keyword === 'object' && keyword.phrase) {
             doc.setFontSize(12);
-            doc.text(`${index + 1}. ${keyword.text}`, 20, yPosition);
+            doc.text(`${index + 1}. ${keyword.phrase}`, 20, yPosition);
             yPosition += 10;
           }
         });
@@ -395,9 +319,8 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="latent-emotional">Latent Emotional Analysis</TabsTrigger>
-                <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                <TabsTrigger value="keywords">Keywords</TabsTrigger>
+                <TabsTrigger value="analysis">Analysis</TabsTrigger>
+                <TabsTrigger value="entry">Entry</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview">
@@ -424,7 +347,6 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                         <div>
                           <h3 className="text-lg font-medium mb-2">Emotional Tone</h3>
                           <div className="flex items-center">
-                            {/* This would be replaced with actual sentiment data */}
                             <div className="w-full bg-gray-200 rounded-full h-2.5">
                               <div 
                                 className="bg-green-600 h-2.5 rounded-full" 
@@ -446,7 +368,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                                 key={index}
                                 className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
                               >
-                                {typeof keyword === 'object' ? keyword.text : keyword}
+                                {typeof keyword === 'object' ? keyword.phrase : keyword}
                               </span>
                             ))}
                             
@@ -461,86 +383,144 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                 </Card>
               </TabsContent>
               
-              <TabsContent value="latent-emotional">
-                <Card className="min-h-[300px]">
-                  <CardHeader>
-                    <CardTitle>Latent Emotional Analysis</CardTitle>
-                    <CardDescription>
-                      Visualizing the emotional landscape of your entry
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isProcessing ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
-                        <p>Generating emotional analysis...</p>
-                      </div>
-                    ) : embeddingPoints.length > 0 ? (
-                      <div className="h-[500px] rounded-lg overflow-hidden border border-gray-200">
-                        <DocumentEmbedding points={embeddingPoints} />
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-[300px] text-gray-500">
-                        <div className="text-center">
-                          <AlertTriangle className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                          <p>Not enough data to generate emotional analysis</p>
+              <TabsContent value="analysis">
+                <div className="space-y-6">
+                  <Card className="min-h-[300px]">
+                    <CardHeader>
+                      <CardTitle>View Detailed Analysis Data</CardTitle>
+                      <CardDescription>
+                        In-depth analysis of your journal entry
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {isProcessing ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
+                          <p>Generating detailed analysis...</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-8">
+                          <div>
+                            <h3 className="text-lg font-medium mb-4">Sentiment Timeline</h3>
+                            {sentimentTimeline.length > 0 ? (
+                              <div className="h-[300px]">
+                                <SentimentTimeline data={sentimentTimeline} />
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center h-[100px] text-gray-500">
+                                <p>No sentiment data available</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div>
+                            <h3 className="text-lg font-medium mb-4">Key Phrases</h3>
+                            {keywordResults.length > 0 ? (
+                              <KeyPhrases keywords={keywordResults} />
+                            ) : (
+                              <div className="flex items-center justify-center h-[100px] text-gray-500">
+                                <p>No key phrases identified</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div>
+                            <h3 className="text-lg font-medium mb-4">Suggestions</h3>
+                            {keywordResults.length > 0 ? (
+                              <div className="space-y-4">
+                                {keywordResults.slice(0, 3).map((keyword, index) => (
+                                  <Card key={index}>
+                                    <CardContent className="pt-6">
+                                      <h4 className="font-medium mb-2">
+                                        Based on "{typeof keyword === 'object' ? keyword.phrase : keyword}"
+                                      </h4>
+                                      <p className="text-sm text-gray-600">
+                                        {index === 0 ? 
+                                          "Consider reflecting more on this important theme in your journaling." :
+                                          index === 1 ?
+                                          "This concept appears significant in your entry. Try exploring it further." :
+                                          "This theme might reveal insights about your current perspective."
+                                        }
+                                      </p>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center h-[100px] text-gray-500">
+                                <p>No suggestions available</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="entry">
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Document Text Visualization</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {isProcessing ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
+                          <p>Generating visualization...</p>
+                        </div>
+                      ) : (
+                        <div className="h-[300px] border border-gray-200 rounded-md">
+                          {/* Placeholder for text visualization */}
+                          <div className="flex items-center justify-center h-full text-gray-500">
+                            <p>Text visualization preview</p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Word Comparison</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[200px] border border-gray-200 rounded-md">
+                        {/* Placeholder for word comparison */}
+                        <div className="flex items-center justify-center h-full text-gray-500">
+                          <p>Word comparison visualization</p>
                         </div>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="timeline">
-                <Card className="min-h-[300px]">
-                  <CardHeader>
-                    <CardTitle>Sentiment Timeline</CardTitle>
-                    <CardDescription>
-                      Tracking the emotional journey in your entry
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isProcessing ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
-                        <p>Analyzing sentiment...</p>
-                      </div>
-                    ) : sentimentTimeline.length > 0 ? (
-                      <div className="h-[300px]">
-                        <SentimentTimeline data={sentimentTimeline} />
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-[300px] text-gray-500">
-                        <p>No sentiment data available</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="keywords">
-                <Card className="min-h-[300px]">
-                  <CardHeader>
-                    <CardTitle>Key Phrases</CardTitle>
-                    <CardDescription>
-                      Important concepts and phrases from your entry
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isProcessing ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
-                        <p>Extracting key phrases...</p>
-                      </div>
-                    ) : keywordResults.length > 0 ? (
-                      <KeyPhrases keywords={keywordResults} />
-                    ) : (
-                      <div className="flex items-center justify-center h-[300px] text-gray-500">
-                        <p>No key phrases identified</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Latent Emotional Analysis</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {isProcessing ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
+                          <p>Generating emotional analysis...</p>
+                        </div>
+                      ) : embeddingPoints.length > 0 ? (
+                        <div className="h-[400px] rounded-lg overflow-hidden border border-gray-200">
+                          <DocumentEmbedding points={embeddingPoints} />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-[200px] text-gray-500">
+                          <div className="text-center">
+                            <AlertTriangle className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                            <p>Not enough data to generate emotional analysis</p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </Tabs>
             

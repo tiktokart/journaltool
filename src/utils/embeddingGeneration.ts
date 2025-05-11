@@ -1,3 +1,4 @@
+
 import { Point } from '../types/embedding';
 
 interface EmbeddingPoint {
@@ -83,10 +84,12 @@ export const generateEmbeddingPoints = async (text: string): Promise<Point[]> =>
         id: `word-${i}`,
         position: [x, y, z],
         word,
+        text: word, // Add text field for compatibility
         sentiment,
         emotionalTone,
         color: [r/255, g/255, b/255],
-        relationships: generateRelationships(i, words.length)
+        relationships: generateRelationships(i, words.length),
+        frequency: 1
       };
       
       points.push(point);
@@ -149,3 +152,6 @@ function generateRelationships(index: number, totalPoints: number) {
   
   return relationships;
 }
+
+// Export the generateEmbedding alias for backward compatibility
+export const generateEmbedding = generateEmbeddingPoints;

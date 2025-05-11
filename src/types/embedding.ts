@@ -7,6 +7,7 @@ export interface Point {
   color: [number, number, number];
   keywords?: string[];
   emotionalTone?: string;
+  text?: string; // Add text field compatibility
   relationships?: Array<{ id: string; strength: number; word?: string }>;
   frequency?: number; // Add this property for word frequency tracking
 }

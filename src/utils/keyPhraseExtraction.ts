@@ -149,3 +149,6 @@ export const extractKeyPhrases = async (text: string): Promise<KeyPhrase[]> => {
     ];
   }
 };
+
+// Add alias for backward compatibility
+export const extractKeywords = extractKeyPhrases;
