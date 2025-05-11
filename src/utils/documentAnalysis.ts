@@ -1,4 +1,3 @@
-
 import { generateSummary } from './summaryGeneration';
 import { calculateSentiment } from './sentimentAnalysis';
 import { extractEntities } from './entityExtraction';
@@ -44,7 +43,8 @@ interface KeywordAnalysis {
   tone?: string;
   relatedConcepts?: string[];
   frequency?: number;
-  color?: string;
+  color?: string | [number, number, number]; // Updated to match how we use it
+  weight?: number; // Added to support weight property
 }
 
 export const analyzePdfContent = async (file: File, pdfText: string) => {

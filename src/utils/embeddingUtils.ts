@@ -226,7 +226,7 @@ export const generateMockPoints = (
     const relationships = [];
     
     // Create a set to keep track of points already used in relationships
-    const usedRelationships = new Set<string>();
+    const usedRelationships = new Set<string | number>();
     
     for (let r = 0; r < relationshipCount; r++) {
       let targetIndex;
@@ -238,22 +238,24 @@ export const generateMockPoints = (
         targetIndex = Math.floor(rng() * points.length);
         attempts++;
         if (attempts > maxAttempts) break;
-      } while (targetIndex === index || usedRelationships.has(points[targetIndex].id));
+      } while (targetIndex === index || usedRelationships.has(String(points[targetIndex].id)));
       
       if (attempts <= maxAttempts) {
         const targetPoint = points[targetIndex];
-        usedRelationships.add(targetPoint.id);
-        
-        // Relationship strength is stronger for points with the same emotional tone
-        const sameEmotionalTone = point.emotionalTone === targetPoint.emotionalTone;
-        const baseStrength = sameEmotionalTone ? 0.7 : 0.3;
-        const strength = baseStrength + rng() * 0.3;
-        
-        relationships.push({
-          id: targetPoint.id,
-          word: targetPoint.word,
-          strength: strength
-        });
+        if (targetPoint.id) {
+          usedRelationships.add(targetPoint.id);
+          
+          // Relationship strength is stronger for points with the same emotional tone
+          const sameEmotionalTone = point.emotionalTone === targetPoint.emotionalTone;
+          const baseStrength = sameEmotionalTone ? 0.7 : 0.3;
+          const strength = baseStrength + rng() * 0.3;
+          
+          relationships.push({
+            id: targetPoint.id,
+            word: targetPoint.word,
+            strength: strength
+          });
+        }
       }
     }
     

@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { Point } from '../../types/embedding';
@@ -99,7 +100,9 @@ const EmbeddingScene = ({
       1000
     );
     camera.position.z = 30;
-    cameraRef.current = camera;
+    if (cameraRef.current === null) {
+      cameraRef.current = camera;
+    }
     
     // Set up the renderer
     const renderer = new THREE.WebGLRenderer({ 
@@ -117,7 +120,9 @@ const EmbeddingScene = ({
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
       controls.rotateSpeed = 0.7;
-      controlsRef.current = controls;
+      if (controlsRef.current === null) {
+        controlsRef.current = controls;
+      }
     }
     
     // Expose actions to window for external components
@@ -175,8 +180,8 @@ const EmbeddingScene = ({
     // Cleanup function
     return () => {
       // Remove the canvas from the DOM
-      if (container.contains(renderer.domElement)) {
-        container.removeChild(renderer.domElement);
+      if (containerRef.current && containerRef.current.contains(renderer.domElement)) {
+        containerRef.current.removeChild(renderer.domElement);
       }
       
       // Dispose of Three.js resources
@@ -271,9 +276,9 @@ const EmbeddingScene = ({
     const updatePointVisibility = () => {
       if (!pointsMeshRef.current || !pointsMeshRef.current.geometry) return;
       
-      const positions = pointsMeshRef.current.geometry.attributes.position.array as THREE.TypedArray;
-      const colors = pointsMeshRef.current.geometry.attributes.color.array as THREE.TypedArray;
-      const sizes = pointsMeshRef.current.geometry.attributes.size.array as THREE.TypedArray;
+      const positions = pointsMeshRef.current.geometry.attributes.position.array;
+      const colors = pointsMeshRef.current.geometry.attributes.color.array;
+      const sizes = pointsMeshRef.current.geometry.attributes.size.array;
       
       for (let i = 0; i < points.length; i++) {
         const point = points[i];
@@ -319,9 +324,11 @@ const EmbeddingScene = ({
         // Set visibility by adjusting size and color
         if (isVisible) {
           sizes[i] = point.size || 1;
-          colors[i * 3] = (point.color as any)[0] || 1;
-          colors[i * 3 + 1] = (point.color as any)[1] || 1;
-          colors[i * 3 + 2] = (point.color as any)[2] || 1;
+          if (Array.isArray(point.color)) {
+            colors[i * 3] = point.color[0] || 1;
+            colors[i * 3 + 1] = point.color[1] || 1;
+            colors[i * 3 + 2] = point.color[2] || 1;
+          }
         } else {
           sizes[i] = 0;
           colors[i * 3] = 0;
@@ -402,15 +409,15 @@ const EmbeddingScene = ({
     
     // Add event listeners for mouse interaction
     if (isInteractive) {
-      container.addEventListener('mousemove', handleMouseMove);
-      container.addEventListener('click', handlePointClick);
+      containerRef.current.addEventListener('mousemove', handleMouseMove);
+      containerRef.current.addEventListener('click', handlePointClick);
     }
     
     // Clean up event listeners
     return () => {
-      if (isInteractive) {
-        container.removeEventListener('mousemove', handleMouseMove);
-        container.removeEventListener('click', handlePointClick);
+      if (isInteractive && containerRef.current) {
+        containerRef.current.removeEventListener('mousemove', handleMouseMove);
+        containerRef.current.removeEventListener('click', handlePointClick);
       }
     };
   }, [points, containerRef, isInteractive, onPointHover, onPointSelect, selectedEmotionalGroup, focusOnWord, visibleClusterCount, showAllPoints, depressedJournalReference, selectedPoint, comparisonPoint, connectedPoints]);

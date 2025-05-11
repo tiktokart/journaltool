@@ -9,7 +9,7 @@ export interface Point {
   z?: number;
   position: number[]; // Made required to fix type error
   size?: number;
-  color?: string | [number, number, number]; // Accepts either string or RGB array
+  color?: string | [number, number, number] | number[]; // Updated to accept number[] as well
   emotionalTone?: string; // The emotional tone associated with the point
   sentiment?: number; // Numeric sentiment score
   intensity?: number; // How strongly the emotion is expressed
@@ -17,7 +17,10 @@ export interface Point {
   hidden?: boolean; // Whether the point should be hidden
   distance?: number; // Distance from selected point (for comparison)
   id?: string | number; // Unique identifier for the point
-  relationships?: { id: string | number; strength: number }[]; // Connections to other points
+  relationships?: { id: string | number; strength: number; word?: string }[]; // Added word property
+  keywords?: string[]; // Added for BERT integration
+  text?: string; // For compatibility
+  frequency?: number; // For word frequency
   [key: string]: any; // Allow for additional properties
 }
 
