@@ -49,10 +49,13 @@ export const calculateSentiment = async (text: string): Promise<{
       sentimentScore = Math.min(0.9, Math.max(0.1, baseScore - 0.1 + (Math.random() * 0.2)));
     }
     
-    // Determine sentiment label
+    // Convert normalized sentiment score to the 0-55 range
+    const scaledScore = Math.round(sentimentScore * 55);
+    
+    // Determine sentiment label based on new score ranges: 20-30 as low, 30-40 as average, 40-55 as high
     let sentimentLabel = "Neutral";
-    if (sentimentScore > 0.65) sentimentLabel = "Positive";
-    else if (sentimentScore < 0.35) sentimentLabel = "Negative";
+    if (scaledScore >= 40) sentimentLabel = "Positive";
+    else if (scaledScore < 30) sentimentLabel = "Negative";
     
     // Calculate distribution percentages with better spread
     // Ensure we have a more balanced distribution rather than heavily positive
@@ -62,7 +65,7 @@ export const calculateSentiment = async (text: string): Promise<{
     
     return {
       overallSentiment: {
-        score: sentimentScore,
+        score: scaledScore, // Now reporting in the 0-55 scale
         label: sentimentLabel
       },
       distribution: {
@@ -74,7 +77,7 @@ export const calculateSentiment = async (text: string): Promise<{
   } catch (error) {
     console.error("Error calculating sentiment:", error);
     return {
-      overallSentiment: { score: 0.5, label: "Neutral" },
+      overallSentiment: { score: 35, label: "Neutral" }, // Default to middle of average range
       distribution: { positive: 33, neutral: 34, negative: 33 }
     };
   }

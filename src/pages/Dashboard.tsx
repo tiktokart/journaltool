@@ -192,6 +192,11 @@ const ScienceOfHappiness = () => {
             <li>Improve memory and cognitive function</li>
           </ul>
         </div>
+        
+        {/* Add the happiness infographic back into the drawer */}
+        <div className="mt-4">
+          <HappinessInfographic />
+        </div>
       </div>
     </div>
   );
@@ -673,14 +678,11 @@ const Dashboard = () => {
         ) : (
           // Monthly View
           <>
-            {/* Add the new Happiness Infographic */}
-            <HappinessInfographic />
-            
             <div className="grid md:grid-cols-2 gap-6">
               {/* Left Column */}
               <div className="space-y-6 relative">
-                {/* Science of Happiness Button - positioned to be visible on the side of the calendar */}
-                <div className="absolute -left-3 top-28 z-10">
+                {/* Science of Happiness Button - positioned to the LEFT of the calendar without overlapping */}
+                <div className="absolute -left-16 top-28 z-10">
                   <Drawer>
                     <DrawerTrigger asChild>
                       <Button
@@ -692,7 +694,7 @@ const Dashboard = () => {
                         Science of Happiness
                       </Button>
                     </DrawerTrigger>
-                    <DrawerContent>
+                    <DrawerContent className="max-h-[90vh] overflow-y-auto">
                       <div className="mx-auto w-full max-w-3xl p-6">
                         <DrawerHeader>
                           <DrawerTitle className="text-center text-2xl font-pacifico text-purple-800">
