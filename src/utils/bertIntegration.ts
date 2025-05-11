@@ -12,6 +12,8 @@ interface BertAnalysisResult {
   keywords: KeywordAnalysis[];
   overallSentiment: number;
   overallTone: string;
+  emotionalTone?: string;  // Add this property
+  analysis?: string;       // Add this property
 }
 
 const stopWords = [
@@ -188,10 +190,16 @@ export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisRes
     else if (overallSentiment < 0.35) overallTone = "Sadness";
     else if (overallSentiment < 0.4) overallTone = "Anxiety";
     
+    // Generate a simple analysis text
+    const emotionalTone = overallTone;
+    const analysis = `The text shows ${overallTone.toLowerCase()} with an overall sentiment score of ${overallSentiment.toFixed(2)}. Analysis identified ${keywords.length} significant words or phrases.`;
+    
     return {
       keywords,
       overallSentiment,
-      overallTone
+      overallTone,
+      emotionalTone,
+      analysis
     };
   } catch (error) {
     console.error("Error in BERT analysis:", error);

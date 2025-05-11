@@ -1,4 +1,3 @@
-
 // Fix the TypeError: Type 'Element' is not assignable to type 'string'
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -178,8 +177,8 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
       doc.setFontSize(14);
       doc.text(`Sentiment Score: ${bertAnalysis.overallSentiment?.toFixed(2) || "N/A"}`, 20, 40);
       
-      // Emotional tone
-      doc.text(`Emotional Tone: ${bertAnalysis.emotionalTone || "N/A"}`, 20, 50);
+      // Emotional tone - use overallTone if emotionalTone doesn't exist
+      doc.text(`Emotional Tone: ${bertAnalysis.emotionalTone || bertAnalysis.overallTone || "N/A"}`, 20, 50);
       
       // Journal text
       doc.setFontSize(12);
@@ -193,7 +192,8 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
       doc.setFontSize(14);
       doc.text("BERT Analysis:", 20, 85 + textHeight);
       
-      const analysisText = bertAnalysis.analysis || "No detailed analysis available";
+      const analysisText = bertAnalysis.analysis || 
+        `Analysis of sentiment: ${bertAnalysis.overallTone} (${bertAnalysis.overallSentiment.toFixed(2)})`;
       const splitAnalysis = doc.splitTextToSize(analysisText, 170);
       doc.setFontSize(12);
       doc.text(splitAnalysis, 20, 95 + textHeight);
@@ -416,7 +416,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           <div>
                             <h3 className="text-lg font-medium mb-4">Key Phrases</h3>
                             {keywordResults.length > 0 ? (
-                              <KeyPhrases keywords={keywordResults} />
+                              <KeyPhrases data={keywordResults} />
                             ) : (
                               <div className="flex items-center justify-center h-[100px] text-gray-500">
                                 <p>No key phrases identified</p>

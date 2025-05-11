@@ -11,24 +11,42 @@ type KeyPhrase = {
 };
 
 interface KeyPhrasesProps {
-  data: string[] | KeyPhrase[];
+  data?: string[] | KeyPhrase[];
+  keywords?: any[];  // Add this property to support the older API
   sourceDescription?: string;
 }
 
-export const KeyPhrases = ({ data = [], sourceDescription }: KeyPhrasesProps) => {
+export const KeyPhrases = ({ data = [], keywords = [], sourceDescription }: KeyPhrasesProps) => {
   const { t } = useLanguage();
 
+  // Use keywords prop if data is empty
+  const dataToUse = data.length > 0 ? data : keywords;
+
   // Normalize data to ensure consistent structure
-  const normalizedData: KeyPhrase[] = data.map(item => {
+  const normalizedData: KeyPhrase[] = dataToUse.map(item => {
     if (typeof item === 'string') {
       // Convert string items to KeyPhrase structure with default values
       return {
         phrase: item,
         score: 0.5, // Default middle score
       };
+    } else if (typeof item === 'object' && item !== null) {
+      // Handle the case where the item is an object but may have different property names
+      if ('phrase' in item) {
+        return item as KeyPhrase;
+      } else if ('word' in item) {
+        // Convert from word format to phrase format
+        return {
+          phrase: item.word,
+          score: item.sentiment || 0.5
+        };
+      }
     }
-    // Already in KeyPhrase format
-    return item as KeyPhrase;
+    // Fallback for any other format
+    return {
+      phrase: String(item),
+      score: 0.5
+    };
   });
 
   // Group phrases by approximate score range
