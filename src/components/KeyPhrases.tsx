@@ -22,32 +22,45 @@ export const KeyPhrases = ({ data = [], keywords = [], sourceDescription }: KeyP
   // Use keywords prop if data is empty
   const dataToUse = data.length > 0 ? data : keywords;
 
-  // Normalize data to ensure consistent structure
-  const normalizedData: KeyPhrase[] = dataToUse.map(item => {
-    if (typeof item === 'string') {
-      // Convert string items to KeyPhrase structure with default values
-      return {
-        phrase: item,
-        score: 0.5, // Default middle score
-      };
-    } else if (typeof item === 'object' && item !== null) {
-      // Handle the case where the item is an object but may have different property names
-      if ('phrase' in item) {
-        return item as KeyPhrase;
-      } else if ('word' in item) {
-        // Convert from word format to phrase format
+  // Filter out prepositions, conjunctions, and question words
+  const stopWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 
+    'by', 'in', 'out', 'with', 'about', 'against', 'before', 'after', 'during', 'what', 
+    'where', 'when', 'why', 'how', 'which', 'who', 'whom', 'whose', 'that', 'than'];
+
+  // Normalize data to ensure consistent structure and filter out stop words
+  const normalizedData: KeyPhrase[] = dataToUse
+    .map(item => {
+      if (typeof item === 'string') {
+        // Skip if it's a stop word
+        if (stopWords.includes(item.toLowerCase())) return null;
+        
+        // Convert string items to KeyPhrase structure with default values
         return {
-          phrase: item.word,
-          score: item.sentiment || 0.5
+          phrase: item,
+          score: 0.5, // Default middle score
+        };
+      } else if (typeof item === 'object' && item !== null) {
+        // Handle the case where the item is an object but may have different property names
+        let phrase = '';
+        if ('phrase' in item) {
+          phrase = item.phrase;
+        } else if ('word' in item) {
+          phrase = item.word;
+        } else {
+          phrase = String(item);
+        }
+        
+        // Skip if it's a stop word
+        if (stopWords.includes(phrase.toLowerCase())) return null;
+        
+        return {
+          phrase: phrase,
+          score: item.sentiment || item.score || 0.5
         };
       }
-    }
-    // Fallback for any other format
-    return {
-      phrase: String(item),
-      score: 0.5
-    };
-  });
+      return null;
+    })
+    .filter(Boolean) as KeyPhrase[]; // Remove null values
 
   // Group phrases by approximate score range
   const highImportance = normalizedData.filter(item => item.score >= 0.7);

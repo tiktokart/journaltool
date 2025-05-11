@@ -10,6 +10,7 @@ import { getEmotionColor } from "@/utils/embeddingUtils";
 import { getEmotionColor as getBertEmotionColor } from "@/utils/bertSentimentAnalysis";
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { analyzeTextWithBert } from "@/utils/bertIntegration";
 
 interface TextEmotionViewerProps {
   pdfText: string;
@@ -27,6 +28,8 @@ export const TextEmotionViewer = ({
   const [showHighlights, setShowHighlights] = useState(true);
   const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
   const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal'>('minimal');
+  const [bertAnalysis, setBertAnalysis] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Unified color function for emotional tones - ensuring consistency across the app
   const getUnifiedEmotionColor = (emotion: string): string => {
@@ -40,13 +43,51 @@ export const TextEmotionViewer = ({
     return getEmotionColor(emotion);
   };
 
+  // Run BERT analysis when pdfText changes
+  useEffect(() => {
+    const runAnalysis = async () => {
+      if (!pdfText || pdfText.trim().length === 0) return;
+      
+      setIsProcessing(true);
+      try {
+        // Analyze text with BERT
+        const analysis = await analyzeTextWithBert(pdfText);
+        setBertAnalysis(analysis);
+        setIsProcessing(false);
+      } catch (error) {
+        console.error("Error running BERT analysis:", error);
+        setIsProcessing(false);
+      }
+    };
+    
+    runAnalysis();
+  }, [pdfText]);
+
   useEffect(() => {
     // Use either provided embedding points or ones exposed on window by DocumentEmbedding
-    const points = embeddingPoints?.length > 0 
+    let points = embeddingPoints?.length > 0 
       ? embeddingPoints 
       : window.documentEmbeddingPoints || [];
       
-    console.log(`TextEmotionViewer: Using ${points.length} embedding points`);
+    // Also include BERT keywords for highlighting if available
+    if (bertAnalysis?.keywords?.length > 0) {
+      const bertPoints = bertAnalysis.keywords.map((kw: any) => ({
+        word: kw.word,
+        emotionalTone: kw.tone,
+        color: kw.color,
+        sentiment: kw.sentiment
+      }));
+      
+      // Combine BERT points with embedding points, avoiding duplicates
+      const existingWords = points.map((p: Point) => p.word?.toLowerCase());
+      const filteredBertPoints = bertPoints.filter((p: any) => 
+        !existingWords.includes(p.word?.toLowerCase())
+      );
+      
+      points = [...points, ...filteredBertPoints];
+    }
+      
+    console.log(`TextEmotionViewer: Using ${points.length} points for highlighting`);
     
     if (!pdfText || pdfText.length === 0) {
       setHighlightedText([pdfText || ""]);
@@ -64,7 +105,7 @@ export const TextEmotionViewer = ({
     } else {
       setHighlightedText([pdfText]);
     }
-  }, [pdfText, embeddingPoints, showHighlights, hideNonHighlighted, filteringLevel]);
+  }, [pdfText, embeddingPoints, showHighlights, hideNonHighlighted, filteringLevel, bertAnalysis]);
 
   const processTextWithEmotions = (points: Point[]) => {
     if (!showHighlights) {
@@ -220,13 +261,30 @@ export const TextEmotionViewer = ({
     return (
       <Card className="border border-border shadow-md bg-white">
         <CardHeader>
-          <CardTitle className="flex items-center text-xl">
+          <CardTitle className="flex items-center text-xl font-pacifico">
             <Highlighter className="h-5 w-5 mr-2 text-primary" />
             {t("Document Text Visualization")}
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center py-10">
+        <CardContent className="flex flex-col items-center justify-center py-10 font-georgia">
           <p className="text-muted-foreground">{t("No text available from document")}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isProcessing) {
+    return (
+      <Card className="border border-border shadow-md bg-white">
+        <CardHeader>
+          <CardTitle className="flex items-center text-xl font-pacifico">
+            <Highlighter className="h-5 w-5 mr-2 text-primary" />
+            {t("Document Text Visualization")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center py-10 font-georgia">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Analyzing text with BERT...</p>
         </CardContent>
       </Card>
     );
@@ -236,7 +294,7 @@ export const TextEmotionViewer = ({
     <Card className="border border-border shadow-md bg-white">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <CardTitle className="flex items-center text-xl">
+          <CardTitle className="flex items-center text-xl font-pacifico">
             <Highlighter className="h-5 w-5 mr-2 text-primary" />
             {t("Document Text Visualization")}
           </CardTitle>
@@ -245,7 +303,7 @@ export const TextEmotionViewer = ({
               variant={showHighlights ? "default" : "outline"}
               size="sm"
               onClick={() => setShowHighlights(!showHighlights)}
-              className="self-start bg-purple-600 hover:bg-purple-700 text-white"
+              className="self-start bg-purple-600 hover:bg-purple-700 text-white font-georgia"
             >
               {showHighlights ? t("Hide Emotional Highlights") : t("Show Emotional Highlights")}
             </Button>
@@ -256,7 +314,7 @@ export const TextEmotionViewer = ({
                   onPressedChange={setHideNonHighlighted}
                   size="sm"
                   aria-label="Toggle non-highlighted words visibility"
-                  className="self-start"
+                  className="self-start font-georgia"
                 >
                   {hideNonHighlighted ? (
                     <EyeOff className="h-4 w-4 mr-1" />
@@ -270,7 +328,7 @@ export const TextEmotionViewer = ({
                   onPressedChange={(pressed) => setFilteringLevel(pressed ? 'none' : 'minimal')}
                   size="sm"
                   aria-label="Toggle filtering level"
-                  className="self-start"
+                  className="self-start font-georgia"
                 >
                   {filteringLevel === 'none' ? "No Filtering" : "Minimal Filtering"}
                 </Toggle>
@@ -279,12 +337,12 @@ export const TextEmotionViewer = ({
           </div>
         </div>
         {sourceDescription && (
-          <p className="text-sm text-muted-foreground mt-1">{sourceDescription}</p>
+          <p className="text-sm text-muted-foreground mt-1 font-georgia">{sourceDescription}</p>
         )}
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[350px] rounded border border-border p-4">
-          <div className="text-sm whitespace-pre-wrap">
+          <div className="text-sm whitespace-pre-wrap font-georgia">
             {highlightedText}
           </div>
         </ScrollArea>
