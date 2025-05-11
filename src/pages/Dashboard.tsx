@@ -333,7 +333,7 @@ const Dashboard = () => {
   };
 
   // Handle journal submission
-  const handleSubmitJournal = (text: string, addToMonthly: boolean) => {
+  const handleSubmitJournal = async (text: string, addToMonthly: boolean) => {
     try {
       // Create new journal entry
       const newEntry = {
@@ -375,13 +375,12 @@ const Dashboard = () => {
       }
       
       // Analyze the new entry using BERT
-      analyzePdfContent(null, text)
-        .then(analysis => {
-          console.log("Journal entry analyzed with BERT:", analysis);
-        })
-        .catch(err => {
-          console.error("Error analyzing journal with BERT:", err);
-        });
+      try {
+        const analysis = await analyzeTextWithBert(text);
+        console.log("Journal entry analyzed with BERT:", analysis);
+      } catch (err) {
+        console.error("Error analyzing journal with BERT:", err);
+      }
 
       // Refresh the entries
       setRefreshTrigger(prev => prev + 1);
@@ -402,7 +401,7 @@ const Dashboard = () => {
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-6 relative">
-        <VectorDecorations className="absolute inset-0 pointer-events-none opacity-30" />
+        <VectorDecorations className="absolute inset-0 pointer-events-none opacity-30" type="home" />
         
         {isEntriesView ? (
           // Entries View
@@ -430,7 +429,7 @@ const Dashboard = () => {
                 <Button 
                   size="sm"
                   onClick={openWritePopup}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white"
                 >
                   Write
                 </Button>

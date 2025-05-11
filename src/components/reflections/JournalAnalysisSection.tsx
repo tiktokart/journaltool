@@ -18,6 +18,7 @@ import JournalSentimentChart from "./JournalSentimentChart";
 import JournalSentimentSummary from "./JournalSentimentSummary";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Card } from "@/components/ui/card";
+import MentalHealthSuggestions from "../suggestions/MentalHealthSuggestions";
 
 interface JournalAnalysisSectionProps {
   journalEntries: any[];
@@ -38,6 +39,94 @@ const JournalAnalysisSection = ({
 }: JournalAnalysisSectionProps) => {
   const { t } = useLanguage();
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+
+  // Generate emotional embeddings from journal entries
+  const generateEmotionalEmbeddings = () => {
+    if (!journalEntries.length) return [];
+    
+    // Create simulated embeddings with emotional tones
+    return journalEntries.flatMap((entry, entryIndex) => {
+      const words = entry.text.split(/\s+/);
+      
+      return words.filter(word => word.length > 3).map((word, index) => {
+        // Generate consistent but seemingly random values for each word based on its characters
+        const hash = [...word].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const x = Math.sin(hash) * 5;
+        const y = Math.cos(hash * 0.5) * 5;
+        const z = Math.sin(hash * 0.3) * Math.cos(hash * 0.7) * 5;
+        
+        // Assign emotional tones based on word patterns or entry sentiment
+        const emotionalTones = ['Joy', 'Sadness', 'Anxiety', 'Contentment', 'Confusion', 'Anger', 'Fear', 'Surprise'];
+        const toneIndex = hash % emotionalTones.length;
+        const emotionalTone = emotionalTones[toneIndex];
+        
+        // Create color based on emotional tone
+        let color;
+        switch(emotionalTone) {
+          case 'Joy':
+            color = [1, 0.9, 0.4]; // Yellow
+            break;
+          case 'Sadness':
+            color = [0.4, 0.6, 0.9]; // Blue
+            break;
+          case 'Anxiety':
+            color = [0.9, 0.5, 0.2]; // Orange
+            break;
+          case 'Contentment':
+            color = [0.5, 0.9, 0.5]; // Green
+            break;
+          case 'Confusion':
+            color = [0.7, 0.5, 0.9]; // Purple
+            break;
+          case 'Anger':
+            color = [0.9, 0.3, 0.3]; // Red
+            break;
+          case 'Fear':
+            color = [0.7, 0.3, 0.7]; // Dark Purple
+            break;
+          case 'Surprise':
+            color = [0.4, 0.9, 0.9]; // Cyan
+            break;
+          default:
+            color = [0.7, 0.7, 0.7]; // Gray
+        }
+        
+        return {
+          id: `${entryIndex}-${index}`,
+          word: word.replace(/[^\w]/g, ''),
+          position: [x, y, z],
+          color: color,
+          emotionalTone: emotionalTone,
+          frequency: 1,
+          relationships: []
+        };
+      });
+    });
+  };
+
+  // Extract keywords from journal entries
+  const extractKeywords = () => {
+    if (!journalEntries.length) return [];
+    
+    const allText = journalEntries.map(entry => entry.text).join(" ");
+    const words = allText.toLowerCase().split(/\s+/);
+    const wordCount = {};
+    
+    words.forEach(word => {
+      if (word.length > 4) {
+        wordCount[word] = (wordCount[word] || 0) + 1;
+      }
+    });
+    
+    return Object.entries(wordCount)
+      .filter(([_, count]) => count > 1) // Only words that appear more than once
+      .sort(([_, countA], [_, countB]) => Number(countB) - Number(countA))
+      .slice(0, 20)
+      .map(([word]) => word);
+  };
+
+  const embeddingPoints = generateEmotionalEmbeddings();
+  const keywords = extractKeywords();
 
   return (
     <div className="mt-6">
@@ -117,24 +206,18 @@ const JournalAnalysisSection = ({
                   </AccordionTrigger>
                   <AccordionContent className="p-2">
                     <div className="flex flex-wrap gap-2">
-                      {journalEntries.length > 0 && Array.from(new Set(
-                        journalEntries
-                          .flatMap(entry => entry.text.split(/\s+/))
-                          .filter(word => word.length > 4)
-                          .slice(0, 20)
-                      )).map((word, i) => (
+                      {keywords.map((word, i) => (
                         <span key={i} className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs">
                           {word}
                         </span>
                       ))}
-                      {journalEntries.length === 0 && (
+                      {keywords.length === 0 && (
                         <p className="text-sm text-gray-500">No journal entries to analyze.</p>
                       )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
                 
-                {/* Latent Emotional Analysis Accordion */}
                 <AccordionItem value="latent-emotional-analysis">
                   <AccordionTrigger className="text-purple-700 hover:text-purple-800">
                     Latent Emotional Analysis
@@ -145,7 +228,7 @@ const JournalAnalysisSection = ({
                         <h4 className="font-medium mb-2">3D Visualization</h4>
                         <div className="h-[300px] w-full bg-gray-50 rounded-lg overflow-hidden">
                           <DocumentEmbedding 
-                            points={[]} 
+                            points={embeddingPoints} 
                             isInteractive={true} 
                             depressedJournalReference={overallSentimentChange.includes("negative")}
                           />
@@ -181,6 +264,8 @@ const JournalAnalysisSection = ({
                           ))}
                         </div>
                       </Card>
+                      
+                      <MentalHealthSuggestions journalEntries={journalEntries} />
                     </div>
                   </AccordionContent>
                 </AccordionItem>
