@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -24,6 +25,7 @@ import { analyzePdfContent } from "@/utils/documentAnalysis";
 import { initBertModel } from "@/utils/bertSentimentAnalysis";
 import JournalWritePopup from "@/components/JournalWritePopup";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
+import HappinessInfographic from "@/components/HappinessInfographic";
 
 // Rename PerfectLifePlan to Goals
 const Goals = () => {
@@ -111,6 +113,7 @@ const Goals = () => {
 // Import MonthlyReflections and JournalAnalysisSection
 import { MonthlyReflections } from "@/components/MonthlyReflections";
 import JournalAnalysisSection from "@/components/reflections/JournalAnalysisSection";
+import { DeleteEntryConfirm } from "@/components/DeleteEntryConfirm";
 
 interface JournalEntry {
   id: string;
@@ -128,6 +131,8 @@ const Dashboard = () => {
   const [showConsentDialog, setShowConsentDialog] = useState<boolean>(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [isWritePopupOpen, setIsWritePopupOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -374,19 +379,29 @@ const Dashboard = () => {
     }
   };
 
+  // Initiate delete journal entry
+  const initiateDeleteEntry = (entryId: string) => {
+    setEntryToDelete(entryId);
+    setShowDeleteDialog(true);
+  };
+
   // Delete journal entry
-  const deleteEntry = (entryId: string) => {
+  const confirmDeleteEntry = () => {
+    if (!entryToDelete) return;
+    
     try {
-      const updatedEntries = journalEntries.filter(entry => entry.id !== entryId);
+      const updatedEntries = journalEntries.filter(entry => entry.id !== entryToDelete);
       setJournalEntries(updatedEntries);
       localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
       
-      if (selectedEntry?.id === entryId) {
+      if (selectedEntry?.id === entryToDelete) {
         setSelectedEntry(null);
       }
       
       toast.success("Journal entry deleted");
       setRefreshTrigger(prev => prev + 1);
+      setShowDeleteDialog(false);
+      setEntryToDelete(null);
     } catch (error) {
       console.error("Error deleting journal entry:", error);
       toast.error("Failed to delete journal entry");
@@ -554,7 +569,10 @@ const Dashboard = () => {
                 </Button>
               </div>
             </div>
-          
+            
+            {/* Add the new Happiness Infographic */}
+            <HappinessInfographic />
+            
             <div className="grid md:grid-cols-2 gap-6">
               {/* Left Column */}
               <div className="space-y-6">
@@ -598,7 +616,7 @@ const Dashboard = () => {
                               variant="ghost"
                               size="sm"
                               className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
-                              onClick={() => deleteEntry(entry.id)}
+                              onClick={() => initiateDeleteEntry(entry.id)}
                             >
                               <span className="sr-only">Delete</span>
                               ×
@@ -700,6 +718,13 @@ const Dashboard = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        
+        {/* Delete Entry Confirmation Dialog */}
+        <DeleteEntryConfirm
+          isOpen={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirmDelete={confirmDeleteEntry}
+        />
         
         {/* Journal Write Popup */}
         <JournalWritePopup 

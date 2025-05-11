@@ -14,21 +14,23 @@ const stopWords = [
   'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 
   'about', 'in', 'under', 'over', 'with', 'without', 'during', 'before', 'after', 'of',
   // PDF-related words
-  'pdf', 'document', 'file', 'text', 'page', 'content',
+  'pdf', 'document', 'file', 'text', 'page', 'content', 'from pdf', 'pdf file',
   // Additional common stopwords that don't carry emotional weight
   'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 
   'this', 'that', 'these', 'those', 'there', 'here', 'where',
   'who', 'whom', 'which', 'what', 'whose', 'when', 'why', 'how',
-  'all', 'any', 'some', 'many', 'few', 'most', 'no', 'every'
+  'all', 'any', 'some', 'many', 'few', 'most', 'no', 'every',
+  'has', 'have', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could',
+  'than', 'then', 'into', 'out', 'only', 'very', 'just', 'more', 'less'
 ];
 
 // Part-of-speech weights to prioritize certain types of words
 const posWeights = {
-  VERB: 2.5,     // Action verbs get highest priority
-  NOUN: 2.0,     // Nouns are important for context
-  ADJ: 1.8,      // Adjectives often carry emotional content
+  VERB: 3.0,     // Action verbs get highest priority
+  NOUN: 2.5,     // Nouns are important for context
+  ADJ: 2.0,      // Adjectives often carry emotional content
   ADV: 1.5,      // Adverbs can modify emotional intensity
-  DEFAULT: 1.0   // All other types get normal weight
+  DEFAULT: 0.8   // All other types get lower weight
 };
 
 // Identify common PDF metadata patterns
