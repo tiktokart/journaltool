@@ -126,6 +126,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [latentAnalysisExpanded, setLatentAnalysisExpanded] = useState(false);
   const [wordComparisonExpanded, setWordComparisonExpanded] = useState(false);
   const [bertAnalysisResult, setBertAnalysisResult] = useState<any>(null);
+  const [overviewExpanded, setOverviewExpanded] = useState(true);
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
+  const [keywordsExpanded, setKeywordsExpanded] = useState(false);
 
   // Update filtered entries when entries or search query changes
   useEffect(() => {
@@ -213,10 +216,10 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
     // Check if they belong to the same emotional group
     const sameEmotionalGroup = point1.emotionalTone === point2.emotionalTone;
     
-    // Find shared keywords/concepts
-    const keywords1 = point1.relatedConcepts || [];
-    const keywords2 = point2.relatedConcepts || [];
-    const sharedKeywords = keywords1.filter(k => keywords2.includes(k));
+    // Find shared keywords/concepts - with type safety
+    const keywords1 = (point1 as any).relatedConcepts || [];
+    const keywords2 = (point2 as any).relatedConcepts || [];
+    const sharedKeywords = keywords1.filter((k: string) => keywords2.includes(k));
     
     return {
       spatialSimilarity,
@@ -501,47 +504,113 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                         </div>
                       ) : (
                         <div className="space-y-6">
-                          {/* Content Overview */}
-                          <div>
-                            <h3 className="text-lg font-medium mb-2 font-pacifico">Content Overview</h3>
-                            <div className="p-4 bg-gray-50 rounded-md">
-                              <p className="mb-2"><strong>Word Count:</strong> {selectedEntry.text.split(/\s+/).filter(Boolean).length} words</p>
-                              <p className="mb-2"><strong>Reading Time:</strong> ~{Math.round(selectedEntry.text.split(/\s+/).filter(Boolean).length / 200)} min</p>
-                              <p><strong>Created:</strong> {format(new Date(selectedEntry.date), "MMMM dd, yyyy 'at' h:mm a")}</p>
-                            </div>
-                          </div>
-                          
-                          {/* Emotional Actions */}
-                          <div>
-                            <h3 className="text-lg font-medium mb-2 font-pacifico">Emotional Actions</h3>
-                            <div className="p-4 bg-gray-50 rounded-md">
-                              <p className="mb-2"><strong>Overall Emotion:</strong> {bertAnalysisResult?.overallTone || "Neutral"}</p>
-                              <p className="mb-2"><strong>Sentiment Score:</strong> {bertAnalysisResult?.overallSentiment.toFixed(2) || "0.50"} / 1.00</p>
-                              <div className="flex items-center">
-                                <span className="mr-2">Emotional Balance:</span>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5 max-w-md">
-                                  <div 
-                                    className="bg-green-600 h-2.5 rounded-full" 
-                                    style={{ width: `${((bertAnalysisResult?.overallSentiment || 0.5) * 100)}%` }}
-                                  ></div>
+                          {/* Content Overview & Emotional Actions based on image reference */}
+                          <div className="grid md:grid-cols-2 gap-6 mb-6">
+                            {/* Content Overview - Left Side */}
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                              <h3 className="font-medium mb-4 text-black text-center font-pacifico">Content Overview</h3>
+                              <div className="text-sm text-black leading-relaxed font-georgia">
+                                <div className="flex flex-col space-y-4">
+                                  <div className="bg-white p-3 rounded-lg shadow-sm">
+                                    <div className="font-medium mb-1 text-black">Document Statistics</div>
+                                    <div className="text-sm">
+                                      This document contains {selectedEntry.text.split(/\s+/).filter(w => w.trim().length > 0).length} words, 
+                                      {selectedEntry.text.split(/[.!?]+/).filter(s => s.trim().length > 0).length} sentences, and approximately 
+                                      {selectedEntry.text.split(/\n\s*\n/).filter(p => p.trim().length > 0).length} paragraphs.
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="bg-white p-3 rounded-lg shadow-sm">
+                                    <div className="font-medium mb-1 text-black">Document Structure</div>
+                                    <div className="flex justify-between">
+                                      <div className="text-center">
+                                        <div className="text-3xl font-bold text-orange">
+                                          {selectedEntry.text.split(/\s+/).filter(w => w.trim().length > 0).length}
+                                        </div>
+                                        <div className="text-xs">Words</div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="text-3xl font-bold text-purple-500">
+                                          {selectedEntry.text.split(/[.!?]+/).filter(s => s.trim().length > 0).length}
+                                        </div>
+                                        <div className="text-xs">Sentences</div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="text-3xl font-bold text-blue-500">
+                                          {selectedEntry.text.split(/\n\s*\n/).filter(p => p.trim().length > 0).length}
+                                        </div>
+                                        <div className="text-xs">Paragraphs</div>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          {/* Main Subject */}
-                          <div>
-                            <h3 className="text-lg font-medium mb-2 font-pacifico">Main Subject</h3>
-                            <div className="p-4 bg-gray-50 rounded-md">
-                              <p>{extractMainSubject(selectedEntry.text)}</p>
+                            
+                            {/* Emotional Actions - Right Side */}
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                              <h3 className="font-medium mb-4 text-black text-center font-pacifico">Emotional Actions</h3>
+                              {bertAnalysisResult?.keywords?.length > 0 ? (
+                                <div className="flex flex-wrap gap-4 justify-center">
+                                  {bertAnalysisResult.keywords.slice(0, 6).map((item: any, index: number) => (
+                                    <div key={index} className="flex flex-col items-center">
+                                      <div 
+                                        className="rounded-full flex items-center justify-center bg-gray-100 border-2 border-white shadow-md"
+                                        style={{
+                                          width: `${60 + (item.score * 40)}px`,
+                                          height: `${60 + (item.score * 40)}px`,
+                                        }}
+                                      >
+                                        <span className="font-bold text-center font-georgia">
+                                          {item.word}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground text-center font-georgia">
+                                  No significant emotional actions detected
+                                </p>
+                              )}
                             </div>
                           </div>
                           
-                          {/* Full Text */}
-                          <div>
-                            <h3 className="text-lg font-medium mb-2 font-pacifico">Full Text</h3>
-                            <div className="p-4 bg-gray-50 rounded-md max-h-32 overflow-y-auto">
-                              <p className="whitespace-pre-wrap">{selectedEntry.text}</p>
+                          {/* Main Subjects - Below */}
+                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6">
+                            <h3 className="font-medium mb-4 text-black text-center font-pacifico">Main Subjects</h3>
+                            {keywordResults?.length > 0 ? (
+                              <div className="flex justify-center gap-6 flex-wrap">
+                                {keywordResults.slice(0, 8).map((item, index) => (
+                                  <div key={index} className="text-center">
+                                    <div 
+                                      className="mx-auto bg-slate-100 rounded-xl p-4 shadow-sm border border-white"
+                                      style={{
+                                        width: `${Math.max(100, item.score * 140)}px`,
+                                        height: `${Math.max(60, item.score * 80)}px`,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexDirection: 'column'
+                                      }}
+                                    >
+                                      <div className="font-semibold font-georgia">{typeof item === 'string' ? item : item.phrase || item.word}</div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground text-center font-georgia">
+                                No significant subjects detected
+                              </p>
+                            )}
+                          </div>
+                          
+                          {/* Full Text Section */}
+                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                            <h3 className="font-medium mb-2 text-black font-pacifico">Full Text</h3>
+                            <div className="text-sm text-black leading-relaxed whitespace-pre-line max-h-[400px] overflow-y-auto border border-border p-4 rounded-md bg-white font-georgia">
+                              {selectedEntry.text}
                             </div>
                           </div>
                           
@@ -553,17 +622,17 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                                 {generateSuggestions(selectedEntry.text).map(suggestion => (
                                   <div key={suggestion.id} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
                                     <div className="flex justify-between items-start mb-2">
-                                      <h4 className="font-medium text-orange-700">{suggestion.solutionStatement}</h4>
-                                      <span className="text-xs px-2 py-1 bg-orange-100 rounded-full text-orange-800">
+                                      <h4 className="font-medium text-orange-700 font-georgia">{suggestion.solutionStatement}</h4>
+                                      <span className="text-xs px-2 py-1 bg-orange-100 rounded-full text-orange-800 font-georgia">
                                         Triggered by: "{suggestion.keyword}"
                                       </span>
                                     </div>
-                                    <p className="mt-2 text-sm text-gray-700">{suggestion.actionPlan}</p>
+                                    <p className="mt-2 text-sm text-gray-700 font-georgia">{suggestion.actionPlan}</p>
                                     <a 
                                       href={suggestion.resourceLink}
                                       target="_blank" 
                                       rel="noopener noreferrer" 
-                                      className="mt-2 text-xs text-orange-600 hover:text-orange-800 inline-block"
+                                      className="mt-2 text-xs text-orange-600 hover:text-orange-800 inline-block font-georgia"
                                     >
                                       Learn more about managing {suggestion.keyword}
                                     </a>
@@ -668,35 +737,141 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                     </Card>
                   </Collapsible>
                   
-                  {/* Overview, Timeline, Keywords sections */}
-                  <div className="mb-6">
-                    <h3 className="text-xl font-pacifico mb-4">Entry Overview</h3>
-                    <Card className="mb-6">
-                      <CardContent className="p-4">
-                        <div className="space-y-4 mt-4">
-                          <div>
-                            <h4 className="font-medium mb-2 font-pacifico">Overview</h4>
-                            <p className="font-georgia">
-                              {bertAnalysisResult?.analysis || 
-                                `This entry shows ${bertAnalysisResult?.overallTone?.toLowerCase() || 'neutral'} emotions with a sentiment score of ${(bertAnalysisResult?.overallSentiment || 0.5).toFixed(2)}.`}
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <h4 className="font-medium mb-2 font-pacifico">Timeline</h4>
-                            <div className="h-[200px] w-full">
-                              <SentimentTimeline data={sentimentTimeline} />
+                  {/* Overview section - not expandable */}
+                  <Card className="mb-6">
+                    <CardHeader>
+                      <CardTitle className="font-pacifico">Overview</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                          <h3 className="text-lg font-medium mb-2 font-pacifico">Overall Sentiment</h3>
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <p className="font-semibold text-lg font-georgia">
+                                {bertAnalysisResult?.overallTone || 'Neutral'}
+                              </p>
+                              <p className="text-muted-foreground font-georgia">Score: {((bertAnalysisResult?.overallSentiment || 0.5) * 100).toFixed(0)}%</p>
+                            </div>
+                            <div className="bg-green-500 h-16 w-16 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                              {((bertAnalysisResult?.overallSentiment || 0.5) * 100).toFixed(0)}
                             </div>
                           </div>
                           
-                          <div>
-                            <h4 className="font-medium mb-2 font-pacifico">Keywords</h4>
-                            <KeyPhrases data={keywordResults} sourceDescription="BERT Analysis" />
+                          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                            <div 
+                              className="bg-green-500 h-2.5 rounded-full transition-all duration-500 ease-out" 
+                              style={{ width: `${(bertAnalysisResult?.overallSentiment || 0.5) * 100}%` }}
+                            ></div>
+                          </div>
+                          
+                          <div className="flex justify-between text-xs text-muted-foreground font-georgia">
+                            <span>Negative</span>
+                            <span>Neutral</span>
+                            <span>Positive</span>
                           </div>
                         </div>
-                      </CardContent>
+                        
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                          <h3 className="text-lg font-medium mb-2 font-pacifico">Sentiment Distribution</h3>
+                          <div className="space-y-4">
+                            <div>
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium font-georgia">Positive</span>
+                                <span className="text-sm text-muted-foreground font-georgia">
+                                  {bertAnalysisResult?.distribution?.positive || 0}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                <div 
+                                  className="bg-green-500 h-2.5 rounded-full" 
+                                  style={{ width: `${bertAnalysisResult?.distribution?.positive || 0}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium font-georgia">Neutral</span>
+                                <span className="text-sm text-muted-foreground font-georgia">
+                                  {bertAnalysisResult?.distribution?.neutral || 0}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                <div 
+                                  className="bg-blue-500 h-2.5 rounded-full" 
+                                  style={{ width: `${bertAnalysisResult?.distribution?.neutral || 0}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium font-georgia">Negative</span>
+                                <span className="text-sm text-muted-foreground font-georgia">
+                                  {bertAnalysisResult?.distribution?.negative || 0}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                <div 
+                                  className="bg-red-500 h-2.5 rounded-full" 
+                                  style={{ width: `${bertAnalysisResult?.distribution?.negative || 0}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Timeline section - Expandable */}
+                  <Collapsible 
+                    open={timelineExpanded} 
+                    onOpenChange={setTimelineExpanded}
+                    className="mb-6"
+                  >
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className="text-xl font-pacifico">Timeline</CardTitle>
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            {timelineExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        </CollapsibleTrigger>
+                      </CardHeader>
+                      <CollapsibleContent>
+                        <CardContent>
+                          <div className="h-[200px] w-full">
+                            <SentimentTimeline data={sentimentTimeline} />
+                          </div>
+                        </CardContent>
+                      </CollapsibleContent>
                     </Card>
-                  </div>
+                  </Collapsible>
+                  
+                  {/* Keywords section - Expandable */}
+                  <Collapsible 
+                    open={keywordsExpanded} 
+                    onOpenChange={setKeywordsExpanded}
+                    className="mb-6"
+                  >
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className="text-xl font-pacifico">Keywords</CardTitle>
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            {keywordsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        </CollapsibleTrigger>
+                      </CardHeader>
+                      <CollapsibleContent>
+                        <CardContent>
+                          <KeyPhrases data={keywordResults} sourceDescription="BERT Analysis" />
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
                 </div>
               </TabsContent>
             </Tabs>
@@ -712,7 +887,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
       
       {/* Delete confirmation dialog */}
       <DeleteEntryConfirm 
-        open={deleteConfirmOpen} 
+        isOpen={deleteConfirmOpen} 
         onOpenChange={setDeleteConfirmOpen}
         onConfirmDelete={handleDeleteEntry}
       />
@@ -721,3 +896,4 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
 };
 
 export default EntriesView;
+

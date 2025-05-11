@@ -155,8 +155,11 @@ export const TextEmotionViewer = ({
 
     // Words to filter out - significantly reduced filtering, only the most common/basic words
     const wordsToFilter = filteringLevel === 'minimal' ? [
-      // Minimal filtering - only the most common articles and basic pronouns
-      'a', 'an', 'the', 'is', 'are', 'was', 'were'
+      // Minimal filtering - only articles, prepositions, conjunctions, and question words
+      'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'being', 'been',
+      'and', 'but', 'or', 'nor', 'for', 'yet', 'so',
+      'in', 'on', 'at', 'by', 'to', 'from', 'with', 'about', 'against', 'before', 'after',
+      'what', 'where', 'when', 'why', 'how', 'which', 'who', 'whom', 'whose', 'that'
     ] : [];
 
     // Split text into words while preserving whitespace and punctuation
@@ -246,7 +249,7 @@ export const TextEmotionViewer = ({
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-sm">
+            <p className="text-sm font-georgia">
               <strong>Emotion:</strong> {segment.emotion}
             </p>
           </TooltipContent>
@@ -284,7 +287,7 @@ export const TextEmotionViewer = ({
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-10 font-georgia">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Analyzing text with BERT...</p>
+          <p className="text-muted-foreground font-georgia">Analyzing text with BERT...</p>
         </CardContent>
       </Card>
     );
