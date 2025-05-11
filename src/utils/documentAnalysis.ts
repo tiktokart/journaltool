@@ -43,7 +43,7 @@ interface KeywordAnalysis {
   tone?: string;
   relatedConcepts?: string[];
   frequency?: number;
-  color?: string | [number, number, number]; // Updated to match how we use it
+  color?: string | [number, number, number] | number[]; // Updated to match accepted color formats
   weight?: number; // Added to support weight property
 }
 

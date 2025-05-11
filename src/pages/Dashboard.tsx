@@ -519,12 +519,63 @@ const Dashboard = () => {
     setIsWritePopupOpen(true);
   };
 
+  // Toggle view
+  const toggleView = () => {
+    if (isEntriesView) {
+      navigate('/dashboard');
+    } else {
+      navigate('/dashboard#entries');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F7F9FC]">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-6 relative">
         <VectorDecorations className="absolute inset-0 pointer-events-none opacity-30" type="home" />
+        
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-purple-900">My Wellness Journal</h1>
+          <div className="flex space-x-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleView}
+              className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
+            >
+              {isEntriesView ? 'Monthly View' : 'Entries View'}
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={shareJournalAnalysis}
+              className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportMonthlyAnalysis}
+              className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              Export Monthly Analysis
+            </Button>
+            
+            <Button 
+              size="sm"
+              onClick={openWritePopup}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Write
+            </Button>
+          </div>
+        </div>
         
         {isEntriesView ? (
           // Entries View
@@ -537,37 +588,6 @@ const Dashboard = () => {
         ) : (
           // Monthly View
           <>
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-purple-900">My Wellness Journal</h1>
-              <div className="flex space-x-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={shareJournalAnalysis}
-                  className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportMonthlyAnalysis}
-                  className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
-                >
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Export Monthly Analysis
-                </Button>
-                <Button 
-                  size="sm"
-                  onClick={openWritePopup}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Write
-                </Button>
-              </div>
-            </div>
-            
             {/* Add the new Happiness Infographic */}
             <HappinessInfographic />
             
@@ -627,9 +647,9 @@ const Dashboard = () => {
                       ))}
                     
                     {journalEntries.filter(entry => {
-                      const entryDate = new Date(entry.date);
-                      return isSameDay(entryDate, selectedDate);
-                    }).length === 0 && (
+                        const entryDate = new Date(entry.date);
+                        return isSameDay(entryDate, selectedDate);
+                      }).length === 0 && (
                       <div className="text-center py-8 text-gray-500">
                         <p>No journal entries for this date</p>
                         <Button 

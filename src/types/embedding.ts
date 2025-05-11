@@ -9,7 +9,7 @@ export interface Point {
   z?: number;
   position: number[]; // Made required to fix type error
   size?: number;
-  color?: string | [number, number, number] | number[]; // Updated to accept number[] as well
+  color?: string | number[] | [number, number, number]; // Updated to handle all color formats
   emotionalTone?: string; // The emotional tone associated with the point
   sentiment?: number; // Numeric sentiment score
   intensity?: number; // How strongly the emotion is expressed
