@@ -96,51 +96,141 @@ export const PdfExport = ({
         });
       }
       
+      // Content Overview
+      const sentimentTableEndY = (doc as any).lastAutoTable?.finalY || (yPos + 40);
+      if (sentimentTableEndY > 250) {
+        doc.addPage();
+        yPos = 20;
+      } else {
+        yPos = sentimentTableEndY + 10;
+      }
+      
+      doc.setFontSize(14);
+      doc.text("Content Overview", 20, yPos);
+      
+      // Get content overview from BERT analysis
+      let contentOverview = "No content overview available";
+      if (sentimentData.bertAnalysis && sentimentData.bertAnalysis.analysis) {
+        contentOverview = sentimentData.bertAnalysis.analysis;
+      } else if (sentimentData.summary) {
+        contentOverview = sentimentData.summary;
+      }
+      
+      doc.setFontSize(11);
+      doc.text(contentOverview, 20, yPos + 10, {
+        maxWidth: 170,
+      });
+      
+      // Emotional Actions section
+      let overviewEndY = yPos + 50;
+      if (overviewEndY > 250) {
+        doc.addPage();
+        overviewEndY = 20;
+      }
+      
+      doc.setFontSize(14);
+      doc.text("Emotional Actions", 20, overviewEndY);
+      
+      // Extract emotional keywords if available
+      const emotionalKeywords = sentimentData.bertAnalysis?.keywords
+        ?.filter((kw: any) => kw.tone && kw.tone !== "Neutral")
+        ?.map((kw: any) => [kw.word, kw.tone || "Unknown"]) || [];
+      
+      if (emotionalKeywords.length > 0) {
+        autoTable(doc, {
+          startY: overviewEndY + 5,
+          head: [["Word", "Emotion"]],
+          body: emotionalKeywords.slice(0, 10),
+        });
+      } else {
+        doc.setFontSize(11);
+        doc.text("No emotional keywords detected", 20, overviewEndY + 10);
+      }
+      
+      // Main Subject section
+      const emotionalTableEndY = (doc as any).lastAutoTable?.finalY || (overviewEndY + 20);
+      if (emotionalTableEndY > 250) {
+        doc.addPage();
+        yPos = 20;
+      } else {
+        yPos = emotionalTableEndY + 10;
+      }
+      
+      doc.setFontSize(14);
+      doc.text("Main Subject", 20, yPos);
+      
+      // Extract main subjects (entities) if available
+      if (sentimentData.entities && sentimentData.entities.length > 0) {
+        const mainSubjects = sentimentData.entities.map((entity: any) => [
+          entity.name,
+          entity.type || "Unknown",
+        ]);
+        
+        autoTable(doc, {
+          startY: yPos + 5,
+          head: [["Subject", "Type"]],
+          body: mainSubjects.slice(0, 5),
+        });
+      } else {
+        doc.setFontSize(11);
+        doc.text("No main subjects detected", 20, yPos + 10);
+      }
+      
+      // Full Text section
+      const subjectTableEndY = (doc as any).lastAutoTable?.finalY || (yPos + 20);
+      if (subjectTableEndY > 200) {
+        doc.addPage();
+        yPos = 20;
+      } else {
+        yPos = subjectTableEndY + 20;
+      }
+      
+      doc.setFontSize(14);
+      doc.text("Full Text", 20, yPos);
+      
+      const fullText = sentimentData.text || sentimentData.pdfText || "No text available";
+      
+      // Limit to first 1000 characters to avoid extremely large PDFs
+      const truncatedText = fullText.length > 1000 
+        ? fullText.substring(0, 1000) + "..." 
+        : fullText;
+      
+      doc.setFontSize(10);
+      doc.text(truncatedText, 20, yPos + 10, {
+        maxWidth: 170,
+      });
+      
       // Key Phrases
       if (sentimentData.keyPhrases && sentimentData.keyPhrases.length > 0) {
-        const distributionTableEndY = (doc as any).lastAutoTable?.finalY || (yPos + 40);
-        if (distributionTableEndY > 250) {
-          doc.addPage();
-          yPos = 20;
-        } else {
-          yPos = distributionTableEndY + 10;
-        }
-        
+        doc.addPage();
         doc.setFontSize(14);
-        doc.text("Key Phrases", 20, yPos);
+        doc.text("Key Phrases", 20, 20);
         
         const keyPhraseRows = sentimentData.keyPhrases.map((phrase: string) => [phrase]);
         
         autoTable(doc, {
-          startY: yPos + 5,
+          startY: 25,
           head: [["Phrase"]],
           body: keyPhraseRows.slice(0, 10), // Limit to 10 key phrases
         });
       }
       
-      // Entities
-      if (sentimentData.entities && sentimentData.entities.length > 0) {
-        const keyPhrasesTableEndY = (doc as any).lastAutoTable?.finalY || (yPos + 20);
-        if (keyPhrasesTableEndY > 250) {
-          doc.addPage();
-          yPos = 20;
-        } else {
-          yPos = keyPhrasesTableEndY + 10;
-        }
-        
+      // Timeline data - Create a visual representation
+      if (sentimentData.timeline && sentimentData.timeline.length > 0) {
+        doc.addPage();
         doc.setFontSize(14);
-        doc.text("Entities", 20, yPos);
+        doc.text("Sentiment Timeline", 20, 20);
         
-        const entityRows = sentimentData.entities.map((entity: any) => [
-          entity.name,
-          entity.type,
-          entity.sentiment ? (entity.sentiment * 10).toFixed(1) + "/10" : "N/A",
+        const timelineData = sentimentData.timeline.map((item: any) => [
+          item.time || "Unknown",
+          item.event || "No description",
+          (item.score * 10).toFixed(1) + "/10"
         ]);
         
         autoTable(doc, {
-          startY: yPos + 5,
-          head: [["Name", "Type", "Sentiment"]],
-          body: entityRows.slice(0, 10), // Limit to 10 entities
+          startY: 25,
+          head: [["Point", "Description", "Sentiment"]],
+          body: timelineData,
         });
       }
       
@@ -229,13 +319,13 @@ export const PdfExport = ({
   return (
     <Card className="border border-border shadow-md bg-white">
       <CardHeader>
-        <CardTitle>Export Analysis</CardTitle>
+        <CardTitle className="font-pacifico">Export Analysis</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col space-y-2">
           <Button
             onClick={exportToPdf}
-            className="w-full"
+            className="w-full font-georgia"
           >
             <FileDown className="mr-2 h-4 w-4" />
             Export to PDF
@@ -244,7 +334,7 @@ export const PdfExport = ({
           <Button
             onClick={addToJournalEntries}
             variant="outline"
-            className="w-full border-orange text-orange hover:bg-orange/10"
+            className="w-full border-orange text-orange hover:bg-orange/10 font-georgia"
           >
             <FileText className="mr-2 h-4 w-4" />
             Add to Journal Entries
@@ -253,7 +343,7 @@ export const PdfExport = ({
           <Button
             onClick={addToMonthlyReflections}
             variant="outline"
-            className="w-full border-orange text-orange hover:bg-orange/10"
+            className="w-full border-orange text-orange hover:bg-orange/10 font-georgia"
           >
             <Calendar className="mr-2 h-4 w-4" />
             Add to Monthly Reflections

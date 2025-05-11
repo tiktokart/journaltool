@@ -84,15 +84,15 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
   return (
     <Card className="border-0 shadow-md w-full bg-white">
       <CardHeader>
-        <CardTitle className="text-orange">{t("sentimentTimeline")}</CardTitle>
+        <CardTitle className="text-orange font-pacifico">Sentiment Timeline</CardTitle>
         {sourceDescription && (
-          <p className="text-sm text-muted-foreground">{sourceDescription}</p>
+          <p className="text-sm text-muted-foreground font-georgia">{sourceDescription}</p>
         )}
       </CardHeader>
       <CardContent>
         {!isDataValid || normalizedData.length === 0 ? (
           <div className="h-80 w-full flex items-center justify-center">
-            <p className="text-muted-foreground">{t("noDataAvailable")}</p>
+            <p className="text-muted-foreground font-georgia">{t("noDataAvailable")}</p>
           </div>
         ) : (
           <div className="h-80 w-full">
@@ -110,7 +110,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                 <XAxis 
                   dataKey="page" 
-                  label={{ value: t("sequencePoint"), position: 'insideBottom', offset: -10 }} 
+                  label={{ value: "sequencePoint", position: 'insideBottom', offset: -10 }} 
                   // Use time property for labels instead of just "Page X"
                   tickFormatter={(value) => {
                     const point = normalizedData.find(d => d.page === value);
@@ -126,14 +126,14 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                 />
                 <YAxis 
                   domain={[0, 1]} 
-                  label={{ value: t("sentimentScore"), position: 'insideLeft', offset: 5 }}
+                  label={{ value: "Sentiment Score", position: 'insideLeft', offset: 5 }}
                   ticks={[0, 0.2, 0.4, 0.6, 0.8, 1]}
                   width={40}
                 />
                 <Tooltip 
                   formatter={(value: number) => [
-                    `${t("score")}: ${value.toFixed(2)}`,
-                    t("sentiment")
+                    `Score: ${value.toFixed(2)}`,
+                    "Sentiment"
                   ]}
                   // Show time and event instead of just "Page X"
                   labelFormatter={(label) => {
@@ -150,19 +150,19 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   y={averageSentiment} 
                   stroke="#8884d8" 
                   strokeDasharray="3 3" 
-                  label={{ value: `${t("average")}: ${averageSentiment.toFixed(2)}`, position: 'right' }} 
+                  label={{ value: `Average: ${averageSentiment.toFixed(2)}`, position: 'right', className: "font-georgia" }} 
                 />
                 <ReferenceLine 
                   y={0.6} 
                   stroke="#27AE60" 
                   strokeDasharray="3 3" 
-                  label={{ value: t("positive"), position: 'left', fill: '#27AE60' }} 
+                  label={{ value: "Positive", position: 'left', fill: '#27AE60', className: "font-georgia" }} 
                 />
                 <ReferenceLine 
                   y={0.4} 
                   stroke="#E74C3C" 
                   strokeDasharray="3 3" 
-                  label={{ value: t("negative"), position: 'left', fill: '#E74C3C' }} 
+                  label={{ value: "Negative", position: 'left', fill: '#E74C3C', className: "font-georgia" }} 
                 />
                 <Area 
                   type="monotone" 
@@ -194,11 +194,11 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
             </ResponsiveContainer>
           </div>
         )}
-        <div className="mt-4 text-sm text-center text-muted-foreground">
+        <div className="mt-4 text-sm text-center text-muted-foreground font-georgia">
           {sourceDescription ? (
             <div className="flex items-center justify-center">
               <Info className="h-4 w-4 mr-1" />
-              {sourceDescription}
+              Analysis with BERT Model
             </div>
           ) : (
             t("timelineDescription")

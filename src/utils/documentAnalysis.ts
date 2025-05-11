@@ -6,6 +6,7 @@ import { extractKeyPhrases } from './keyPhraseExtraction';
 import { generateTimeline } from './timelineGeneration';
 import { generateEmbeddingPoints } from './embeddingGeneration';
 import { extractTextFromPdf } from './pdfExtraction';
+import { analyzeTextWithBert } from './bertIntegration';
 
 export const analyzePdfContent = async (file: File, pdfText: string) => {
   try {
@@ -35,6 +36,9 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
       .replace(/(\w)\.(\w)/g, '$1. $2') // Add space after periods between words
       .trim();
     
+    // Perform BERT analysis
+    const bertAnalysis = await analyzeTextWithBert(processedText);
+    
     // Generate summary with enhanced contextual analysis
     const summary = await generateSummary(processedText);
     
@@ -60,6 +64,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     console.log(`- Key phrases: ${keyPhrases.length}`);
     console.log(`- Entities: ${entities.length}`);
     console.log(`- Timeline entries: ${timeline.length}`);
+    console.log(`- BERT keywords: ${bertAnalysis.keywords?.length || 0}`);
     
     // Make the data available on window.documentEmbeddingPoints for other components
     window.documentEmbeddingPoints = embeddingPoints;
@@ -78,6 +83,7 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
       timeline,
       entities,
       keyPhrases,
+      bertAnalysis, // Add the BERT analysis to the results
       sourceDescription: "Analysis with BERT Model",
       // Add timestamps to help with caching/refreshing
       timestamp: new Date().toISOString()

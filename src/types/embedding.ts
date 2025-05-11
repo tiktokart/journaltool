@@ -1,30 +1,19 @@
 
 export interface Point {
-  id: string;
-  word: string;           
-  sentiment: number;
-  position: [number, number, number];
-  color: [number, number, number];
-  keywords?: string[];
-  emotionalTone?: string;
-  text?: string; // Add text field compatibility
-  relationships?: Array<{ id: string; strength: number; word?: string }>;
-  frequency?: number; // Add this property for word frequency tracking
-}
-
-export interface DocumentEmbeddingProps {
-  points?: Point[];
-  onPointClick?: (point: Point | null) => void;
-  isInteractive?: boolean;
-  depressedJournalReference?: boolean;  
-  focusOnWord?: string | null;
-  selectedPoint?: Point | null; // Add selected point property
-  selectedPointId?: string; // Add this property for tracking selected point by ID
-  onComparePoint?: (point1: Point, point2: Point) => void;  
-  onSearchSelect?: (point: Point) => void;  
-  sourceDescription?: string;
-  onResetView?: () => void;
-  visibleClusterCount?: number;  // Controls the number of emotional clusters displayed
-  showAllPoints?: boolean;      // Added to control showing all points regardless of cluster
-  wordCount?: number;           // Add a prop to display the total word count
+  word?: string;
+  label?: string;
+  cluster?: number;
+  group?: string;
+  x?: number;
+  y?: number;
+  z?: number;
+  size?: number;
+  color?: string | [number, number, number]; // Accepts either string or RGB array
+  emotionalTone?: string; // The emotional tone associated with the point
+  sentiment?: number; // Numeric sentiment score
+  intensity?: number; // How strongly the emotion is expressed
+  selected?: boolean; // Whether the point is currently selected
+  hidden?: boolean; // Whether the point should be hidden
+  distance?: number; // Distance from selected point (for comparison)
+  [key: string]: any; // Allow for additional properties
 }
