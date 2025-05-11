@@ -1,337 +1,300 @@
+
 import { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
-import { Point } from "@/types/embedding";
-import { analyzePdfContent } from "@/utils/documentAnalysis";
-import { v4 as uuidv4 } from 'uuid';
-import PerfectLifePlan from "@/components/dashboard/PerfectLifePlan";
-import { MonthlyReflections } from "@/components/MonthlyReflections";
-import { JournalInput } from "@/components/JournalInput";
-import { JournalCache } from "@/components/JournalCache";
-import DocumentAnalysisPanel from "@/components/dashboard/DocumentAnalysisPanel";
-import AnalysisResults from "@/components/dashboard/AnalysisResults";
+import { Card } from "@/components/ui/card";
+import AskAI from "@/components/AskAI";
+import MonthlyCalendar from "@/components/MonthlyCalendar";
+import EntriesView from "@/components/EntriesView";
+import VectorDecorations from "@/components/VectorDecorations";
+import { format, isSameDay } from "date-fns";
 
-const Dashboard = () => {
-  const [file, setFile] = useState<File | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [sentimentData, setSentimentData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("embedding");
-  const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
-  const [analysisComplete, setAnalysisComplete] = useState(false);
-  const [uniqueWords, setUniqueWords] = useState<string[]>([]);
-  const [pdfText, setPdfText] = useState<string>("");
-  const [selectedWord, setSelectedWord] = useState<string | null>(null);
-  const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
-  const [visibleClusterCount, setVisibleClusterCount] = useState(8);
-  const [journalText, setJournalText] = useState<string>("");
-  const [monthlyReflectionText, setMonthlyReflectionText] = useState<string>("");
-  const [refreshJournalTrigger, setRefreshJournalTrigger] = useState(0);
-  const [refreshReflectionsTrigger, setRefreshReflectionsTrigger] = useState(0);
+// Rename PerfectLifePlan to Goals
+const Goals = () => {
+  const [dailyGoals, setDailyGoals] = useState<string>("");
+  const [weeklyGoals, setWeeklyGoals] = useState<string>("");
+  const [monthlyGoals, setMonthlyGoals] = useState<string>("");
 
-  // Callback functions for triggering refreshes
-  const handleJournalEntryAdded = useCallback(() => {
-    setRefreshJournalTrigger(prev => prev + 1);
-  }, []);
-  
-  const handleMonthlyReflectionAdded = useCallback(() => {
-    setRefreshReflectionsTrigger(prev => prev + 1);
+  // Load goals from local storage on component mount
+  useEffect(() => {
+    try {
+      const storedDailyGoals = localStorage.getItem('perfectLifeDailyPlan');
+      const storedWeeklyGoals = localStorage.getItem('perfectLifeWeeklyPlan');
+      const storedMonthlyGoals = localStorage.getItem('perfectLifeMonthlyPlan');
+      
+      if (storedDailyGoals) setDailyGoals(storedDailyGoals);
+      if (storedWeeklyGoals) setWeeklyGoals(storedWeeklyGoals);
+      if (storedMonthlyGoals) setMonthlyGoals(storedMonthlyGoals);
+    } catch (error) {
+      console.error('Error loading goals from storage:', error);
+    }
   }, []);
 
-  const handleFileUpload = (files: File[], extractedText?: string) => {
-    if (files && files.length > 0) {
-      setFile(files[0]);
-      setPdfText(extractedText || "");
-      toast.success(`File "${files[0].name}" uploaded successfully`);
-      
-      if (extractedText && extractedText.length > 0) {
-        const wordCount = extractedText.split(/\s+/).length;
-        toast.info(`Extracted ${wordCount} words from PDF for analysis`);
-      }
-      
-      if (sentimentData) {
-        setSentimentData(null);
-        setSelectedPoint(null);
-        setAnalysisComplete(false);
-      }
-    }
-  };
-
-  const handleJournalEntrySubmit = (text: string) => {
-    // Set the text as the current PDF text
-    setPdfText(text);
-    setJournalText(text);
-    
-    // Create a virtual "file" for the journal entry
-    const fileName = `Journal_Entry_${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
-    setFile(new File([text], fileName, { type: "text/plain" }));
-    
-    // Clear existing results
-    if (sentimentData) {
-      setSentimentData(null);
-      setSelectedPoint(null);
-      setAnalysisComplete(false);
-    }
-    
-    // Save to local storage
+  // Save goals to local storage
+  const handleSaveGoals = () => {
     try {
-      const entry = {
-        id: uuidv4(),
-        text: text,
-        date: new Date().toISOString()
-      };
-      
-      const storedEntries = localStorage.getItem('journalEntries');
-      const entries = storedEntries ? JSON.parse(storedEntries) : [];
-      entries.push(entry);
-      
-      localStorage.setItem('journalEntries', JSON.stringify(entries));
-      
-      // Dispatch a storage event for other components to detect the change
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'journalEntries',
-        newValue: JSON.stringify(entries)
-      }));
-      
-      toast.success("Journal entry saved");
-      
-      // Trigger refresh for journal cache
-      setRefreshJournalTrigger(prev => prev + 1);
+      localStorage.setItem('perfectLifeDailyPlan', dailyGoals);
+      localStorage.setItem('perfectLifeWeeklyPlan', weeklyGoals);
+      localStorage.setItem('perfectLifeMonthlyPlan', monthlyGoals);
+      toast.success("Goals saved successfully");
     } catch (error) {
-      console.error('Error saving journal entry:', error);
-      toast.error("Failed to save journal entry");
-    }
-  };
-
-  const handleAddToMonthlyReflection = (text: string) => {
-    setMonthlyReflectionText(text);
-    
-    try {
-      const reflection = {
-        id: uuidv4(),
-        text: text,
-        date: new Date().toISOString()
-      };
-      
-      const storedReflections = localStorage.getItem('monthlyReflections');
-      const reflections = storedReflections ? JSON.parse(storedReflections) : [];
-      reflections.push(reflection);
-      
-      localStorage.setItem('monthlyReflections', JSON.stringify(reflections));
-      
-      // Trigger refresh for monthly reflections
-      setRefreshReflectionsTrigger(prev => prev + 1);
-    } catch (error) {
-      console.error('Error adding to monthly reflections:', error);
-    }
-  };
-
-  const analyzeSentiment = async () => {
-    if (!file && !pdfText) {
-      toast.error("Please upload a PDF file or enter journal text first");
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setAnalysisComplete(false);
-    
-    try {
-      toast.info("Starting document analysis with BERT...");
-      const results = await analyzePdfContent(file!, pdfText);
-      console.log("BERT Analysis results:", results);
-      
-      // Add pdfText to the results object for PDF export and ensure text property
-      const resultsWithText = {
-        ...results,
-        pdfText: pdfText,
-        text: pdfText || results.text // Ensure we have text property available
-      };
-      
-      setSentimentData(resultsWithText);
-      setFilteredPoints(results.embeddingPoints || []);
-      setAnalysisComplete(true);
-      
-      const words = results.embeddingPoints
-        .map((point: Point) => point.word)
-        .filter((word: string, index: number, self: string[]) => 
-          word && self.indexOf(word) === index
-        )
-        .sort();
-      
-      setUniqueWords(words);
-      
-      // Make sure points are exposed to window for visualization connection
-      window.documentEmbeddingPoints = results.embeddingPoints;
-      
-      if (results.pdfTextLength > 0) {
-        toast.success(`BERT analysis completed! Analyzed ${results.pdfTextLength} characters of text.`);
-      } else {
-        toast.success("BERT document analysis completed! All tabs are now available.");
-      }
-    } catch (error) {
-      toast.error("Error analyzing document with BERT");
-      console.error("BERT analysis error:", error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const handlePointClick = (point: Point | null) => {
-    if (!point) {
-      setSelectedPoint(null);
-      setSelectedWord(null);
-      setConnectedPoints([]);
-      return;
-    }
-    
-    setSelectedPoint(point);
-    setSelectedWord(point.word);
-    
-    if (point.relationships && point.relationships.length > 0) {
-      const sortedRelationships = [...point.relationships]
-        .sort((a, b) => b.strength - a.strength)
-        .slice(0, 3);
-        
-      const connected = sentimentData.embeddingPoints
-        .filter((p: Point) => sortedRelationships.some(rel => rel.id === p.id));
-      
-      setConnectedPoints(connected);
-    } else {
-      setConnectedPoints([]);
-    }
-    
-    toast(`Selected: "${point.word}" (${point.emotionalTone || 'Neutral'})`);
-  };
-
-  const handleResetVisualization = () => {
-    if (window.documentEmbeddingActions && window.documentEmbeddingActions.resetView) {
-      window.documentEmbeddingActions.resetView();
-      toast.info("Visualization reset to default view");
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    setSelectedWord(null);
-  };
-
-  const calculateRelationship = (point1: Point, point2: Point) => {
-    if (!point1 || !point2) return null;
-    
-    const distance = Math.sqrt(
-      Math.pow(point1.position[0] - point2.position[0], 2) +
-      Math.pow(point1.position[1] - point2.position[1], 2) +
-      Math.pow(point1.position[2] - point2.position[2], 2)
-    );
-    
-    const spatialSimilarity = Math.max(0, 1 - (distance / 40));
-    
-    const sentimentDiff = Math.abs(point1.sentiment - point2.sentiment);
-    const sentimentSimilarity = 1 - sentimentDiff;
-    
-    const sameEmotionalGroup = 
-      (point1.emotionalTone || "Neutral") === (point2.emotionalTone || "Neutral");
-    
-    const point1Keywords = point1.keywords || [];
-    const point2Keywords = point2.keywords || [];
-    const sharedKeywords = point1Keywords.filter(k => point2Keywords.includes(k));
-    
-    return {
-      spatialSimilarity,
-      sentimentSimilarity,
-      sameEmotionalGroup,
-      sharedKeywords
-    };
-  };
-
-  const handleCachedEntrySelect = (text: string) => {
-    setPdfText(text);
-    setJournalText(text);
-    
-    // Create a virtual "file" for the journal entry
-    const fileName = `Journal_Entry_${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
-    setFile(new File([text], fileName, { type: "text/plain" }));
-    
-    // Clear existing results
-    if (sentimentData) {
-      setSentimentData(null);
-      setSelectedPoint(null);
-      setAnalysisComplete(false);
+      console.error('Error saving goals to storage:', error);
+      toast.error("Failed to save goals");
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-yellow">
+    <Card className="rounded-xl overflow-hidden shadow-sm">
+      <div className="p-4 bg-green-50 border-b border-green-100">
+        <h2 className="text-xl font-semibold text-black">Goals</h2>
+      </div>
+      <div className="p-4">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-black">Daily</label>
+            <textarea 
+              className="w-full p-3 border border-green-200 rounded-md min-h-[60px]"
+              placeholder="What are your goals for today?"
+              value={dailyGoals}
+              onChange={(e) => setDailyGoals(e.target.value)}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1 text-black">Weekly</label>
+            <textarea 
+              className="w-full p-3 border border-green-200 rounded-md min-h-[60px]"
+              placeholder="What do you want to accomplish this week?"
+              value={weeklyGoals}
+              onChange={(e) => setWeeklyGoals(e.target.value)}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1 text-black">Monthly</label>
+            <textarea 
+              className="w-full p-3 border border-green-200 rounded-md min-h-[60px]"
+              placeholder="What are your goals for this month?"
+              value={monthlyGoals}
+              onChange={(e) => setMonthlyGoals(e.target.value)}
+            />
+          </div>
+          
+          <button 
+            className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+            onClick={handleSaveGoals}
+          >
+            Save Goals
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+// Import MonthlyReflections and JournalAnalysisSection (already exists)
+import { MonthlyReflections } from "@/components/MonthlyReflections";
+import JournalAnalysisSection from "@/components/reflections/JournalAnalysisSection";
+
+interface JournalEntry {
+  id: string;
+  text: string;
+  date: string;
+}
+
+const Dashboard = () => {
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isEntriesView, setIsEntriesView] = useState(false);
+  
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Load journal entries from local storage
+  useEffect(() => {
+    try {
+      const storedEntries = localStorage.getItem('journalEntries');
+      if (storedEntries) {
+        const entries: JournalEntry[] = JSON.parse(storedEntries);
+        setJournalEntries(entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      }
+    } catch (error) {
+      console.error('Error loading journal entries:', error);
+    }
+  }, [refreshTrigger]);
+
+  // Handle storage events (when journal entries change)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setRefreshTrigger(prev => prev + 1);
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Check if we should show the entries view based on URL hash
+  useEffect(() => {
+    setIsEntriesView(location.hash === "#entries");
+  }, [location.hash]);
+
+  // Handle date selection in calendar
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    
+    // Find entries for the selected date
+    const entriesForDate = journalEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return isSameDay(entryDate, date);
+    });
+    
+    if (entriesForDate.length > 0) {
+      setSelectedEntry(entriesForDate[0]);
+    } else {
+      setSelectedEntry(null);
+    }
+  };
+
+  // Generate synthetic timeline data for JournalAnalysisSection
+  const generateTimelineData = () => {
+    return journalEntries.map(entry => {
+      // Create a simple mapping from entry text to sentiment value
+      const textLength = entry.text.length;
+      // Generate a sentiment between -0.8 and 0.8 based on text length
+      const sentiment = Math.sin(textLength * 0.01) * 0.8;
+      
+      return {
+        date: new Date(entry.date),
+        sentiment: sentiment,
+        text: entry.text.substring(0, 100) + (entry.text.length > 100 ? "..." : "")
+      };
+    }).sort((a, b) => a.date.getTime() - b.date.getTime());
+  };
+
+  // Determine sentiment change direction
+  const getOverallSentimentChange = () => {
+    if (journalEntries.length < 2) return "neutral";
+    
+    const timelineData = generateTimelineData();
+    if (timelineData.length < 2) return "neutral";
+    
+    const firstSentiment = timelineData[0].sentiment;
+    const lastSentiment = timelineData[timelineData.length - 1].sentiment;
+    
+    if (lastSentiment > firstSentiment + 0.1) return "positive";
+    if (lastSentiment < firstSentiment - 0.1) return "negative";
+    return "neutral";
+  };
+
+  // Calculate average sentiment
+  const getAverageSentiment = () => {
+    const timelineData = generateTimelineData();
+    if (timelineData.length === 0) return 0;
+    
+    const total = timelineData.reduce((sum, item) => sum + item.sentiment, 0);
+    return total / timelineData.length;
+  };
+
+  // Helper function to get sentiment color
+  const getSentimentColor = (sentiment: number) => {
+    if (sentiment > 0.3) return "#27AE60"; // Positive
+    if (sentiment < -0.3) return "#E74C3C"; // Negative
+    return "#3498DB"; // Neutral
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-green">
       <Header />
       
-      <main className="flex-grow container mx-auto max-w-7xl px-4 py-8">
-        <div className="flex flex-col gap-8">
-          {/* Perfect Life and Monthly Reflections - Side by Side */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <PerfectLifePlan />
-            <div className="bg-white p-4 rounded-lg">
-              <MonthlyReflections 
-                journalText={monthlyReflectionText} 
-                refreshTrigger={refreshReflectionsTrigger}
-                journalRefreshTrigger={refreshJournalTrigger}
-              />
-            </div>
-          </div>
-          
-          {/* Journal Input Section */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white p-4 rounded-lg">
-              <JournalInput 
-                onJournalEntrySubmit={handleJournalEntrySubmit}
-                onAddToMonthlyReflection={handleAddToMonthlyReflection}
-              />
-            </div>
-            <div className="bg-white p-4 rounded-lg">
-              <JournalCache 
-                onSelectEntry={handleCachedEntrySelect} 
-                refreshTrigger={refreshJournalTrigger}
-              />
-            </div>
-          </div>
-          
-          {/* Document Analysis Section */}
-          <DocumentAnalysisPanel
-            file={file}
-            pdfText={pdfText}
-            isAnalyzing={isAnalyzing}
-            onFileUpload={handleFileUpload}
-            onAnalyzeClick={analyzeSentiment}
-          />
-
-          {/* Analysis Results Section */}
-          {sentimentData && (
-            <AnalysisResults
-              sentimentData={sentimentData}
-              pdfText={pdfText}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              selectedPoint={selectedPoint}
-              setSelectedPoint={setSelectedPoint}
-              selectedWord={selectedWord}
-              setSelectedWord={setSelectedWord}
-              filteredPoints={filteredPoints}
-              setFilteredPoints={setFilteredPoints}
-              uniqueWords={uniqueWords}
-              connectedPoints={connectedPoints}
-              setConnectedPoints={setConnectedPoints}
-              visibleClusterCount={visibleClusterCount}
-              setVisibleClusterCount={setVisibleClusterCount}
-              handlePointClick={handlePointClick}
-              handleResetVisualization={handleResetVisualization}
-              handleClearSearch={handleClearSearch}
-              calculateRelationship={calculateRelationship}
-              onJournalEntryAdded={handleJournalEntryAdded}
-              onMonthlyReflectionAdded={handleMonthlyReflectionAdded}
+      <main className="flex-grow container mx-auto max-w-7xl px-4 py-6 relative">
+        <VectorDecorations className="absolute inset-0 pointer-events-none" />
+        
+        {isEntriesView ? (
+          // Entries View
+          <div className="bg-white rounded-xl overflow-hidden shadow-md h-[calc(100vh-140px)]">
+            <EntriesView 
+              entries={journalEntries}
+              onSelectEntry={setSelectedEntry}
             />
-          )}
+          </div>
+        ) : (
+          // Monthly View
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              <MonthlyCalendar 
+                onSelectDate={handleDateSelect}
+                journalEntries={journalEntries}
+              />
+              
+              <Card className="rounded-xl overflow-hidden shadow-sm">
+                <div className="p-4 bg-green-50 border-b border-green-100">
+                  <h2 className="text-xl font-semibold text-black">Journal Entries</h2>
+                  <p className="text-sm text-gray-600">
+                    {format(selectedDate, 'MMMM d, yyyy')}
+                  </p>
+                </div>
+                <div className="p-4">
+                  {journalEntries
+                    .filter(entry => {
+                      const entryDate = new Date(entry.date);
+                      return isSameDay(entryDate, selectedDate);
+                    })
+                    .map(entry => (
+                      <div key={entry.id} className="mb-4 last:mb-0">
+                        <div className="text-xs text-gray-500 mb-1">
+                          {format(new Date(entry.date), 'h:mm a')}
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <p className="text-sm line-clamp-5">{entry.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                  
+                  {journalEntries.filter(entry => {
+                    const entryDate = new Date(entry.date);
+                    return isSameDay(entryDate, selectedDate);
+                  }).length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      No journal entries for this date
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+            
+            {/* Right Column */}
+            <div className="space-y-6">
+              <Goals />
+              
+              <MonthlyReflections 
+                journalText=""
+                refreshTrigger={refreshTrigger}
+                journalRefreshTrigger={refreshTrigger}
+              />
+              
+              <JournalAnalysisSection 
+                journalEntries={journalEntries}
+                timelineData={generateTimelineData()}
+                overallSentimentChange={getOverallSentimentChange()}
+                averageSentiment={getAverageSentiment()}
+                getSentimentColor={getSentimentColor}
+                refreshTrigger={refreshTrigger}
+              />
+            </div>
+          </div>
+        )}
+        
+        {/* Ask AI Section at the bottom */}
+        <div className="mt-6">
+          <AskAI 
+            journalText={journalEntries.map(entry => entry.text).join(" ")}
+          />
         </div>
       </main>
     </div>

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, BarChart2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -36,21 +36,21 @@ const JournalAnalysisSection = ({
       <Collapsible
         open={isAnalysisOpen}
         onOpenChange={setIsAnalysisOpen}
-        className="border border-border rounded-md"
+        className="border border-border rounded-xl shadow-sm overflow-hidden"
       >
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
-            className="flex w-full items-center justify-between p-4"
+            className="flex w-full items-center justify-between p-4 bg-green-50 hover:bg-green-100"
           >
             <div className="flex items-center">
-              <BarChart2 className="h-5 w-5 mr-2 text-orange" />
-              <span className="font-semibold">Journal Analysis Summary</span>
+              <BarChart2 className="h-5 w-5 mr-2 text-green-600" />
+              <span className="font-semibold">Latent Emotional Analysis</span>
             </div>
             <ChevronRight className={`h-5 w-5 transition-transform ${isAnalysisOpen ? 'rotate-90' : ''}`} />
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="p-4 bg-muted/20">
+        <CollapsibleContent className="p-4 bg-white">
           {journalEntries.length < 2 ? (
             <div className="text-center py-4 text-black">
               <p>Need at least two journal entries to analyze trends.</p>

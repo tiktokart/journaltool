@@ -1,3 +1,4 @@
+
 body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -17,17 +18,17 @@ body {
   background-color: #E74C3C;
 }
 
-.bg-yellow {
-  background-color: #f6df60;
+.bg-green {
+  background-color: #F2FCE2; /* Soft green as primary color */
 }
 
-.bg-yellow-soft {
-  background-color: #fef7cd;
+.bg-green-soft {
+  background-color: #e8f7d9;
 }
 
 /* Orange color for buttons and accents */
 .bg-orange {
-  background-color: #e56e00;
+  background-color: #4CAF50; /* Changed to green */
 }
 
 .text-truncate {
@@ -87,7 +88,7 @@ body {
 
 /* Color for emotional tones in visualization */
 .emotional-tone-yellow {
-  color: #f6df60;
+  color: #F2FCE2;
 }
 
 /* Bold text for life plan sections */
@@ -103,11 +104,6 @@ body {
   border: 1px solid rgba(200, 200, 200, 0.2);
 }
 
-/* Gray mode style - Header kept the same */
-.gray-mode header.bg-yellow {
-  background-color: #f6df60;
-}
-
 /* Wave Animation Styles */
 .wave {
   position: absolute;
@@ -115,7 +111,7 @@ body {
   height: 100%;
   opacity: 0.6;
   left: 0;
-  background: linear-gradient(to bottom, transparent 70%, rgba(30, 174, 219, 0.5) 100%);
+  background: linear-gradient(to bottom, transparent 70%, rgba(76, 175, 80, 0.5) 100%);
 }
 
 .wave1 {
@@ -153,8 +149,90 @@ body {
   }
 }
 
-/* Switch Override for Gray Mode */
-.gray-mode [data-state="checked"].bg-\[#C8C8C9\] {
-  background-color: #C8C8C9;
-  box-shadow: 0 0 5px rgba(150, 150, 150, 0.7);
+/* Journal card styles */
+.journal-card {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.journal-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Calendar day styles */
+.calendar-day {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-day:hover {
+  background-color: #e8f7d9;
+}
+
+.calendar-day.has-entry {
+  background-color: #4CAF50;
+  color: white;
+  font-weight: 500;
+}
+
+.calendar-day.today {
+  border: 2px solid #4CAF50;
+  font-weight: bold;
+}
+
+/* Vector decoration styles */
+.vector-wave {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+.vector-circle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vector-shape {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Journal entry writing popup styles */
+.journal-popup {
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Ask AI section styles */
+.ask-ai-section {
+  border-radius: 16px;
+  background-color: #f9f9f9;
+  border: 1px solid #eaeaea;
+}
+
+.ask-ai-question {
+  background-color: #F2FCE2;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.ask-ai-answer {
+  background-color: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
 }

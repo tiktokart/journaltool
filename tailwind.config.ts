@@ -71,16 +71,19 @@ export default {
           negative: '#E74C3C',
         },
         
-        // Updated theme colors - changed to use white instead of purple/lavender
-        yellow: {
-          DEFAULT: '#f6df60',
-          light: '#f8e680',
-          dark: '#e6cf50',
-        },
-        orange: {
-          DEFAULT: '#f57e00',
-          light: '#ff9e20',
-          dark: '#e56e00',
+        // Updated theme colors - changed from yellow to green
+        green: {
+          DEFAULT: '#F2FCE2', // Light green
+          50: '#F2FCE2',
+          100: '#e8f7d9',
+          200: '#d1eeb3',
+          300: '#b9e48d',
+          400: '#a2db67',
+          500: '#8bd141',
+          600: '#6fa734',
+          700: '#527d27',
+          800: '#35541a',
+          900: '#182a0d',
         }
 			},
 			borderRadius: {
