@@ -168,11 +168,15 @@ const Dashboard = () => {
       const sentiment = Math.sin(textLength * 0.01) * 0.8;
       
       return {
-        date: new Date(entry.date),
+        date: format(new Date(entry.date), 'MMM dd'),
         sentiment: sentiment,
         text: entry.text.substring(0, 100) + (entry.text.length > 100 ? "..." : "")
       };
-    }).sort((a, b) => a.date.getTime() - b.date.getTime());
+    }).sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateA.getTime() - dateB.getTime();
+    });
   };
 
   // Determine sentiment change direction

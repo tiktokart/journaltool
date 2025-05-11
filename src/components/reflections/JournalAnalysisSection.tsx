@@ -88,7 +88,7 @@ const JournalAnalysisSection = ({
                         <h4 className="font-medium mb-2">Overview</h4>
                         <p className="text-sm">
                           Your overall emotional state this month has been {overallSentimentChange.includes("positive") ? "positive" : 
-                          overallSentimentChange.includes("negative") ? "negative" : "neutral"} with 
+                          overallSentimentChange.includes("negative") ? "negative" : "neutral"} with {" "}
                           {timelineData.length} recorded emotional data points.
                         </p>
                       </div>
