@@ -8,6 +8,7 @@ export interface Point {
   keywords?: string[];
   emotionalTone?: string;
   relationships?: Array<{ id: string; strength: number; word?: string }>;
+  frequency?: number; // Add this property for word frequency tracking
 }
 
 export interface DocumentEmbeddingProps {
@@ -15,7 +16,9 @@ export interface DocumentEmbeddingProps {
   onPointClick?: (point: Point | null) => void;
   isInteractive?: boolean;
   depressedJournalReference?: boolean;  
-  focusOnWord?: string | null;         
+  focusOnWord?: string | null;
+  selectedPoint?: Point | null; // Add selected point property
+  selectedPointId?: string; // Add this property for tracking selected point by ID
   onComparePoint?: (point1: Point, point2: Point) => void;  
   onSearchSelect?: (point: Point) => void;  
   sourceDescription?: string;

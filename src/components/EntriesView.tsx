@@ -131,7 +131,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
       const analysis = await analyzeTextWithBert(entry.text);
       if (analysis && analysis.keywords && analysis.keywords.length > 0) {
         // If BERT provides keywords, use them
-        const points = analysis.keywords.map((keyword, index) => {
+        const points = analysis.keywords.map((keyword: any, index: number) => {
           // Generate positions for 3D visualization
           const x = Math.sin(index) * 5;
           const y = Math.cos(index * 0.5) * 5;
@@ -140,13 +140,13 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
           return {
             id: `e-${keyword.word}-${index}`,
             word: keyword.word,
-            position: [x, y, z],
+            position: [x, y, z] as [number, number, number],
             sentiment: keyword.sentiment || 0.5,
             emotionalTone: keyword.tone || 'Neutral',
             keywords: keyword.relatedConcepts || [],
-            color: keyword.color || [0.5, 0.5, 0.5],
+            color: keyword.color || [0.5, 0.5, 0.5] as [number, number, number],
             frequency: keyword.frequency || 1
-          };
+          } as Point;
         });
         
         setEmbeddingPoints(points);
@@ -166,7 +166,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
     
     // Create a mapping of word to frequency count
     const wordCounts: Record<string, number> = {};
-    words.forEach(word => {
+    words.forEach((word: string) => {
       const cleanWord = word.replace(/[^\w]/g, '').toLowerCase();
       if (cleanWord.length > 3) {
         wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
@@ -177,7 +177,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
     const emotionalTones = ['Joy', 'Sadness', 'Anxiety', 'Contentment', 'Confusion', 'Anger', 'Fear', 'Surprise'];
     
     limitedWords.forEach((word, index) => {
-      const cleanWord = word.replace(/[^\w]/g, '');
+      // Ensure word is a string before calling replace
+      const wordStr = String(word);
+      const cleanWord = wordStr.replace(/[^\w]/g, '');
       if (cleanWord.length <= 3) return;
       
       // Generate hash based on the word
@@ -210,7 +212,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
       }
       
       // Create color based on emotional tone
-      let color;
+      let color: [number, number, number];
       switch(emotionalTone) {
         case 'Joy':
           color = [1, 0.9, 0.4]; // Yellow
@@ -255,7 +257,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
     setEmbeddingPoints(points);
   };
   
-  const handlePointSelection = (point: Point) => {
+  const handlePointSelection = (point: Point | null) => {
     setSelectedPoint(point);
   };
   
@@ -359,7 +361,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
                   points={embeddingPoints} 
                   isInteractive={true} 
                   onPointClick={handlePointSelection}
-                  selectedPointId={selectedPoint?.id}
+                  selectedPoint={selectedPoint}
                   depressedJournalReference={false}
                 />
               </div>
@@ -396,18 +398,18 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
                   <h4 className="font-medium text-sm mb-2">Top Words</h4>
                   <div className="flex flex-wrap gap-2">
                     {embeddingPoints
-                      .sort((a, b) => (b.frequency || 1) - (a.frequency || 1))
+                      .sort((a, b) => ((b.frequency || 1) - (a.frequency || 1)))
                       .slice(0, 10)
                       .map(point => (
                         <div 
                           key={point.id} 
                           className="px-2 py-1 bg-gray-100 rounded-full text-xs cursor-pointer hover:bg-gray-200"
-                          onClick={() => setSelectedPoint(point)}
+                          onClick={() => handlePointSelection(point)}
                           style={{
                             backgroundColor: `rgba(${Math.round(point.color[0] * 255)}, ${Math.round(point.color[1] * 255)}, ${Math.round(point.color[2] * 255)}, 0.3)`,
                           }}
                         >
-                          {point.word}{point.frequency > 1 ? ` (${point.frequency})` : ''}
+                          {point.word}{point.frequency && point.frequency > 1 ? ` (${point.frequency})` : ''}
                         </div>
                       ))}
                   </div>
