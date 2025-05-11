@@ -1,80 +1,146 @@
 
-import React from "react";
+import React from 'react';
 
 interface VectorDecorationsProps {
-  type?: "home" | "dashboard";
   className?: string;
 }
 
-const VectorDecorations: React.FC<VectorDecorationsProps> = ({ 
-  type = "dashboard", 
-  className = "" 
-}) => {
-  if (type === "home") {
-    return (
-      <div className={`${className} relative w-full h-full overflow-hidden`}>
-        {/* Top left decoration */}
-        <div className="vector-circle absolute top-10 left-10 w-64 h-64 bg-green-100 opacity-40" />
-        
-        {/* Top right wave */}
-        <div className="vector-wave absolute top-0 right-0 w-96 h-64">
-          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-            <path 
-              fill="#F2FCE2" 
-              d="M48.2,-59.2C62.6,-51.4,74.9,-36.8,77.5,-20.8C80.1,-4.7,73,12.8,63.7,27.8C54.4,42.9,43,55.5,28.7,63.1C14.5,70.7,-2.5,73.2,-19.2,69.5C-35.9,65.9,-52.3,56.1,-62.9,41.3C-73.5,26.6,-78.3,6.9,-74.5,-10.8C-70.6,-28.6,-58.2,-44.3,-43.2,-52C-28.3,-59.7,-10.9,-59.4,4.7,-65.1C20.2,-70.8,38.7,-82.5,48.2,-59.2Z" 
-              transform="translate(100 100)" 
-            />
-          </svg>
-        </div>
-        
-        {/* Bottom left shape */}
-        <div className="vector-shape absolute bottom-10 left-20">
-          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="60" cy="60" r="60" fill="#e8f7d9" />
-            <circle cx="60" cy="60" r="45" stroke="#4CAF50" strokeWidth="2" fill="none" />
-            <circle cx="60" cy="60" r="30" fill="#F2FCE2" />
-          </svg>
-        </div>
-        
-        {/* Bottom right decoration */}
-        <div className="vector-wave absolute bottom-0 right-20">
-          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-64 h-64">
-            <path 
-              fill="#4CAF5050" 
-              d="M34.6,-47.5C47.3,-35.7,61.8,-28.2,65.4,-17.2C69,-6.2,61.8,8.3,54,21.3C46.1,34.3,37.7,45.8,26.4,51.9C15.1,57.9,0.9,58.6,-12.9,56.1C-26.8,53.7,-40.4,48.1,-49.4,37.9C-58.3,27.6,-62.6,12.7,-63,-2.7C-63.5,-18.2,-60.1,-34.3,-50.4,-46.4C-40.7,-58.5,-24.8,-66.7,-9.9,-65.9C5,-65,17.9,-55.3,34.6,-47.5Z" 
-              transform="translate(100 100)" 
-            />
-          </svg>
-        </div>
-      </div>
-    );
-  }
-  
-  // Dashboard decorations
+const VectorDecorations: React.FC<VectorDecorationsProps> = ({ className = '' }) => {
   return (
-    <div className={`${className} relative w-full h-full overflow-hidden`}>
-      {/* Top right decoration */}
-      <div className="vector-shape absolute top-5 right-5">
-        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="40" cy="40" r="40" fill="#F2FCE230" />
-          <circle cx="40" cy="40" r="25" fill="#4CAF5020" />
-        </svg>
+    <div className={`${className} select-none`}>
+      {/* Top-left decoration */}
+      <svg
+        width="180"
+        height="180"
+        viewBox="0 0 180 180"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 text-purple-200"
+      >
+        <circle cx="90" cy="90" r="90" fill="currentColor" fillOpacity="0.2" />
+        <path
+          d="M150 90C150 123.137 123.137 150 90 150C56.8629 150 30 123.137 30 90C30 56.8629 56.8629 30 90 30C123.137 30 150 56.8629 150 90Z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeDasharray="4 4"
+        />
+      </svg>
+
+      {/* Top-right decoration */}
+      <svg
+        width="64"
+        height="64"
+        viewBox="0 0 64 64"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="absolute top-10 right-10 text-purple-300"
+      >
+        <path
+          d="M32 64C49.6731 64 64 49.6731 64 32C64 14.3269 49.6731 0 32 0C14.3269 0 0 14.3269 0 32C0 49.6731 14.3269 64 32 64Z"
+          fill="currentColor"
+          fillOpacity="0.2"
+        />
+        <path
+          d="M56 32C56 45.2548 45.2548 56 32 56C18.7452 56 8 45.2548 8 32C8 18.7452 18.7452 8 32 8C45.2548 8 56 18.7452 56 32Z"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+      </svg>
+
+      {/* Middle wave decoration */}
+      <svg
+        width="100%"
+        height="48"
+        viewBox="0 0 1440 48"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="absolute top-1/3 -translate-y-1/2"
+        preserveAspectRatio="none"
+      >
+        <path
+          d="M0 48H1440V0C1200 32 960 16 720 8C480 0 240 16 0 0V48Z"
+          fill="url(#paint0_linear)"
+          fillOpacity="0.1"
+        />
+        <defs>
+          <linearGradient
+            id="paint0_linear"
+            x1="720"
+            y1="0"
+            x2="720"
+            y2="48"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor="#9b87f5" />
+            <stop offset="1" stopColor="#9b87f5" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* Bottom-right decoration */}
+      <svg
+        width="120"
+        height="120"
+        viewBox="0 0 120 120"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 text-purple-200"
+      >
+        <path
+          d="M120 60C120 93.1371 93.1371 120 60 120C26.8629 120 0 93.1371 0 60C0 26.8629 26.8629 0 60 0C93.1371 0 120 26.8629 120 60Z"
+          fill="currentColor"
+          fillOpacity="0.2"
+        />
+        <path
+          d="M96 60C96 80.9868 78.9868 98 58 98C37.0132 98 20 80.9868 20 60C20 39.0132 37.0132 22 58 22C78.9868 22 96 39.0132 96 60Z"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+      </svg>
+
+      {/* Scattered dots decoration */}
+      <div className="absolute inset-0 overflow-hidden">
+        {Array.from({ length: 30 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-purple-300 opacity-20"
+            style={{
+              width: `${Math.random() * 6 + 2}px`,
+              height: `${Math.random() * 6 + 2}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+            }}
+          />
+        ))}
       </div>
-      
-      {/* Bottom left wave */}
-      <div className="vector-wave absolute -bottom-20 -left-20">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-80 h-80 opacity-30">
-          <path 
-            fill="#4CAF50" 
-            d="M48.2,-59.2C62.6,-51.4,74.9,-36.8,77.5,-20.8C80.1,-4.7,73,12.8,63.7,27.8C54.4,42.9,43,55.5,28.7,63.1C14.5,70.7,-2.5,73.2,-19.2,69.5C-35.9,65.9,-52.3,56.1,-62.9,41.3C-73.5,26.6,-78.3,6.9,-74.5,-10.8C-70.6,-28.6,-58.2,-44.3,-43.2,-52C-28.3,-59.7,-10.9,-59.4,4.7,-65.1C20.2,-70.8,38.7,-82.5,48.2,-59.2Z" 
-            transform="translate(100 100)" 
+
+      {/* BetterHelp-inspired illustrations */}
+      <div className="absolute bottom-10 left-10 opacity-20">
+        <svg
+          width="120"
+          height="120"
+          viewBox="0 0 120 120"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M60 110C87.6142 110 110 87.6142 110 60C110 32.3858 87.6142 10 60 10C32.3858 10 10 32.3858 10 60C10 87.6142 32.3858 110 60 110Z"
+            fill="#9b87f5"
+            fillOpacity="0.2"
+          />
+          <path
+            d="M45 45C45 40.5817 48.5817 37 53 37H67C71.4183 37 75 40.5817 75 45V75C75 79.4183 71.4183 83 67 83H53C48.5817 83 45 79.4183 45 75V45Z"
+            stroke="#9b87f5"
+            strokeWidth="2"
+          />
+          <path
+            d="M50 50H70M50 60H65M50 70H60"
+            stroke="#9b87f5"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
         </svg>
       </div>
-      
-      {/* Small decorations */}
-      <div className="vector-circle absolute top-1/4 left-10 w-16 h-16 bg-green-100 opacity-30 rounded-full"></div>
-      <div className="vector-circle absolute bottom-1/3 right-1/4 w-24 h-24 bg-green-50 opacity-40 rounded-full"></div>
     </div>
   );
 };

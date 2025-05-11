@@ -215,10 +215,10 @@ const JournalWritePopup = ({
         <DialogTrigger asChild>
           <Button 
             size="lg" 
-            className="w-full max-w-md"
+            className="w-full max-w-md bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg shadow-md"
             disabled={isDisabled}
           >
-            Write in your journal
+            Write
           </Button>
         </DialogTrigger>
       )}
@@ -299,6 +299,7 @@ const JournalWritePopup = ({
           <Button
             onClick={saveJournalEntry}
             disabled={!journalText.trim()}
+            className="bg-purple-600 hover:bg-purple-700"
           >
             Save Entry
           </Button>

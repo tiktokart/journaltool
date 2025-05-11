@@ -16,11 +16,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FileDown, Bell } from "lucide-react";
+import { analyzePdfContent } from "@/utils/documentAnalysis";
+import { initBertModel } from "@/utils/bertSentimentAnalysis";
+import JournalWritePopup from "@/components/JournalWritePopup";
 
 // Rename PerfectLifePlan to Goals
 const Goals = () => {
@@ -57,16 +59,16 @@ const Goals = () => {
   };
 
   return (
-    <Card className="rounded-xl overflow-hidden shadow-sm">
-      <div className="p-4 bg-green-50 border-b border-green-100">
-        <h2 className="text-xl font-semibold text-black">Goals</h2>
+    <Card className="rounded-xl overflow-hidden shadow-sm bg-white border border-purple-100">
+      <div className="p-4 bg-purple-50 border-b border-purple-100">
+        <h2 className="text-xl font-semibold text-purple-900">Goals</h2>
       </div>
       <div className="p-4">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1 text-black">Daily</label>
+            <label className="block text-sm font-medium mb-1 text-purple-900">Daily</label>
             <textarea 
-              className="w-full p-3 border border-green-200 rounded-md min-h-[60px]"
+              className="w-full p-3 border border-purple-200 rounded-md min-h-[60px]"
               placeholder="What are your goals for today?"
               value={dailyGoals}
               onChange={(e) => setDailyGoals(e.target.value)}
@@ -74,9 +76,9 @@ const Goals = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1 text-black">Weekly</label>
+            <label className="block text-sm font-medium mb-1 text-purple-900">Weekly</label>
             <textarea 
-              className="w-full p-3 border border-green-200 rounded-md min-h-[60px]"
+              className="w-full p-3 border border-purple-200 rounded-md min-h-[60px]"
               placeholder="What do you want to accomplish this week?"
               value={weeklyGoals}
               onChange={(e) => setWeeklyGoals(e.target.value)}
@@ -84,9 +86,9 @@ const Goals = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1 text-black">Monthly</label>
+            <label className="block text-sm font-medium mb-1 text-purple-900">Monthly</label>
             <textarea 
-              className="w-full p-3 border border-green-200 rounded-md min-h-[60px]"
+              className="w-full p-3 border border-purple-200 rounded-md min-h-[60px]"
               placeholder="What are your goals for this month?"
               value={monthlyGoals}
               onChange={(e) => setMonthlyGoals(e.target.value)}
@@ -94,7 +96,7 @@ const Goals = () => {
           </div>
           
           <button 
-            className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
             onClick={handleSaveGoals}
           >
             Save Goals
@@ -124,9 +126,24 @@ const Dashboard = () => {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [showConsentDialog, setShowConsentDialog] = useState<boolean>(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
+  const [isWritePopupOpen, setIsWritePopupOpen] = useState(false);
   
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Initialize BERT model when component mounts
+  useEffect(() => {
+    const initBert = async () => {
+      try {
+        await initBertModel();
+        console.log("BERT model initialized successfully");
+      } catch (error) {
+        console.error("Failed to initialize BERT model:", error);
+      }
+    };
+    
+    initBert();
+  }, []);
 
   // Load journal entries from local storage
   useEffect(() => {
@@ -315,12 +332,77 @@ const Dashboard = () => {
     }
   };
 
+  // Handle journal submission
+  const handleSubmitJournal = (text: string, addToMonthly: boolean) => {
+    try {
+      // Create new journal entry
+      const newEntry = {
+        id: uuidv4(),
+        text: text.trim(),
+        date: new Date().toISOString()
+      };
+      
+      // Get existing entries
+      const existingEntriesJSON = localStorage.getItem('journalEntries');
+      const existingEntries = existingEntriesJSON 
+        ? JSON.parse(existingEntriesJSON) 
+        : [];
+      
+      // Add new entry to beginning
+      const updatedEntries = [newEntry, ...existingEntries];
+      
+      // Save to localStorage
+      localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+      
+      // If addToMonthly is true, add it to monthly reflections
+      if (addToMonthly) {
+        // Get existing reflections
+        const existingReflectionsJSON = localStorage.getItem('monthlyReflections');
+        const existingReflections = existingReflectionsJSON 
+          ? JSON.parse(existingReflectionsJSON) 
+          : [];
+        
+        // Add new reflection
+        const newReflection = {
+          id: uuidv4(),
+          text: text.trim(),
+          date: new Date().toISOString()
+        };
+        
+        // Add to beginning
+        const updatedReflections = [newReflection, ...existingReflections];
+        localStorage.setItem('monthlyReflections', JSON.stringify(updatedReflections));
+      }
+      
+      // Analyze the new entry using BERT
+      analyzePdfContent(null, text)
+        .then(analysis => {
+          console.log("Journal entry analyzed with BERT:", analysis);
+        })
+        .catch(err => {
+          console.error("Error analyzing journal with BERT:", err);
+        });
+
+      // Refresh the entries
+      setRefreshTrigger(prev => prev + 1);
+      toast.success("Journal entry saved");
+    } catch (error) {
+      console.error("Error saving journal entry:", error);
+      toast.error("Failed to save journal entry");
+    }
+  };
+
+  // Open the write popup
+  const openWritePopup = () => {
+    setIsWritePopupOpen(true);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-green">
+    <div className="min-h-screen flex flex-col bg-[#F7F9FC]">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-6 relative">
-        <VectorDecorations className="absolute inset-0 pointer-events-none" />
+        <VectorDecorations className="absolute inset-0 pointer-events-none opacity-30" />
         
         {isEntriesView ? (
           // Entries View
@@ -332,110 +414,132 @@ const Dashboard = () => {
           </div>
         ) : (
           // Monthly View
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Left Column */}
-            <div className="space-y-6">
-              <MonthlyCalendar 
-                onSelectDate={handleDateSelect}
-                journalEntries={journalEntries}
-              />
-              
-              <Card className="rounded-xl overflow-hidden shadow-sm">
-                <div className="p-4 bg-green-50 border-b border-green-100 flex justify-between items-center">
-                  <div>
-                    <h2 className="text-xl font-semibold text-black">Journal Entries</h2>
-                    <p className="text-sm text-gray-600">
-                      {format(selectedDate, 'MMMM d, yyyy')}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={toggleNotifications}
-                      className={`${notificationsEnabled ? 'text-green-600' : 'text-gray-400'}`}
-                    >
-                      <Bell className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="p-4">
-                  {journalEntries
-                    .filter(entry => {
-                      const entryDate = new Date(entry.date);
-                      return isSameDay(entryDate, selectedDate);
-                    })
-                    .map(entry => (
-                      <div key={entry.id} className="mb-4 last:mb-0">
-                        <div className="flex justify-between items-start">
-                          <div className="text-xs text-gray-500 mb-1">
-                            {format(new Date(entry.date), 'h:mm a')}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
-                            onClick={() => deleteEntry(entry.id)}
-                          >
-                            <span className="sr-only">Delete</span>
-                            ×
-                          </Button>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <p className="text-sm line-clamp-5">{entry.text}</p>
-                        </div>
-                      </div>
-                    ))}
-                  
-                  {journalEntries.filter(entry => {
-                    const entryDate = new Date(entry.date);
-                    return isSameDay(entryDate, selectedDate);
-                  }).length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      No journal entries for this date
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-            
-            {/* Right Column */}
-            <div className="space-y-6">
-              <div className="flex justify-end">
+          <>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold text-purple-900">My Wellness Journal</h1>
+              <div className="flex space-x-3">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-white"
                   onClick={exportMonthlyAnalysis}
+                  className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
                 >
                   <FileDown className="h-4 w-4 mr-2" />
                   Export Monthly Analysis
                 </Button>
+                <Button 
+                  size="sm"
+                  onClick={openWritePopup}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Write
+                </Button>
+              </div>
+            </div>
+          
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Left Column */}
+              <div className="space-y-6">
+                <MonthlyCalendar 
+                  onSelectDate={handleDateSelect}
+                  journalEntries={journalEntries}
+                />
+                
+                <Card className="rounded-xl overflow-hidden shadow-sm border border-purple-100">
+                  <div className="p-4 bg-purple-50 border-b border-purple-100 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-xl font-semibold text-purple-900">Journal Entries</h2>
+                      <p className="text-sm text-purple-600">
+                        {format(selectedDate, 'MMMM d, yyyy')}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={toggleNotifications}
+                        className={`${notificationsEnabled ? 'text-purple-600' : 'text-gray-400'}`}
+                      >
+                        <Bell className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-white">
+                    {journalEntries
+                      .filter(entry => {
+                        const entryDate = new Date(entry.date);
+                        return isSameDay(entryDate, selectedDate);
+                      })
+                      .map(entry => (
+                        <div key={entry.id} className="mb-4 last:mb-0">
+                          <div className="flex justify-between items-start">
+                            <div className="text-xs text-gray-500 mb-1">
+                              {format(new Date(entry.date), 'h:mm a')}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                              onClick={() => deleteEntry(entry.id)}
+                            >
+                              <span className="sr-only">Delete</span>
+                              ×
+                            </Button>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-sm line-clamp-5">{entry.text}</p>
+                          </div>
+                        </div>
+                      ))}
+                    
+                    {journalEntries.filter(entry => {
+                      const entryDate = new Date(entry.date);
+                      return isSameDay(entryDate, selectedDate);
+                    }).length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>No journal entries for this date</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={openWritePopup}
+                          className="mt-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                        >
+                          Write an entry
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </Card>
               </div>
               
-              <Goals />
-              
-              <MonthlyReflections 
-                journalText=""
-                refreshTrigger={refreshTrigger}
-                journalRefreshTrigger={refreshTrigger}
-              />
-              
-              <JournalAnalysisSection 
-                journalEntries={journalEntries}
-                timelineData={generateTimelineData()}
-                overallSentimentChange={getOverallSentimentChange()}
-                averageSentiment={getAverageSentiment()}
-                getSentimentColor={getSentimentColor}
-                refreshTrigger={refreshTrigger}
-              />
-              
-              {/* Ask AI Section visible only on Monthly view */}
+              {/* Right Column */}
+              <div className="space-y-6">
+                <Goals />
+                
+                <MonthlyReflections 
+                  journalText=""
+                  refreshTrigger={refreshTrigger}
+                  journalRefreshTrigger={refreshTrigger}
+                />
+                
+                <JournalAnalysisSection 
+                  journalEntries={journalEntries}
+                  timelineData={generateTimelineData()}
+                  overallSentimentChange={getOverallSentimentChange()}
+                  averageSentiment={getAverageSentiment()}
+                  getSentimentColor={getSentimentColor}
+                  refreshTrigger={refreshTrigger}
+                />
+              </div>
+            </div>
+            
+            {/* Ask AI Section at the bottom */}
+            <div className="mt-8">
               <AskAI 
                 journalText={journalEntries.map(entry => entry.text).join(" ")}
               />
             </div>
-          </div>
+          </>
         )}
         
         {/* SMS Notification Consent Dialog */}
@@ -472,12 +576,19 @@ const Dashboard = () => {
               <Button variant="outline" onClick={() => setShowConsentDialog(false)}>
                 Cancel
               </Button>
-              <Button type="submit" onClick={enableNotifications}>
+              <Button type="submit" onClick={enableNotifications} className="bg-purple-600 hover:bg-purple-700">
                 Enable Reminders
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        
+        {/* Journal Write Popup */}
+        <JournalWritePopup 
+          isOpen={isWritePopupOpen}
+          onClose={() => setIsWritePopupOpen(false)}
+          onSubmitJournal={handleSubmitJournal}
+        />
       </main>
     </div>
   );

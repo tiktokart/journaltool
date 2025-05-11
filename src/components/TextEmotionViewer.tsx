@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,6 +9,7 @@ import { Point } from "@/types/embedding";
 import { getEmotionColor } from "@/utils/embeddingUtils";
 import { getEmotionColor as getBertEmotionColor } from "@/utils/bertSentimentAnalysis";
 import { Toggle } from "@/components/ui/toggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TextEmotionViewerProps {
   pdfText: string;
@@ -193,14 +195,21 @@ export const TextEmotionViewer = ({
       const color = "inherit";
 
       return (
-        <span 
-          key={index} 
-          style={{ backgroundColor, color }}
-          title={segment.emotion}
-          className="rounded px-0.5 transition-colors"
-        >
-          {segment.text}
-        </span>
+        <Tooltip key={index}>
+          <TooltipTrigger asChild>
+            <span 
+              style={{ backgroundColor, color }}
+              className="rounded px-0.5 transition-colors hover:opacity-80 cursor-help"
+            >
+              {segment.text}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-sm">
+              <strong>Emotion:</strong> {segment.emotion}
+            </p>
+          </TooltipContent>
+        </Tooltip>
       );
     });
 
@@ -236,7 +245,7 @@ export const TextEmotionViewer = ({
               variant={showHighlights ? "default" : "outline"}
               size="sm"
               onClick={() => setShowHighlights(!showHighlights)}
-              className="self-start"
+              className="self-start bg-purple-600 hover:bg-purple-700 text-white"
             >
               {showHighlights ? t("Hide Emotional Highlights") : t("Show Emotional Highlights")}
             </Button>
