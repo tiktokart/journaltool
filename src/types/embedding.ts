@@ -32,4 +32,5 @@ export interface DocumentEmbeddingProps {
   visibleClusterCount?: number;
   showAllPoints?: boolean;
   wordCount?: number;
+  bertAnalysis?: any;
 }

@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +17,7 @@ import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { SentimentOverview } from "@/components/SentimentOverview";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { KeyPhrases } from "@/components/KeyPhrases";
+import MentalHealthSuggestions from "@/components/suggestions/MentalHealthSuggestions";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -40,6 +40,7 @@ interface AnalysisTabsProps {
   handlePointClick: (point: Point | null) => void;
   handleResetVisualization: () => void;
   handleClearSearch: () => void;
+  bertAnalysis?: any;
 }
 
 export const AnalysisTabs = ({
@@ -60,7 +61,8 @@ export const AnalysisTabs = ({
   visibleClusterCount,
   handlePointClick,
   handleResetVisualization,
-  handleClearSearch
+  handleClearSearch,
+  bertAnalysis
 }: AnalysisTabsProps) => {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -71,6 +73,11 @@ export const AnalysisTabs = ({
   const hasOverviewData = sentimentData?.overallSentiment && sentimentData?.distribution;
   const hasTimelineData = sentimentData?.timeline && sentimentData.timeline.length > 0;
   const hasKeyPhrasesData = sentimentData?.keyPhrases && sentimentData.keyPhrases.length > 0;
+  const hasBertData = bertAnalysis || sentimentData?.bertAnalysis;
+
+  // Extract text from either sentimentData or create a simulated journal entry for suggestions
+  const textForSuggestions = sentimentData?.text || "";
+  const journalEntries = textForSuggestions ? [{ text: textForSuggestions, date: new Date().toISOString() }] : [];
 
   // Ensure we have text data for visualization
   const hasTextData = sentimentData?.text && sentimentData.text.length > 0 || 
@@ -89,7 +96,7 @@ export const AnalysisTabs = ({
     }
     
     const filtered = sentimentData.embeddingPoints.filter((point: Point) => {
-      return point.word.toLowerCase().includes(term) || 
+      return point.word?.toLowerCase().includes(term) || 
              (point.emotionalTone && point.emotionalTone.toLowerCase().includes(term));
     });
     
@@ -273,10 +280,23 @@ export const AnalysisTabs = ({
                     sourceDescription={sentimentData.sourceDescription}
                     onResetView={handleResetVisualization}
                     visibleClusterCount={visibleClusterCount}
+                    bertAnalysis={sentimentData.bertAnalysis || bertAnalysis}
                   />
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Suggestions section based on BERT analysis */}
+            <div className="mt-8">
+              <h2 className="text-xl font-bold text-purple-900 mb-4">Detailed Analysis Data</h2>
+              {/* If we have BERT data or text content, show suggestions */}
+              {(hasBertData || hasTextData) && (
+                <MentalHealthSuggestions 
+                  journalEntries={journalEntries}
+                  bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
+                />
+              )}
+            </div>
           </>
         )}
       </TabsContent>

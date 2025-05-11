@@ -87,7 +87,6 @@ const AnalysisResults = ({
           text={sentimentData.text || sentimentData.pdfText}
           wordCount={sentimentData.wordCount}
           sourceDescription={sentimentData.sourceDescription}
-          bertAnalysis={sentimentData.bertAnalysis}
         />
       </div>
       
@@ -129,7 +128,6 @@ const AnalysisResults = ({
           selectedPoint={selectedPoint}
           sourceDescription={sentimentData.sourceDescription}
           calculateRelationship={calculateRelationship}
-          bertAnalysis={sentimentData.bertAnalysis}
         />
       </div>
       
@@ -146,7 +144,6 @@ const AnalysisResults = ({
         <WellbeingResources 
           embeddingPoints={sentimentData.embeddingPoints}
           sourceDescription={sentimentData.sourceDescription}
-          bertAnalysis={sentimentData.bertAnalysis}
         />
       </div>
       

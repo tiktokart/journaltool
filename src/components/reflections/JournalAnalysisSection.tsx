@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, BarChart2 } from "lucide-react";
@@ -255,7 +256,6 @@ const JournalAnalysisSection = ({
                             points={embeddingPoints} 
                             isInteractive={true} 
                             depressedJournalReference={overallSentimentChange.includes("negative")}
-                            // Pass BERT data for enhanced visualizations
                             bertAnalysis={bertAnalysis}
                           />
                         </div>
@@ -291,7 +291,10 @@ const JournalAnalysisSection = ({
                         </div>
                       </Card>
                       
-                      <MentalHealthSuggestions journalEntries={journalEntries} />
+                      <MentalHealthSuggestions 
+                        journalEntries={journalEntries} 
+                        bertAnalysis={bertAnalysis}
+                      />
                     </div>
                   </AccordionContent>
                 </AccordionItem>

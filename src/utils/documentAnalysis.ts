@@ -8,6 +8,16 @@ import { generateEmbeddingPoints } from './embeddingGeneration';
 import { extractTextFromPdf } from './pdfExtraction';
 import { analyzeTextWithBert } from './bertIntegration';
 
+// Common prepositions and articles to filter out
+const stopWords = [
+  'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 
+  'about', 'in', 'under', 'over', 'with', 'without', 'during', 'before', 'after', 'of',
+  'pdf', 'document', 'file', 'text', 'page', 'content'
+];
+
+// Identify common PDF metadata patterns
+const pdfMetadataRegex = /from\s+pdf|pdf\s+file|document\s+name|file\s+name|page\s+\d+/gi;
+
 export const analyzePdfContent = async (file: File, pdfText: string) => {
   try {
     console.log("Starting PDF analysis with BERT...");
@@ -27,18 +37,31 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Calculate total word count
     const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
     
+    // Clean text by removing PDF metadata patterns
+    let cleanedText = text.replace(pdfMetadataRegex, '');
+    
     // Enhanced text preprocessing for better context analysis
     // - Replace multiple spaces with single space
     // - Ensure proper sentence boundaries for better context analysis
     // - Maintain original case for better entity detection
-    const processedText = text
+    const processedText = cleanedText
       .replace(/\s+/g, ' ')
       .replace(/(\w)\.(\w)/g, '$1. $2') // Add space after periods between words
       .trim();
     
     // Perform BERT analysis first so other analyses can use its results
-    console.log("Running BERT analysis on text...");
+    console.log("Running BERT analysis on cleaned text...");
     const bertAnalysis = await analyzeTextWithBert(processedText);
+    
+    // Filter out stop words and common PDF metadata terms from BERT keywords
+    if (bertAnalysis.keywords && Array.isArray(bertAnalysis.keywords)) {
+      bertAnalysis.keywords = bertAnalysis.keywords.filter(keyword => {
+        const word = keyword.word?.toLowerCase();
+        return word && word.length > 2 && !stopWords.includes(word) && 
+               !word.match(/pdf|document|file|page|content/);
+      });
+    }
+    
     console.log("BERT analysis complete, found keywords:", bertAnalysis.keywords?.length || 0);
     
     // Generate summary with enhanced contextual analysis
