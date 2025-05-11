@@ -127,7 +127,7 @@ export const Header = () => {
             onClick={() => setIsJournalWriteOpen(true)}
           >
             <Pencil className="h-4 w-4" />
-            <span>Write</span>
+            <span>Journal</span>
           </Button>
         </div>
       </div>

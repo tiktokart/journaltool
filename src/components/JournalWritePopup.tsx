@@ -224,17 +224,6 @@ const JournalWritePopup = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose ? onClose : setInternalIsOpen}>
-      {!externalIsOpen && (
-        <DialogTrigger asChild>
-          <Button 
-            size="lg" 
-            className="w-full max-w-md bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md"
-            disabled={isDisabled}
-          >
-            Start Writing
-          </Button>
-        </DialogTrigger>
-      )}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
