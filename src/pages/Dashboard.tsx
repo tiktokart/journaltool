@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FileDown, Bell } from "lucide-react";
+import { FileDown, Bell, Share2 } from "lucide-react";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
 import { initBertModel } from "@/utils/bertSentimentAnalysis";
 import JournalWritePopup from "@/components/JournalWritePopup";
@@ -256,12 +256,51 @@ const Dashboard = () => {
         timelineData: generateTimelineData(),
       };
       
-      // In a real implementation, this would use jsPDF or similar library
-      console.log("Exporting monthly analysis:", exportData);
+      // Create a CSV or PDF to download
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Month,Entries Count,Overall Sentiment,Average Sentiment\n";
+      csvContent += `${exportData.month},${exportData.entriesCount},${exportData.overallSentiment},${exportData.averageSentiment.toFixed(2)}\n\n`;
+      csvContent += "Date,Sentiment,Text\n";
+      
+      exportData.timelineData.forEach(item => {
+        csvContent += `${item.date},${item.sentiment.toFixed(2)},"${item.text.replace(/"/g, '""')}"\n`;
+      });
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `journal_analysis_${currentMonth.replace(' ', '_')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
       toast.success(`Monthly analysis for ${currentMonth} exported successfully`);
     } catch (error) {
       console.error("Error exporting monthly analysis:", error);
       toast.error("Failed to export monthly analysis");
+    }
+  };
+
+  // Share functionality
+  const shareJournalAnalysis = async () => {
+    try {
+      const shareData = {
+        title: 'My Journal Analysis',
+        text: `I've been journaling with Journal Analysis. Here's my monthly sentiment: ${getOverallSentimentChange()}.`,
+        url: window.location.href
+      };
+      
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        toast.success("Shared successfully");
+      } else {
+        // Fallback for browsers that don't support sharing
+        navigator.clipboard.writeText(shareData.text + " " + shareData.url);
+        toast.success("Link copied to clipboard");
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      toast.error("Failed to share");
     }
   };
 
@@ -418,6 +457,15 @@ const Dashboard = () => {
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-purple-900">My Wellness Journal</h1>
               <div className="flex space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={shareJournalAnalysis}
+                  className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

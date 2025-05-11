@@ -1,10 +1,10 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { GitCompareArrows, Search, X } from "lucide-react";
+import { GitCompareArrows, Search, X, Info } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { WordComparison } from "@/components/WordComparison";
 import { toast } from "sonner";
@@ -27,15 +27,28 @@ export const WordComparisonController = ({
   sourceDescription,
   calculateRelationship
 }: WordComparisonControllerProps) => {
+  const { t, language } = useLanguage();
   const [compareWords, setCompareWords] = useState<Point[]>([]);
   const [compareSearchOpen, setCompareSearchOpen] = useState(false);
   const [compareSearchTerm, setCompareSearchTerm] = useState("");
   const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
   const [availableEmotions, setAvailableEmotions] = useState<string[]>([]);
-  const { t, language } = useLanguage();
   const [forceUpdate, setForceUpdate] = useState(0);
   const location = useLocation();
   const isHomepage = location.pathname === '/';
+
+  // Automatically add selected point to comparison
+  useEffect(() => {
+    if (selectedPoint && !compareWords.some(word => word.id === selectedPoint.id)) {
+      if (compareWords.length < 4) {
+        setCompareWords(prev => [...prev, selectedPoint]);
+      } else {
+        // Replace the last word
+        setCompareWords(prev => [...prev.slice(0, 3), selectedPoint]);
+        toast.info(`Replaced a word with "${selectedPoint.word}" in comparison`);
+      }
+    }
+  }, [selectedPoint]);
 
   // Get the correct color for a point based on the current page
   const getPointColor = (point: Point): string => {
@@ -60,10 +73,40 @@ export const WordComparisonController = ({
     return '#95A5A6'; // Default gray if no color information is available
   };
 
+  // Memoize common words to suggest when no search term
+  const commonEmotionalWords = useMemo(() => {
+    if (!points || points.length === 0) return [];
+    
+    // Count occurrence of each emotional tone
+    const emotionCount: Record<string, number> = {};
+    points.forEach(point => {
+      if (point.emotionalTone) {
+        emotionCount[point.emotionalTone] = (emotionCount[point.emotionalTone] || 0) + 1;
+      }
+    });
+    
+    // Get the most common emotional tones
+    const topEmotions = Object.entries(emotionCount)
+      .sort(([, countA], [, countB]) => countB - countA)
+      .slice(0, 5)
+      .map(([emotion]) => emotion);
+      
+    // Get one representative word for each top emotion
+    return topEmotions.flatMap(emotion => {
+      const words = points.filter(p => p.emotionalTone === emotion);
+      return words.length > 0 ? [words[0]] : [];
+    });
+  }, [points]);
+
   // Update search results and extract available emotions when points change
   useEffect(() => {
     if (points && points.length > 0) {
-      setCompareSearchResults(points.slice(0, 15));
+      // Default to showing common emotional words or just the first few entries
+      const initialResults = commonEmotionalWords.length > 0 
+        ? commonEmotionalWords 
+        : points.slice(0, 15);
+        
+      setCompareSearchResults(initialResults);
       
       // Extract unique emotions
       const emotions = new Set<string>();
@@ -74,7 +117,7 @@ export const WordComparisonController = ({
       });
       setAvailableEmotions(Array.from(emotions).sort());
     }
-  }, [points]);
+  }, [points, commonEmotionalWords]);
 
   // Force re-render when language changes
   useEffect(() => {
@@ -91,7 +134,10 @@ export const WordComparisonController = ({
     setCompareSearchTerm(value);
     
     if (!value.trim()) {
-      setCompareSearchResults([]);
+      // Show default suggestions when search is cleared
+      setCompareSearchResults(commonEmotionalWords.length > 0 
+        ? commonEmotionalWords 
+        : points.slice(0, 15));
       return;
     }
     
@@ -111,6 +157,14 @@ export const WordComparisonController = ({
       
       if (aEmotionMatch && !bEmotionMatch) return -1;
       if (!aEmotionMatch && bEmotionMatch) return 1;
+      
+      // If exact word match, prioritize those
+      const aExactMatch = a.word.toLowerCase() === value.toLowerCase();
+      const bExactMatch = b.word.toLowerCase() === value.toLowerCase();
+      
+      if (aExactMatch && !bExactMatch) return -1;
+      if (!aExactMatch && bExactMatch) return 1;
+      
       return 0;
     });
     
@@ -158,6 +212,33 @@ export const WordComparisonController = ({
     toast.success(`Added ${emotionPoints.length} words with "${emotion}" emotion to comparison`);
   };
 
+  // Add suggestion buttons for available emotions
+  const renderEmotionFilters = () => {
+    if (availableEmotions.length === 0) return null;
+    
+    return (
+      <div className="mt-3 space-y-1">
+        <p className="text-xs text-muted-foreground">{t("quickAdd")}:</p>
+        <div className="flex flex-wrap gap-2">
+          {availableEmotions.slice(0, 5).map(emotion => (
+            <Badge
+              key={emotion}
+              variant="outline"
+              className="cursor-pointer hover:bg-secondary"
+              onClick={() => handleEmotionFilter(emotion)}
+              style={{
+                backgroundColor: `${getEmotionColor(emotion)}20`,
+                borderColor: getEmotionColor(emotion)
+              }}
+            >
+              {emotion}
+            </Badge>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card className="border border-border shadow-md">
       <CardHeader>
@@ -190,7 +271,7 @@ export const WordComparisonController = ({
                     <CommandGroup>
                       {compareSearchResults.map((point) => (
                         <CommandItem 
-                          key={`${point.id}-${language}`} 
+                          key={`${point.id}-${language}-${forceUpdate}`} 
                           onSelect={() => handleAddToComparison(point)}
                         >
                           <div className="flex items-center">
@@ -206,6 +287,8 @@ export const WordComparisonController = ({
                         </CommandItem>
                       ))}
                     </CommandGroup>
+                    
+                    {renderEmotionFilters()}
                   </CommandList>
                 </Command>
               </PopoverContent>

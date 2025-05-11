@@ -1,378 +1,439 @@
 
-import { useState, useEffect } from "react";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
-import { Search, ChevronDown, ChevronUp, Share, Calendar, FileDown } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger
-} from "@/components/ui/accordion";
-import { TextEmotionViewer } from "@/components/TextEmotionViewer";
-import { toast } from "sonner";
-
-interface JournalEntry {
-  id: string;
-  text: string;
-  date: string;
-}
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Point } from '@/types/embedding';
+import { DocumentEmbedding } from './DocumentEmbedding'; 
+import MentalHealthSuggestions from './suggestions/MentalHealthSuggestions';
+import { WordComparisonController } from './WordComparisonController';
+import { analyzeTextWithBert } from '@/utils/bertIntegration';
 
 interface EntriesViewProps {
-  entries: JournalEntry[];
-  onSelectEntry: (entry: JournalEntry) => void;
+  entries: any[];
+  onSelectEntry?: (entry: any) => void;
 }
 
-const EntriesView = ({ entries, onSelectEntry }: EntriesViewProps) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
-  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
-  const [activeTab, setActiveTab] = useState("analysis");
-
-  // Group entries by week
-  const [weeks, setWeeks] = useState<{
-    weekStart: Date;
-    weekEnd: Date;
-    entries: JournalEntry[];
-    isExpanded: boolean;
-  }[]>([]);
-
+const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredEntries, setFilteredEntries] = useState<any[]>([]);
+  const [currentEntry, setCurrentEntry] = useState<any | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [embeddingPoints, setEmbeddingPoints] = useState<Point[]>([]);
+  const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+  const entriesPerPage = 10;
+  
+  // Filter entries by search query
   useEffect(() => {
-    // Filter entries based on search term
-    const filtered = entries.filter(entry => 
-      entry.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      format(new Date(entry.date), "MMMM d, yyyy").toLowerCase().includes(searchTerm.toLowerCase())
+    if (!searchQuery.trim()) {
+      setFilteredEntries(entries);
+      return;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    const results = entries.filter(entry => 
+      entry.text.toLowerCase().includes(query) || 
+      format(new Date(entry.date), 'MMMM d, yyyy').toLowerCase().includes(query)
     );
-    setFilteredEntries(filtered);
-
-    // Group entries by week
-    const entriesByWeek = groupEntriesByWeek(entries);
-    setWeeks(entriesByWeek);
-  }, [entries, searchTerm]);
-
-  const groupEntriesByWeek = (journalEntries: JournalEntry[]) => {
-    const weekGroups: {[key: string]: JournalEntry[]} = {};
     
-    journalEntries.forEach(entry => {
-      const entryDate = new Date(entry.date);
-      const weekStart = startOfWeek(entryDate);
-      const weekKey = format(weekStart, 'yyyy-MM-dd');
-      
-      if (!weekGroups[weekKey]) {
-        weekGroups[weekKey] = [];
-      }
-      
-      weekGroups[weekKey].push(entry);
-    });
-    
-    return Object.keys(weekGroups).map(weekKey => {
-      const weekStart = new Date(weekKey);
-      const weekEnd = endOfWeek(weekStart);
-      return {
-        weekStart,
-        weekEnd,
-        entries: weekGroups[weekKey].sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        ),
-        isExpanded: false
-      };
-    }).sort((a, b) => b.weekStart.getTime() - a.weekStart.getTime());
+    setFilteredEntries(results);
+  }, [searchQuery, entries]);
+  
+  // Set current entry when filtered entries change
+  useEffect(() => {
+    if (filteredEntries.length > 0 && !currentEntry) {
+      handleSelectEntry(filteredEntries[0]);
+    }
+  }, [filteredEntries]);
+  
+  // Update pagination when filtered entries change
+  useEffect(() => {
+    if (currentPage > Math.ceil(filteredEntries.length / entriesPerPage) - 1) {
+      setCurrentPage(0);
+    }
+  }, [filteredEntries]);
+
+  // Generate emotional embeddings from current entry
+  useEffect(() => {
+    if (currentEntry) {
+      generateEmbeddingsForEntry(currentEntry);
+    } else {
+      setEmbeddingPoints([]);
+    }
+  }, [currentEntry]);
+
+  const handleSelectEntry = (entry: any) => {
+    setCurrentEntry(entry);
+    if (onSelectEntry) {
+      onSelectEntry(entry);
+    }
+    generateEmbeddingsForEntry(entry);
   };
-
-  const handleEntryClick = (entry: JournalEntry) => {
-    setSelectedEntry(entry);
-    onSelectEntry(entry);
-  };
-
-  const toggleWeekExpand = (index: number) => {
-    setWeeks(weeks => weeks.map((week, i) => 
-      i === index ? { ...week, isExpanded: !week.isExpanded } : week
-    ));
-  };
-
-  const exportEntryAnalysis = () => {
-    if (!selectedEntry) return;
-
-    try {
-      // Generate PDF with entry analysis
-      const content = {
-        entryDate: format(new Date(selectedEntry.date), 'MMMM d, yyyy'),
-        entryText: selectedEntry.text,
-        wordCount: getWordCount(selectedEntry.text),
-        sentiment: generateMockSentiment(), // This would be replaced with actual sentiment analysis
-        keywords: selectedEntry.text.split(/\s+/).slice(0, 10).map(word => word.trim()),
-      };
-
-      // In a real implementation, this would use jsPDF or a similar library
-      console.log("Exporting analysis for entry:", content);
-      toast.success("Analysis exported successfully");
-    } catch (error) {
-      console.error("Error exporting analysis:", error);
-      toast.error("Failed to export analysis");
+  
+  const handleNextPage = () => {
+    if ((currentPage + 1) * entriesPerPage < filteredEntries.length) {
+      setCurrentPage(prevPage => prevPage + 1);
     }
   };
-
-  const generateMockSentiment = () => {
-    // In a real app, this would be an actual sentiment analysis value
-    return 0.65; 
+  
+  const handlePrevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(prevPage => prevPage - 1);
+    }
   };
-
-  const getSentimentDescription = (sentiment: number) => {
-    if (sentiment >= 0.7) return "Very Positive";
-    if (sentiment >= 0.55) return "Positive";
-    if (sentiment >= 0.45) return "Neutral";
-    if (sentiment >= 0.3) return "Negative";
-    return "Very Negative";
+  
+  // Calculate relationship between two embedding points
+  const calculateRelationship = (point1: Point, point2: Point) => {
+    if (!point1 || !point2) return null;
+    
+    // Check if the points have the same emotional group
+    const sameEmotionalGroup = point1.emotionalTone === point2.emotionalTone;
+    
+    // Calculate spatial similarity based on position in 3D space
+    const calculateDistance = (pos1: number[], pos2: number[]) => {
+      const dx = pos1[0] - pos2[0];
+      const dy = pos1[1] - pos2[1];
+      const dz = pos1[2] - pos2[2];
+      return Math.sqrt(dx*dx + dy*dy + dz*dz);
+    };
+    
+    const maxDistance = 10; // Maximum possible distance
+    const distance = calculateDistance(point1.position, point2.position);
+    const spatialSimilarity = 1 - Math.min(distance / maxDistance, 1);
+    
+    // Calculate sentiment similarity
+    const sentimentDifference = Math.abs(point1.sentiment - point2.sentiment);
+    const sentimentSimilarity = 1 - sentimentDifference;
+    
+    // Find shared keywords
+    const keywords1 = point1.keywords || [];
+    const keywords2 = point2.keywords || [];
+    const sharedKeywords = keywords1.filter(kw => keywords2.includes(kw));
+    
+    return {
+      spatialSimilarity,
+      sentimentSimilarity,
+      sameEmotionalGroup,
+      sharedKeywords
+    };
   };
-
-  const generateSuggestions = () => {
-    // These would ideally be generated based on BERT analysis
-    return [
-      "Consider exploring the positive emotions you mentioned in more detail",
-      "Reflect on how your feelings about work have evolved this month",
-      "Track the personal growth milestones you've achieved",
-      "Practice mindfulness when feeling overwhelmed by similar situations"
-    ];
+  
+  // Generate embeddings for the current entry
+  const generateEmbeddingsForEntry = async (entry: any) => {
+    if (!entry || !entry.text) {
+      setEmbeddingPoints([]);
+      return;
+    }
+    
+    try {
+      // Try to use BERT for analysis
+      const analysis = await analyzeTextWithBert(entry.text);
+      if (analysis && analysis.keywords && analysis.keywords.length > 0) {
+        // If BERT provides keywords, use them
+        const points = analysis.keywords.map((keyword, index) => {
+          // Generate positions for 3D visualization
+          const x = Math.sin(index) * 5;
+          const y = Math.cos(index * 0.5) * 5;
+          const z = Math.sin(index * 0.3) * Math.cos(index * 0.7) * 5;
+          
+          return {
+            id: `e-${keyword.word}-${index}`,
+            word: keyword.word,
+            position: [x, y, z],
+            sentiment: keyword.sentiment || 0.5,
+            emotionalTone: keyword.tone || 'Neutral',
+            keywords: keyword.relatedConcepts || [],
+            color: keyword.color || [0.5, 0.5, 0.5],
+            frequency: keyword.frequency || 1
+          };
+        });
+        
+        setEmbeddingPoints(points);
+        return;
+      }
+    } catch (error) {
+      console.error("Error generating embeddings with BERT:", error);
+    }
+    
+    // Fallback: Generate embeddings from text directly
+    const words = entry.text.split(/\s+/).filter((word: string) => word.length > 3);
+    const uniqueWords = Array.from(new Set(words));
+    const points: Point[] = [];
+    
+    // Limit to 50 words for performance
+    const limitedWords = uniqueWords.slice(0, 50);
+    
+    // Create a mapping of word to frequency count
+    const wordCounts: Record<string, number> = {};
+    words.forEach(word => {
+      const cleanWord = word.replace(/[^\w]/g, '').toLowerCase();
+      if (cleanWord.length > 3) {
+        wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
+      }
+    });
+    
+    // Generate emotional tones based on word patterns
+    const emotionalTones = ['Joy', 'Sadness', 'Anxiety', 'Contentment', 'Confusion', 'Anger', 'Fear', 'Surprise'];
+    
+    limitedWords.forEach((word, index) => {
+      const cleanWord = word.replace(/[^\w]/g, '');
+      if (cleanWord.length <= 3) return;
+      
+      // Generate hash based on the word
+      const hash = [...cleanWord].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      
+      // Generate consistent position
+      const x = Math.sin(hash) * 5;
+      const y = Math.cos(hash * 0.5) * 5;
+      const z = Math.sin(hash * 0.3) * Math.cos(hash * 0.7) * 5;
+      
+      // Assign emotional tone based on hash
+      const toneIndex = hash % emotionalTones.length;
+      const emotionalTone = emotionalTones[toneIndex];
+      
+      // Generate sentiment based on emotional tone
+      let sentiment = 0.5;
+      switch(emotionalTone) {
+        case 'Joy':
+        case 'Contentment':
+          sentiment = 0.6 + (hash % 30) / 100;
+          break;
+        case 'Sadness':
+        case 'Fear':
+        case 'Anxiety':
+        case 'Anger':
+          sentiment = 0.4 - (hash % 30) / 100;
+          break;
+        default:
+          sentiment = 0.4 + (hash % 20) / 100;
+      }
+      
+      // Create color based on emotional tone
+      let color;
+      switch(emotionalTone) {
+        case 'Joy':
+          color = [1, 0.9, 0.4]; // Yellow
+          break;
+        case 'Sadness':
+          color = [0.4, 0.6, 0.9]; // Blue
+          break;
+        case 'Anxiety':
+          color = [0.9, 0.5, 0.2]; // Orange
+          break;
+        case 'Contentment':
+          color = [0.5, 0.9, 0.5]; // Green
+          break;
+        case 'Confusion':
+          color = [0.7, 0.5, 0.9]; // Purple
+          break;
+        case 'Anger':
+          color = [0.9, 0.3, 0.3]; // Red
+          break;
+        case 'Fear':
+          color = [0.7, 0.3, 0.7]; // Dark Purple
+          break;
+        case 'Surprise':
+          color = [0.4, 0.9, 0.9]; // Cyan
+          break;
+        default:
+          color = [0.7, 0.7, 0.7]; // Gray
+      }
+      
+      points.push({
+        id: `e-${cleanWord}-${index}`,
+        word: cleanWord,
+        position: [x, y, z],
+        sentiment,
+        emotionalTone,
+        keywords: [],
+        color,
+        frequency: wordCounts[cleanWord.toLowerCase()] || 1
+      });
+    });
+    
+    setEmbeddingPoints(points);
   };
-
+  
+  const handlePointSelection = (point: Point) => {
+    setSelectedPoint(point);
+  };
+  
+  const startIndex = currentPage * entriesPerPage;
+  const endIndex = Math.min(startIndex + entriesPerPage, filteredEntries.length);
+  const currentEntries = filteredEntries.slice(startIndex, endIndex);
+  
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200 bg-white">
-        <div className="flex gap-2 mb-4">
+    <div className="flex h-full">
+      {/* Entries List */}
+      <div className="w-1/3 border-r h-full flex flex-col">
+        <div className="p-4 border-b">
           <Input
             placeholder="Search entries..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border-green-200"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full"
+            prefix={<Search className="h-4 w-4 text-gray-400" />}
           />
         </div>
-      </div>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Entries Sidebar */}
-        <div className="w-1/3 border-r border-gray-200 overflow-y-auto p-2">
-          {weeks.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No journal entries found
-            </div>
+        
+        <div className="flex-grow overflow-y-auto">
+          {currentEntries.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">No entries found</div>
           ) : (
-            <div className="space-y-4">
-              {weeks.map((week, index) => (
-                <div key={`week-${week.weekStart}`} className="border border-gray-100 rounded-lg overflow-hidden">
-                  <div 
-                    className="flex justify-between items-center p-3 bg-green-50 cursor-pointer"
-                    onClick={() => toggleWeekExpand(index)}
-                  >
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2 text-green-600" />
-                      <span className="text-sm font-medium">
-                        {format(week.weekStart, 'MMM d')} - {format(week.weekEnd, 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                      {week.isExpanded ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </Button>
+            <>
+              {currentEntries.map((entry) => (
+                <div 
+                  key={entry.id}
+                  className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors
+                    ${currentEntry && entry.id === currentEntry.id ? 'bg-gray-100' : ''}`}
+                  onClick={() => handleSelectEntry(entry)}
+                >
+                  <div className="text-sm font-medium text-black">
+                    {format(new Date(entry.date), 'MMMM d, yyyy')}
                   </div>
-                  
-                  {week.isExpanded && (
-                    <div className="py-1">
-                      {week.entries.map(entry => (
-                        <div 
-                          key={entry.id}
-                          className={`p-3 cursor-pointer hover:bg-gray-50 ${
-                            selectedEntry?.id === entry.id ? 'bg-green-50' : ''
-                          }`}
-                          onClick={() => handleEntryClick(entry)}
-                        >
-                          <div className="text-xs text-gray-500 mb-1">
-                            {format(new Date(entry.date), 'EEEE, MMMM d, yyyy')}
-                          </div>
-                          <div className="text-sm line-clamp-2">
-                            {entry.text}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <div className="text-xs text-gray-500">
+                    {format(new Date(entry.date), 'h:mm a')}
+                  </div>
+                  <div className="mt-1 text-sm line-clamp-2 text-gray-600">
+                    {entry.text}
+                  </div>
                 </div>
               ))}
-            </div>
+            </>
           )}
         </div>
         
-        {/* Entry View */}
-        <div className="flex-1 overflow-y-auto bg-gray-50">
-          {selectedEntry ? (
-            <div className="h-full">
-              <div className="p-4 bg-white border-b border-gray-200 flex justify-between items-center">
-                <div>
-                  <h2 className="text-lg font-semibold">
-                    {format(new Date(selectedEntry.date), 'MMMM d, yyyy')}
-                  </h2>
-                  <div className="text-xs text-gray-500">
-                    {getWordCount(selectedEntry.text)} words
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" className="bg-white" onClick={exportEntryAnalysis}>
-                  <Share className="h-4 w-4 mr-1" /> Share
-                </Button>
+        <div className="p-3 border-t flex items-center justify-between">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handlePrevPage}
+            disabled={currentPage === 0}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+          <div className="text-xs text-gray-500">
+            {filteredEntries.length === 0 ? (
+              "No entries"
+            ) : (
+              `${startIndex + 1}-${endIndex} of ${filteredEntries.length}`
+            )}
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleNextPage}
+            disabled={(currentPage + 1) * entriesPerPage >= filteredEntries.length}
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* Entry Detail View */}
+      <div className="w-2/3 h-full overflow-y-auto">
+        {currentEntry ? (
+          <div className="p-6">
+            <div className="mb-4">
+              <div className="text-lg font-medium text-black">
+                {format(new Date(currentEntry.date), 'MMMM d, yyyy')}
+              </div>
+              <div className="text-sm text-gray-500">
+                {format(new Date(currentEntry.date), 'h:mm a')}
+              </div>
+            </div>
+            
+            <div className="p-5 bg-gray-50 rounded-lg mb-6">
+              <p className="whitespace-pre-line">{currentEntry.text}</p>
+            </div>
+            
+            {/* Latent Emotional Analysis */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-3">Latent Emotional Analysis</h3>
+              
+              <div className="h-[300px] w-full bg-gray-50 rounded-lg overflow-hidden mb-4">
+                <DocumentEmbedding 
+                  points={embeddingPoints} 
+                  isInteractive={true} 
+                  onPointClick={handlePointSelection}
+                  selectedPointId={selectedPoint?.id}
+                  depressedJournalReference={false}
+                />
               </div>
               
-              <Tabs defaultValue="analysis" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="px-4 pt-4 bg-white border-b border-gray-200">
-                  <TabsList className="bg-gray-100">
-                    <TabsTrigger value="analysis">Analysis</TabsTrigger>
-                    <TabsTrigger value="entry">Entry</TabsTrigger>
-                  </TabsList>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="border rounded-lg p-3">
+                  <h4 className="font-medium text-sm mb-2">Emotional Distribution</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {['Joy', 'Sadness', 'Anxiety', 'Contentment', 'Confusion', 'Anger', 'Fear', 'Surprise']
+                      .map(emotion => {
+                        const count = embeddingPoints.filter(p => p.emotionalTone === emotion).length;
+                        if (count === 0) return null;
+                        
+                        return (
+                          <div key={emotion} className="flex items-center">
+                            <div className={`w-3 h-3 rounded-full mr-2 ${
+                              emotion === "Joy" ? "bg-yellow-400" :
+                              emotion === "Sadness" ? "bg-blue-400" :
+                              emotion === "Anxiety" ? "bg-orange-400" :
+                              emotion === "Contentment" ? "bg-green-400" :
+                              emotion === "Confusion" ? "bg-purple-400" :
+                              emotion === "Anger" ? "bg-red-400" :
+                              emotion === "Fear" ? "bg-purple-700" :
+                              "bg-cyan-400"
+                            }`}></div>
+                            <span className="text-sm">{emotion}: {count}</span>
+                          </div>
+                        );
+                      }).filter(Boolean)}
+                  </div>
                 </div>
                 
-                <TabsContent value="analysis" className="p-4 mt-0">
-                  <Card className="border-0 shadow-sm rounded-xl overflow-hidden">
-                    <div className="p-4">
-                      <h3 className="text-lg font-medium mb-4">Entry Analysis</h3>
-                      
-                      <div className="bg-white border border-gray-100 rounded-lg p-4 mb-4">
-                        <h4 className="text-sm font-medium text-gray-600 mb-2">Key Emotions</h4>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-3 py-1 bg-green-50 text-green-800 text-xs rounded-full">Joy</span>
-                          <span className="px-3 py-1 bg-blue-50 text-blue-800 text-xs rounded-full">Curiosity</span>
-                          <span className="px-3 py-1 bg-yellow-50 text-yellow-800 text-xs rounded-full">Anticipation</span>
+                <div className="border rounded-lg p-3">
+                  <h4 className="font-medium text-sm mb-2">Top Words</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {embeddingPoints
+                      .sort((a, b) => (b.frequency || 1) - (a.frequency || 1))
+                      .slice(0, 10)
+                      .map(point => (
+                        <div 
+                          key={point.id} 
+                          className="px-2 py-1 bg-gray-100 rounded-full text-xs cursor-pointer hover:bg-gray-200"
+                          onClick={() => setSelectedPoint(point)}
+                          style={{
+                            backgroundColor: `rgba(${Math.round(point.color[0] * 255)}, ${Math.round(point.color[1] * 255)}, ${Math.round(point.color[2] * 255)}, 0.3)`,
+                          }}
+                        >
+                          {point.word}{point.frequency > 1 ? ` (${point.frequency})` : ''}
                         </div>
-                      </div>
-                      
-                      <div className="bg-white border border-gray-100 rounded-lg p-4 mb-4">
-                        <h4 className="text-sm font-medium text-gray-600 mb-2">Key Topics</h4>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-3 py-1 bg-gray-50 text-gray-800 text-xs rounded-full">Work</span>
-                          <span className="px-3 py-1 bg-gray-50 text-gray-800 text-xs rounded-full">Relationships</span>
-                          <span className="px-3 py-1 bg-gray-50 text-gray-800 text-xs rounded-full">Personal Growth</span>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-white border border-gray-100 rounded-lg p-4 mb-4">
-                        <h4 className="text-sm font-medium text-gray-600 mb-2">Sentiment Analysis</h4>
-                        <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="bg-green-500 h-full" style={{ width: "65%" }}></div>
-                        </div>
-                        <div className="flex justify-between text-xs mt-1">
-                          <span>Negative</span>
-                          <span>Neutral</span>
-                          <span>Positive</span>
-                        </div>
-                      </div>
-                      
-                      {/* Detailed Analysis Data section */}
-                      <div className="bg-white border border-gray-100 rounded-lg p-4 mb-4">
-                        <h4 className="text-sm font-medium text-gray-600 mb-2">Detailed Analysis Data</h4>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-xs">Overall Sentiment:</span>
-                            <span className="text-xs font-medium">{getSentimentDescription(generateMockSentiment())} ({generateMockSentiment().toFixed(2)})</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-xs">Word Count:</span>
-                            <span className="text-xs font-medium">{getWordCount(selectedEntry.text)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-xs">Key Entities:</span>
-                            <span className="text-xs font-medium">3</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-xs">Analysis Method:</span>
-                            <span className="text-xs font-medium">BERT Sentiment Analysis</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Suggestions section */}
-                      <div className="bg-white border border-gray-100 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-gray-600 mb-2">Suggestions</h4>
-                        <ul className="text-xs space-y-2 list-disc pl-5">
-                          {generateSuggestions().map((suggestion, index) => (
-                            <li key={index}>{suggestion}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </Card>
-                </TabsContent>
-                
-                <TabsContent value="entry" className="p-4 mt-0">
-                  <Card className="border-0 shadow-sm rounded-xl">
-                    <div className="p-4">
-                      {/* Document Text Visualization section */}
-                      <div className="mb-6">
-                        <h3 className="text-lg font-medium mb-4">Document Text Visualization</h3>
-                        <div className="bg-white border border-gray-100 rounded-lg p-4">
-                          <TextEmotionViewer 
-                            pdfText={selectedEntry.text} 
-                            sourceDescription="BERT Analysis"
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* Word Comparison section */}
-                      <div className="mb-6">
-                        <h3 className="text-lg font-medium mb-4">Word Comparison</h3>
-                        <div className="bg-white border border-gray-100 rounded-lg p-4">
-                          <div className="flex flex-wrap gap-3">
-                            {selectedEntry.text.split(/\s+/).slice(0, 10).map((word, i) => (
-                              <span key={i} className="px-3 py-1 bg-gray-50 text-gray-800 text-sm rounded-full">
-                                {word}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Latent Emotional Analysis (expandable) */}
-                      <div className="mb-6">
-                        <Accordion type="single" collapsible>
-                          <AccordionItem value="latent-emotional-analysis">
-                            <AccordionTrigger className="text-lg font-medium">
-                              Latent Emotional Analysis
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="bg-white border border-gray-100 rounded-lg p-4">
-                                <p className="text-sm text-gray-600 mb-4">
-                                  Emotional analysis of your journal entry reveals a predominantly positive tone.
-                                  Key emotional markers indicate periods of joy and optimism, with minor notes of reflection.
-                                </p>
-                                <div className="h-[200px] w-full border border-gray-200 rounded-lg flex items-center justify-center bg-gray-50 relative overflow-hidden">
-                                  {/* This would be a 3D visualization in the full implementation */}
-                                  <p className="text-gray-400">3D Emotional Analysis Visualization</p>
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      </div>
-                    </div>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+                      ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Word Comparison */}
+              <WordComparisonController
+                points={embeddingPoints}
+                selectedPoint={selectedPoint}
+                sourceDescription="Words from this journal entry"
+                calculateRelationship={calculateRelationship}
+              />
             </div>
-          ) : (
-            <div className="h-full flex items-center justify-center text-gray-500">
-              Select an entry to view its details
-            </div>
-          )}
-        </div>
+            
+            {/* Mental Health Suggestions based on current entry */}
+            <MentalHealthSuggestions journalEntries={[currentEntry]} />
+          </div>
+        ) : (
+          <div className="h-full flex items-center justify-center text-gray-500">
+            Select an entry to view details
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-// Helper function to count words
-const getWordCount = (text: string) => {
-  return text.split(/\s+/).filter(Boolean).length;
 };
 
 export default EntriesView;
