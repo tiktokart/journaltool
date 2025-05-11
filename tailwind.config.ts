@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -71,12 +70,18 @@ export default {
           negative: '#E74C3C',
         },
         
-        // Updated theme colors - changed to use white instead of purple/lavender
-        yellow: {
-          DEFAULT: '#f6df60',
-          light: '#f8e680',
-          dark: '#e6cf50',
+        // Updated theme colors - changed from yellow to green
+        green: {
+          DEFAULT: '#4CAF50',
+          light: '#8BC34A',
+          dark: '#2E7D32',
         },
+        lime: {
+          DEFAULT: '#8BC34A',
+          light: '#CDDC39',
+          dark: '#689F38',
+        },
+        // Keep the orange colors for accents
         orange: {
           DEFAULT: '#f57e00',
           light: '#ff9e20',
@@ -124,13 +129,25 @@ export default {
             transform: 'scale(1)',
             opacity: '1'
           }
+        },
+        'float': {
+          '0%': {
+            transform: 'translateY(0px)'
+          },
+          '50%': {
+            transform: 'translateY(-10px)'
+          },
+          '100%': {
+            transform: 'translateY(0px)'
+          }
         }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fade-in 0.3s ease-out',
-        'scale-in': 'scale-in 0.2s ease-out'
+        'scale-in': 'scale-in 0.2s ease-out',
+        'float': 'float 6s ease-in-out infinite'
 			}
 		}
 	},

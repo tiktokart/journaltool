@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/contexts/LanguageContext";
 import DarkModeToggle from "./DarkModeToggle";
+import { ArrowButton } from "./VectorDecorations";
 
 // Supported languages with their display names
 const LANGUAGES = {
@@ -30,21 +31,21 @@ export const Header = () => {
   };
 
   return (
-    <header className="border-b border-border bg-yellow backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b border-border bg-green backdrop-blur-sm sticky top-0 z-50 rounded-b-xl">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <Flower className="h-6 w-6 text-purple animate-bounce" />
-            <span className="font-bold text-xl text-black">{t("journalAnalysis")}</span>
+            <Flower className="h-6 w-6 text-white animate-bounce" />
+            <span className="font-bold text-xl text-white">{t("journalAnalysis")}</span>
           </Link>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <nav className="flex items-center space-x-8">
-              <Link to="/" className="text-black hover:text-foreground transition-colors">
+              <Link to="/" className="text-white hover:text-foreground transition-colors">
                 {t("home")}
               </Link>
-              <Link to="/dashboard" className="text-black hover:text-foreground transition-colors">
+              <Link to="/dashboard" className="text-white hover:text-foreground transition-colors">
                 {t("dashboard")}
               </Link>
               <DarkModeToggle />
@@ -52,11 +53,11 @@ export const Header = () => {
             
             {/* Language Selector */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center text-black hover:text-foreground transition-colors">
+              <DropdownMenuTrigger className="flex items-center text-white hover:text-foreground transition-colors">
                 <Globe className="h-5 w-5 mr-1" />
                 <span className="text-sm">{LANGUAGES[language as keyof typeof LANGUAGES]}</span>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background border border-border">
+              <DropdownMenuContent align="end" className="bg-background border border-border rounded-xl">
                 {Object.entries(LANGUAGES).map(([code, name]) => (
                   <DropdownMenuItem 
                     key={code}
@@ -72,7 +73,7 @@ export const Header = () => {
           
           {/* Mobile Menu Button */}
           <button 
-            className="md:hidden text-black" 
+            className="md:hidden text-white" 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? (
@@ -89,14 +90,14 @@ export const Header = () => {
             <nav className="flex flex-col space-y-4">
               <Link 
                 to="/" 
-                className="text-black hover:text-foreground transition-colors py-2"
+                className="text-white hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t("home")}
               </Link>
               <Link 
                 to="/dashboard" 
-                className="text-black hover:text-foreground transition-colors py-2"
+                className="text-white hover:text-foreground transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t("dashboard")}
@@ -109,7 +110,7 @@ export const Header = () => {
               
               {/* Mobile Language Selector */}
               <div className="border-t border-border pt-4 mt-2">
-                <p className="text-sm text-black mb-2">
+                <p className="text-sm text-white mb-2">
                   {t("selectLanguage")}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -120,10 +121,10 @@ export const Header = () => {
                         handleLanguageChange(code);
                         setIsMenuOpen(false);
                       }}
-                      className={`py-2 px-3 text-sm rounded-md transition-colors ${
+                      className={`py-2 px-3 text-sm rounded-xl transition-colors ${
                         language === code 
-                          ? "bg-primary/10 text-primary" 
-                          : "hover:bg-accent/50"
+                          ? "bg-primary/10 text-white" 
+                          : "hover:bg-accent/50 text-white"
                       }`}
                     >
                       {name}
