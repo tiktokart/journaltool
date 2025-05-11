@@ -36,8 +36,10 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
       .replace(/(\w)\.(\w)/g, '$1. $2') // Add space after periods between words
       .trim();
     
-    // Perform BERT analysis
+    // Perform BERT analysis first so other analyses can use its results
+    console.log("Running BERT analysis on text...");
     const bertAnalysis = await analyzeTextWithBert(processedText);
+    console.log("BERT analysis complete, found keywords:", bertAnalysis.keywords?.length || 0);
     
     // Generate summary with enhanced contextual analysis
     const summary = await generateSummary(processedText);
@@ -54,8 +56,8 @@ export const analyzePdfContent = async (file: File, pdfText: string) => {
     // Generate timeline with meaningful text markers
     const timeline = await generateTimeline(processedText);
     
-    // Generate embedding points with contextual relationships
-    const embeddingPoints = await generateEmbeddingPoints(processedText);
+    // Generate embedding points with contextual relationships, using BERT keywords if available
+    const embeddingPoints = await generateEmbeddingPoints(processedText, bertAnalysis);
     
     console.log("BERT Analysis complete with the following stats:");
     console.log(`- Word count: ${wordCount}`);

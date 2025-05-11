@@ -1,749 +1,458 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
+import { Point } from '../../src/types/embedding';
+import { useFrame } from '@react-three/fiber';
+import { useSnapshot } from 'valtio';
+import { state } from './State';
+import { getEmotionColor } from '../../src/utils/embeddingUtils';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Point } from '@/types/embedding';
-import gsap from 'gsap';
-import { getHomepageEmotionColor } from '@/utils/colorUtils';
 
 interface EmbeddingSceneProps {
+  containerRef: React.RefObject<HTMLDivElement>;
+  cameraRef: React.MutableRefObject<THREE.PerspectiveCamera | null>;
+  controlsRef: React.MutableRefObject<OrbitControls | null>;
   points: Point[];
-  containerRef?: React.RefObject<HTMLDivElement>;
-  cameraRef?: React.MutableRefObject<THREE.PerspectiveCamera | null>;
-  controlsRef?: React.MutableRefObject<OrbitControls | null>;
-  isInteractive?: boolean;
-  onPointHover?: (point: Point | null) => void;
-  onPointSelect?: (point: Point | null) => void;
-  focusOnWord?: string | null;
-  connectedPoints?: Point[];
-  selectedPoint?: Point | null;
-  comparisonPoint?: Point | null;
-  isCompareMode?: boolean;
-  depressedJournalReference?: boolean;
-  onFocusEmotionalGroup?: (tone: string) => void;
-  selectedEmotionalGroup?: string | null;
-  onResetView?: () => void;
-  visibleClusterCount?: number;
-  showAllPoints?: boolean;
+  onPointHover: (point: Point | null) => void;
+  onPointSelect: (point: Point | null) => void;
+  isInteractive: boolean;
+  depressedJournalReference: boolean;
+  focusOnWord: string | null;
+  connectedPoints: Point[];
+  selectedPoint: Point | null;
+  comparisonPoint: Point | null;
+  isCompareMode: boolean;
+  onFocusEmotionalGroup: (tone: string) => void;
+  selectedEmotionalGroup: string | null;
+  onResetView: () => void;
+  visibleClusterCount: number;
+  showAllPoints: boolean;
 }
 
-const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({ 
-  points, 
-  containerRef: externalContainerRef,
-  cameraRef: externalCameraRef,
-  controlsRef: externalControlsRef,
-  isInteractive = true, 
+export const zoomIn = (camera: THREE.PerspectiveCamera | null) => {
+  if (camera) {
+    camera.position.z -= 5;
+  }
+};
+
+export const zoomOut = (camera: THREE.PerspectiveCamera | null) => {
+  if (camera) {
+    camera.position.z += 5;
+  }
+};
+
+export const resetZoom = (camera: THREE.PerspectiveCamera | null, controls: OrbitControls | null) => {
+  if (camera) {
+    camera.position.set(0, 0, 25);
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+  }
+  if (controls) {
+    controls.reset();
+  }
+};
+
+const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
+  containerRef,
+  cameraRef,
+  controlsRef,
+  points,
   onPointHover,
   onPointSelect,
+  isInteractive,
+  depressedJournalReference,
   focusOnWord,
-  connectedPoints = [],
+  connectedPoints,
   selectedPoint,
   comparisonPoint,
-  isCompareMode = false,
-  depressedJournalReference = false,
+  isCompareMode,
   onFocusEmotionalGroup,
   selectedEmotionalGroup,
   onResetView,
-  visibleClusterCount = 8,
-  showAllPoints = true
+  visibleClusterCount,
+  showAllPoints
 }) => {
-  const internalContainerRef = useRef<HTMLDivElement>(null);
-  const containerRef = externalContainerRef || internalContainerRef;
-  
-  const internalCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const cameraRef = externalCameraRef || internalCameraRef;
-  
-  const internalControlsRef = useRef<OrbitControls | null>(null);
-  const controlsRef = externalControlsRef || internalControlsRef;
-  
   const sceneRef = useRef<THREE.Scene>(new THREE.Scene());
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const spheresGroupRef = useRef<THREE.Group | null>(null);
-  const linesRef = useRef<THREE.LineSegments | null>(null);
-  const comparisonLinesRef = useRef<THREE.LineSegments | null>(null);
-  const spheresRef = useRef<THREE.Mesh[]>([]);
-  const emotionalGroupsRef = useRef<Map<string, THREE.Vector3>>(new Map());
-  const isZoomingRef = useRef<boolean>(false);
-  const zoomTimeoutRef = useRef<number | null>(null);
-  const animationFrameIdRef = useRef<number | null>(null);
-  const isDraggingRef = useRef<boolean>(false);
-  const rotationRef = useRef<THREE.Vector3>(new THREE.Vector3(0.0001, 0.0002, 0));
-  const filteredPointsRef = useRef<Point[]>([]);
-  const activeEmotionalGroupsRef = useRef<string[]>([]);
-
-  // Determine if we're on the homepage
-  const isHomepage = window.location.pathname === '/';
-
+  const pointsRef = useRef<THREE.Points>(null);
+  const lineRef = useRef<THREE.Line>(null);
+  const camera = useRef<THREE.PerspectiveCamera>(new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000));
+  const orbitControls = useRef<OrbitControls | null>(null);
+  const animationFrameId = useRef<number>(0);
+  const { hoveredWord } = useSnapshot(state);
+  const [frustum, setFrustum] = React.useState<THREE.Frustum>(new THREE.Frustum());
+  
+  const isPointVisible = (point: Point, camera: THREE.PerspectiveCamera, frustum: THREE.Frustum) => {
+    if (!point || typeof point.x !== 'number' || typeof point.y !== 'number' || typeof point.z !== 'number') {
+      return false;
+    }
+    
+    const vector = new THREE.Vector3(point.x, point.y, point.z);
+    vector.project(camera);
+    
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    vector.x = (vector.x * width + width) / 2;
+    vector.y = -(vector.y * height - height) / 2;
+    
+    const sphere = new THREE.Sphere(new THREE.Vector3(point.x, point.y, point.z), 1);
+    return frustum.intersectsSphere(sphere);
+  };
+  
   useEffect(() => {
-    if (!points.length) return;
-    
-    // Log point counts for debugging
-    console.log(`EmbeddingScene received ${points.length} points`);
-    console.log(`showAllPoints is set to: ${showAllPoints}`);
-    
-    // Make points globally available for other components like TextEmotionViewer
-    if (typeof window !== 'undefined') {
-      window.documentEmbeddingPoints = points;
-      console.log(`EmbeddingScene: Exposed ${points.length} points to window object`);
+    if (cameraRef) {
+      cameraRef.current = camera.current;
     }
-    
-    const emotionCounts: Record<string, number> = {};
-    points.forEach(point => {
-      const emotion = point.emotionalTone || "Neutral";
-      emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
-    });
-    
-    const sortedEmotions = Object.entries(emotionCounts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([emotion]) => emotion);
-    
-    activeEmotionalGroupsRef.current = sortedEmotions.slice(0, visibleClusterCount);
-    
-    if (selectedEmotionalGroup) {
-      // Filter for specific emotional group
-      filteredPointsRef.current = points.filter(p => 
-        (p.emotionalTone || "Neutral") === selectedEmotionalGroup
-      );
-    } else if (showAllPoints) {
-      // Show all points regardless of group
-      filteredPointsRef.current = points;
-      console.log(`Displaying all ${points.length} points`);
-    } else {
-      // Show only points from top emotional groups
-      filteredPointsRef.current = points.filter(p => 
-        activeEmotionalGroupsRef.current.includes(p.emotionalTone || "Neutral")
-      );
-    }
-    
-    if (spheresGroupRef.current) {
-      updateSpheres();
-    }
-  }, [points, visibleClusterCount, selectedEmotionalGroup, showAllPoints]);
-
+  }, [cameraRef, camera]);
+  
   useEffect(() => {
     const scene = sceneRef.current;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0); // Set clear color to transparent
     
-    if (!cameraRef.current) {
-      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      if (externalCameraRef) {
-        externalCameraRef.current = camera;
-      } else {
-        internalCameraRef.current = camera;
-      }
-    }
-    const camera = cameraRef.current!;
-    
-    const renderer = new THREE.WebGLRenderer({ 
-      antialias: true, 
-      alpha: true,
-      preserveDrawingBuffer: true
-    });
-    rendererRef.current = renderer;
-    
-    if (!containerRef.current) return;
-    const containerWidth = containerRef.current.clientWidth;
-    const containerHeight = containerRef.current.clientHeight;
-    renderer.setSize(containerWidth, containerHeight);
-    containerRef.current.appendChild(renderer.domElement);
-    
-    camera.aspect = containerWidth / containerHeight;
-    camera.updateProjectionMatrix();
-    camera.position.z = 20;
-    
-    // Change background color to white
-    scene.background = new THREE.Color(0xFFFFFF);
-
-    const controlsInstance = new OrbitControls(camera, renderer.domElement);
-    if (externalControlsRef) {
-      externalControlsRef.current = controlsInstance;
-    } else {
-      internalControlsRef.current = controlsInstance;
+    if (!containerRef.current) {
+      console.error("Container ref is not yet available.");
+      return;
     }
     
-    controlsInstance.enableDamping = true;
-    controlsInstance.dampingFactor = 0.1;
-    controlsInstance.screenSpacePanning = true;
-    controlsInstance.minDistance = 1;
-    controlsInstance.maxDistance = 50;
-    controlsInstance.maxPolarAngle = Math.PI;
-    controlsInstance.autoRotateSpeed = 0.5;
-    controlsInstance.autoRotate = true;
-    controlsInstance.enableZoom = true;
-    controlsInstance.enableRotate = true;
-    controlsInstance.rotateSpeed = 0.5;
-    controlsInstance.zoomSpeed = 1.2;
-    controlsInstance.panSpeed = 0.8;
+    const container = containerRef.current;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
     
-    const handleMouseDown = () => {
-      isDraggingRef.current = true;
-    };
+    renderer.setSize(width, height);
+    container.appendChild(renderer.domElement);
     
-    const handleMouseUp = () => {
-      isDraggingRef.current = false;
-    };
+    camera.current.aspect = width / height;
+    camera.current.position.z = 25;
+    camera.current.updateProjectionMatrix();
     
-    const handleMouseLeave = () => {
-      isDraggingRef.current = false;
-    };
+    // OrbitControls
+    orbitControls.current = new OrbitControls(camera.current, renderer.domElement);
+    orbitControls.current.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+    orbitControls.current.dampingFactor = 0.05;
+    orbitControls.current.screenSpacePanning = false;
+    orbitControls.current.minDistance = 10;
+    orbitControls.current.maxDistance = 50;
+    orbitControls.current.maxPolarAngle = Math.PI / 2;
     
-    if (containerRef.current) {
-      containerRef.current.addEventListener('mousedown', handleMouseDown);
-      window.addEventListener('mouseup', handleMouseUp);
-      containerRef.current.addEventListener('mouseleave', handleMouseLeave);
+    if (controlsRef) {
+      controlsRef.current = orbitControls.current;
     }
     
-    controlsInstance.update();
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
     
-    const animate = () => {
-      animationFrameIdRef.current = requestAnimationFrame(animate);
-      
-      if (spheresGroupRef.current) {
-        spheresGroupRef.current.rotation.x += rotationRef.current.x;
-        spheresGroupRef.current.rotation.y += rotationRef.current.y;
-      }
-      
-      if (!isZoomingRef.current) {
-        controlsInstance.update();
-      }
-      
-      renderer.render(scene, camera);
-    };
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight.position.set(0, 1, 1).normalize();
+    scene.add(directionalLight);
     
-    animate();
-    
+    // Handle window resize
     const handleResize = () => {
       if (!containerRef.current) return;
-      const containerWidth = containerRef.current.clientWidth;
-      const containerHeight = containerRef.current.clientHeight;
       
-      renderer.setSize(containerWidth, containerHeight);
-      camera.aspect = containerWidth / containerHeight;
-      camera.updateProjectionMatrix();
+      const newWidth = containerRef.current.clientWidth;
+      const newHeight = containerRef.current.clientHeight;
+      
+      camera.current.aspect = newWidth / newHeight;
+      camera.current.updateProjectionMatrix();
+      
+      renderer.setSize(newWidth, newHeight);
     };
     
     window.addEventListener('resize', handleResize);
     
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (containerRef.current) {
-        containerRef.current.removeEventListener('mousedown', handleMouseDown);
-        containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
-      }
-      window.removeEventListener('mouseup', handleMouseUp);
+    // Raycaster for interactive points
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!containerRef.current || !pointsRef.current || !isInteractive) return;
       
-      if (zoomTimeoutRef.current !== null) {
-        window.clearTimeout(zoomTimeoutRef.current);
-      }
+      const rect = containerRef.current.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / containerRef.current.clientWidth) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / containerRef.current.clientHeight) * 2 + 1;
       
-      if (animationFrameIdRef.current !== null) {
-        cancelAnimationFrame(animationFrameIdRef.current);
-      }
+      raycaster.setFromCamera(mouse, camera.current);
       
-      controlsInstance.dispose();
-      renderer.dispose();
-      if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
-      }
-    };
-  }, [externalCameraRef, externalControlsRef]);
-
-  useEffect(() => {
-    if (selectedEmotionalGroup) {
-      filteredPointsRef.current = points.filter(p => 
-        (p.emotionalTone || "Neutral") === selectedEmotionalGroup
-      );
-    } else {
-      filteredPointsRef.current = points.filter(p => 
-        activeEmotionalGroupsRef.current.includes(p.emotionalTone || "Neutral")
-      );
-    }
-    
-    emotionalGroupsRef.current.clear();
-    
-    const emotionalGroups = new Map<string, Point[]>();
-    
-    points.forEach(point => {
-      const tone = point.emotionalTone || "Neutral";
-      if (!emotionalGroups.has(tone)) {
-        emotionalGroups.set(tone, []);
-      }
-      emotionalGroups.get(tone)!.push(point);
-    });
-    
-    emotionalGroups.forEach((groupPoints, tone) => {
-      if (groupPoints.length === 0) return;
+      const intersects = raycaster.intersectObject(pointsRef.current);
       
-      let sumX = 0, sumY = 0, sumZ = 0;
-      
-      groupPoints.forEach(point => {
-        sumX += point.position[0];
-        sumY += point.position[1];
-        sumZ += point.position[2];
-      });
-      
-      const centerX = sumX / groupPoints.length;
-      const centerY = sumY / groupPoints.length;
-      const centerZ = sumZ / groupPoints.length;
-      
-      emotionalGroupsRef.current.set(tone, new THREE.Vector3(centerX, centerY, centerZ));
-    });
-    
-    updateSpheres();
-  }, [points, selectedEmotionalGroup, visibleClusterCount]);
-
-  const updateSpheres = () => {
-    const scene = sceneRef.current;
-    
-    if (spheresGroupRef.current) {
-      scene.remove(spheresGroupRef.current);
-      spheresGroupRef.current = null;
-    }
-    
-    const spheresGroup = new THREE.Group();
-    spheresGroupRef.current = spheresGroup;
-    
-    spheresRef.current = [];
-    
-    const pointsToRender = filteredPointsRef.current;
-    
-    const sphereGeometry = new THREE.SphereGeometry(0.12, 16, 16);
-    
-    pointsToRender.forEach((point, index) => {
-      const isSelected = selectedPoint && point.id === selectedPoint.id;
-      const isComparison = comparisonPoint && point.id === comparisonPoint.id;
-      
-      // Check if we should use homepage-specific colors
-      let color: THREE.Color;
-      
-      if (isHomepage && point.emotionalTone) {
-        // Use our custom colors for homepage emotional groups
-        const homepageColor = getHomepageEmotionColor(point.emotionalTone, true);
-        if (homepageColor) {
-          // Convert hex to THREE.Color
-          color = new THREE.Color(homepageColor);
+      if (intersects.length > 0) {
+        const intersection = intersects[0];
+        const index = intersection.index;
+        
+        if (points && points[index]) {
+          const hoveredPoint = points[index];
+          state.hoveredWord = hoveredPoint.word || null;
+          onPointHover(hoveredPoint);
         } else {
-          // Fallback to the point's original color
-          color = new THREE.Color(point.color[0], point.color[1], point.color[2]);
+          state.hoveredWord = null;
+          onPointHover(null);
         }
       } else {
-        // Use the default color from point data for dashboard
-        color = new THREE.Color(point.color[0], point.color[1], point.color[2]);
+        state.hoveredWord = null;
+        onPointHover(null);
       }
-      
-      const material = new THREE.MeshBasicMaterial({
-        color: color,
-        transparent: true,
-        opacity: 0.8
-      });
-      
-      if (isSelected || isComparison) {
-        sphereGeometry.scale(1.5, 1.5, 1.5);
-        material.color.multiplyScalar(1.5);
-        material.opacity = 1.0;
-      }
-      
-      const sphere = new THREE.Mesh(sphereGeometry, material);
-      
-      sphere.position.set(point.position[0], point.position[1], point.position[2]);
-      
-      sphere.userData.pointIndex = index;
-      sphere.userData.pointId = point.id;
-      
-      spheresGroup.add(sphere);
-      
-      spheresRef.current.push(sphere);
-      
-      if (isSelected || isComparison) {
-        sphereGeometry.scale(1/1.5, 1/1.5, 1/1.5);
-      }
-    });
+    };
     
-    scene.add(spheresGroup);
-    
-    if (spheresGroup) {
-      spheresGroup.rotation.x = Math.random() * 0.2;
-      spheresGroup.rotation.y = Math.random() * 0.2;
-    }
-  };
-
-  const handlePointHover = (event: MouseEvent) => {
-    if (!isInteractive || !containerRef.current || !spheresGroupRef.current) return;
-
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const mouse = new THREE.Vector2(
-      ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1,
-      -((event.clientY - containerRect.top) / containerRect.height) * 2 + 1
-    );
-
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, cameraRef.current!);
-
-    const intersects = raycaster.intersectObjects(spheresGroupRef.current.children);
-
-    if (intersects.length > 0) {
-      const object = intersects[0].object as THREE.Mesh;
-      const pointIndex = object.userData.pointIndex;
+    const handlePointClick = (event: MouseEvent) => {
+      if (!containerRef.current || !pointsRef.current || !isInteractive) return;
       
-      if (pointIndex !== undefined && onPointHover) {
-        onPointHover(filteredPointsRef.current[pointIndex]);
-      }
-    } else if (onPointHover) {
-      onPointHover(null);
-    }
-  };
-
-  const handlePointClick = (event: MouseEvent) => {
-    if (!isInteractive || !containerRef.current || !spheresGroupRef.current) return;
-    
-    if (isDraggingRef.current) return;
-
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const mouse = new THREE.Vector2(
-      ((event.clientX - containerRect.left) / containerRect.width) * 2 - 1,
-      -((event.clientY - containerRect.top) / containerRect.height) * 2 + 1
-    );
-
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, cameraRef.current!);
-
-    const intersects = raycaster.intersectObjects(spheresGroupRef.current.children);
-
-    if (intersects.length > 0) {
-      const object = intersects[0].object as THREE.Mesh;
-      const pointIndex = object.userData.pointIndex;
+      const rect = containerRef.current.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / containerRef.current.clientWidth) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / containerRef.current.clientHeight) * 2 + 1;
       
-      if (pointIndex !== undefined) {
-        const clickedPoint = filteredPointsRef.current[pointIndex];
+      raycaster.setFromCamera(mouse, camera.current);
+      
+      const intersects = raycaster.intersectObject(pointsRef.current);
+      
+      if (intersects.length > 0) {
+        const intersection = intersects[0];
+        const index = intersection.index;
         
-        if (!isCompareMode && selectedPoint && clickedPoint.id === selectedPoint.id) {
-          if (onPointSelect) {
-            onPointSelect(null);
-          }
+        if (points && points[index]) {
+          const selectedPoint = points[index];
+          onPointSelect(selectedPoint);
         } else {
-          if (onPointSelect) {
-            onPointSelect(clickedPoint);
-          }
+          onPointSelect(null);
         }
+      } else {
+        onPointSelect(null);
       }
+    };
+    
+    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('click', handlePointClick);
+    
+    const animate = () => {
+      if (orbitControls.current) {
+        orbitControls.current.update();
+      }
+      
+      // Get current projection matrix
+      camera.current.updateMatrixWorld();
+      camera.current.matrixWorldInverse.copy(camera.current.matrixWorld).invert();
+      
+      // Update the frustum
+      frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.current.projectionMatrix, camera.current.matrixWorldInverse));
+      
+      renderer.render(scene, camera.current);
+      animationFrameId.current = window.requestAnimationFrame(animate);
+    };
+    
+    animate();
+    
+    return () => {
+      window.cancelAnimationFrame(animationFrameId.current);
+      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('click', handlePointClick);
+      window.removeEventListener('resize', handleResize);
+      
+      // Dispose of resources
+      renderer.dispose();
+      scene.dispose();
+      
+      if (orbitControls.current) {
+        orbitControls.current.dispose();
+      }
+    };
+  }, [containerRef, points, isInteractive, onPointHover, onPointSelect]);
+  
+  useEffect(() => {
+    if (onResetView) {
+      window.documentEmbeddingActions = {
+        ...window.documentEmbeddingActions,
+        resetView: () => {
+          resetZoom(camera.current, orbitControls.current);
+        }
+      };
     }
+  }, [onResetView]);
+  
+  useEffect(() => {
+    if (onFocusEmotionalGroup) {
+      window.documentEmbeddingActions = {
+        ...window.documentEmbeddingActions,
+        focusOnEmotionalGroup: (tone: string) => {
+          // Call the handler to focus on the emotional group
+          onFocusEmotionalGroup(tone);
+        },
+        resetEmotionalGroupFilter: () => {
+          // Call the handler to reset the emotional group filter
+          onResetView();
+        }
+      };
+    }
+  }, [onFocusEmotionalGroup, onResetView]);
+  
+  const createPointMaterial = (point: Point) => {
+    // Handle both position formats
+    let positionArray: number[] = [];
+    
+    if (Array.isArray(point.position)) {
+      positionArray = point.position;
+    } else if (typeof point.x === 'number' && typeof point.y === 'number' && typeof point.z === 'number') {
+      positionArray = [point.x, point.y, point.z];
+    } else {
+      // Fallback to origin if no valid position data
+      positionArray = [0, 0, 0];
+    }
+    
+    // Use position array values safely knowing they are numbers
+    const distance = Math.sqrt(
+      Math.pow(positionArray[0], 2) + 
+      Math.pow(positionArray[1], 2) + 
+      Math.pow(positionArray[2], 2)
+    );
+    
+    let color;
+    if (point.color) {
+      if (Array.isArray(point.color)) {
+        color = new THREE.Color(point.color[0], point.color[1], point.color[2]);
+      } else {
+        color = new THREE.Color(point.color);
+      }
+    } else if (point.emotionalTone) {
+      color = new THREE.Color(getEmotionColor(point.emotionalTone));
+    } else {
+      color = new THREE.Color(0x95A5A6);
+    }
+    
+    const size = point.size || 0.1;
+    
+    const material = new THREE.PointsMaterial({
+      size: size,
+      color: color,
+      opacity: 0.7,
+      transparent: true,
+      sizeAttenuation: true,
+    });
+    
+    return material;
   };
-
-  useEffect(() => {
-    if (isInteractive && containerRef.current) {
-      containerRef.current.addEventListener('click', handlePointClick);
-      containerRef.current.addEventListener('mousemove', handlePointHover);
-    }
-
-    return () => {
-      if (isInteractive && containerRef.current) {
-        containerRef.current.removeEventListener('click', handlePointClick);
-        containerRef.current.removeEventListener('mousemove', handlePointHover);
-      }
-    };
-  }, [filteredPointsRef.current, isInteractive, onPointSelect, onPointHover, containerRef, selectedPoint, comparisonPoint, isCompareMode, selectedEmotionalGroup, visibleClusterCount]);
-
-  const focusOnPoint = useCallback((targetPoint: Point | null) => {
-    if (!targetPoint || !cameraRef.current || !controlsRef.current) return;
-    
-    isZoomingRef.current = true;
-    
-    const point = new THREE.Vector3(targetPoint.position[0], targetPoint.position[1], targetPoint.position[2]);
-    
-    const startPosition = new THREE.Vector3();
-    startPosition.copy(cameraRef.current.position);
-    
-    const endPosition = new THREE.Vector3();
-    endPosition.copy(point).add(new THREE.Vector3(0, 0, 8));
-    
-    gsap.to(cameraRef.current.position, {
-      x: endPosition.x,
-      y: endPosition.y,
-      z: endPosition.z,
-      duration: 1.5,
-      ease: "power2.inOut",
-      onUpdate: () => {
-        if (controlsRef.current) {
-          controlsRef.current.target.set(point.x, point.y, point.z);
-          controlsRef.current.update();
-        }
-      },
-      onComplete: () => {
-        isZoomingRef.current = false;
-      }
-    });
-  }, [cameraRef]);
-
-  const resetView = useCallback(() => {
-    if (!cameraRef.current || !controlsRef.current) return;
-    
-    isZoomingRef.current = true;
-    
-    gsap.to(cameraRef.current.position, {
-      x: 0,
-      y: 0,
-      z: 20,
-      duration: 1.5,
-      ease: "power2.inOut",
-      onUpdate: () => {
-        if (controlsRef.current) {
-          controlsRef.current.target.set(0, 0, 0);
-          controlsRef.current.update();
-        }
-      },
-      onComplete: () => {
-        isZoomingRef.current = false;
-        if (controlsRef.current) {
-          controlsRef.current.autoRotate = true;
-        }
-      }
-    });
-    
-    if (onFocusEmotionalGroup) {
-      onFocusEmotionalGroup("");
-    }
-  }, [cameraRef, controlsRef, onFocusEmotionalGroup]);
-
-  const focusOnEmotionalGroup = useCallback((emotionalTone: string) => {
-    if (!cameraRef.current || !controlsRef.current) return;
-    
-    const groupCenter = emotionalGroupsRef.current.get(emotionalTone);
-    if (!groupCenter) return;
-    
-    isZoomingRef.current = true;
-    
-    if (controlsRef.current) {
-      controlsRef.current.autoRotate = false;
-    }
-    
-    const point = groupCenter;
-    
-    const startPosition = new THREE.Vector3();
-    startPosition.copy(cameraRef.current.position);
-    
-    const endPosition = new THREE.Vector3();
-    endPosition.copy(point).add(new THREE.Vector3(0, 0, 10));
-    
-    gsap.to(cameraRef.current.position, {
-      x: endPosition.x,
-      y: endPosition.y,
-      z: endPosition.z,
-      duration: 2.0,
-      ease: "power2.inOut",
-      onUpdate: () => {
-        if (controlsRef.current) {
-          controlsRef.current.target.set(point.x, point.y, point.z);
-          controlsRef.current.update();
-        }
-      },
-      onComplete: () => {
-        isZoomingRef.current = false;
-      }
-    });
-    
-    if (onFocusEmotionalGroup) {
-      onFocusEmotionalGroup(emotionalTone);
-    }
-  }, [cameraRef, controlsRef, onFocusEmotionalGroup]);
-
-  const resetEmotionalGroupFilter = useCallback(() => {
-    if (!cameraRef.current || !controlsRef.current) return;
-    
-    isZoomingRef.current = true;
-    
-    gsap.to(cameraRef.current.position, {
-      x: 0,
-      y: 0,
-      z: 20,
-      duration: 1.5,
-      ease: "power2.inOut",
-      onUpdate: () => {
-        if (controlsRef.current) {
-          controlsRef.current.target.set(0, 0, 0);
-          controlsRef.current.update();
-        }
-      },
-      onComplete: () => {
-        isZoomingRef.current = false;
-      }
-    });
-  }, [cameraRef]);
-
-  useEffect(() => {
-    if (focusOnWord) {
-      const targetPoint = points.find(point => point.word === focusOnWord);
-      focusOnPoint(targetPoint || null);
-    }
-  }, [focusOnWord, points, focusOnPoint]);
-
-  useEffect(() => {
-    if (!window.documentEmbeddingActions) {
-      window.documentEmbeddingActions = {};
-    }
-    window.documentEmbeddingActions.focusOnEmotionalGroup = focusOnEmotionalGroup;
-    window.documentEmbeddingActions.resetEmotionalGroupFilter = resetEmotionalGroupFilter;
-    window.documentEmbeddingActions.resetView = resetView;
-    
-    return () => {
-      if (window.documentEmbeddingActions) {
-        window.documentEmbeddingActions.focusOnEmotionalGroup = undefined;
-        window.documentEmbeddingActions.resetEmotionalGroupFilter = undefined;
-        window.documentEmbeddingActions.resetView = undefined;
-      }
-    };
-  }, [focusOnEmotionalGroup, resetEmotionalGroupFilter, resetView]);
-
+  
   useEffect(() => {
     const scene = sceneRef.current;
     
-    if (linesRef.current) {
-      scene.remove(linesRef.current);
-      linesRef.current = null;
+    // Clear any existing points
+    if (pointsRef.current) {
+      scene.remove(pointsRef.current);
+      pointsRef.current.geometry.dispose();
+      if (Array.isArray(pointsRef.current.material)) {
+        pointsRef.current.material.forEach(material => material.dispose());
+      } else {
+        pointsRef.current.material.dispose();
+      }
     }
     
-    if (connectedPoints.length === 0 || !focusOnWord) return;
+    // Filter points based on selected emotional group
+    let filteredPoints = points;
+    if (selectedEmotionalGroup) {
+      filteredPoints = points.filter(point => point.emotionalTone === selectedEmotionalGroup);
+    }
     
-    const sourcePoint = points.find(p => p.word === focusOnWord);
-    if (!sourcePoint) return;
+    // Prepare data for the points
+    const vertices: number[] = [];
+    const materials: THREE.PointsMaterial[] = [];
     
-    const lineVertices: number[] = [];
-    const lineColors: number[] = [];
-    
-    connectedPoints.forEach(connectedPoint => {
-      lineVertices.push(
-        sourcePoint.position[0],
-        sourcePoint.position[1],
-        sourcePoint.position[2]
-      );
-      
-      lineVertices.push(
-        connectedPoint.position[0],
-        connectedPoint.position[1],
-        connectedPoint.position[2]
-      );
-      
-      lineColors.push(
-        sourcePoint.color[0],
-        sourcePoint.color[1],
-        sourcePoint.color[2]
-      );
-      
-      lineColors.push(
-        connectedPoint.color[0],
-        connectedPoint.color[1],
-        connectedPoint.color[2]
-      );
+    filteredPoints.forEach(point => {
+      if (point.x !== undefined && point.y !== undefined && point.z !== undefined) {
+        vertices.push(point.x, point.y, point.z);
+        const material = createPointMaterial(point);
+        materials.push(material);
+      } else if (point.position && Array.isArray(point.position) && point.position.length === 3) {
+        vertices.push(point.position[0], point.position[1], point.position[2]);
+        const material = createPointMaterial(point);
+        materials.push(material);
+      }
     });
     
-    if (lineVertices.length > 0) {
-      const linesGeometry = new THREE.BufferGeometry();
-      linesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(lineVertices, 3));
-      linesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3));
-      
-      const linesMaterial = new THREE.LineBasicMaterial({
-        vertexColors: true,
-        linewidth: 3,
-        transparent: true,
-        opacity: 0.9
-      });
-      
-      linesRef.current = new THREE.LineSegments(linesGeometry, linesMaterial);
-      scene.add(linesRef.current);
-      
-      if (rendererRef.current && cameraRef.current) {
-        rendererRef.current.render(scene, cameraRef.current);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    
+    // Create points
+    const pointsObj = new THREE.Points(geometry, materials);
+    pointsRef.current = pointsObj;
+    scene.add(pointsObj);
+    
+    return () => {
+      if (pointsRef.current) {
+        scene.remove(pointsRef.current);
+        pointsRef.current.geometry.dispose();
+        if (Array.isArray(pointsRef.current.material)) {
+          pointsRef.current.material.forEach(material => material.dispose());
+        } else {
+          pointsRef.current.material.dispose();
+        }
       }
-    }
-  }, [points, connectedPoints, focusOnWord]);
-
-  useEffect(() => {
+    };
+  }, [points, selectedEmotionalGroup]);
+  
+  const renderConnections = () => {
     const scene = sceneRef.current;
     
-    if (comparisonLinesRef.current) {
-      scene.remove(comparisonLinesRef.current);
-      comparisonLinesRef.current = null;
-    }
-    
-    if (!selectedPoint || !comparisonPoint) return;
-    
-    const lineVertices: number[] = [];
-    const lineColors: number[] = [];
-    
-    lineVertices.push(
-      selectedPoint.position[0],
-      selectedPoint.position[1],
-      selectedPoint.position[2]
-    );
-    
-    lineVertices.push(
-      comparisonPoint.position[0],
-      comparisonPoint.position[1],
-      comparisonPoint.position[2]
-    );
-    
-    lineColors.push(1.0, 0.6, 0.0);
-    lineColors.push(1.0, 0.6, 0.0);
-    
-    if (lineVertices.length > 0) {
-      const linesGeometry = new THREE.BufferGeometry();
-      linesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(lineVertices, 3));
-      linesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3));
-      
-      const linesMaterial = new THREE.LineBasicMaterial({
-        vertexColors: true,
-        linewidth: 5,
-        transparent: true,
-        opacity: 1.0
-      });
-      
-      comparisonLinesRef.current = new THREE.LineSegments(linesGeometry, linesMaterial);
-      scene.add(comparisonLinesRef.current);
-      
-      if (rendererRef.current && cameraRef.current) {
-        rendererRef.current.render(scene, cameraRef.current);
+    if (lineRef.current) {
+      scene.remove(lineRef.current);
+      lineRef.current.geometry.dispose();
+      if (Array.isArray(lineRef.current.material)) {
+        lineRef.current.material.forEach(material => material.dispose());
+      } else {
+        lineRef.current.material.dispose();
       }
     }
-  }, [selectedPoint, comparisonPoint]);
-
-  return (
-    <div ref={externalContainerRef ? undefined : internalContainerRef} style={{ width: '100%', height: '100%' }} />
-  );
-};
-
-export const zoomIn = (camera: THREE.PerspectiveCamera | null) => {
-  if (!camera) return;
-  
-  gsap.to(camera.position, {
-    z: Math.max(camera.position.z - 2, 1),
-    duration: 0.5,
-    ease: "power2.out"
-  });
-};
-
-export const zoomOut = (camera: THREE.PerspectiveCamera | null) => {
-  if (!camera) return;
-  
-  gsap.to(camera.position, {
-    z: Math.min(camera.position.z + 3, 50),
-    duration: 0.5,
-    ease: "power2.out"
-  });
-};
-
-export const resetZoom = (camera: THREE.PerspectiveCamera | null, controls: OrbitControls | null) => {
-  if (!camera || !controls) return;
-  
-  gsap.to(camera.position, {
-    x: 0,
-    y: 0,
-    z: 20,
-    duration: 1,
-    ease: "power2.inOut",
-    onUpdate: () => {
-      if (controls) {
-        controls.target.set(0, 0, 0);
-        controls.update();
-      }
+    
+    if (!selectedPoint || !connectedPoints || connectedPoints.length === 0) {
+      return;
     }
-  });
+    
+    // Extract position safely for both data formats
+    const getPointPosition = (point: Point): [number, number, number] => {
+      if (Array.isArray(point.position) && point.position.length >= 3) {
+        return [
+          Number(point.position[0]), 
+          Number(point.position[1]), 
+          Number(point.position[2])
+        ];
+      }
+      
+      return [
+        Number(point.x || 0),
+        Number(point.y || 0),
+        Number(point.z || 0)
+      ];
+    };
+    
+    // Get selected point position
+    const p1Pos = getPointPosition(selectedPoint);
+    
+    // Prepare line geometry
+    const lineGeometry = new THREE.BufferGeometry();
+    const positions = [];
+    
+    // Add selected point position
+    positions.push(p1Pos[0], p1Pos[1], p1Pos[2]);
+    
+    // Add connected points positions
+    connectedPoints.forEach(point2 => {
+      const p2Pos = getPointPosition(point2);
+      positions.push(p2Pos[0], p2Pos[1], p2Pos[2]);
+    });
+    
+    lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    
+    // Create line material
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+    
+    // Create line object
+    const line = new THREE.Line(lineGeometry, lineMaterial);
+    lineRef.current = line;
+    scene.add(line);
+  };
+  
+  useEffect(() => {
+    renderConnections();
+  }, [selectedPoint, connectedPoints]);
+  
+  return null;
 };
 
 export default EmbeddingScene;

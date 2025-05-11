@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
@@ -48,6 +47,42 @@ export const DocumentEmbedding = ({
   const [emotionalGroups, setEmotionalGroups] = useState<string[]>([]);
   const [selectedEmotionalGroup, setSelectedEmotionalGroup] = useState<string | null>(null);
   const [filterApplied, setFilterApplied] = useState<boolean>(false);
+
+  // Ensure points have proper position format to fix type errors
+  const normalizePoints = (inputPoints: Point[]): Point[] => {
+    return inputPoints.map(point => {
+      // If point already has position array, keep it
+      if (point.position && Array.isArray(point.position)) {
+        return point;
+      }
+      
+      // If point has x,y,z properties, create position array
+      if (typeof point.x === 'number' && typeof point.y === 'number' && typeof point.z === 'number') {
+        return {
+          ...point,
+          position: [point.x, point.y, point.z]
+        };
+      }
+      
+      // If point has position as array of numbers in text form, convert to numbers
+      if (Array.isArray(point.position)) {
+        return {
+          ...point,
+          position: point.position.map(Number)
+        };
+      }
+      
+      // Fallback - create random position if no valid position data exists
+      return {
+        ...point,
+        position: [
+          (Math.random() - 0.5) * 20,
+          (Math.random() - 0.5) * 20,
+          (Math.random() - 0.5) * 20
+        ]
+      };
+    });
+  };
   
   useEffect(() => {
     if (focusOnWord !== currentFocusWord) {
@@ -80,7 +115,8 @@ export const DocumentEmbedding = ({
   useEffect(() => {
     if (points.length > 0) {
       console.log(`Setting display points with ${points.length} points from props`);
-      const pointsWithCorrectColors = enrichPoints(points, isHomepage);
+      const normalizedPoints = normalizePoints(points);
+      const pointsWithCorrectColors = enrichPoints(normalizedPoints, isHomepage);
       setDisplayPoints(pointsWithCorrectColors);
       
       // Export points to window for TextEmotionViewer to access
@@ -88,11 +124,12 @@ export const DocumentEmbedding = ({
     } else if (generatedPoints.length === 0) {
       console.log("Generating mock points");
       const mockPoints = generateMockPoints(depressedJournalReference);
-      setGeneratedPoints(mockPoints);
-      setDisplayPoints(mockPoints);
+      const normalizedMockPoints = normalizePoints(mockPoints);
+      setGeneratedPoints(normalizedMockPoints);
+      setDisplayPoints(normalizedMockPoints);
       
       // Export points to window for TextEmotionViewer to access
-      window.documentEmbeddingPoints = mockPoints;
+      window.documentEmbeddingPoints = normalizedMockPoints;
     }
   }, [points, depressedJournalReference, generatedPoints.length, isHomepage]);
   
@@ -305,6 +342,119 @@ export const DocumentEmbedding = ({
   );
 };
 
+// Implement handler methods that were only referenced above
+function handlePointHover(point: Point | null) {
+  setHoveredPoint(point);
+}
+
+function handlePointSelect(point: Point | null) {
+  if (isCompareMode) {
+    setComparisonPoint(point);
+    setIsCompareMode(false);
+    
+    if (onComparePoint && selectedPoint && point) {
+      onComparePoint(selectedPoint, point);
+    }
+    
+    return;
+  }
+  
+  setSelectedPoint(point);
+  
+  if (!point) {
+    setConnectedPoints([]);
+    setComparisonPoint(null);
+    if (onPointClick) {
+      onPointClick(null);
+    }
+    return;
+  }
+  
+  if (point.relationships && point.relationships.length > 0) {
+    const sortedRelationships = [...point.relationships]
+      .sort((a, b) => b.strength - a.strength)
+      .slice(0, 3);
+      
+    const connected = sortedRelationships
+      .map(rel => displayPoints.find(p => p.id === rel.id))
+      .filter(p => p !== undefined) as Point[];
+      
+    setConnectedPoints(connected);
+  } else {
+    setConnectedPoints([]);
+  }
+  
+  if (onPointClick) {
+    onPointClick(point);
+  }
+}
+
+function handleZoomIn() {
+  zoomIn(cameraRef.current);
+}
+
+function handleZoomOut() {
+  zoomOut(cameraRef.current);
+}
+
+function handleResetZoom() {
+  resetZoom(cameraRef.current, controlsRef.current);
+}
+
+function handleFocusEmotionalGroup(tone: string) {
+  setSelectedEmotionalGroup(tone);
+  setFilterApplied(true);
+}
+
+function focusOnEmotionalGroup(emotionalTone: string) {
+  setSelectedEmotionalGroup(emotionalTone);
+  setFilterApplied(true);
+  
+  if (window.documentEmbeddingActions && 
+      window.documentEmbeddingActions.focusOnEmotionalGroup) {
+    window.documentEmbeddingActions.focusOnEmotionalGroup(emotionalTone);
+  }
+  
+  toast.info(`${t("showingOnlyEmotionalGroup")} "${emotionalTone}" ${t("emotionalGroup")}`);
+}
+
+function resetEmotionalGroupFilter() {
+  setSelectedEmotionalGroup(null);
+  setFilterApplied(false);
+  
+  if (window.documentEmbeddingActions && 
+      window.documentEmbeddingActions.resetEmotionalGroupFilter) {
+    window.documentEmbeddingActions.resetEmotionalGroupFilter();
+  }
+  
+  toast.info(t("showingAllEmotionalGroups"));
+}
+
+function handleResetView() {
+  if (window.documentEmbeddingActions && 
+      window.documentEmbeddingActions.resetView) {
+    window.documentEmbeddingActions.resetView();
+  }
+  
+  if (onResetView) {
+    onResetView();
+  }
+  
+  setSelectedEmotionalGroup(null);
+  setFilterApplied(false);
+  toast.info(t("viewReset"));
+}
+
+function toggleCompareMode() {
+  if (selectedPoint) {
+    setIsCompareMode(!isCompareMode);
+    if (!isCompareMode) {
+      setComparisonPoint(null);
+    }
+  }
+}
+
+// Define the global window interfaces
 declare global {
   interface Window {
     documentEmbeddingPoints?: Point[];

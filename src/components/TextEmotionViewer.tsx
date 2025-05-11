@@ -16,19 +16,21 @@ interface TextEmotionViewerProps {
   pdfText: string;
   embeddingPoints?: Point[];
   sourceDescription?: string;
+  bertAnalysis?: any;
 }
 
 export const TextEmotionViewer = ({ 
   pdfText, 
   embeddingPoints = [],
-  sourceDescription
+  sourceDescription,
+  bertAnalysis
 }: TextEmotionViewerProps) => {
   const { t } = useLanguage();
   const [highlightedText, setHighlightedText] = useState<React.ReactNode[]>([]);
   const [showHighlights, setShowHighlights] = useState(true);
   const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
   const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal'>('minimal');
-  const [bertAnalysis, setBertAnalysis] = useState<any>(null);
+  const [localBertAnalysis, setLocalBertAnalysis] = useState<any>(bertAnalysis);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Unified color function for emotional tones - ensuring consistency across the app
@@ -48,11 +50,19 @@ export const TextEmotionViewer = ({
     const runAnalysis = async () => {
       if (!pdfText || pdfText.trim().length === 0) return;
       
+      // If bertAnalysis was provided as a prop, use it instead of running new analysis
+      if (bertAnalysis) {
+        console.log("Using provided BERT analysis with", bertAnalysis.keywords?.length || 0, "keywords");
+        setLocalBertAnalysis(bertAnalysis);
+        return;
+      }
+      
       setIsProcessing(true);
       try {
         // Analyze text with BERT
         const analysis = await analyzeTextWithBert(pdfText);
-        setBertAnalysis(analysis);
+        setLocalBertAnalysis(analysis);
+        console.log("Completed BERT analysis with", analysis.keywords?.length || 0, "keywords");
         setIsProcessing(false);
       } catch (error) {
         console.error("Error running BERT analysis:", error);
@@ -61,7 +71,7 @@ export const TextEmotionViewer = ({
     };
     
     runAnalysis();
-  }, [pdfText]);
+  }, [pdfText, bertAnalysis]);
 
   useEffect(() => {
     // Use either provided embedding points or ones exposed on window by DocumentEmbedding
@@ -70,8 +80,9 @@ export const TextEmotionViewer = ({
       : window.documentEmbeddingPoints || [];
       
     // Also include BERT keywords for highlighting if available
-    if (bertAnalysis?.keywords?.length > 0) {
-      const bertPoints = bertAnalysis.keywords.map((kw: any) => ({
+    if (localBertAnalysis?.keywords?.length > 0) {
+      console.log("Adding BERT keywords to embedding points for highlighting");
+      const bertPoints = localBertAnalysis.keywords.map((kw: any) => ({
         word: kw.word,
         emotionalTone: kw.tone,
         color: kw.color,
@@ -81,7 +92,7 @@ export const TextEmotionViewer = ({
       // Combine BERT points with embedding points, avoiding duplicates
       const existingWords = points.map((p: Point) => p.word?.toLowerCase());
       const filteredBertPoints = bertPoints.filter((p: any) => 
-        !existingWords.includes(p.word?.toLowerCase())
+        p.word && !existingWords.includes(p.word?.toLowerCase())
       );
       
       points = [...points, ...filteredBertPoints];
@@ -105,7 +116,7 @@ export const TextEmotionViewer = ({
     } else {
       setHighlightedText([pdfText]);
     }
-  }, [pdfText, embeddingPoints, showHighlights, hideNonHighlighted, filteringLevel, bertAnalysis]);
+  }, [pdfText, embeddingPoints, showHighlights, hideNonHighlighted, filteringLevel, localBertAnalysis]);
 
   const processTextWithEmotions = (points: Point[]) => {
     if (!showHighlights) {

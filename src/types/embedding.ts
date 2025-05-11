@@ -7,6 +7,7 @@ export interface Point {
   x?: number;
   y?: number;
   z?: number;
+  position?: number[]; // Added for compatibility
   size?: number;
   color?: string | [number, number, number]; // Accepts either string or RGB array
   emotionalTone?: string; // The emotional tone associated with the point
@@ -16,4 +17,19 @@ export interface Point {
   hidden?: boolean; // Whether the point should be hidden
   distance?: number; // Distance from selected point (for comparison)
   [key: string]: any; // Allow for additional properties
+}
+
+export interface DocumentEmbeddingProps {
+  points?: Point[];
+  onPointClick?: (point: Point | null) => void;
+  isInteractive?: boolean;
+  depressedJournalReference?: boolean;
+  focusOnWord?: string | null;
+  onComparePoint?: (point1: Point, point2: Point) => void;
+  onSearchSelect?: (point: Point) => void;
+  sourceDescription?: string;
+  onResetView?: () => void;
+  visibleClusterCount?: number;
+  showAllPoints?: boolean;
+  wordCount?: number;
 }

@@ -64,6 +64,13 @@ const AnalysisResults = ({
     return null;
   }
 
+  // Log BERT analysis data to verify it's available
+  console.log("BERT data available in AnalysisResults:", 
+    sentimentData.bertAnalysis ? 
+    `Yes, with ${sentimentData.bertAnalysis.keywords?.length || 0} keywords` : 
+    "No"
+  );
+
   return (
     <div className="animate-fade-in">
       <div className="bg-white p-4 rounded-lg mb-4">
@@ -80,6 +87,7 @@ const AnalysisResults = ({
           text={sentimentData.text || sentimentData.pdfText}
           wordCount={sentimentData.wordCount}
           sourceDescription={sentimentData.sourceDescription}
+          bertAnalysis={sentimentData.bertAnalysis}
         />
       </div>
       
@@ -103,6 +111,7 @@ const AnalysisResults = ({
           handlePointClick={handlePointClick}
           handleResetVisualization={handleResetVisualization}
           handleClearSearch={handleClearSearch}
+          bertAnalysis={sentimentData.bertAnalysis}
         />
       </div>
       
@@ -120,6 +129,7 @@ const AnalysisResults = ({
           selectedPoint={selectedPoint}
           sourceDescription={sentimentData.sourceDescription}
           calculateRelationship={calculateRelationship}
+          bertAnalysis={sentimentData.bertAnalysis}
         />
       </div>
       
@@ -128,6 +138,7 @@ const AnalysisResults = ({
           pdfText={pdfText}
           embeddingPoints={sentimentData.embeddingPoints}
           sourceDescription={sentimentData.sourceDescription}
+          bertAnalysis={sentimentData.bertAnalysis}
         />
       </div>
       
@@ -135,6 +146,7 @@ const AnalysisResults = ({
         <WellbeingResources 
           embeddingPoints={sentimentData.embeddingPoints}
           sourceDescription={sentimentData.sourceDescription}
+          bertAnalysis={sentimentData.bertAnalysis}
         />
       </div>
       

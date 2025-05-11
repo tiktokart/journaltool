@@ -1,50 +1,32 @@
 
-import React from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface DeleteEntryConfirmProps {
   isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
+  onOpenChange: (open: boolean) => void;
+  onConfirmDelete: () => void;
 }
 
-const DeleteEntryConfirm: React.FC<DeleteEntryConfirmProps> = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm 
-}) => {
-  const handleConfirm = () => {
-    onConfirm();
-    onClose();
-  };
-
+export const DeleteEntryConfirm = ({
+  isOpen,
+  onOpenChange,
+  onConfirmDelete
+}: DeleteEntryConfirmProps) => {
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete Journal Entry</AlertDialogTitle>
-          <AlertDialogDescription>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Delete Journal Entry</DialogTitle>
+          <DialogDescription>
             Are you sure you want to delete this journal entry? This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} className="bg-red-600 hover:bg-red-700">
-            Delete
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="destructive" onClick={onConfirmDelete}>Delete</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
-
-export default DeleteEntryConfirm;

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, BarChart2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -19,6 +18,7 @@ import JournalSentimentSummary from "./JournalSentimentSummary";
 import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Card } from "@/components/ui/card";
 import MentalHealthSuggestions from "../suggestions/MentalHealthSuggestions";
+import { analyzeTextWithBert } from "@/utils/bertIntegration";
 
 interface JournalAnalysisSectionProps {
   journalEntries: any[];
@@ -39,6 +39,8 @@ const JournalAnalysisSection = ({
 }: JournalAnalysisSectionProps) => {
   const { t } = useLanguage();
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+  const [bertAnalysis, setBertAnalysis] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Generate emotional embeddings from journal entries
   const generateEmotionalEmbeddings = () => {
@@ -124,6 +126,28 @@ const JournalAnalysisSection = ({
       .slice(0, 20)
       .map(([word]) => word);
   };
+
+  // Run BERT analysis on journal entries
+  useEffect(() => {
+    const runAnalysis = async () => {
+      if (!journalEntries.length) return;
+      
+      setIsAnalyzing(true);
+      try {
+        const combinedText = journalEntries.map(entry => entry.text).join(" ");
+        console.log("Running BERT analysis on journal entries...");
+        const analysis = await analyzeTextWithBert(combinedText);
+        console.log("Journal BERT analysis complete with", analysis.keywords?.length || 0, "keywords");
+        setBertAnalysis(analysis);
+      } catch (error) {
+        console.error("Error running BERT analysis on journal entries:", error);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+    
+    runAnalysis();
+  }, [journalEntries, refreshTrigger]);
 
   const embeddingPoints = generateEmotionalEmbeddings();
   const keywords = extractKeywords();
@@ -231,6 +255,8 @@ const JournalAnalysisSection = ({
                             points={embeddingPoints} 
                             isInteractive={true} 
                             depressedJournalReference={overallSentimentChange.includes("negative")}
+                            // Pass BERT data for enhanced visualizations
+                            bertAnalysis={bertAnalysis}
                           />
                         </div>
                       </div>
