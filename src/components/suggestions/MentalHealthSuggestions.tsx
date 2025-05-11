@@ -12,6 +12,7 @@ interface Suggestion {
   solutionStatement: string;
   actionPlan: string;
   resourceLink: string;
+  triggeringWord?: string; // Add the triggering word from the text
 }
 
 const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
@@ -103,12 +104,21 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
         }
       };
       
-      // Check for keywords in the combined text
+      // Check for keywords in the combined text and find actual triggering words
       const matchedSuggestions: Suggestion[] = [];
       
       for (const [keyword, suggestion] of Object.entries(keywordSuggestions)) {
         if (combinedText.includes(keyword)) {
-          matchedSuggestions.push(suggestion);
+          // Find the actual instance of the keyword in the text for context
+          const regex = new RegExp(`\\b${keyword}\\b|\\b${keyword}[a-z]*\\b|\\b[a-z]*${keyword}\\b`, 'i');
+          const match = combinedText.match(regex);
+          const triggeringWord = match ? match[0] : keyword;
+          
+          // Create a copy of the suggestion with the triggering word
+          matchedSuggestions.push({
+            ...suggestion,
+            triggeringWord
+          });
         }
       }
       
@@ -119,7 +129,8 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
           keyword: 'wellness',
           solutionStatement: 'Maintain good mental health through regular self-care practices.',
           actionPlan: 'Prioritize sleep, physical activity, and social connections. Consider starting a daily gratitude practice.',
-          resourceLink: 'https://www.mentalhealth.gov/basics/what-is-mental-health'
+          resourceLink: 'https://www.mentalhealth.gov/basics/what-is-mental-health',
+          triggeringWord: 'general wellness'
         });
       }
       
@@ -142,7 +153,12 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
         <div className="space-y-6">
           {suggestions.map(suggestion => (
             <div key={suggestion.id} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-              <h4 className="font-medium text-orange-700">{suggestion.solutionStatement}</h4>
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="font-medium text-orange-700">{suggestion.solutionStatement}</h4>
+                <span className="text-xs px-2 py-1 bg-orange-100 rounded-full text-orange-800">
+                  Triggered by: "{suggestion.triggeringWord}"
+                </span>
+              </div>
               <p className="mt-2 text-sm text-gray-700">{suggestion.actionPlan}</p>
               <a 
                 href={suggestion.resourceLink}

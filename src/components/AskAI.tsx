@@ -84,10 +84,11 @@ const AskAI = ({ journalText = "", className = "" }: AskAIProps) => {
       
       let answer = "Based on your journal entries, I couldn't find enough information to answer this question specifically. Try writing more entries that touch on this topic.";
       
-      if (bertAnalysis && bertAnalysis.text) {
-        answer = bertAnalysis.text;
+      // Fix the type issue by checking if bertAnalysis has the expected structure
+      if (bertAnalysis && typeof bertAnalysis === 'object' && 'text' in bertAnalysis) {
+        answer = bertAnalysis.text as string;
       } else {
-        // If BERT analysis fails, use a more sophisticated fallback
+        // If BERT analysis fails or doesn't return expected format, use a fallback
         answer = generateEnhancedAnswer(text, journalEntries);
       }
       

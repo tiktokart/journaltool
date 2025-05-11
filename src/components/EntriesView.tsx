@@ -146,7 +146,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
             sentiment: keyword.sentiment || 0.5,
             emotionalTone: keyword.tone || 'Neutral',
             keywords: keyword.relatedConcepts || [],
-            color: keyword.color || [0.5, 0.5, 0.5] as [number, number, number],
+            color: keyword.color || [0.8, 0.8, 0.2] as [number, number, number], // Brighter default color
             frequency: keyword.frequency || 1
           } as Point;
         });
@@ -265,7 +265,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries = [], onSelectEntry }
         keywords: [],
         color,
         frequency: wordCounts[cleanWord.toLowerCase()] || 1
-      });
+      } as Point);
     });
     
     setEmbeddingPoints(points);
