@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -667,8 +666,6 @@ const Dashboard = () => {
                 />
               </div>
             </div>
-            
-            {/* AskAI Section has been removed as requested */}
           </>
         )}
         
