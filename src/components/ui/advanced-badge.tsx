@@ -9,6 +9,7 @@ interface AdvancedBadgeProps extends BadgeProps {
   sentiment?: number;
   clickable?: boolean;
   title?: string; // Add title for tooltip
+  onClick?: () => void; // Add onClick handler
 }
 
 export function AdvancedBadge({
@@ -18,6 +19,7 @@ export function AdvancedBadge({
   sentiment,
   clickable = false,
   title,
+  onClick,
   ...props
 }: AdvancedBadgeProps) {
   // Get emotion-specific colors
@@ -63,6 +65,12 @@ export function AdvancedBadge({
                        sentiment !== undefined ? getSentimentColor(sentiment) : 
                        { bg: '', text: '', hover: '' };
   
+  const handleClick = () => {
+    if (clickable && onClick) {
+      onClick();
+    }
+  };
+  
   const badgeContent = (
     <Badge
       className={cn(
@@ -73,6 +81,7 @@ export function AdvancedBadge({
         clickable && 'transition-colors duration-200',
         className
       )}
+      onClick={handleClick}
       {...props}
     >
       {children}

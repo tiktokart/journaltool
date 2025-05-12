@@ -13,6 +13,8 @@ import { ChevronDown, ChevronUp, BarChart2, BookOpen, Clock, KeySquare, Network 
 import { Point } from "@/types/embedding";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { AdvancedBadge } from "./ui/advanced-badge";
+import { BertAnalysisResult } from '../utils/bertIntegration';
+import { toast } from 'sonner';
 
 interface EntryContentProps {
   sentimentData: any;
@@ -71,18 +73,38 @@ export const EntryContent: React.FC<EntryContentProps> = ({
 
   if (!sentimentData) return null;
 
-  // Extract action verbs and main topics from BERT analysis if available - Make sure we're using the actual text data
-  const actionVerbs = sentimentData.bertAnalysis?.keywords
+  // Ensure bertAnalysis is available in the correct format
+  const bertAnalysis = sentimentData.bertAnalysis as BertAnalysisResult;
+  
+  // Handle cases where BERT analysis is missing or incomplete
+  if (!bertAnalysis || !bertAnalysis.keywords || bertAnalysis.keywords.length === 0) {
+    console.warn("BERT analysis data is missing or empty");
+    // We could show a warning toast here, but for now we'll continue with available data
+  } else {
+    console.log(`BERT analysis available with ${bertAnalysis.keywords.length} keywords`);
+  }
+
+  // Extract action verbs and main topics from BERT analysis if available
+  const actionVerbs = bertAnalysis?.keywords
     ?.filter((kw: any) => kw.pos === 'verb')
     ?.sort((a: any, b: any) => b.weight - a.weight)
     ?.slice(0, 10)
     ?.map((kw: any) => kw.word) || [];
     
-  const mainTopics = sentimentData.bertAnalysis?.keywords
+  const mainTopics = bertAnalysis?.keywords
     ?.filter((kw: any) => kw.pos === 'noun')
     ?.sort((a: any, b: any) => b.frequency - a.frequency)
     ?.slice(0, 8)
     ?.map((kw: any) => kw.word) || [];
+  
+  const handleWordClick = (word: string) => {
+    setSelectedWord(word);
+    const matchingPoint = filteredPoints.find(p => p.word === word);
+    if (matchingPoint) {
+      handlePointClick(matchingPoint);
+      toast.success(`Selected word: ${word}`);
+    }
+  };
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -157,7 +179,8 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                             emotion="action"
                             className="text-xs"
                             clickable
-                            title={`Action verb from your journal`}
+                            title={`Action verb from your journal: ${verb}`}
+                            onClick={() => handleWordClick(verb)}
                           >
                             {verb}
                           </AdvancedBadge>
@@ -181,7 +204,8 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                             emotion="topic" 
                             className="text-xs"
                             clickable
-                            title={`Topic from your journal`}
+                            title={`Topic from your journal: ${topic}`}
+                            onClick={() => handleWordClick(topic)}
                           >
                             {topic}
                           </AdvancedBadge>
@@ -223,7 +247,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                   pdfText={pdfText} 
                   embeddingPoints={sentimentData.embeddingPoints} 
                   sourceDescription={sentimentData.sourceDescription}
-                  bertAnalysis={sentimentData.bertAnalysis}
+                  bertAnalysis={bertAnalysis}
                 />
               </ScrollArea>
               <p className="text-xs text-gray-500 mt-2">
@@ -263,7 +287,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                   selectedWord={selectedWord}
                   filteredPoints={filteredPoints}
                   visibleClusterCount={visibleClusterCount}
-                  bertData={sentimentData.bertAnalysis}
+                  bertData={bertAnalysis}
                 />
               </div>
               <p className="text-xs text-gray-500 mt-2">
@@ -300,6 +324,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                 selectedPoint={selectedPoint}
                 sourceDescription={sentimentData.sourceDescription}
                 calculateRelationship={calculateRelationship}
+                bertKeywords={bertAnalysis?.keywords}
               />
             </div>
           </CollapsibleContent>
@@ -330,6 +355,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                 <SentimentTimeline 
                   data={sentimentData.timelineEvents || []} 
                   sourceDescription={sentimentData.sourceDescription}
+                  bertData={bertAnalysis}
                 />
               </ScrollArea>
             </div>
@@ -361,7 +387,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                 data={sentimentData.keyPhrases || []} 
                 scoreMax={1.0}
                 sourceDescription={sentimentData.sourceDescription}
-                bertKeywords={sentimentData.bertAnalysis?.keywords || []}
+                bertKeywords={bertAnalysis?.keywords || []}
               />
             </div>
           </CollapsibleContent>

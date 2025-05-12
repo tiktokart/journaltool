@@ -14,6 +14,7 @@ import { enrichPoints, extractEmotionalGroups } from './embedding/PointUtils';
 import EmotionalGroupsPanel from './embedding/EmotionalGroupsPanel';
 import WordMetadataDisplay from './embedding/WordMetadataDisplay';
 import EmbeddingControls from './embedding/EmbeddingControls';
+import { BertAnalysisResult } from '@/utils/bertIntegration';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -27,7 +28,8 @@ export const DocumentEmbedding = ({
   onResetView,
   visibleClusterCount = 8,
   showAllPoints = true,
-  wordCount
+  wordCount,
+  bertData
 }: DocumentEmbeddingProps) => {
   const { t } = useLanguage();
   const location = useLocation();
@@ -83,44 +85,53 @@ export const DocumentEmbedding = ({
       };
     });
   };
-  
-  useEffect(() => {
-    if (focusOnWord !== currentFocusWord) {
-      setCurrentFocusWord(focusOnWord);
-      
-      if (focusOnWord && displayPoints.length > 0) {
-        const focusedPoint = displayPoints.find(p => p.word === focusOnWord);
-        if (focusedPoint && focusedPoint.relationships) {
-          const sortedRelationships = [...focusedPoint.relationships]
-            .sort((a, b) => b.strength - a.strength)
-            .slice(0, 3);
-            
-          const connected = sortedRelationships
-            .map(rel => displayPoints.find(p => p.id === rel.id))
-            .filter(p => p !== undefined) as Point[];
-            
-          setConnectedPoints(connected);
-          if (focusedPoint) {
-            setSelectedPoint(focusedPoint);
-          }
-        } else {
-          setConnectedPoints([]);
-        }
-      } else {
-        setConnectedPoints([]);
-      }
-    }
-  }, [focusOnWord, currentFocusWord, displayPoints]);
 
+  // Enhance points with BERT data if available
+  const enhancePointsWithBert = (inputPoints: Point[], bertData?: BertAnalysisResult | null): Point[] => {
+    if (!bertData || !bertData.keywords || bertData.keywords.length === 0) {
+      return inputPoints;
+    }
+
+    // Map of words to BERT keyword data
+    const bertWordMap: Record<string, any> = {};
+    bertData.keywords.forEach(kw => {
+      if (kw.word) {
+        bertWordMap[kw.word.toLowerCase()] = kw;
+      }
+    });
+
+    return inputPoints.map(point => {
+      if (!point.word) return point;
+      
+      // Try to find matching BERT keyword
+      const bertKeyword = bertWordMap[point.word.toLowerCase()];
+      
+      if (bertKeyword) {
+        return {
+          ...point,
+          emotionalTone: bertKeyword.tone || point.emotionalTone,
+          sentiment: bertKeyword.sentiment !== undefined ? bertKeyword.sentiment : point.sentiment,
+          weight: bertKeyword.weight !== undefined ? bertKeyword.weight : point.weight,
+          color: bertKeyword.color || point.color,
+          pos: bertKeyword.pos || point.pos,
+          relatedConcepts: bertKeyword.relatedConcepts || point.relatedConcepts
+        };
+      }
+      return point;
+    });
+  };
+  
   useEffect(() => {
     if (points.length > 0) {
       console.log(`Setting display points with ${points.length} points from props`);
       const normalizedPoints = normalizePoints(points);
       const pointsWithCorrectColors = enrichPoints(normalizedPoints, isHomepage);
-      setDisplayPoints(pointsWithCorrectColors);
+      // Enhance with BERT if available
+      const bertEnhancedPoints = enhancePointsWithBert(pointsWithCorrectColors, bertData);
+      setDisplayPoints(bertEnhancedPoints);
       
       // Export points to window for TextEmotionViewer to access
-      window.documentEmbeddingPoints = pointsWithCorrectColors;
+      window.documentEmbeddingPoints = bertEnhancedPoints;
     } else if (generatedPoints.length === 0) {
       console.log("Generating mock points");
       const mockPoints = generateMockPoints(depressedJournalReference);
@@ -131,7 +142,7 @@ export const DocumentEmbedding = ({
       // Export points to window for TextEmotionViewer to access
       window.documentEmbeddingPoints = normalizedMockPoints;
     }
-  }, [points, depressedJournalReference, generatedPoints.length, isHomepage]);
+  }, [points, depressedJournalReference, generatedPoints.length, isHomepage, bertData]);
   
   useEffect(() => {
     if (displayPoints.length > 0) {
@@ -371,6 +382,7 @@ export const DocumentEmbedding = ({
         onResetView={handleResetView}
         visibleClusterCount={visibleClusterCount}
         showAllPoints={showAllPoints}
+        bertData={bertData}
       />
       
       {isInteractive && (

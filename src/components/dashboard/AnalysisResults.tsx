@@ -7,8 +7,9 @@ import { Point } from "@/types/embedding";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, BarChart2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PdfExport } from "@/components/PdfExport";
+import { BertAnalysisResult } from "@/utils/bertIntegration";
 
 interface AnalysisResultsProps {
   sentimentData: any;
@@ -65,6 +66,15 @@ const AnalysisResults = ({
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
   const [viewType, setViewType] = useState("analysis");
+  const [bertData, setBertData] = useState<BertAnalysisResult | null>(null);
+
+  useEffect(() => {
+    // Ensure BERT data is properly loaded
+    if (sentimentData?.bertAnalysis) {
+      console.log("Setting BERT data from sentiment data");
+      setBertData(sentimentData.bertAnalysis);
+    }
+  }, [sentimentData]);
 
   if (!sentimentData) {
     return null;
@@ -129,7 +139,7 @@ const AnalysisResults = ({
                 summary={sentimentData.summary} 
                 wordCount={sentimentData.wordCount}
                 sourceDescription={sentimentData.sourceDescription}
-                bertAnalysis={sentimentData.bertAnalysis}
+                bertAnalysis={bertData || sentimentData.bertAnalysis}
               />
             </CollapsibleContent>
           </div>
@@ -176,7 +186,7 @@ const AnalysisResults = ({
                 handlePointClick={handlePointClick}
                 handleResetVisualization={handleResetVisualization}
                 handleClearSearch={handleClearSearch}
-                bertAnalysis={sentimentData.bertAnalysis}
+                bertAnalysis={bertData || sentimentData.bertAnalysis}
               />
             </div>
           ) : (

@@ -1,11 +1,18 @@
+
 import { shouldFilterWord, determineWordTone, getContextualImportance, KeywordAnalysis } from './documentAnalysis';
 
 const FILTER_COMMON_WORDS = true; // Set to false if you want to include common words
 
-interface BertAnalysisResult {
+export interface BertAnalysisResult {
   keywords: KeywordAnalysis[];
   emotionalTones: { tone: string; count: number }[];
-  contextualAnalysis: Record<string, any>;
+  contextualAnalysis: {
+    dominantEmotions: string[];
+    emotionalShifts: any[];
+    topicClusters: any[];
+    actionWords: string[];
+    mainSubjects: string[];
+  };
 }
 
 export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisResult> => {
@@ -174,7 +181,13 @@ export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisRes
     return {
       keywords: [],
       emotionalTones: [],
-      contextualAnalysis: {}
+      contextualAnalysis: {
+        dominantEmotions: [],
+        emotionalShifts: [],
+        topicClusters: [],
+        actionWords: [],
+        mainSubjects: []
+      }
     };
   }
 };
