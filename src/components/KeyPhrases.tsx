@@ -23,9 +23,24 @@ export const KeyPhrases = ({ data = [], keywords = [], sourceDescription }: KeyP
   const dataToUse = data.length > 0 ? data : keywords;
 
   // Filter out prepositions, conjunctions, and question words
-  const stopWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 
-    'by', 'in', 'out', 'with', 'about', 'against', 'before', 'after', 'during', 'what', 
-    'where', 'when', 'why', 'how', 'which', 'who', 'whom', 'whose', 'that', 'than'];
+  const stopWords = [
+    'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 
+    'by', 'in', 'out', 'with', 'about', 'against', 'before', 'after', 'during', 
+    'what', 'where', 'when', 'why', 'how', 'which', 'who', 'whom', 'whose', 'that', 'than',
+    // Pronouns
+    'i', 'me', 'my', 'mine', 'myself',
+    'you', 'your', 'yours', 'yourself',
+    'he', 'him', 'his', 'himself',
+    'she', 'her', 'hers', 'herself',
+    'it', 'its', 'itself',
+    'we', 'us', 'our', 'ours', 'ourselves',
+    'they', 'them', 'their', 'theirs', 'themselves',
+    // Common auxiliaries and common words
+    'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'shall', 'should',
+    'may', 'might', 'must', 'can', 'could',
+    'very', 'really', 'just'
+  ];
 
   // Normalize data to ensure consistent structure and filter out stop words
   const normalizedData: KeyPhrase[] = dataToUse

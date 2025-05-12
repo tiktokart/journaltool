@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -30,10 +31,10 @@ export const TextEmotionViewer = ({
   const [highlightedText, setHighlightedText] = useState<React.ReactNode[]>([]);
   const [showHighlights, setShowHighlights] = useState(true);
   const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
-  const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal'>('minimal');
+  const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal' | 'strict'>('strict');
   const [localBertAnalysis, setLocalBertAnalysis] = useState<any>(bertAnalysis);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   // Unified color function for emotional tones - ensuring consistency across the app
   const getUnifiedEmotionColor = (emotion: string): string => {
@@ -166,14 +167,52 @@ export const TextEmotionViewer = ({
 
     console.log("Word emotion map size:", wordEmotionMap.size);
 
-    // Words to filter out - significantly reduced filtering, only the most common/basic words
-    const wordsToFilter = filteringLevel === 'minimal' ? [
-      // Minimal filtering - only articles, prepositions, conjunctions, and question words
-      'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'being', 'been',
-      'and', 'but', 'or', 'nor', 'for', 'yet', 'so',
-      'in', 'on', 'at', 'by', 'to', 'from', 'with', 'about', 'against', 'before', 'after',
-      'what', 'where', 'when', 'why', 'how', 'which', 'who', 'whom', 'whose', 'that'
-    ] : [];
+    // Words to filter out based on selected filtering level
+    const wordsToFilter = (() => {
+      if (filteringLevel === 'none') return [];
+      
+      // Basic words to filter in minimal mode
+      const minimalFilters = [
+        // Articles, prepositions, conjunctions, and question words
+        'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'being', 'been',
+        'and', 'but', 'or', 'nor', 'for', 'yet', 'so',
+        'in', 'on', 'at', 'by', 'to', 'from', 'with', 'about', 'against', 'before', 'after',
+        'what', 'where', 'when', 'why', 'how', 'which', 'who', 'whom', 'whose', 'that'
+      ];
+      
+      // More extensive filtering for strict mode
+      if (filteringLevel === 'strict') {
+        return [
+          ...minimalFilters,
+          // Pronouns
+          'i', 'me', 'my', 'mine', 'myself',
+          'you', 'your', 'yours', 'yourself',
+          'he', 'him', 'his', 'himself',
+          'she', 'her', 'hers', 'herself',
+          'it', 'its', 'itself',
+          'we', 'us', 'our', 'ours', 'ourselves',
+          'they', 'them', 'their', 'theirs', 'themselves',
+          
+          // Common adverbs
+          'very', 'really', 'quite', 'just', 'too', 'enough', 'even',
+          'almost', 'only', 'merely', 'nearly', 'hardly',
+          
+          // Common adjectives
+          'good', 'bad', 'big', 'small', 'high', 'low',
+          'many', 'much', 'few', 'some', 'any', 'all', 'most',
+          
+          // Common auxiliaries
+          'can', 'could', 'may', 'might', 'shall', 'should',
+          'will', 'would', 'must', 'do', 'does', 'did',
+          'have', 'has', 'had',
+          
+          // Interjections and fillers
+          'oh', 'ah', 'uh', 'um', 'er', 'hmm', 'well'
+        ];
+      }
+      
+      return minimalFilters;
+    })();
 
     // Split text into words while preserving whitespace and punctuation
     const textSegments: { text: string; emotion: string | null; color?: string }[] = [];
@@ -356,15 +395,35 @@ export const TextEmotionViewer = ({
                     )}
                     {hideNonHighlighted ? t("Show All Text") : t("Hide Non-Highlighted")}
                   </Toggle>
-                  <Toggle
-                    pressed={filteringLevel === 'none'}
-                    onPressedChange={(pressed) => setFilteringLevel(pressed ? 'none' : 'minimal')}
-                    size="sm"
-                    aria-label="Toggle filtering level"
-                    className="self-start font-georgia"
-                  >
-                    {filteringLevel === 'none' ? "No Filtering" : "Minimal Filtering"}
-                  </Toggle>
+                  <div className="flex gap-1">
+                    <Toggle
+                      pressed={filteringLevel === 'strict'}
+                      onPressedChange={() => setFilteringLevel('strict')}
+                      size="sm"
+                      aria-label="Use strict filtering"
+                      className={`self-start font-georgia ${filteringLevel === 'strict' ? 'bg-green-100' : ''}`}
+                    >
+                      Strict
+                    </Toggle>
+                    <Toggle
+                      pressed={filteringLevel === 'minimal'}
+                      onPressedChange={() => setFilteringLevel('minimal')}
+                      size="sm"
+                      aria-label="Use minimal filtering"
+                      className={`self-start font-georgia ${filteringLevel === 'minimal' ? 'bg-blue-100' : ''}`}
+                    >
+                      Minimal
+                    </Toggle>
+                    <Toggle
+                      pressed={filteringLevel === 'none'}
+                      onPressedChange={() => setFilteringLevel('none')}
+                      size="sm"
+                      aria-label="No filtering"
+                      className={`self-start font-georgia ${filteringLevel === 'none' ? 'bg-red-100' : ''}`}
+                    >
+                      None
+                    </Toggle>
+                  </div>
                 </>
               )}
             </div>

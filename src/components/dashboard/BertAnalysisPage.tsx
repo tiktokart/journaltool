@@ -7,7 +7,6 @@ import AnalysisResults from "@/components/dashboard/AnalysisResults";
 import { Point } from "@/types/embedding";
 import { toast } from "sonner";
 import { processBertAnalysis, saveBertAnalysisToJournal } from "@/utils/bertDataFlow";
-import BertVisualization from "@/components/embedding/BertVisualization";
 import { TextEmotionViewer } from "@/components/TextEmotionViewer";
 
 interface BertAnalysisPageProps {
@@ -30,14 +29,15 @@ const BertAnalysisPage = ({
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>("analysis");
   const [visibleClusterCount, setVisibleClusterCount] = useState<number>(8);
+  const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Initialize uniqueWords from embedding points
+  // Initialize uniqueWords from points with emotional data
   useEffect(() => {
     if (sentimentData?.embeddingPoints && sentimentData.embeddingPoints.length > 0) {
       const words = sentimentData.embeddingPoints
-        .filter((point: Point) => point.word)
+        .filter((point: Point) => point.word && point.emotionalTone)
         .map((point: Point) => point.word || "");
         
       // Fixed TS error by ensuring we have array of strings
@@ -161,15 +161,6 @@ const BertAnalysisPage = ({
           </div>
           
           <div className="mt-8">
-            <BertVisualization 
-              points={sentimentData.embeddingPoints}
-              bertAnalysis={sentimentData.bertAnalysis}
-              onPointSelect={handlePointClick}
-              sourceDescription={sentimentData.sourceDescription}
-            />
-          </div>
-          
-          <div className="mt-8">
             <AnalysisResults
               sentimentData={sentimentData}
               pdfText={pdfText}
@@ -191,6 +182,8 @@ const BertAnalysisPage = ({
               handleClearSearch={handleClearSearch}
               onJournalEntryAdded={onJournalEntryAdded}
               onMonthlyReflectionAdded={onMonthlyReflectionAdded}
+              connectedPoints={connectedPoints}
+              setConnectedPoints={setConnectedPoints}
             />
           </div>
           

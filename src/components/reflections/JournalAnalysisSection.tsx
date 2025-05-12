@@ -16,11 +16,11 @@ import {
 } from "@/components/ui/collapsible";
 import JournalSentimentChart from "./JournalSentimentChart";
 import JournalSentimentSummary from "./JournalSentimentSummary";
-import { Card } from "@/components/ui/card";
 import MentalHealthSuggestions from "../suggestions/MentalHealthSuggestions";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
 import { TextEmotionViewer } from "@/components/TextEmotionViewer";
 import { ScrollToSection } from "@/components/ScrollToSection";
+import { KeyPhrases } from "@/components/KeyPhrases";
 
 interface JournalAnalysisSectionProps {
   journalEntries: any[];
@@ -48,6 +48,10 @@ const JournalAnalysisSection = ({
   // Extract keywords from journal entries
   const extractKeywords = () => {
     if (!journalEntries.length) return [];
+    
+    if (bertAnalysis?.keywords) {
+      return bertAnalysis.keywords.map((kw: any) => kw.word);
+    }
     
     const allText = journalEntries.map(entry => entry.text).join(" ");
     const words = allText.toLowerCase().split(/\s+/);
@@ -88,7 +92,6 @@ const JournalAnalysisSection = ({
     runAnalysis();
   }, [journalEntries, refreshTrigger]);
 
-  const keywords = extractKeywords();
   const combinedJournalText = journalEntries.map(entry => entry.text).join(" ");
 
   return (
@@ -139,9 +142,17 @@ const JournalAnalysisSection = ({
                 getSentimentColor={getSentimentColor}
               />
 
-              <div className="h-[200px] w-full">
+              <div className="h-[200px] w-full my-6">
                 <JournalSentimentChart
                   timelineData={timelineData}
+                />
+              </div>
+              
+              {/* Add Keywords section using KeyPhrases component */}
+              <div className="mt-6">
+                <KeyPhrases 
+                  data={bertAnalysis?.keywords || []} 
+                  sourceDescription="Journal entries key themes" 
                 />
               </div>
               
@@ -168,37 +179,6 @@ const JournalAnalysisSection = ({
                           {timelineData.length} recorded emotional data points.
                         </p>
                       </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="timeline" id="timeline">
-                  <AccordionTrigger className="text-purple-700 hover:text-purple-800">
-                    Timeline
-                  </AccordionTrigger>
-                  <AccordionContent className="p-2">
-                    <div className="h-[200px] w-full">
-                      <JournalSentimentChart
-                        timelineData={timelineData}
-                      />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="keywords" id="keywords">
-                  <AccordionTrigger className="text-purple-700 hover:text-purple-800">
-                    Keywords
-                  </AccordionTrigger>
-                  <AccordionContent className="p-2">
-                    <div className="flex flex-wrap gap-2">
-                      {keywords.map((word, i) => (
-                        <span key={i} className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs">
-                          {word}
-                        </span>
-                      ))}
-                      {keywords.length === 0 && (
-                        <p className="text-sm text-gray-500">No journal entries to analyze.</p>
-                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>

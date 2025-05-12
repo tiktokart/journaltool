@@ -5,15 +5,15 @@ interface KeywordAnalysis {
   tone?: string;
   relatedConcepts?: string[];
   frequency?: number;
-  color?: [number, number, number];
+  color?: string | [number, number, number];
 }
 
 interface BertAnalysisResult {
   keywords: KeywordAnalysis[];
   overallSentiment: number;
   overallTone: string;
-  emotionalTone?: string;  // Add this property
-  analysis?: string;       // Add this property
+  emotionalTone?: string;
+  analysis?: string;
 }
 
 const stopWords = [
@@ -28,17 +28,17 @@ const stopWords = [
   'those', 'there', 'here', 'who'
 ];
 
-// Bright, visible color palette for emotional tones
-const emotionalColors = {
-  Joy: [1, 0.9, 0.2] as [number, number, number],        // Bright Yellow
-  Sadness: [0.2, 0.6, 1] as [number, number, number],     // Bright Blue
-  Anxiety: [1, 0.5, 0.1] as [number, number, number],     // Bright Orange
-  Contentment: [0.2, 0.9, 0.4] as [number, number, number], // Bright Green
-  Confusion: [0.8, 0.4, 1] as [number, number, number],   // Bright Purple
-  Anger: [1, 0.2, 0.2] as [number, number, number],       // Bright Red
-  Fear: [0.9, 0.2, 0.9] as [number, number, number],      // Bright Magenta
-  Surprise: [0.2, 1, 1] as [number, number, number],      // Bright Cyan
-  Neutral: [0.8, 0.8, 0.8] as [number, number, number],   // Bright Gray
+// Emotional colors map - now with string values for easier CSS usage
+const emotionalColors: Record<string, string> = {
+  Joy: '#FFE600',          // Bright Yellow
+  Sadness: '#3399FF',      // Bright Blue
+  Anxiety: '#FF8000',      // Bright Orange
+  Contentment: '#33E666',  // Bright Green
+  Confusion: '#CC66FF',    // Bright Purple
+  Anger: '#FF3333',        // Bright Red
+  Fear: '#E633E6',         // Bright Magenta
+  Surprise: '#33FFFF',     // Bright Cyan
+  Neutral: '#CCCCCC',      // Bright Gray
 };
 
 export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisResult> => {
