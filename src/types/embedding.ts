@@ -44,3 +44,26 @@ export interface DocumentEmbeddingProps {
   filteredPoints?: Point[];
   bertData?: any;
 }
+
+// Now update the EmbeddingSceneProps interface to include bertData
+export interface EmbeddingSceneProps {
+  containerRef: React.RefObject<HTMLDivElement>;
+  cameraRef: React.RefObject<THREE.PerspectiveCamera | null>;
+  controlsRef: React.RefObject<THREE.OrbitControls | null>;
+  points: Point[];
+  onPointHover: (point: Point | null) => void;
+  onPointSelect: (point: Point | null) => void;
+  isInteractive?: boolean;
+  depressedJournalReference?: boolean;
+  focusOnWord?: string | null;
+  connectedPoints?: Point[];
+  selectedPoint?: Point | null;
+  comparisonPoint?: Point | null;
+  isCompareMode?: boolean;
+  onFocusEmotionalGroup?: (emotionalTone: string) => void;
+  selectedEmotionalGroup?: string | null;
+  onResetView?: () => void;
+  visibleClusterCount?: number;
+  showAllPoints?: boolean;
+  bertData?: any; // Add bertData property
+}

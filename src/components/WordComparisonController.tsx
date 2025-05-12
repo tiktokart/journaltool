@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,13 +18,15 @@ interface WordComparisonControllerProps {
   selectedPoint: Point | null;
   sourceDescription?: string;
   calculateRelationship: (point1: Point, point2: Point) => any;
+  bertKeywords?: any[]; // Add bertKeywords property
 }
 
 export const WordComparisonController = ({
   points,
   selectedPoint,
   sourceDescription,
-  calculateRelationship
+  calculateRelationship,
+  bertKeywords
 }: WordComparisonControllerProps) => {
   const { t, language } = useLanguage();
   const [compareWords, setCompareWords] = useState<Point[]>([]);
