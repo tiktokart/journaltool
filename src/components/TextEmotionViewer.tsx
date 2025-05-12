@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -89,7 +90,10 @@ export const TextEmotionViewer = ({
         word: kw.word,
         emotionalTone: kw.tone,
         color: kw.color,
-        sentiment: kw.sentiment
+        sentiment: kw.sentiment,
+        pos: kw.pos,
+        weight: kw.weight,
+        frequency: kw.frequency
       }));
       
       // Combine BERT points with embedding points, avoiding duplicates
@@ -159,7 +163,11 @@ export const TextEmotionViewer = ({
         if (color) {
           wordEmotionMap.set(point.word.toLowerCase(), {
             emotion,
-            color
+            color,
+            pos: point.pos,
+            weight: point.weight,
+            frequency: point.frequency,
+            sentiment: point.sentiment
           });
         }
       }
@@ -173,7 +181,7 @@ export const TextEmotionViewer = ({
       : [];
 
     // Split text into words while preserving whitespace and punctuation
-    const textSegments: { text: string; emotion: string | null; color?: string }[] = [];
+    const textSegments: { text: string; emotion: string | null; color?: string; metadata?: any }[] = [];
     
     // Regular expression that matches words
     const wordRegex = /[a-zA-Z0-9']+/g;
@@ -198,7 +206,13 @@ export const TextEmotionViewer = ({
         textSegments.push({ 
           text: word, 
           emotion: emotionData.emotion,
-          color: emotionData.color
+          color: emotionData.color,
+          metadata: {
+            pos: emotionData.pos,
+            weight: emotionData.weight,
+            frequency: emotionData.frequency,
+            sentiment: emotionData.sentiment
+          }
         });
       } else if (shouldFilter) {
         // Only filter if it's in our filtered list AND has no emotion assigned
@@ -226,6 +240,36 @@ export const TextEmotionViewer = ({
       if (!segment.emotion) {
         return segment.text;
       }
+
+      // Enhanced tooltip content with more metadata
+      const getTooltipContent = () => {
+        if (!segment.metadata) return <p className="text-sm font-georgia"><strong>Emotion:</strong> {segment.emotion}</p>;
+        
+        // Format sentiment as a percentage
+        const sentimentPercent = segment.metadata.sentiment 
+          ? `${Math.round((segment.metadata.sentiment + 1) * 50)}%` 
+          : 'N/A';
+        
+        // Format weight for display
+        const weightFormatted = segment.metadata.weight
+          ? Math.round(segment.metadata.weight * 100) / 100
+          : 'N/A';
+          
+        return (
+          <>
+            <p className="text-sm font-georgia"><strong>Word:</strong> {segment.text}</p>
+            <p className="text-sm font-georgia"><strong>Emotion:</strong> {segment.emotion}</p>
+            {segment.metadata.pos && <p className="text-sm font-georgia"><strong>Type:</strong> {segment.metadata.pos}</p>}
+            {segment.metadata.sentiment !== undefined && (
+              <p className="text-sm font-georgia">
+                <strong>Sentiment:</strong> {sentimentPercent} {segment.metadata.sentiment > 0 ? '(positive)' : segment.metadata.sentiment < 0 ? '(negative)' : '(neutral)'}
+              </p>
+            )}
+            {segment.metadata.frequency && <p className="text-sm font-georgia"><strong>Frequency:</strong> {segment.metadata.frequency}</p>}
+            {segment.metadata.weight && <p className="text-sm font-georgia"><strong>Contextual importance:</strong> {weightFormatted}</p>}
+          </>
+        );
+      };
 
       // Use the color from the segment if available
       let backgroundColor;
@@ -259,9 +303,7 @@ export const TextEmotionViewer = ({
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-sm font-georgia">
-              <strong>Emotion:</strong> {segment.emotion}
-            </p>
+            {getTooltipContent()}
           </TooltipContent>
         </Tooltip>
       );

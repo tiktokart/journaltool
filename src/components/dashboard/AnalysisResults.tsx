@@ -4,8 +4,6 @@ import { ViewDetailedAnalysis } from "@/components/ViewDetailedAnalysis";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
 import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
 import { WordComparisonController } from "@/components/WordComparisonController";
-import { TextEmotionViewer } from "@/components/TextEmotionViewer";
-import { WellbeingResources } from "@/components/WellbeingResources";
 import { PdfExport } from "@/components/PdfExport";
 import { Point } from "@/types/embedding";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -85,7 +83,7 @@ const AnalysisResults = ({
   return (
     <div className="animate-fade-in flex flex-col items-center">
       {/* Main Content Area */}
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
         {/* File Information Section */}
         <Collapsible open={isInfoOpen} onOpenChange={setIsInfoOpen} className="w-full">
           <div className="bg-white p-4 rounded-lg mb-4">
@@ -141,7 +139,7 @@ const AnalysisResults = ({
         </Collapsible>
         
         {/* Analysis Tabs Section */}
-        <div className="bg-white p-4 rounded-lg mb-4">
+        <div className="bg-white p-4 rounded-lg mb-4 w-full">
           <AnalysisTabs 
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -190,38 +188,6 @@ const AnalysisResults = ({
                 sourceDescription={sentimentData.sourceDescription}
                 calculateRelationship={calculateRelationship}
               />
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
-        
-        {/* Latent Emotional Analysis Section */}
-        <Collapsible open={isLatentAnalysisOpen} onOpenChange={setIsLatentAnalysisOpen} className="w-full">
-          <div className="mt-8 mb-4 bg-white rounded-lg p-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold">Latent Emotional Analysis</h2>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-9 p-0">
-                  {isLatentAnalysisOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            <CollapsibleContent>
-              <div className="h-[500px] relative bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-                {/* 3D visualization will appear here */}
-                {sentimentData.embeddingPoints && sentimentData.embeddingPoints.length > 0 ? (
-                  <div className="h-full w-full">
-                    {/* Pass necessary props to the DocumentEmbedding component */}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-gray-500">No embedding data available for visualization</p>
-                  </div>
-                )}
-              </div>
             </CollapsibleContent>
           </div>
         </Collapsible>

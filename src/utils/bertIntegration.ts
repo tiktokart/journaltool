@@ -1,4 +1,3 @@
-
 import { shouldFilterWord, determineWordTone, getContextualImportance, KeywordAnalysis } from './documentAnalysis';
 
 const FILTER_COMMON_WORDS = true; // Set to false if you want to include common words
@@ -90,11 +89,15 @@ export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisRes
         const g = sentimentScore > 0 ? 255 : Math.round(255 + (sentimentScore * 255));
         const b = sentimentScore > -0.2 && sentimentScore < 0.2 ? 255 : 150;
         
+        // Fix the color format to match KeywordAnalysis type: [number, number, number]
+        // Ensure exactly 3 elements in the array and normalize to 0-1 range
+        const color: [number, number, number] = [r/255, g/255, b/255];
+        
         return {
           word,
           sentiment: sentimentScore,
           weight: contextualImportance,
-          color: [r/255, g/255, b/255], // RGB normalized to 0-1 range
+          color: color, // Now properly typed as [number, number, number]
           tone,
           relatedConcepts: surroundingWords.slice(0, 5),
           frequency,
@@ -117,11 +120,23 @@ export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisRes
       count
     })).sort((a, b) => b.count - a.count);
     
-    // Add contextual analysis
+    // Add contextual analysis - focusing more on verbs and action words
     const contextualAnalysis = {
       dominantEmotions: emotionalTones.slice(0, 3).map(e => e.tone),
       emotionalShifts: detectEmotionalShifts(text),
-      topicClusters: identifyTopicClusters(keywordAnalysis)
+      topicClusters: identifyTopicClusters(keywordAnalysis),
+      // Add more focus on verbs and action words
+      actionWords: keywordAnalysis
+        .filter(kw => kw.pos === 'verb')
+        .sort((a, b) => b.weight - a.weight)
+        .slice(0, 10)
+        .map(kw => kw.word),
+      // Extract main subjects (nouns) from the text
+      mainSubjects: keywordAnalysis
+        .filter(kw => kw.pos === 'noun')
+        .sort((a, b) => b.frequency - a.frequency)
+        .slice(0, 8)
+        .map(kw => kw.word)
     };
     
     console.log("BERT analysis complete with", keywordAnalysis.length, "keywords");
@@ -142,10 +157,12 @@ export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisRes
   }
 };
 
-// Helper function to determine part of speech (simplified)
+// Helper function to determine part of speech (enhanced to better identify verbs)
 const determinePartOfSpeech = (word: string): string => {
   const commonNouns = ['time', 'person', 'year', 'way', 'day', 'thing', 'man', 'world', 'life', 'hand', 'part', 'child', 'eye', 'woman', 'place', 'work', 'week', 'case', 'point', 'company'];
-  const commonVerbs = ['go', 'make', 'know', 'take', 'see', 'come', 'think', 'look', 'want', 'give', 'use', 'find', 'tell', 'ask', 'work', 'seem', 'feel', 'try', 'leave', 'call'];
+  const commonVerbs = ['go', 'make', 'know', 'take', 'see', 'come', 'think', 'look', 'want', 'give', 'use', 'find', 'tell', 'ask', 'work', 'seem', 'feel', 'try', 'leave', 'call',
+                       'walk', 'run', 'move', 'talk', 'write', 'read', 'speak', 'eat', 'drink', 'sleep',
+                       'play', 'sing', 'dance', 'laugh', 'cry', 'fight', 'love', 'hate', 'hope', 'fear'];
   const commonAdjectives = ['good', 'new', 'first', 'last', 'long', 'great', 'little', 'own', 'other', 'old', 'right', 'big', 'high', 'different', 'small', 'large', 'next', 'early', 'young', 'important'];
   const commonAdverbs = ['up', 'so', 'out', 'just', 'now', 'how', 'then', 'more', 'also', 'here', 'well', 'only', 'very', 'even', 'back', 'there', 'down', 'still', 'rather', 'quite'];
   
@@ -157,14 +174,18 @@ const determinePartOfSpeech = (word: string): string => {
   if (commonAdjectives.includes(lowerWord)) return 'adjective';
   if (commonAdverbs.includes(lowerWord)) return 'adverb';
   
-  // Simple patterns
+  // Enhanced patterns for better verb detection
   if (lowerWord.endsWith('ing')) return 'verb';
+  if (lowerWord.endsWith('ed') && lowerWord.length > 3) return 'verb';
+  if (lowerWord.endsWith('s') && commonVerbs.includes(lowerWord.slice(0, -1))) return 'verb';
+  
+  // Other patterns
   if (lowerWord.endsWith('ly')) return 'adverb';
   if (lowerWord.endsWith('ness') || lowerWord.endsWith('ment') || lowerWord.endsWith('ship') || lowerWord.endsWith('ity')) return 'noun';
   if (lowerWord.endsWith('ful') || lowerWord.endsWith('ous') || lowerWord.endsWith('ive') || lowerWord.endsWith('able') || lowerWord.endsWith('ible')) return 'adjective';
   
-  // Default
-  return 'unknown';
+  // Default to noun for unknown words (most common)
+  return 'noun';
 };
 
 // Helper function to detect emotional shifts in text
