@@ -80,12 +80,14 @@ export const EntryContent: React.FC<EntryContentProps> = ({
   const timelineRef = useRef<HTMLDivElement>(null);
   const keywordsRef = useRef<HTMLDivElement>(null);
 
-  // Add scroll controls to fix scrolling issues
+  // Ensure scrolling works properly
   useEffect(() => {
     const handleResize = () => {
       const collapsibleContents = document.querySelectorAll('.collapsible-content');
       collapsibleContents.forEach((content: any) => {
-        content.style.maxHeight = `${window.innerHeight * 0.6}px`;
+        if (content) {
+          content.style.maxHeight = `${window.innerHeight * 0.6}px`;
+        }
       });
     };
 
@@ -168,7 +170,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
 
   return (
     <div className="animate-fade-in space-y-6">
-      {/* FIRST: Overview Section */}
+      {/* 1. OVERVIEW SECTION */}
       <div ref={overviewRef}>
         <Collapsible open={isOverviewOpen} onOpenChange={setIsOverviewOpen} className="w-full">
           <div className="bg-white p-4 rounded-lg">
@@ -266,7 +268,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </Collapsible>
       </div>
       
-      {/* SECOND: Document Text Analysis */}
+      {/* 2. DOCUMENT TEXT ANALYSIS */}
       <div ref={textAnalysisRef}>
         <Collapsible open={isTextAnalysisOpen} onOpenChange={setIsTextAnalysisOpen} className="w-full">
           <div className="bg-white p-4 rounded-lg">
@@ -304,7 +306,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </Collapsible>
       </div>
       
-      {/* THIRD: Latent Emotional Analysis */}
+      {/* 3. LATENT EMOTIONAL ANALYSIS */}
       <div ref={latentAnalysisRef}>
         <Collapsible open={isLatentAnalysisOpen} onOpenChange={setIsLatentAnalysisOpen} className="w-full">
           <div className="bg-white p-4 rounded-lg">
@@ -347,7 +349,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </Collapsible>
       </div>
       
-      {/* FOURTH: Word Comparison */}
+      {/* 4. WORD COMPARISON */}
       <div ref={wordComparisonRef}>
         <Collapsible open={isWordComparisonOpen} onOpenChange={setIsWordComparisonOpen} className="w-full">
           <div className="bg-white p-4 rounded-lg">
@@ -381,7 +383,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </Collapsible>
       </div>
       
-      {/* FIFTH: Timeline */}
+      {/* 5. TIMELINE */}
       <div ref={timelineRef}>
         <Collapsible open={isTimelineOpen} onOpenChange={setIsTimelineOpen} className="w-full">
           <div className="bg-white p-4 rounded-lg">
@@ -415,7 +417,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </Collapsible>
       </div>
       
-      {/* SIXTH: Keywords */}
+      {/* 6. KEYWORDS */}
       <div ref={keywordsRef}>
         <Collapsible open={isKeywordsOpen} onOpenChange={setIsKeywordsOpen} className="w-full">
           <div className="bg-white p-4 rounded-lg">
