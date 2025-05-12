@@ -36,8 +36,6 @@ export const calculateSentiment = async (text: string): Promise<{
     const totalSentimentWords = positiveCount + negativeCount || 1; // Avoid division by zero
     
     // Calculate a more balanced sentiment score, with a bias toward neutral rather than positive
-    // Previously we were using: (positiveCount / totalSentimentWords) || 0.5;
-    // Now we're adding randomization for more realistic results
     let sentimentScore;
     if (totalSentimentWords < 5) {
       // For short texts with few sentiment words, use a more balanced score
@@ -52,10 +50,11 @@ export const calculateSentiment = async (text: string): Promise<{
     // Convert normalized sentiment score to the 0-55 range
     const scaledScore = Math.round(sentimentScore * 55);
     
-    // Determine sentiment label based on new score ranges: 20-30 as low, 30-40 as average, 40-55 as high
+    // UPDATED! Determine sentiment label based on score ranges: 20-30 as low, 30-40 as average, 40-55 as high
     let sentimentLabel = "Neutral";
-    if (scaledScore >= 40) sentimentLabel = "Positive";
-    else if (scaledScore < 30) sentimentLabel = "Negative";
+    if (scaledScore >= 40) sentimentLabel = "Positive"; // High: 40-55
+    else if (scaledScore < 30) sentimentLabel = "Negative"; // Low: 20-30
+    // Between 30-40 is average/neutral
     
     // Calculate distribution percentages with better spread
     // Ensure we have a more balanced distribution rather than heavily positive
@@ -65,7 +64,7 @@ export const calculateSentiment = async (text: string): Promise<{
     
     return {
       overallSentiment: {
-        score: scaledScore, // Now reporting in the 0-55 scale
+        score: scaledScore, // Now reporting in the 0-55 scale as requested
         label: sentimentLabel
       },
       distribution: {
@@ -77,7 +76,7 @@ export const calculateSentiment = async (text: string): Promise<{
   } catch (error) {
     console.error("Error calculating sentiment:", error);
     return {
-      overallSentiment: { score: 35, label: "Neutral" }, // Default to middle of average range
+      overallSentiment: { score: 35, label: "Neutral" }, // Default to middle of average range (30-40)
       distribution: { positive: 33, neutral: 34, negative: 33 }
     };
   }
