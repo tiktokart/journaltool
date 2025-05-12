@@ -1,5 +1,5 @@
 
-import { Point } from '../types/embedding';
+import { Point, getSentimentLabel } from '../types/embedding';
 
 /**
  * Get a color based on sentiment
@@ -108,77 +108,6 @@ export const enrichPoints = (points: Point[], isHomepage: boolean = false): Poin
     };
   });
 };
-
-/**
- * Generate mock points for visualization
- * @param depressedJournalReference - Whether to skew the data towards depressed tones
- * @returns Array of mock points
- */
-export const generateMockPoints = (depressedJournalReference: boolean = false): Point[] => {
-  const points: Point[] = [];
-  const emotionalTones = depressedJournalReference
-    ? ["Sad", "Anxious", "Depressed", "Neutral", "Frustrated", "Confused"]
-    : ["Joyful", "Sad", "Angry", "Neutral", "Excited", "Peaceful", "Anxious"];
-    
-  const words = depressedJournalReference
-    ? ["depression", "anxiety", "sadness", "stress", "worry", "fear", "lonely", "tired", "overwhelmed"]
-    : ["happy", "exciting", "wonderful", "challenging", "interesting", "surprising", "calm"];
-    
-  for (let i = 0; i < 50; i++) {
-    const word = words[Math.floor(Math.random() * words.length)] + (i % 10);
-    const emotionalTone = emotionalTones[Math.floor(Math.random() * emotionalTones.length)];
-    const sentiment = depressedJournalReference
-      ? Math.random() * 0.4 + 0.1 // 0.1 to 0.5 for depressed
-      : Math.random() * 0.6 + 0.2; // 0.2 to 0.8 for normal
-      
-    const position: [number, number, number] = [
-      (Math.random() - 0.5) * 30,
-      (Math.random() - 0.5) * 30,
-      (Math.random() - 0.5) * 30
-    ];
-    
-    const color = getColorForSentiment(sentiment);
-    
-    points.push({
-      id: `word-${i}`,
-      word,
-      text: word,
-      position,
-      color,
-      emotionalTone,
-      sentiment,
-      frequency: Math.floor(Math.random() * 10) + 1,
-      relationships: generateMockRelationships(i, 50)
-    });
-  }
-  
-  return points;
-};
-
-/**
- * Generate mock relationships between points
- * @param index - Index of the point
- * @param totalPoints - Total number of points
- * @returns Array of relationships
- */
-function generateMockRelationships(index: number, totalPoints: number) {
-  const relationships = [];
-  const relationshipCount = Math.floor(Math.random() * 5) + 1; // 1-5 relationships
-  
-  for (let i = 0; i < relationshipCount; i++) {
-    let relatedIndex;
-    do {
-      relatedIndex = Math.floor(Math.random() * totalPoints);
-    } while (relatedIndex === index);
-    
-    relationships.push({
-      id: `word-${relatedIndex}`,
-      strength: Math.random() * 0.8 + 0.2 // Between 0.2 and 1.0
-    });
-  }
-  
-  return relationships;
-}
 
 /**
  * Extract unique emotional groups from points

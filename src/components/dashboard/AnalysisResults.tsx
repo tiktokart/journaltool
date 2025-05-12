@@ -1,18 +1,14 @@
 
-import { FileInfoDisplay } from "@/components/FileInfoDisplay";
-import { ViewDetailedAnalysis } from "@/components/ViewDetailedAnalysis";
-import { AnalysisTabs } from "@/components/AnalysisTabs";
-import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
-import { WordComparisonController } from "@/components/WordComparisonController";
-import { TextEmotionViewer } from "@/components/TextEmotionViewer";
-import { WellbeingResources } from "@/components/WellbeingResources";
-import { PdfExport } from "@/components/PdfExport";
-import { Point } from "@/types/embedding";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Search, X, RotateCcw } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { EmotionalClustersControl } from "../EmotionalClustersControl";
 import { ScrollToSection } from "@/components/ScrollToSection";
+import { Point } from "@/types/embedding";
 
 interface AnalysisResultsProps {
   sentimentData: any;
@@ -28,16 +24,14 @@ interface AnalysisResultsProps {
   filteredPoints: Point[];
   setFilteredPoints: (points: Point[]) => void;
   uniqueWords: string[];
-  connectedPoints: Point[];
-  setConnectedPoints: (points: Point[]) => void;
   visibleClusterCount: number;
   setVisibleClusterCount: (count: number) => void;
   handlePointClick: (point: Point | null) => void;
   handleResetVisualization: () => void;
   handleClearSearch: () => void;
-  calculateRelationship: (point1: Point, point2: Point) => any;
-  onJournalEntryAdded: () => void;
-  onMonthlyReflectionAdded: () => void;
+  calculateRelationship?: (point1: Point, point2: Point) => any;
+  onJournalEntryAdded?: () => void;
+  onMonthlyReflectionAdded?: () => void;
 }
 
 const AnalysisResults = ({
@@ -54,8 +48,6 @@ const AnalysisResults = ({
   filteredPoints,
   setFilteredPoints,
   uniqueWords,
-  connectedPoints,
-  setConnectedPoints,
   visibleClusterCount,
   setVisibleClusterCount,
   handlePointClick,
@@ -65,241 +57,193 @@ const AnalysisResults = ({
   onJournalEntryAdded,
   onMonthlyReflectionAdded
 }: AnalysisResultsProps) => {
-  const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [isClustersOpen, setIsClustersOpen] = useState(false);
-  const [isComparisonOpen, setIsComparisonOpen] = useState(false);
-  const [isPdfOpen, setIsPdfOpen] = useState(false);
-  const [isTextVisualizationOpen, setIsTextVisualizationOpen] = useState(true);
-  
-  // References to collapsible sections for scrolling
-  const infoRef = useRef<HTMLDivElement>(null);
-  const detailsRef = useRef<HTMLDivElement>(null);
-  const clustersRef = useRef<HTMLDivElement>(null);
-  const comparisonRef = useRef<HTMLDivElement>(null);
-  const pdfRef = useRef<HTMLDivElement>(null);
-  const textVisualizationRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
-  // Function to scroll to a section when opened
-  const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
-    if (!ref.current) return;
+  // Filter words based on search term
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
     
-    setTimeout(() => {
-      const headerOffset = 80; // Adjust based on your header height
-      const elementPosition = ref.current?.getBoundingClientRect().top || 0;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-      
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth"
-      });
-    }, 100);
+    if (!term.trim()) {
+      setFilteredPoints(sentimentData.embeddingPoints || []);
+      return;
+    }
+    
+    const lowerTerm = term.toLowerCase();
+    const filtered = (sentimentData.embeddingPoints || []).filter((point: Point) => {
+      if (!point.word) return false;
+      return point.word.toLowerCase().includes(lowerTerm);
+    });
+    
+    setFilteredPoints(filtered);
   };
   
-  // Add effects to scroll to sections when they're opened
-  useEffect(() => {
-    if (isInfoOpen) scrollToSection(infoRef);
-  }, [isInfoOpen]);
-  
-  useEffect(() => {
-    if (isDetailsOpen) scrollToSection(detailsRef);
-  }, [isDetailsOpen]);
-  
-  useEffect(() => {
-    if (isClustersOpen) scrollToSection(clustersRef);
-  }, [isClustersOpen]);
-  
-  useEffect(() => {
-    if (isComparisonOpen) scrollToSection(comparisonRef);
-  }, [isComparisonOpen]);
-  
-  useEffect(() => {
-    if (isPdfOpen) scrollToSection(pdfRef);
-  }, [isPdfOpen]);
-  
-  useEffect(() => {
-    if (isTextVisualizationOpen) scrollToSection(textVisualizationRef);
-  }, [isTextVisualizationOpen]);
-
-  if (!sentimentData) {
-    return null;
-  }
-
-  // Log BERT analysis data to verify it's available
-  console.log("BERT data available in AnalysisResults:", 
-    sentimentData.bertAnalysis ? 
-    `Yes, with ${sentimentData.bertAnalysis.keywords?.length || 0} keywords` : 
-    "No"
-  );
-
   return (
-    <div className="animate-fade-in">
-      {/* Scroll helpers */}
-      <ScrollToSection isOpen={isInfoOpen} elementId="file-info-section" />
-      <ScrollToSection isOpen={isDetailsOpen} elementId="document-summary-section" />
-      <ScrollToSection isOpen={isClustersOpen} elementId="emotional-clusters-section" />
-      <ScrollToSection isOpen={isComparisonOpen} elementId="word-comparison-section" />
-      <ScrollToSection isOpen={isPdfOpen} elementId="export-options-section" />
-      <ScrollToSection isOpen={isTextVisualizationOpen} elementId="text-visualization-section" />
-      
-      {/* Document Text Visualization - Moved above the Overview section */}
-      <Collapsible open={isTextVisualizationOpen} onOpenChange={setIsTextVisualizationOpen} className="w-full mb-4">
-        <div id="text-visualization-section">
-          <TextEmotionViewer 
-            pdfText={pdfText}
-            embeddingPoints={sentimentData.embeddingPoints}
-            sourceDescription={sentimentData.sourceDescription}
-            bertAnalysis={sentimentData.bertAnalysis}
-          />
-        </div>
-      </Collapsible>
-      
-      <Collapsible open={isInfoOpen} onOpenChange={setIsInfoOpen} className="w-full">
-        <div id="file-info-section" className="bg-white p-4 rounded-lg mb-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">File Information</h2>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="w-9 p-0">
-                {isInfoOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-          <CollapsibleContent className="overflow-hidden">
-            <FileInfoDisplay 
-              fileName={sentimentData.fileName}
-              fileSize={sentimentData.fileSize}
-              wordCount={sentimentData.wordCount}
-            />
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-      
-      <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen} className="w-full">
-        <div id="document-summary-section" className="bg-white p-4 rounded-lg mb-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Document Summary</h2>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="w-9 p-0">
-                {isDetailsOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-          <CollapsibleContent className="overflow-hidden">
-            <ViewDetailedAnalysis 
-              summary={sentimentData.summary} 
-              text={sentimentData.text || sentimentData.pdfText}
-              wordCount={sentimentData.wordCount}
-              sourceDescription={sentimentData.sourceDescription}
-            />
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-      
-      <div className="bg-white p-4 rounded-lg mb-4">
-        <AnalysisTabs 
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          sentimentData={sentimentData}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          selectedPoint={selectedPoint}
-          setSelectedPoint={setSelectedPoint}
-          selectedWord={selectedWord}
-          setSelectedWord={setSelectedWord}
-          filteredPoints={filteredPoints}
-          setFilteredPoints={setFilteredPoints}
-          uniqueWords={uniqueWords}
-          connectedPoints={connectedPoints}
-          setConnectedPoints={setConnectedPoints}
-          visibleClusterCount={visibleClusterCount}
-          handlePointClick={handlePointClick}
-          handleResetVisualization={handleResetVisualization}
-          handleClearSearch={handleClearSearch}
-          bertAnalysis={sentimentData.bertAnalysis}
-        />
-      </div>
-      
-      <Collapsible open={isClustersOpen} onOpenChange={setIsClustersOpen} className="w-full">
-        <div id="emotional-clusters-section" className="mt-8 mb-4">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold">Emotional Clusters</h2>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="w-9 p-0">
-                {isClustersOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-          <CollapsibleContent className="overflow-hidden">
-            <EmotionalClustersControl 
-              visibleClusterCount={visibleClusterCount}
-              setVisibleClusterCount={setVisibleClusterCount}
-              activeTab={activeTab}
-            />
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-      
-      <Collapsible open={isComparisonOpen} onOpenChange={setIsComparisonOpen} className="w-full">
-        <div id="word-comparison-section" className="mt-8 mb-4 bg-white rounded-lg p-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Word Comparison</h2>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="w-9 p-0">
-                {isComparisonOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-          <CollapsibleContent className="overflow-hidden">
-            <WordComparisonController 
-              points={sentimentData.embeddingPoints}
-              selectedPoint={selectedPoint}
-              sourceDescription={sentimentData.sourceDescription}
-              calculateRelationship={calculateRelationship}
-            />
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-      
-      <Collapsible open={isPdfOpen} onOpenChange={setIsPdfOpen} className="w-full">
-        <div id="export-options-section" className="mt-8 bg-white p-4 rounded-lg">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Export Options</h2>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="w-9 p-0">
-                {isPdfOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-          <CollapsibleContent className="overflow-hidden">
-            <PdfExport 
-              sentimentData={sentimentData}
-              onJournalEntryAdded={onJournalEntryAdded}
-              onMonthlyReflectionAdded={onMonthlyReflectionAdded}
-            />
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-    </div>
+    <Card>
+      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full grid grid-cols-2 mb-4">
+          <TabsTrigger value="analysis" asChild>
+            <ScrollToSection>
+              <span className="w-full">Data Analysis</span>
+            </ScrollToSection>
+          </TabsTrigger>
+          <TabsTrigger value="emotions" asChild>
+            <ScrollToSection>
+              <span className="w-full">Emotional Words</span>
+            </ScrollToSection>
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="analysis">
+          <CardContent>
+            <div className="space-y-6">
+              {/* Sentiment Analysis Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-border">
+                  <h3 className="text-lg font-medium mb-2">Overall Sentiment</h3>
+                  <div className="text-3xl font-bold" style={{ 
+                    color: sentimentData.overallSentiment?.score > 0.6 
+                      ? 'green' 
+                      : sentimentData.overallSentiment?.score < 0.4 
+                        ? 'red' 
+                        : 'orange' 
+                  }}>
+                    {sentimentData.overallSentiment?.label || "Neutral"}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Score: {Math.round((sentimentData.overallSentiment?.score || 0.5) * 100)}%
+                  </div>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-border">
+                  <h3 className="text-lg font-medium mb-2">Distribution</h3>
+                  <div className="flex items-center space-x-1">
+                    <div 
+                      className="h-4 bg-green-500 rounded-l" 
+                      style={{ width: `${sentimentData.distribution?.positive || 0}%` }}
+                    ></div>
+                    <div 
+                      className="h-4 bg-gray-300" 
+                      style={{ width: `${sentimentData.distribution?.neutral || 0}%` }}
+                    ></div>
+                    <div 
+                      className="h-4 bg-red-500 rounded-r" 
+                      style={{ width: `${sentimentData.distribution?.negative || 0}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Positive: {sentimentData.distribution?.positive || 0}%</span>
+                    <span>Neutral: {sentimentData.distribution?.neutral || 0}%</span>
+                    <span>Negative: {sentimentData.distribution?.negative || 0}%</span>
+                  </div>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-border">
+                  <h3 className="text-lg font-medium mb-2">Stats</h3>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Word count:</span>
+                      <span className="font-medium">{sentimentData.wordCount || pdfText.split(/\s+/).length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Unique emotional words:</span>
+                      <span className="font-medium">{sentimentData.embeddingPoints?.length || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Text Summary */}
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-border">
+                <h3 className="text-lg font-medium mb-2">Summary</h3>
+                <p className="text-sm text-muted-foreground">
+                  {sentimentData.summary || "No summary available."}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </TabsContent>
+        
+        <TabsContent value="emotions">
+          <CardContent>
+            <div className="space-y-6">
+              {/* Emotion Filtering */}
+              <div className="mb-4">
+                <EmotionalClustersControl
+                  visibleClusterCount={visibleClusterCount}
+                  setVisibleClusterCount={setVisibleClusterCount}
+                  activeTab={activeTab}
+                />
+              </div>
+              
+              {/* Word Search */}
+              <div className="mb-6 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder={t("searchWords")}
+                    className="pl-8 pr-8"
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                  />
+                  {searchTerm && (
+                    <button 
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                      onClick={handleClearSearch}
+                    >
+                      <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                    </button>
+                  )}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={handleResetVisualization}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {/* Word List */}
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                {filteredPoints.map((point: Point) => (
+                  <div 
+                    key={point.id} 
+                    className={`p-2 rounded border cursor-pointer transition-colors ${
+                      selectedWord === point.word ? 'bg-muted border-primary' : 'hover:bg-muted border-border'
+                    }`}
+                    onClick={() => handlePointClick(point)}
+                  >
+                    <div className="font-medium truncate">{point.word}</div>
+                    <div className="flex justify-between items-center mt-1 text-xs">
+                      <span 
+                        className="px-1.5 py-0.5 rounded-full text-xs"
+                        style={{ 
+                          backgroundColor: typeof point.color === 'string' 
+                            ? point.color 
+                            : `rgb(${Math.round((point.color?.[0] || 0) * 255)}, ${Math.round((point.color?.[1] || 0) * 255)}, ${Math.round((point.color?.[2] || 0) * 255)})`,
+                          color: (point.color?.[0] || 0) + (point.color?.[1] || 0) > 1.0 ? 'black' : 'white'
+                        }}
+                      >
+                        {point.emotionalTone}
+                      </span>
+                      <span className="ml-1 text-muted-foreground">
+                        {Math.round((point.sentiment || 0) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {filteredPoints.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchTerm ? "No words matching your search" : "No emotional words found"}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </TabsContent>
+      </Tabs>
+    </Card>
   );
 };
 

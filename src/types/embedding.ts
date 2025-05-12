@@ -1,29 +1,33 @@
 
+/**
+ * Point type for emotion/sentiment visualization
+ */
 export interface Point {
+  id: string;
   word?: string;
-  label?: string;
-  cluster?: number;
-  group?: string;
+  text?: string;
+  position?: [number, number, number];
   x?: number;
   y?: number;
   z?: number;
-  position: number[]; // Made required to fix type error
-  size?: number;
-  color?: string | number[] | [number, number, number]; // Updated to handle all color formats
-  emotionalTone?: string; // The emotional tone associated with the point
-  sentiment?: number; // Numeric sentiment score
-  intensity?: number; // How strongly the emotion is expressed
-  selected?: boolean; // Whether the point is currently selected
-  hidden?: boolean; // Whether the point should be hidden
-  distance?: number; // Distance from selected point (for comparison)
-  id?: string | number; // Unique identifier for the point
-  relationships?: { id: string | number; strength: number; word?: string }[]; // Added word property
-  keywords?: string[]; // Added for BERT integration
-  text?: string; // For compatibility
-  frequency?: number; // For word frequency
-  [key: string]: any; // Allow for additional properties
+  sentiment?: number;
+  emotionalTone?: string;
+  color?: [number, number, number] | string;
+  relationships?: Relationship[];
+  frequency?: number;
 }
 
+/**
+ * Relationship between embedding points
+ */
+export interface Relationship {
+  id: string;
+  strength: number;
+}
+
+/**
+ * Props for document embedding components
+ */
 export interface DocumentEmbeddingProps {
   points?: Point[];
   onPointClick?: (point: Point | null) => void;
@@ -38,4 +42,16 @@ export interface DocumentEmbeddingProps {
   showAllPoints?: boolean;
   wordCount?: number;
   bertAnalysis?: any;
+}
+
+// Type for getSentimentLabel function that might be needed
+export type SentimentLabel = "Positive" | "Neutral" | "Negative" | "Very Positive" | "Very Negative";
+
+// Helper function for sentiment labels
+export function getSentimentLabel(value: number): SentimentLabel {
+  if (value >= 0.7) return "Very Positive";
+  if (value >= 0.55) return "Positive";
+  if (value <= 0.3) return "Very Negative";
+  if (value <= 0.45) return "Negative";
+  return "Neutral";
 }

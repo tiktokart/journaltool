@@ -26,10 +26,9 @@ const BertAnalysisPage = ({
   const [filteredPoints, setFilteredPoints] = useState<Point[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
-  const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [uniqueWords, setUniqueWords] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<string>("embedding");
+  const [activeTab, setActiveTab] = useState<string>("analysis");
   const [visibleClusterCount, setVisibleClusterCount] = useState<number>(8);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -99,32 +98,16 @@ const BertAnalysisPage = ({
     setSelectedPoint(point);
     
     if (!point) {
-      setConnectedPoints([]);
       setSelectedWord(null);
       return;
     }
     
     setSelectedWord(point.word || null);
-    
-    if (point.relationships && point.relationships.length > 0) {
-      const sortedRelationships = [...point.relationships]
-        .sort((a, b) => b.strength - a.strength)
-        .slice(0, 3);
-        
-      const connected = sentimentData.embeddingPoints
-        .filter((p: Point) => sortedRelationships.some(rel => rel.id === p.id));
-        
-      setConnectedPoints(connected);
-      console.log(`Selected ${point.word} with ${connected.length} connections`);
-    } else {
-      setConnectedPoints([]);
-    }
   };
   
   const handleResetVisualization = () => {
     setSelectedPoint(null);
     setSelectedWord(null);
-    setConnectedPoints([]);
     setSearchTerm("");
     setFilteredPoints(sentimentData?.embeddingPoints || []);
   };
@@ -132,16 +115,6 @@ const BertAnalysisPage = ({
   const handleClearSearch = () => {
     setSearchTerm("");
     setFilteredPoints(sentimentData?.embeddingPoints || []);
-  };
-  
-  const calculateRelationship = (point1: Point, point2: Point) => {
-    const rel1 = point1.relationships?.find(r => r.id === point2.id);
-    const rel2 = point2.relationships?.find(r => r.id === point1.id);
-    
-    return {
-      strength: rel1 ? rel1.strength : (rel2 ? rel2.strength : 0),
-      bidirectional: !!(rel1 && rel2)
-    };
   };
   
   const handleSaveToJournal = () => {
@@ -210,14 +183,11 @@ const BertAnalysisPage = ({
               filteredPoints={filteredPoints}
               setFilteredPoints={setFilteredPoints}
               uniqueWords={uniqueWords}
-              connectedPoints={connectedPoints}
-              setConnectedPoints={setConnectedPoints}
               visibleClusterCount={visibleClusterCount}
               setVisibleClusterCount={setVisibleClusterCount}
               handlePointClick={handlePointClick}
               handleResetVisualization={handleResetVisualization}
               handleClearSearch={handleClearSearch}
-              calculateRelationship={calculateRelationship}
               onJournalEntryAdded={onJournalEntryAdded}
               onMonthlyReflectionAdded={onMonthlyReflectionAdded}
             />
