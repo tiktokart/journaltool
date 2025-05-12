@@ -312,7 +312,6 @@ export const ViewDetailedAnalysis = ({
       }
     }
     
-    // Get all nouns that appear at least twice
     return Object.entries(combinedCounts)
       .filter(([word, count]) => count >= 2 && !wordsToExclude.includes(word))
       .sort((a, b) => b[1] - a[1])
@@ -450,7 +449,7 @@ export const ViewDetailedAnalysis = ({
               ) : (
                 <>
                   <ChevronDown className="h-4 w-4 mr-1 icon-dance" />
-                  {t("viewFullText")}
+                  {t("viewDetails")}
                 </>
               )}
             </button>
@@ -554,14 +553,6 @@ export const ViewDetailedAnalysis = ({
                       No significant subjects detected
                     </p>
                   )}
-                </div>
-                
-                {/* Full Text Section */}
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                  <h3 className="font-medium mb-2 text-black">{t("fullText")}</h3>
-                  <div className="text-sm text-black leading-relaxed whitespace-pre-line max-h-[400px] overflow-y-auto border border-border p-4 rounded-md bg-white">
-                    {displayText}
-                  </div>
                 </div>
               </>
             )}

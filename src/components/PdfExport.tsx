@@ -176,30 +176,6 @@ export const PdfExport = ({
         doc.text("No main subjects detected", 20, yPos + 10);
       }
       
-      // Full Text section
-      const subjectTableEndY = (doc as any).lastAutoTable?.finalY || (yPos + 20);
-      if (subjectTableEndY > 200) {
-        doc.addPage();
-        yPos = 20;
-      } else {
-        yPos = subjectTableEndY + 20;
-      }
-      
-      doc.setFontSize(14);
-      doc.text("Full Text", 20, yPos);
-      
-      const fullText = sentimentData.text || sentimentData.pdfText || "No text available";
-      
-      // Limit to first 1000 characters to avoid extremely large PDFs
-      const truncatedText = fullText.length > 1000 
-        ? fullText.substring(0, 1000) + "..." 
-        : fullText;
-      
-      doc.setFontSize(10);
-      doc.text(truncatedText, 20, yPos + 10, {
-        maxWidth: 170,
-      });
-      
       // Key Phrases
       if (sentimentData.keyPhrases && sentimentData.keyPhrases.length > 0) {
         doc.addPage();
