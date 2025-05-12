@@ -35,6 +35,12 @@ export const SentimentDistribution = ({
     return Math.round((value / total) * 100);
   };
 
+  // Calculate percentage of total text
+  const getTextPercentage = (value: number) => {
+    if (!totalWordCount || totalWordCount === 0) return 0;
+    return Math.round((value / totalWordCount) * 100);
+  };
+
   return (
     <Card className="border border-border shadow-md bg-white">
       <CardHeader>
@@ -44,6 +50,11 @@ export const SentimentDistribution = ({
         </CardTitle>
         {sourceDescription && (
           <p className="text-sm text-muted-foreground font-georgia">{sourceDescription}</p>
+        )}
+        {totalWordCount && (
+          <p className="text-xs text-muted-foreground font-georgia mt-1">
+            Total words analyzed: {totalWordCount}
+          </p>
         )}
       </CardHeader>
       <CardContent>
@@ -107,17 +118,32 @@ export const SentimentDistribution = ({
               <div className="border rounded-md p-2 text-center bg-green-50">
                 <div className="text-green-600 font-medium">Positive</div>
                 <div className="text-xl font-semibold">{distribution.positive}</div>
-                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.positive)}%)</div>
+                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.positive)}% of analyzed)</div>
+                {totalWordCount && (
+                  <div className="text-xs text-muted-foreground">
+                    {getTextPercentage(distribution.positive)}% of total text
+                  </div>
+                )}
               </div>
               <div className="border rounded-md p-2 text-center bg-blue-50">
                 <div className="text-blue-600 font-medium">Neutral</div>
                 <div className="text-xl font-semibold">{distribution.neutral}</div>
-                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.neutral)}%)</div>
+                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.neutral)}% of analyzed)</div>
+                {totalWordCount && (
+                  <div className="text-xs text-muted-foreground">
+                    {getTextPercentage(distribution.neutral)}% of total text
+                  </div>
+                )}
               </div>
               <div className="border rounded-md p-2 text-center bg-red-50">
                 <div className="text-red-600 font-medium">Negative</div>
                 <div className="text-xl font-semibold">{distribution.negative}</div>
-                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.negative)}%)</div>
+                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.negative)}% of analyzed)</div>
+                {totalWordCount && (
+                  <div className="text-xs text-muted-foreground">
+                    {getTextPercentage(distribution.negative)}% of total text
+                  </div>
+                )}
               </div>
             </div>
           </>

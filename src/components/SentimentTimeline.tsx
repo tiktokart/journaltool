@@ -204,18 +204,19 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   <YAxis 
                     domain={[0, 1]} 
                     label={{ value: "Emotional Energy", position: 'insideLeft', angle: -90, offset: 10 }}
-                    ticks={[0, 0.2, 0.4, 0.6, 0.8, 1]}
-                    width={40}
+                    ticks={[0, 0.25, 0.5, 0.75, 1]}
                     tickFormatter={(value) => {
-                      if (value >= 0.6) return "Positive";
-                      if (value === 0.4) return "Neutral";
-                      if (value === 0) return "Negative";
+                      if (value === 1) return "Very Positive";
+                      if (value === 0.75) return "Positive";
+                      if (value === 0.5) return "Neutral";
+                      if (value === 0.25) return "Negative";
+                      if (value === 0) return "Very Negative";
                       return "";
                     }}
                   />
                   <Tooltip 
                     formatter={(value: number) => [
-                      `Energy: ${value.toFixed(2)}`,
+                      `Sentiment Score: ${value.toFixed(2)}`,
                       "Emotional Energy"
                     ]}
                     labelFormatter={(label) => {
@@ -238,13 +239,13 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                     y={0.6} 
                     stroke="#27AE60" 
                     strokeDasharray="3 3" 
-                    label={{ value: "Positive", position: 'left', fill: '#27AE60', className: "font-georgia text-xs" }} 
+                    label={{ value: "Positive Threshold", position: 'left', fill: '#27AE60', className: "font-georgia text-xs" }} 
                   />
                   <ReferenceLine 
                     y={0.4} 
                     stroke="#E74C3C" 
                     strokeDasharray="3 3" 
-                    label={{ value: "Negative", position: 'left', fill: '#E74C3C', className: "font-georgia text-xs" }} 
+                    label={{ value: "Negative Threshold", position: 'left', fill: '#E74C3C', className: "font-georgia text-xs" }} 
                   />
                   <Line 
                     type="monotone" 
@@ -291,7 +292,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                 <h4 className="font-medium">{selectedPoint.time}</h4>
                 <p className="text-sm mt-1">{selectedPoint.event}</p>
                 <div className="flex items-center mt-2">
-                  <span className="text-sm text-muted-foreground">Emotional energy:</span>
+                  <span className="text-sm text-muted-foreground">Sentiment score:</span>
                   <span 
                     className={`ml-2 text-sm font-medium ${
                       selectedPoint.score >= 0.6 ? 'text-green-600' :
@@ -299,10 +300,13 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                       'text-blue-600'
                     }`}
                   >
-                    {selectedPoint.score >= 0.6 ? 'Positive' :
-                     selectedPoint.score <= 0.4 ? 'Negative' :
-                     'Neutral'}
-                    {' '}({Math.round(selectedPoint.score * 100)}%)
+                    {selectedPoint.score.toFixed(2)} ({
+                      selectedPoint.score >= 0.8 ? 'Very Positive' :
+                      selectedPoint.score >= 0.6 ? 'Positive' :
+                      selectedPoint.score <= 0.2 ? 'Very Negative' :
+                      selectedPoint.score <= 0.4 ? 'Negative' :
+                      'Neutral'
+                    })
                   </span>
                 </div>
               </div>
