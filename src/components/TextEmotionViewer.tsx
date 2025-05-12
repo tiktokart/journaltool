@@ -14,6 +14,7 @@ import { analyzeTextWithBert } from "@/utils/bertIntegration";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { shouldFilterWord } from "@/utils/documentAnalysis";
+import { Badge } from "@/components/ui/badge";
 
 interface TextEmotionViewerProps {
   pdfText: string;
@@ -32,10 +33,11 @@ export const TextEmotionViewer = ({
   const [highlightedText, setHighlightedText] = useState<React.ReactNode[]>([]);
   const [showHighlights, setShowHighlights] = useState(true);
   const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
-  const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal'>('minimal');
+  const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal' | 'moderate'>('minimal');
   const [localBertAnalysis, setLocalBertAnalysis] = useState<any>(bertAnalysis);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isOpen, setIsOpen] = useState(true); // Default to open
+  const [isOpen, setIsOpen] = useState(true);
+  const [emotionCategories, setEmotionCategories] = useState<{[key: string]: number}>({});
 
   // Unified color function for emotional tones - ensuring consistency across the app
   const getUnifiedEmotionColor = (emotion: string): string => {
@@ -139,10 +141,16 @@ export const TextEmotionViewer = ({
 
     // Create a map of words to their emotional tones and colors
     const wordEmotionMap = new Map();
+    const emotionCounts: {[key: string]: number} = {};
+    
     points.forEach(point => {
       if (point.word) {
         // Ensure all points have emotion and color
         const emotion = point.emotionalTone || "Neutral";
+        
+        // Count emotions for the summary
+        emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+        
         let color;
         
         if (point.color) {
@@ -173,12 +181,22 @@ export const TextEmotionViewer = ({
       }
     });
 
+    // Update emotion categories for display
+    setEmotionCategories(emotionCounts);
+
     console.log("Word emotion map size:", wordEmotionMap.size);
 
     // Filter words using the utility function
-    const wordsToFilter = filteringLevel === 'minimal' 
-      ? Array.from(wordEmotionMap.keys()).filter(shouldFilterWord)
-      : [];
+    let wordsToFilter: string[] = [];
+    
+    if (filteringLevel === 'minimal') {
+      wordsToFilter = Array.from(wordEmotionMap.keys()).filter(shouldFilterWord);
+    } else if (filteringLevel === 'moderate') {
+      // More aggressive filtering - filter common words plus short words
+      wordsToFilter = Array.from(wordEmotionMap.keys()).filter(word => 
+        shouldFilterWord(word) || word.length < 4
+      );
+    }
 
     // Split text into words while preserving whitespace and punctuation
     const textSegments: { text: string; emotion: string | null; color?: string; metadata?: any }[] = [];
@@ -345,6 +363,11 @@ export const TextEmotionViewer = ({
     );
   }
 
+  // Sort emotion categories by count
+  const sortedEmotions = Object.entries(emotionCategories)
+    .sort(([_, countA], [__, countB]) => countB - countA)
+    .slice(0, 6); // Show top 6 emotions
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
       <Card className="border border-border shadow-md bg-white">
@@ -396,20 +419,41 @@ export const TextEmotionViewer = ({
                     {hideNonHighlighted ? t("Show All Text") : t("Hide Non-Highlighted")}
                   </Toggle>
                   <Toggle
-                    pressed={filteringLevel === 'none'}
-                    onPressedChange={(pressed) => setFilteringLevel(pressed ? 'none' : 'minimal')}
+                    pressed={filteringLevel === 'moderate'}
+                    onPressedChange={(pressed) => setFilteringLevel(pressed ? 'moderate' : 'minimal')}
                     size="sm"
                     aria-label="Toggle filtering level"
                     className="self-start font-georgia"
                   >
-                    {filteringLevel === 'none' ? "No Filtering" : "Minimal Filtering"}
+                    {filteringLevel === 'moderate' ? "Moderate Filtering" : "Minimal Filtering"}
                   </Toggle>
                 </>
               )}
             </div>
+            
+            {/* Emotion Categories */}
+            {sortedEmotions.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium mb-2">Detected emotion categories:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {sortedEmotions.map(([emotion, count]) => (
+                    <Badge
+                      key={emotion}
+                      style={{ backgroundColor: getUnifiedEmotionColor(emotion) + "4D" }}
+                      className="flex items-center gap-1"
+                    >
+                      <span className="font-medium">{emotion}</span>
+                      <span className="bg-white bg-opacity-30 rounded-full text-xs px-1">
+                        {count}
+                      </span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[350px] rounded border border-border p-4">
+            <ScrollArea className="h-[350px] max-h-[80vh] rounded border border-border p-4 overflow-y-auto">
               <div className="text-sm whitespace-pre-wrap font-georgia">
                 {highlightedText}
               </div>

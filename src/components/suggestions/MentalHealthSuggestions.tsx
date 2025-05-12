@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Heart } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface MentalHealthSuggestionsProps {
   journalEntries: any[];
@@ -356,9 +357,9 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
             ].filter(item => item.count > 0)
               .sort((a, b) => b.count - a.count)
               .map((item) => (
-                <span key={item.tone} className={`px-3 py-1 rounded-full ${item.color}`}>
+                <Badge key={item.tone} className={`px-3 py-1 rounded-full ${item.color}`}>
                   {item.tone} <span className="font-semibold ml-1">{item.count}</span>
-                </span>
+                </Badge>
               ))}
           </div>
           <p className="text-xs text-gray-500 mt-2">
@@ -369,10 +370,10 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
         <div className="space-y-6">
           {suggestions.map(suggestion => (
             <div key={suggestion.id} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                 <h4 className="font-medium text-orange-700">{suggestion.solutionStatement}</h4>
                 {suggestion.triggeringWords && suggestion.triggeringWords.length > 0 && (
-                  <span className="text-xs px-2 py-1 bg-orange-100 rounded-full text-orange-800">
+                  <span className="text-xs px-2 py-1 bg-orange-100 rounded-full text-orange-800 whitespace-nowrap">
                     Triggered by: "{suggestion.triggeringWords.join(', ')}"
                   </span>
                 )}

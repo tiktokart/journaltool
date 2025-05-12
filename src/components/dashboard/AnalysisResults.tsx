@@ -5,11 +5,13 @@ import { AnalysisTabs } from "@/components/AnalysisTabs";
 import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
 import { WordComparisonController } from "@/components/WordComparisonController";
 import { PdfExport } from "@/components/PdfExport";
+import { EntryContent } from "@/components/EntryContent";
 import { Point } from "@/types/embedding";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, BarChart2, BookOpen } from "lucide-react";
 import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AnalysisResultsProps {
   sentimentData: any;
@@ -64,10 +66,8 @@ const AnalysisResults = ({
 }: AnalysisResultsProps) => {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
-  const [isClustersOpen, setIsClustersOpen] = useState(false);
-  const [isComparisonOpen, setIsComparisonOpen] = useState(true);
-  const [isLatentAnalysisOpen, setIsLatentAnalysisOpen] = useState(true);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
+  const [viewType, setViewType] = useState("analysis");
 
   if (!sentimentData) {
     return null;
@@ -138,84 +138,68 @@ const AnalysisResults = ({
           </div>
         </Collapsible>
         
-        {/* Analysis Tabs Section */}
-        <div className="bg-white p-4 rounded-lg mb-4 w-full">
-          <AnalysisTabs 
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            sentimentData={sentimentData}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedPoint={selectedPoint}
-            setSelectedPoint={setSelectedPoint}
-            selectedWord={selectedWord}
-            setSelectedWord={setSelectedWord}
-            filteredPoints={filteredPoints}
-            setFilteredPoints={setFilteredPoints}
-            uniqueWords={uniqueWords}
-            connectedPoints={connectedPoints}
-            setConnectedPoints={setConnectedPoints}
-            visibleClusterCount={visibleClusterCount}
-            handlePointClick={handlePointClick}
-            handleResetVisualization={handleResetVisualization}
-            handleClearSearch={handleClearSearch}
-            bertAnalysis={sentimentData.bertAnalysis}
-          />
+        {/* Tabs to switch between Analysis and Entry views */}
+        <div className="flex justify-center w-full mb-4">
+          <Tabs value={viewType} onValueChange={setViewType} className="w-full max-w-md">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="analysis">Analysis</TabsTrigger>
+              <TabsTrigger value="entry">Entry</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
         
-        {/* Word Comparison Section */}
-        <Collapsible open={isComparisonOpen} onOpenChange={setIsComparisonOpen} className="w-full">
-          <div className="mt-8 mb-4 bg-white rounded-lg p-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold flex items-center">
-                <BookOpen className="h-5 w-5 mr-2 text-blue-600" />
-                Word Comparison
-              </h2>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-9 p-0">
-                  {isComparisonOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            <CollapsibleContent>
-              <WordComparisonController 
-                points={sentimentData.embeddingPoints}
-                selectedPoint={selectedPoint}
-                sourceDescription={sentimentData.sourceDescription}
-                calculateRelationship={calculateRelationship}
-              />
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
-        
-        {/* Emotional Clusters Control */}
-        <Collapsible open={isClustersOpen} onOpenChange={setIsClustersOpen} className="w-full">
-          <div className="mt-8 mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-lg font-semibold">Emotional Clusters</h2>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-9 p-0">
-                  {isClustersOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            <CollapsibleContent>
-              <EmotionalClustersControl 
-                visibleClusterCount={visibleClusterCount}
-                setVisibleClusterCount={setVisibleClusterCount}
+        {/* Tab Content */}
+        <div className="w-full">
+          {viewType === "analysis" ? (
+            <div className="bg-white p-4 rounded-lg mb-4 w-full">
+              <AnalysisTabs 
                 activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                sentimentData={sentimentData}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                selectedPoint={selectedPoint}
+                setSelectedPoint={setSelectedPoint}
+                selectedWord={selectedWord}
+                setSelectedWord={setSelectedWord}
+                filteredPoints={filteredPoints}
+                setFilteredPoints={setFilteredPoints}
+                uniqueWords={uniqueWords}
+                connectedPoints={connectedPoints}
+                setConnectedPoints={setConnectedPoints}
+                visibleClusterCount={visibleClusterCount}
+                handlePointClick={handlePointClick}
+                handleResetVisualization={handleResetVisualization}
+                handleClearSearch={handleClearSearch}
+                bertAnalysis={sentimentData.bertAnalysis}
               />
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
+            </div>
+          ) : (
+            <EntryContent 
+              sentimentData={sentimentData}
+              pdfText={pdfText}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedPoint={selectedPoint}
+              setSelectedPoint={setSelectedPoint}
+              selectedWord={selectedWord}
+              setSelectedWord={setSelectedWord}
+              filteredPoints={filteredPoints}
+              setFilteredPoints={setFilteredPoints}
+              uniqueWords={uniqueWords}
+              connectedPoints={connectedPoints}
+              setConnectedPoints={setConnectedPoints}
+              visibleClusterCount={visibleClusterCount}
+              setVisibleClusterCount={setVisibleClusterCount}
+              handlePointClick={handlePointClick}
+              handleResetVisualization={handleResetVisualization}
+              handleClearSearch={handleClearSearch}
+              calculateRelationship={calculateRelationship}
+            />
+          )}
+        </div>
         
         {/* Export Options Section */}
         <Collapsible open={isPdfOpen} onOpenChange={setIsPdfOpen} className="w-full">
