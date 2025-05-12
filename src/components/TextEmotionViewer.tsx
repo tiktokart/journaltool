@@ -13,8 +13,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { shouldFilterWord } from "@/utils/documentAnalysis";
-import { Badge } from "@/components/ui/badge";
 
 interface TextEmotionViewerProps {
   pdfText: string;
@@ -33,11 +31,10 @@ export const TextEmotionViewer = ({
   const [highlightedText, setHighlightedText] = useState<React.ReactNode[]>([]);
   const [showHighlights, setShowHighlights] = useState(true);
   const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
-  const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal' | 'moderate'>('minimal');
+  const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal'>('minimal');
   const [localBertAnalysis, setLocalBertAnalysis] = useState<any>(bertAnalysis);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
-  const [emotionCategories, setEmotionCategories] = useState<{[key: string]: number}>({});
+  const [isOpen, setIsOpen] = useState(false);
 
   // Unified color function for emotional tones - ensuring consistency across the app
   const getUnifiedEmotionColor = (emotion: string): string => {
@@ -92,10 +89,7 @@ export const TextEmotionViewer = ({
         word: kw.word,
         emotionalTone: kw.tone,
         color: kw.color,
-        sentiment: kw.sentiment,
-        pos: kw.pos,
-        weight: kw.weight,
-        frequency: kw.frequency
+        sentiment: kw.sentiment
       }));
       
       // Combine BERT points with embedding points, avoiding duplicates
@@ -141,16 +135,10 @@ export const TextEmotionViewer = ({
 
     // Create a map of words to their emotional tones and colors
     const wordEmotionMap = new Map();
-    const emotionCounts: {[key: string]: number} = {};
-    
     points.forEach(point => {
       if (point.word) {
         // Ensure all points have emotion and color
         const emotion = point.emotionalTone || "Neutral";
-        
-        // Count emotions for the summary
-        emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
-        
         let color;
         
         if (point.color) {
@@ -171,35 +159,25 @@ export const TextEmotionViewer = ({
         if (color) {
           wordEmotionMap.set(point.word.toLowerCase(), {
             emotion,
-            color,
-            pos: point.pos,
-            weight: point.weight,
-            frequency: point.frequency,
-            sentiment: point.sentiment
+            color
           });
         }
       }
     });
 
-    // Update emotion categories for display
-    setEmotionCategories(emotionCounts);
-
     console.log("Word emotion map size:", wordEmotionMap.size);
 
-    // Filter words using the utility function
-    let wordsToFilter: string[] = [];
-    
-    if (filteringLevel === 'minimal') {
-      wordsToFilter = Array.from(wordEmotionMap.keys()).filter(shouldFilterWord);
-    } else if (filteringLevel === 'moderate') {
-      // More aggressive filtering - filter common words plus short words
-      wordsToFilter = Array.from(wordEmotionMap.keys()).filter(word => 
-        shouldFilterWord(word) || word.length < 4
-      );
-    }
+    // Words to filter out - significantly reduced filtering, only the most common/basic words
+    const wordsToFilter = filteringLevel === 'minimal' ? [
+      // Minimal filtering - only articles, prepositions, conjunctions, and question words
+      'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'being', 'been',
+      'and', 'but', 'or', 'nor', 'for', 'yet', 'so',
+      'in', 'on', 'at', 'by', 'to', 'from', 'with', 'about', 'against', 'before', 'after',
+      'what', 'where', 'when', 'why', 'how', 'which', 'who', 'whom', 'whose', 'that'
+    ] : [];
 
     // Split text into words while preserving whitespace and punctuation
-    const textSegments: { text: string; emotion: string | null; color?: string; metadata?: any }[] = [];
+    const textSegments: { text: string; emotion: string | null; color?: string }[] = [];
     
     // Regular expression that matches words
     const wordRegex = /[a-zA-Z0-9']+/g;
@@ -224,13 +202,7 @@ export const TextEmotionViewer = ({
         textSegments.push({ 
           text: word, 
           emotion: emotionData.emotion,
-          color: emotionData.color,
-          metadata: {
-            pos: emotionData.pos,
-            weight: emotionData.weight,
-            frequency: emotionData.frequency,
-            sentiment: emotionData.sentiment
-          }
+          color: emotionData.color
         });
       } else if (shouldFilter) {
         // Only filter if it's in our filtered list AND has no emotion assigned
@@ -258,36 +230,6 @@ export const TextEmotionViewer = ({
       if (!segment.emotion) {
         return segment.text;
       }
-
-      // Enhanced tooltip content with more metadata
-      const getTooltipContent = () => {
-        if (!segment.metadata) return <p className="text-sm font-georgia"><strong>Emotion:</strong> {segment.emotion}</p>;
-        
-        // Format sentiment as a percentage
-        const sentimentPercent = segment.metadata.sentiment 
-          ? `${Math.round((segment.metadata.sentiment + 1) * 50)}%` 
-          : 'N/A';
-        
-        // Format weight for display
-        const weightFormatted = segment.metadata.weight
-          ? Math.round(segment.metadata.weight * 100) / 100
-          : 'N/A';
-          
-        return (
-          <>
-            <p className="text-sm font-georgia"><strong>Word:</strong> {segment.text}</p>
-            <p className="text-sm font-georgia"><strong>Emotion:</strong> {segment.emotion}</p>
-            {segment.metadata.pos && <p className="text-sm font-georgia"><strong>Type:</strong> {segment.metadata.pos}</p>}
-            {segment.metadata.sentiment !== undefined && (
-              <p className="text-sm font-georgia">
-                <strong>Sentiment:</strong> {sentimentPercent} {segment.metadata.sentiment > 0 ? '(positive)' : segment.metadata.sentiment < 0 ? '(negative)' : '(neutral)'}
-              </p>
-            )}
-            {segment.metadata.frequency && <p className="text-sm font-georgia"><strong>Frequency:</strong> {segment.metadata.frequency}</p>}
-            {segment.metadata.weight && <p className="text-sm font-georgia"><strong>Contextual importance:</strong> {weightFormatted}</p>}
-          </>
-        );
-      };
 
       // Use the color from the segment if available
       let backgroundColor;
@@ -321,7 +263,9 @@ export const TextEmotionViewer = ({
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            {getTooltipContent()}
+            <p className="text-sm font-georgia">
+              <strong>Emotion:</strong> {segment.emotion}
+            </p>
           </TooltipContent>
         </Tooltip>
       );
@@ -336,7 +280,7 @@ export const TextEmotionViewer = ({
         <CardHeader>
           <CardTitle className="flex items-center text-xl font-pacifico">
             <Highlighter className="h-5 w-5 mr-2 text-primary" />
-            {t("Document Text Analysis")}
+            {t("Document Text Visualization")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-10 font-georgia">
@@ -352,7 +296,7 @@ export const TextEmotionViewer = ({
         <CardHeader>
           <CardTitle className="flex items-center text-xl font-pacifico">
             <Highlighter className="h-5 w-5 mr-2 text-primary" />
-            {t("Document Text Analysis")}
+            {t("Document Text Visualization")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-10 font-georgia">
@@ -363,11 +307,6 @@ export const TextEmotionViewer = ({
     );
   }
 
-  // Sort emotion categories by count
-  const sortedEmotions = Object.entries(emotionCategories)
-    .sort(([_, countA], [__, countB]) => countB - countA)
-    .slice(0, 6); // Show top 6 emotions
-
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
       <Card className="border border-border shadow-md bg-white">
@@ -375,7 +314,7 @@ export const TextEmotionViewer = ({
           <div className="flex justify-between items-center">
             <CardTitle className="flex items-center text-xl font-pacifico">
               <Highlighter className="h-5 w-5 mr-2 text-primary" />
-              {t("Document Text Analysis")}
+              {t("Document Text Visualization")}
             </CardTitle>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="w-9 p-0">
@@ -419,41 +358,20 @@ export const TextEmotionViewer = ({
                     {hideNonHighlighted ? t("Show All Text") : t("Hide Non-Highlighted")}
                   </Toggle>
                   <Toggle
-                    pressed={filteringLevel === 'moderate'}
-                    onPressedChange={(pressed) => setFilteringLevel(pressed ? 'moderate' : 'minimal')}
+                    pressed={filteringLevel === 'none'}
+                    onPressedChange={(pressed) => setFilteringLevel(pressed ? 'none' : 'minimal')}
                     size="sm"
                     aria-label="Toggle filtering level"
                     className="self-start font-georgia"
                   >
-                    {filteringLevel === 'moderate' ? "Moderate Filtering" : "Minimal Filtering"}
+                    {filteringLevel === 'none' ? "No Filtering" : "Minimal Filtering"}
                   </Toggle>
                 </>
               )}
             </div>
-            
-            {/* Emotion Categories */}
-            {sortedEmotions.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium mb-2">Detected emotion categories:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {sortedEmotions.map(([emotion, count]) => (
-                    <Badge
-                      key={emotion}
-                      style={{ backgroundColor: getUnifiedEmotionColor(emotion) + "4D" }}
-                      className="flex items-center gap-1"
-                    >
-                      <span className="font-medium">{emotion}</span>
-                      <span className="bg-white bg-opacity-30 rounded-full text-xs px-1">
-                        {count}
-                      </span>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[350px] max-h-[80vh] rounded border border-border p-4 overflow-y-auto">
+            <ScrollArea className="h-[350px] rounded border border-border p-4">
               <div className="text-sm whitespace-pre-wrap font-georgia">
                 {highlightedText}
               </div>

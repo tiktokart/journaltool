@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
 import { generateMockPoints } from '../utils/embeddingUtils';
 import { HoverInfoPanel } from './embedding/HoverInfoPanel';
-import EmbeddingScene from './embedding/EmbeddingScene';
+import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
 import ParticleBackground from './embedding/ParticleBackground';
-import { gsap } from 'gsap';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { WellbeingResources } from './WellbeingResources';
@@ -14,7 +14,6 @@ import { enrichPoints, extractEmotionalGroups } from './embedding/PointUtils';
 import EmotionalGroupsPanel from './embedding/EmotionalGroupsPanel';
 import WordMetadataDisplay from './embedding/WordMetadataDisplay';
 import EmbeddingControls from './embedding/EmbeddingControls';
-import { BertAnalysisResult } from '@/utils/bertIntegration';
 
 export const DocumentEmbedding = ({ 
   points = [], 
@@ -28,15 +27,14 @@ export const DocumentEmbedding = ({
   onResetView,
   visibleClusterCount = 8,
   showAllPoints = true,
-  wordCount,
-  bertData
+  wordCount
 }: DocumentEmbeddingProps) => {
   const { t } = useLanguage();
   const location = useLocation();
   const isHomepage = location.pathname === '/';
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
   
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
@@ -85,53 +83,44 @@ export const DocumentEmbedding = ({
       };
     });
   };
-
-  // Enhance points with BERT data if available
-  const enhancePointsWithBert = (inputPoints: Point[], bertData?: BertAnalysisResult | null): Point[] => {
-    if (!bertData || !bertData.keywords || bertData.keywords.length === 0) {
-      return inputPoints;
-    }
-
-    // Map of words to BERT keyword data
-    const bertWordMap: Record<string, any> = {};
-    bertData.keywords.forEach(kw => {
-      if (kw.word) {
-        bertWordMap[kw.word.toLowerCase()] = kw;
-      }
-    });
-
-    return inputPoints.map(point => {
-      if (!point.word) return point;
-      
-      // Try to find matching BERT keyword
-      const bertKeyword = bertWordMap[point.word.toLowerCase()];
-      
-      if (bertKeyword) {
-        return {
-          ...point,
-          emotionalTone: bertKeyword.tone || point.emotionalTone,
-          sentiment: bertKeyword.sentiment !== undefined ? bertKeyword.sentiment : point.sentiment,
-          weight: bertKeyword.weight !== undefined ? bertKeyword.weight : point.weight,
-          color: bertKeyword.color || point.color,
-          pos: bertKeyword.pos || point.pos,
-          relatedConcepts: bertKeyword.relatedConcepts || point.relatedConcepts
-        };
-      }
-      return point;
-    });
-  };
   
+  useEffect(() => {
+    if (focusOnWord !== currentFocusWord) {
+      setCurrentFocusWord(focusOnWord);
+      
+      if (focusOnWord && displayPoints.length > 0) {
+        const focusedPoint = displayPoints.find(p => p.word === focusOnWord);
+        if (focusedPoint && focusedPoint.relationships) {
+          const sortedRelationships = [...focusedPoint.relationships]
+            .sort((a, b) => b.strength - a.strength)
+            .slice(0, 3);
+            
+          const connected = sortedRelationships
+            .map(rel => displayPoints.find(p => p.id === rel.id))
+            .filter(p => p !== undefined) as Point[];
+            
+          setConnectedPoints(connected);
+          if (focusedPoint) {
+            setSelectedPoint(focusedPoint);
+          }
+        } else {
+          setConnectedPoints([]);
+        }
+      } else {
+        setConnectedPoints([]);
+      }
+    }
+  }, [focusOnWord, currentFocusWord, displayPoints]);
+
   useEffect(() => {
     if (points.length > 0) {
       console.log(`Setting display points with ${points.length} points from props`);
       const normalizedPoints = normalizePoints(points);
       const pointsWithCorrectColors = enrichPoints(normalizedPoints, isHomepage);
-      // Enhance with BERT if available
-      const bertEnhancedPoints = enhancePointsWithBert(pointsWithCorrectColors, bertData);
-      setDisplayPoints(bertEnhancedPoints);
+      setDisplayPoints(pointsWithCorrectColors);
       
       // Export points to window for TextEmotionViewer to access
-      window.documentEmbeddingPoints = bertEnhancedPoints;
+      window.documentEmbeddingPoints = pointsWithCorrectColors;
     } else if (generatedPoints.length === 0) {
       console.log("Generating mock points");
       const mockPoints = generateMockPoints(depressedJournalReference);
@@ -142,7 +131,7 @@ export const DocumentEmbedding = ({
       // Export points to window for TextEmotionViewer to access
       window.documentEmbeddingPoints = normalizedMockPoints;
     }
-  }, [points, depressedJournalReference, generatedPoints.length, isHomepage, bertData]);
+  }, [points, depressedJournalReference, generatedPoints.length, isHomepage]);
   
   useEffect(() => {
     if (displayPoints.length > 0) {
@@ -160,46 +149,19 @@ export const DocumentEmbedding = ({
   
   const handleZoomIn = () => {
     if (cameraRef.current) {
-      // Manually implement zoom without importing
-      const camera = cameraRef.current;
-      gsap.to(camera.position, {
-        z: camera.position.z * 0.8,
-        duration: 0.5,
-        ease: "power2.out"
-      });
+      zoomIn(cameraRef.current);
     }
   };
   
   const handleZoomOut = () => {
     if (cameraRef.current) {
-      // Manually implement zoom without importing
-      const camera = cameraRef.current;
-      gsap.to(camera.position, {
-        z: camera.position.z * 1.25,
-        duration: 0.5,
-        ease: "power2.out"
-      });
+      zoomOut(cameraRef.current);
     }
   };
   
   const handleResetZoom = () => {
     if (cameraRef.current && controlsRef.current) {
-      // Manually implement reset without importing
-      const camera = cameraRef.current;
-      const controls = controlsRef.current;
-      gsap.to(camera.position, {
-        x: 0,
-        y: 0,
-        z: 20,
-        duration: 1,
-        ease: "power2.inOut",
-        onUpdate: () => {
-          camera.lookAt(0, 0, 0);
-          if (controls && controls.update) {
-            controls.update();
-          }
-        }
-      });
+      resetZoom(cameraRef.current, controlsRef.current);
     }
   };
   
@@ -409,12 +371,6 @@ export const DocumentEmbedding = ({
         onResetView={handleResetView}
         visibleClusterCount={visibleClusterCount}
         showAllPoints={showAllPoints}
-        bertData={bertData}
-        visualizationSettings={{
-          pointSize: 5,
-          lineWidth: 2,
-          connectionOpacity: 0.7
-        }}
       />
       
       {isInteractive && (

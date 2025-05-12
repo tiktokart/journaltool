@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Calendar } from './ui/calendar';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { ChevronDown, ChevronUp, Search, Calendar as CalendarIcon, FileDown, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { TextEmotionViewer } from './TextEmotionViewer';
@@ -41,9 +41,6 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [documentStats, setDocumentStats] = useState({ wordCount: 0, sentenceCount: 0, paragraphCount: 0 });
   const [mainSubjects, setMainSubjects] = useState<string[]>([]);
-  const [showEmotionalHighlights, setShowEmotionalHighlights] = useState(true);
-  const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
-  const [minimalFiltering, setMinimalFiltering] = useState(true);
 
   useEffect(() => {
     // Filter entries based on search query and selected date
@@ -265,13 +262,72 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
         
         {/* Entry and Analysis - Right Side */}
         <div className="md:col-span-2">
-          <Tabs defaultValue="analysis" className="h-full flex flex-col">
-            <div className="border-b flex justify-center">
+          <Tabs defaultValue="entry" className="h-full flex flex-col">
+            <div className="border-b">
               <TabsList className="p-3">
-                <TabsTrigger value="analysis" className="bg-amber-100 data-[state=active]:bg-amber-200 px-8">Analysis</TabsTrigger>
-                <TabsTrigger value="entry" className="bg-amber-50 data-[state=active]:bg-amber-200 px-8">Entry</TabsTrigger>
+                <TabsTrigger value="entry">Journal Entry</TabsTrigger>
+                <TabsTrigger value="analysis">Entry Analysis</TabsTrigger>
               </TabsList>
             </div>
+            
+            <TabsContent value="entry" className="flex-grow overflow-y-auto p-4">
+              {selectedEntry ? (
+                <div>
+                  <div className="mb-4">
+                    <h2 className="text-xl font-semibold mb-1 font-pacifico">
+                      Journal Entry
+                    </h2>
+                    <p className="text-gray-600">
+                      {format(new Date(selectedEntry.date), 'MMMM d, yyyy - h:mm a')}
+                    </p>
+                    <div className="w-16 h-1 bg-purple-400 mt-1"></div>
+                  </div>
+                  
+                  <Collapsible defaultOpen={true} className="mb-4">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-purple-50 rounded-lg font-medium">
+                      <span className="font-pacifico">Entry Content</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="p-4 border border-t-0 rounded-b-lg">
+                        <div className="prose max-w-none font-georgia">
+                          <p className="whitespace-pre-wrap">{selectedEntry.text}</p>
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      className="border-purple-200 text-purple-700"
+                    >
+                      Export as PDF
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="border-red-200 text-red-700"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-center p-4">
+                  <div>
+                    <p className="text-gray-500 mb-3">Select an entry from the list to view it</p>
+                    {filteredEntries.length > 0 && (
+                      <Button
+                        variant="outline"
+                        onClick={() => handleEntryClick(filteredEntries[0])}
+                      >
+                        View Latest Entry
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
             
             <TabsContent value="analysis" className="flex-grow overflow-y-auto p-4">
               {selectedEntry ? (
@@ -328,125 +384,63 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                         
                         <div className="bg-white p-4 rounded-lg border shadow-sm">
                           <h3 className="text-lg font-medium mb-3">Emotional Analysis</h3>
-                          <p>Emotional Actions</p>
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {['analyzed', 'generated', 'existed', 'realized', 'person', 'still'].map((word, i) => (
-                              <span key={i} className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-sm hover:bg-gray-200 cursor-help" 
-                                    title={`Emotional tone: ${['Neutral', 'Positive', 'Negative'][Math.floor(Math.random() * 3)]}`}>
-                                {word}
-                              </span>
+                          <div className="flex flex-wrap gap-2">
+                            {bertAnalysis?.keywords?.slice(0, 5).map((keyword: any, i: number) => (
+                              <div 
+                                key={i} 
+                                className="px-3 py-2 rounded-full text-white text-sm"
+                                style={{ 
+                                  backgroundColor: keyword.color || 
+                                    (keyword.sentiment > 0 ? '#68D391' : '#FC8181')
+                                }}
+                              >
+                                {keyword.word}
+                              </div>
                             ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Main Subjects Section */}
-                      <div className="mb-6 bg-gray-50 p-4 rounded-lg border">
-                        <h3 className="text-lg font-medium font-pacifico text-center mb-4">Main Subjects</h3>
-                        <div className="flex flex-wrap gap-2 justify-center">
-                          {['positive', 'negative', 'neutral', '512025', 'still', 'person', 'sentiment', 'gemma'].map((subject, index) => (
-                            <span key={index} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 cursor-help"
-                                  title={`Subject category: ${['Main topic', 'Secondary topic', 'Related concept'][Math.floor(Math.random() * 3)]}`}>
-                              {subject}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Suggestions Section */}
-                      <div className="mt-6 mb-6">
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <h3 className="text-lg font-medium font-pacifico text-orange-700">
-                              Addresses fear concerns
-                            </h3>
-                            <div className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
-                              Auto-suggested
-                            </div>
+                            {(!bertAnalysis?.keywords || bertAnalysis.keywords.length === 0) && (
+                              <p className="text-gray-500">No emotional keywords detected</p>
+                            )}
                           </div>
                           
-                          <div className="mb-3">
-                            <p className="text-sm mb-2">Emotions that triggered this suggestion:</p>
-                            <div className="flex gap-1">
-                              <span className="bg-gray-100 text-gray-800 rounded-full px-3 py-1 text-xs">anxious</span>
-                              <span className="bg-gray-100 text-gray-800 rounded-full px-3 py-1 text-xs">fearful</span>
+                          <div className="mt-6">
+                            <h4 className="text-md font-medium mb-2">Main Subjects</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {mainSubjects.map((subject, index) => (
+                                <span
+                                  key={index}
+                                  className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                                >
+                                  {subject}
+                                </span>
+                              ))}
+                              {mainSubjects.length === 0 && (
+                                <p className="text-gray-500">No main subjects detected</p>
+                              )}
                             </div>
-                          </div>
-                          
-                          <div className="border-t border-orange-200 pt-3 mt-2">
-                            <p className="font-medium mb-2">Action Plan:</p>
-                            <ol className="list-decimal list-inside space-y-2 text-sm">
-                              <li>Take a moment to breathe deeply and acknowledge your feelings</li>
-                              <li>Call a crisis helpline like 988 if you need immediate support</li>
-                              <li>Reach out to a trusted friend or family member</li>
-                              <li>Remove yourself from stressful environments if possible</li>
-                              <li>Focus on the present moment using grounding techniques</li>
-                            </ol>
-                            <div className="mt-3">
-                              <a href="#" className="text-orange-600 hover:text-orange-800 text-sm">
-                                Visit resource
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Full Text Section */}
-                      <div className="mt-8">
-                        <h3 className="text-lg font-medium mb-3 font-pacifico">Full Text</h3>
-                        <div className="p-4 bg-gray-50 rounded-lg border">
-                          <p className="mb-2 text-sm">Extracted from PDF "thoughtsonmentalhealthtoday.pdf":</p>
-                          <pre className="whitespace-pre-wrap text-sm font-georgia">{selectedEntry.text}</pre>
-                        </div>
-                      </div>
-
-                      {/* Science of Happiness section with integrated goal graph */}
-                      <div className="mt-8 p-4 bg-purple-50 rounded-lg border border-purple-100">
-                        <h3 className="font-semibold text-purple-800 mb-3">Science of Happiness</h3>
-                        
-                        <div className="flex flex-col md:flex-row gap-4">
-                          <div className="flex-1">
-                            <p className="text-sm mb-4">
-                              Research shows that maintaining a positive outlook in 75% of your journal entries 
-                              can significantly improve your mental well-being over time.
-                            </p>
-                            
-                            {/* Progress bar showing current vs goal */}
-                            <div className="mb-4">
-                              <div className="mb-1 flex justify-between text-xs">
-                                <span>Your happiness: 56%</span>
-                                <span>Goal: 75%</span>
-                              </div>
-                              <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-gradient-to-r from-blue-400 to-purple-500" 
-                                  style={{ width: `56%` }}
-                                ></div>
-                              </div>
-                              <p className="text-xs mt-1 text-gray-600">
-                                19% more positive content needed to reach your goal
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex-1 border-l pl-4">
-                            <h4 className="text-sm font-medium mb-2">Recommended Actions:</h4>
-                            <ul className="text-sm space-y-1 list-disc list-inside">
-                              <li>Focus on gratitude in your next entries</li>
-                              <li>Reflect on positive experiences more deeply</li>
-                              <li>Balance reflections on challenges with solutions</li>
-                            </ul>
                           </div>
                         </div>
                       </div>
 
                       {/* Collapsible sections for expanded analysis */}
-                      <Collapsible className="mb-4 mt-6 border rounded-lg overflow-hidden">
+                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
                         <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
                           <h3 className="text-lg font-medium font-pacifico">Latent Emotional Analysis</h3>
                           <ChevronDown className="h-5 w-5" />
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="p-4 bg-white"></CollapsibleContent>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <div className="bg-gray-50 rounded-lg p-5">
+                            {bertAnalysis ? (
+                              <TextEmotionViewer 
+                                pdfText={selectedEntry.text}
+                                bertAnalysis={bertAnalysis}
+                              />
+                            ) : (
+                              <p className="text-center text-gray-500 py-4">
+                                No emotional analysis available
+                              </p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
                       </Collapsible>
 
                       <Collapsible className="mb-4 border rounded-lg overflow-hidden">
@@ -454,7 +448,28 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           <h3 className="text-lg font-medium font-pacifico">Word Comparison</h3>
                           <ChevronDown className="h-5 w-5" />
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="p-4 bg-white"></CollapsibleContent>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <p className="text-gray-700 mb-4">
+                            Compare the emotional relationships between key words in your entry.
+                          </p>
+                          {bertAnalysis?.keywords?.length > 5 ? (
+                            <div className="grid grid-cols-3 gap-3">
+                              {bertAnalysis.keywords.slice(0, 9).map((kw: any, i: number) => (
+                                <div key={i} className="flex items-center bg-gray-50 p-2 rounded-lg">
+                                  <div 
+                                    className="w-3 h-3 rounded-full mr-2"
+                                    style={{ backgroundColor: kw.color || "#aaaaaa" }}
+                                  ></div>
+                                  <span className="text-sm">{kw.word}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-center text-gray-500">
+                              Not enough keywords for meaningful comparison
+                            </p>
+                          )}
+                        </CollapsibleContent>
                       </Collapsible>
 
                       <Collapsible className="mb-4 border rounded-lg overflow-hidden">
@@ -466,10 +481,18 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="bg-green-50 p-4 rounded-lg">
                               <h4 className="font-medium mb-2">Overall Sentiment</h4>
-                              <p className="text-xl font-semibold mb-1">Neutral</p>
-                              <p className="text-gray-700">Score: 56%</p>
+                              <p className="text-xl font-semibold mb-1">
+                                {bertAnalysis?.sentiment?.label || "Neutral"}
+                              </p>
+                              <p className="text-gray-700">
+                                Score: {Math.round((bertAnalysis?.sentiment?.score || 0.5) * 100)}%
+                              </p>
                               <div className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div className="h-full bg-green-500" style={{ width: '56%' }}></div>
+                                <div 
+                                  className={`h-full ${bertAnalysis?.sentiment?.score > 0.6 ? 'bg-green-500' : 
+                                    bertAnalysis?.sentiment?.score < 0.4 ? 'bg-red-500' : 'bg-yellow-500'}`}
+                                  style={{ width: `${Math.round((bertAnalysis?.sentiment?.score || 0.5) * 100)}%` }}
+                                ></div>
                               </div>
                               <div className="flex justify-between text-xs text-gray-500 mt-1">
                                 <span>Negative</span>
@@ -484,30 +507,39 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                                 <div>
                                   <div className="flex justify-between mb-1 text-sm">
                                     <span>Positive</span>
-                                    <span>56%</span>
+                                    <span>{bertAnalysis?.distribution?.positive || 0}%</span>
                                   </div>
                                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                    <div className="h-full bg-green-500" style={{ width: '56%' }}></div>
+                                    <div 
+                                      className="h-full bg-green-500"
+                                      style={{ width: `${bertAnalysis?.distribution?.positive || 0}%` }}
+                                    ></div>
                                   </div>
                                 </div>
                                 
                                 <div>
                                   <div className="flex justify-between mb-1 text-sm">
                                     <span>Neutral</span>
-                                    <span>32%</span>
+                                    <span>{bertAnalysis?.distribution?.neutral || 0}%</span>
                                   </div>
                                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                    <div className="h-full bg-blue-400" style={{ width: '32%' }}></div>
+                                    <div 
+                                      className="h-full bg-blue-400"
+                                      style={{ width: `${bertAnalysis?.distribution?.neutral || 0}%` }}
+                                    ></div>
                                   </div>
                                 </div>
                                 
                                 <div>
                                   <div className="flex justify-between mb-1 text-sm">
                                     <span>Negative</span>
-                                    <span>12%</span>
+                                    <span>{bertAnalysis?.distribution?.negative || 0}%</span>
                                   </div>
                                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                    <div className="h-full bg-red-500" style={{ width: '12%' }}></div>
+                                    <div 
+                                      className="h-full bg-red-500"
+                                      style={{ width: `${bertAnalysis?.distribution?.negative || 0}%` }}
+                                    ></div>
                                   </div>
                                 </div>
                               </div>
@@ -521,7 +553,11 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           <h3 className="text-lg font-medium font-pacifico">Timeline</h3>
                           <ChevronDown className="h-5 w-5" />
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="p-4 bg-white"></CollapsibleContent>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <p className="text-gray-500 text-center py-4">
+                            Timeline visualization would go here
+                          </p>
+                        </CollapsibleContent>
                       </Collapsible>
 
                       <Collapsible className="mb-4 border rounded-lg overflow-hidden">
@@ -529,171 +565,42 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           <h3 className="text-lg font-medium font-pacifico">Keywords</h3>
                           <ChevronDown className="h-5 w-5" />
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="p-4 bg-white"></CollapsibleContent>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <div className="flex flex-wrap gap-2">
+                            {bertAnalysis?.keywords?.map((keyword: any, i: number) => (
+                              <span 
+                                key={i} 
+                                className="px-3 py-1 rounded-full text-sm"
+                                style={{ 
+                                  backgroundColor: keyword.color ? `${keyword.color}33` : '#f3f4f6',
+                                  color: keyword.color ? keyword.color : '#374151',
+                                  border: `1px solid ${keyword.color || '#e5e7eb'}`
+                                }}
+                              >
+                                {keyword.word}
+                              </span>
+                            ))}
+                            {(!bertAnalysis?.keywords || bertAnalysis.keywords.length === 0) && (
+                              <p className="text-center text-gray-500 w-full py-4">
+                                No keywords extracted
+                              </p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
                       </Collapsible>
+
+                      <div className="mt-8">
+                        <h3 className="text-lg font-medium mb-3 font-pacifico">Full Text</h3>
+                        <div className="p-4 bg-gray-50 rounded-lg border">
+                          <pre className="whitespace-pre-wrap text-sm font-georgia">{selectedEntry.text}</pre>
+                        </div>
+                      </div>
                     </>
                   )}
                 </div>
               ) : (
                 <div className="h-full flex items-center justify-center">
                   <p className="text-gray-500">Select an entry to see its analysis</p>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="entry" className="flex-grow overflow-y-auto p-4">
-              {selectedEntry ? (
-                <div>
-                  <div className="mb-4">
-                    <h2 className="text-xl font-semibold mb-1 font-pacifico">
-                      Journal Entry
-                    </h2>
-                    <p className="text-gray-600">
-                      {selectedEntry.date && format(new Date(selectedEntry.date), 'MMMM d, yyyy - h:mm a')}
-                    </p>
-                    <div className="w-16 h-1 bg-purple-400 mt-1"></div>
-                  </div>
-                  
-                  {/* Document Text Analysis */}
-                  <Collapsible defaultOpen={true} className="mb-4">
-                    <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-purple-50 rounded-t-lg font-medium">
-                      <span className="font-pacifico">Document Text Analysis</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="p-4 border border-t-0 rounded-b-lg bg-white">
-                        <div className="flex flex-wrap gap-2 mt-2 mb-4">
-                          <Button
-                            variant={showEmotionalHighlights ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setShowEmotionalHighlights(!showEmotionalHighlights)}
-                            className="self-start bg-purple-600 hover:bg-purple-700 text-white"
-                          >
-                            {showEmotionalHighlights ? "Hide Emotional Highlights" : "Show Emotional Highlights"}
-                          </Button>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setHideNonHighlighted(!hideNonHighlighted)}
-                            className="self-start"
-                          >
-                            {hideNonHighlighted ? "Show All Text" : "Hide Non-Highlighted"}
-                          </Button>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setMinimalFiltering(!minimalFiltering)}
-                            className="self-start"
-                          >
-                            {minimalFiltering ? "Minimal Filtering" : "No Filtering"}
-                          </Button>
-                        </div>
-                        
-                        <div className="p-4 border rounded-md">
-                          <p className="text-sm mb-2">BERT Emotional Analysis</p>
-                          <div className="bg-white p-4 rounded-md border">
-                            {selectedEntry.text && (
-                              <pre className="whitespace-pre-wrap text-sm font-georgia">
-                                {bertAnalysis ? (
-                                  <span dangerouslySetInnerHTML={{ 
-                                    __html: selectedEntry.text
-                                      .replace(/about AI girlfriends/g, '<span style="background-color: #6EE7B7;">about AI girlfriends</span>')
-                                      .replace(/watched "Her"/g, '<span style="background-color: #FEC6A1;">watched "Her"</span>')
-                                      .replace(/happy moments/g, '<span style="background-color: #9BF6FF;">happy moments</span>')
-                                      .replace(/normal/g, '<span style="background-color: #FDE1D3;">normal</span>')
-                                      .replace(/conviction/g, '<span style="background-color: #FBBDC9;">conviction</span>')
-                                      .replace(/issues/g, '<span style="background-color: #F7A4AF;">issues</span>')
-                                      .replace(/personality defects/g, '<span style="background-color: #FCA5A5;">personality defects</span>')
-                                  }} />
-                                ) : (
-                                  selectedEntry.text
-                                )}
-                              </pre>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                  
-                  {/* Word Comparison */}
-                  <Collapsible className="mb-4">
-                    <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-purple-50 rounded-t-lg font-medium">
-                      <span className="font-pacifico">Word Comparison</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="p-4 border border-t-0 rounded-b-lg bg-white">
-                        <div className="text-sm text-gray-600 mb-4">
-                          Compare words and their emotional significance in your journal entry.
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {['positive', 'negative', 'neutral', 'person', 'thought'].map((word, i) => (
-                            <span key={i} className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-sm hover:bg-gray-200 cursor-help"
-                                title={`Compare: ${word}`}>
-                              {word}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                  
-                  {/* Latent Emotional Analysis */}
-                  <Collapsible className="mb-4">
-                    <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-purple-50 rounded-t-lg font-medium">
-                      <span className="font-pacifico">Latent Emotional Analysis</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="p-4 border border-t-0 rounded-b-lg bg-white">
-                        <p className="text-sm text-gray-600 mb-4">
-                          3D visualization of emotional patterns in your journal entry.
-                        </p>
-                        <div className="h-[250px] bg-gray-50 rounded border flex items-center justify-center">
-                          <p className="text-gray-500">3D visualization loading...</p>
-                        </div>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                  
-                  {/* Entry Content */}
-                  <Collapsible defaultOpen={true} className="mb-4">
-                    <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-purple-50 rounded-t-lg font-medium">
-                      <span className="font-pacifico">Entry Content</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="p-4 border border-t-0 rounded-b-lg bg-white">
-                        <div className="prose max-w-none font-georgia">
-                          <p className="whitespace-pre-wrap">{selectedEntry.text}</p>
-                        </div>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                  
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="border-purple-200 text-purple-700 flex items-center"
-                    >
-                      <FileDown className="h-4 w-4 mr-2" />
-                      Export as PDF
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="border-red-200 text-red-700 flex items-center"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Entry
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <p className="text-gray-500">Select an entry to view</p>
                 </div>
               )}
             </TabsContent>

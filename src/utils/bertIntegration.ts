@@ -1,281 +1,211 @@
 
-import { shouldFilterWord, determineWordTone, getContextualImportance, KeywordAnalysis } from './documentAnalysis';
-
-const FILTER_COMMON_WORDS = true; // Set to false if you want to include common words
-
-export interface BertAnalysisResult {
-  keywords: KeywordAnalysis[];
-  emotionalTones: { tone: string; count: number }[];
-  contextualAnalysis: {
-    dominantEmotions: string[];
-    emotionalShifts: any[];
-    topicClusters: any[];
-    actionWords: string[];
-    mainSubjects: string[];
-  };
+interface KeywordAnalysis {
+  word: string;
+  sentiment: number;
+  tone?: string;
+  relatedConcepts?: string[];
+  frequency?: number;
+  color?: [number, number, number];
 }
 
+interface BertAnalysisResult {
+  keywords: KeywordAnalysis[];
+  overallSentiment: number;
+  overallTone: string;
+  emotionalTone?: string;  // Add this property
+  analysis?: string;       // Add this property
+}
+
+const stopWords = [
+  'the', 'a', 'an', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 
+  'in', 'out', 'with', 'about', 'against', 'before', 'after', 'during', 'he', 'she', 
+  'it', 'they', 'we', 'you', 'i', 'me', 'him', 'her', 'them', 'us', 'is', 'am', 'are',
+  'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+  'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'can', 'could', 'uh', 'um',
+  'eh', 'oh', 'ah', 'hmm', 'like', 'just', 'very', 'really', 'so', 'then', 
+  'of', 'as', 'if', 'that', 'what', 'when', 'where', 'why', 'how', 'because', 'since',
+  'while', 'although', 'though', 'whether', 'which', 'whose', 'whom', 'this', 'these',
+  'those', 'there', 'here', 'who'
+];
+
+// Bright, visible color palette for emotional tones
+const emotionalColors = {
+  Joy: [1, 0.9, 0.2] as [number, number, number],        // Bright Yellow
+  Sadness: [0.2, 0.6, 1] as [number, number, number],     // Bright Blue
+  Anxiety: [1, 0.5, 0.1] as [number, number, number],     // Bright Orange
+  Contentment: [0.2, 0.9, 0.4] as [number, number, number], // Bright Green
+  Confusion: [0.8, 0.4, 1] as [number, number, number],   // Bright Purple
+  Anger: [1, 0.2, 0.2] as [number, number, number],       // Bright Red
+  Fear: [0.9, 0.2, 0.9] as [number, number, number],      // Bright Magenta
+  Surprise: [0.2, 1, 1] as [number, number, number],      // Bright Cyan
+  Neutral: [0.8, 0.8, 0.8] as [number, number, number],   // Bright Gray
+};
+
 export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisResult> => {
-  console.log("Starting BERT analysis process for text:", text.substring(0, 50) + "...");
-  
   try {
-    // Simulate BERT processing with our own algorithms since we don't have actual BERT
-    const words = text
-      .split(/\s+/)
-      .filter(word => word.length > 0)
-      .map(word => word.replace(/[^\w\s'']/g, '').trim())
-      .filter(word => word.length > 0);
+    console.log("Analyzing text with BERT:", text.substring(0, 100) + "...");
     
-    console.log(`Extracted ${words.length} words for analysis`);
-    
-    // Filter common words if enabled
-    const significantWords = FILTER_COMMON_WORDS 
-      ? words.filter(word => !shouldFilterWord(word))
-      : words;
-    
-    console.log(`After filtering, ${significantWords.length} significant words remain`);
-    
-    // Count word frequencies
-    const wordFrequencies: Record<string, number> = {};
-    significantWords.forEach(word => {
-      const normalized = word.toLowerCase();
-      wordFrequencies[normalized] = (wordFrequencies[normalized] || 0) + 1;
-    });
-    
-    // Create a list of surrounding words for context
-    const surroundingWordsMap: Record<string, string[]> = {};
-    for (let i = 0; i < words.length; i++) {
-      const word = words[i].toLowerCase();
-      if (!surroundingWordsMap[word]) {
-        surroundingWordsMap[word] = [];
-      }
-      
-      // Add surrounding words (up to 3 on each side)
-      for (let j = Math.max(0, i - 3); j < Math.min(words.length, i + 4); j++) {
-        if (i !== j) {
-          surroundingWordsMap[word].push(words[j].toLowerCase());
-        }
-      }
+    if (!text || typeof text !== 'string') {
+      throw new Error("Invalid text provided for analysis");
     }
     
-    // Generate keyword analysis with enhanced focus on verbs and actions
-    const keywordAnalysis: KeywordAnalysis[] = Object.entries(wordFrequencies)
-      .filter(([_, count]) => count > 0)  // Filter out words that appear only once
-      .map(([word, frequency]) => {
-        // Get surrounding words for context
-        const surroundingWords = surroundingWordsMap[word] || [];
-        
-        // Determine part of speech with enhanced focus on verbs
-        const pos = determinePartOfSpeech(word);
-        
-        // Give verbs higher weight to prioritize actions
-        const posWeight = pos === 'verb' ? 1.5 : (pos === 'noun' ? 1.2 : 1.0);
-        
-        // Determine importance based on context
-        const rawContextualImportance = getContextualImportance(word, surroundingWords);
-        
-        // Apply part-of-speech weighting to importance
-        const contextualImportance = rawContextualImportance * posWeight;
-        
-        // Determine emotional tone
-        const tone = determineWordTone(word);
-        
-        // Generate a sentiment score (-1 to 1)
-        let sentimentScore = 0;
-        switch (tone) {
-          case 'positive':
-            sentimentScore = 0.5 + (Math.random() * 0.5); // 0.5 to 1.0
-            break;
-          case 'negative':
-            sentimentScore = -1.0 + (Math.random() * 0.5); // -1.0 to -0.5
-            break;
-          case 'anxious':
-            sentimentScore = -0.7 + (Math.random() * 0.4); // -0.7 to -0.3
-            break;
-          case 'calm':
-            sentimentScore = 0.3 + (Math.random() * 0.3); // 0.3 to 0.6
-            break;
-          default:
-            sentimentScore = -0.2 + (Math.random() * 0.4); // -0.2 to 0.2 (mostly neutral)
-        }
-        
-        // Generate a color based on sentiment
-        // Red for negative, green for positive, blue for neutral
-        const r = sentimentScore < 0 ? 255 : Math.round(255 - (sentimentScore * 255));
-        const g = sentimentScore > 0 ? 255 : Math.round(255 + (sentimentScore * 255));
-        const b = sentimentScore > -0.2 && sentimentScore < 0.2 ? 255 : 150;
-        
-        // Fix the color format to match KeywordAnalysis type: [number, number, number]
-        // Ensure exactly 3 elements in the array and normalize to 0-1 range
-        const color: [number, number, number] = [r/255, g/255, b/255];
-        
-        return {
-          word,
-          sentiment: sentimentScore,
-          weight: contextualImportance,
-          color: color, // Now properly typed as [number, number, number]
-          tone,
-          relatedConcepts: surroundingWords.slice(0, 5),
-          frequency,
-          pos
-        };
-      })
-      .sort((a, b) => {
-        // Sort by part of speech priority first (verbs > nouns > others)
-        const posOrderA = a.pos === 'verb' ? 0 : (a.pos === 'noun' ? 1 : 2);
-        const posOrderB = b.pos === 'verb' ? 0 : (b.pos === 'noun' ? 1 : 2);
-        
-        if (posOrderA !== posOrderB) {
-          return posOrderA - posOrderB;
-        }
-        
-        // Within the same part of speech, sort by weight and frequency
-        return (b.weight * b.frequency) - (a.weight * a.frequency);
-      })
+    // Extract and clean words
+    const words = text.split(/\s+/)
+      .map(word => word.replace(/[^\w]/g, '').toLowerCase())
+      .filter(word => word.length > 3 && !stopWords.includes(word));
+    
+    // Count word frequency
+    const wordFrequency: Record<string, number> = {};
+    for (const word of words) {
+      wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+    }
+    
+    // Get unique words sorted by frequency
+    const uniqueWords = [...new Set(words)]
+      .filter(word => wordFrequency[word] > 1 || word.length > 5)
+      .sort((a, b) => wordFrequency[b] - wordFrequency[a])
       .slice(0, 50); // Limit to top 50 words
     
-    // Count tone distributions
-    const toneCount: Record<string, number> = {};
-    keywordAnalysis.forEach(keyword => {
-      if (keyword.tone) {
-        toneCount[keyword.tone] = (toneCount[keyword.tone] || 0) + 1;
-      }
-    });
+    // Perform contextual analysis
+    // In a real implementation, this would use an actual BERT model
+    const keywords: KeywordAnalysis[] = [];
+    let totalSentiment = 0;
     
-    const emotionalTones = Object.entries(toneCount).map(([tone, count]) => ({
-      tone,
-      count
-    })).sort((a, b) => b.count - a.count);
-    
-    // Add contextual analysis - focusing more on verbs and action words
-    const actionWords = keywordAnalysis
-      .filter(kw => kw.pos === 'verb')
-      .sort((a, b) => b.weight - a.weight)
-      .slice(0, 10)
-      .map(kw => kw.word);
+    // Map of words to common emotional associations for contextual analysis
+    const emotionalAssociations: Record<string, { tone: string, sentiment: number }> = {
+      // Positive emotions
+      "happy": { tone: "Joy", sentiment: 0.8 },
+      "joy": { tone: "Joy", sentiment: 0.9 },
+      "love": { tone: "Joy", sentiment: 0.85 },
+      "peaceful": { tone: "Contentment", sentiment: 0.75 },
+      "calm": { tone: "Contentment", sentiment: 0.7 },
+      "excited": { tone: "Joy", sentiment: 0.8 },
+      "hopeful": { tone: "Joy", sentiment: 0.75 },
+      "grateful": { tone: "Contentment", sentiment: 0.8 },
+      "relaxed": { tone: "Contentment", sentiment: 0.7 },
       
-    const mainSubjects = keywordAnalysis
-      .filter(kw => kw.pos === 'noun')
-      .sort((a, b) => b.frequency - a.frequency)
-      .slice(0, 8)
-      .map(kw => kw.word);
+      // Negative emotions
+      "sad": { tone: "Sadness", sentiment: 0.2 },
+      "angry": { tone: "Anger", sentiment: 0.15 },
+      "anxious": { tone: "Anxiety", sentiment: 0.25 },
+      "fear": { tone: "Fear", sentiment: 0.2 },
+      "worried": { tone: "Anxiety", sentiment: 0.3 },
+      "stressed": { tone: "Anxiety", sentiment: 0.25 },
+      "depressed": { tone: "Sadness", sentiment: 0.1 },
+      "confused": { tone: "Confusion", sentiment: 0.4 },
+      "frustrated": { tone: "Anger", sentiment: 0.25 },
       
-    const contextualAnalysis = {
-      dominantEmotions: emotionalTones.slice(0, 3).map(e => e.tone),
-      emotionalShifts: detectEmotionalShifts(text),
-      topicClusters: identifyTopicClusters(keywordAnalysis),
-      actionWords,
-      mainSubjects
+      // Neutral/mixed emotions
+      "surprised": { tone: "Surprise", sentiment: 0.5 },
+      "curious": { tone: "Surprise", sentiment: 0.6 },
+      "thinking": { tone: "Neutral", sentiment: 0.5 },
+      "wondering": { tone: "Confusion", sentiment: 0.45 },
     };
     
-    console.log("BERT analysis complete with", keywordAnalysis.length, "keywords");
-    
-    return {
-      keywords: keywordAnalysis,
-      emotionalTones,
-      contextualAnalysis
-    };
-    
-  } catch (error) {
-    console.error("Error during BERT analysis:", error);
-    return {
-      keywords: [],
-      emotionalTones: [],
-      contextualAnalysis: {
-        dominantEmotions: [],
-        emotionalShifts: [],
-        topicClusters: [],
-        actionWords: [],
-        mainSubjects: []
+    // Generate fake context windows around each unique word for analysis
+    for (const word of uniqueWords) {
+      const contextWindow = text
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((_, i, arr) => i < arr.indexOf(word) + 5 && i > arr.indexOf(word) - 5)
+        .join(' ');
+      
+      // Simple sentiment analysis based on contextual associations
+      let sentiment = 0.5; // Neutral by default
+      let tone = "Neutral";
+      const relatedConcepts: string[] = [];
+      
+      // Check for direct emotional associations
+      if (emotionalAssociations[word]) {
+        sentiment = emotionalAssociations[word].sentiment;
+        tone = emotionalAssociations[word].tone;
+      } else {
+        // Check for emotional words in context
+        let emotionalWordCount = 0;
+        let totalEmotionalSentiment = 0;
+        
+        for (const emotionalWord of Object.keys(emotionalAssociations)) {
+          if (contextWindow.includes(emotionalWord)) {
+            emotionalWordCount++;
+            totalEmotionalSentiment += emotionalAssociations[emotionalWord].sentiment;
+            tone = emotionalAssociations[emotionalWord].tone;
+            
+            // Add as a related concept if it's not the word itself
+            if (emotionalWord !== word) {
+              relatedConcepts.push(emotionalWord);
+            }
+          }
+        }
+        
+        if (emotionalWordCount > 0) {
+          sentiment = totalEmotionalSentiment / emotionalWordCount;
+        } else {
+          // Generate pseudo-random but consistent sentiment based on word
+          const hash = Array.from(word).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+          sentiment = 0.3 + ((hash % 50) / 100);
+          
+          // Assign emotional tone based on sentiment range
+          if (sentiment > 0.65) tone = "Joy";
+          else if (sentiment > 0.6) tone = "Contentment";
+          else if (sentiment < 0.35) tone = "Sadness";
+          else if (sentiment < 0.4) tone = "Anxiety";
+          else tone = "Neutral";
+        }
       }
-    };
-  }
-};
-
-// Helper function to determine part of speech (enhanced to better identify verbs)
-const determinePartOfSpeech = (word: string): string => {
-  const commonNouns = ['time', 'person', 'year', 'way', 'day', 'thing', 'man', 'world', 'life', 'hand', 'part', 'child', 'eye', 'woman', 'place', 'work', 'week', 'case', 'point', 'company'];
-  const commonVerbs = ['go', 'make', 'know', 'take', 'see', 'come', 'think', 'look', 'want', 'give', 'use', 'find', 'tell', 'ask', 'work', 'seem', 'feel', 'try', 'leave', 'call',
-                       'walk', 'run', 'move', 'talk', 'write', 'read', 'speak', 'eat', 'drink', 'sleep',
-                       'play', 'sing', 'dance', 'laugh', 'cry', 'fight', 'love', 'hate', 'hope', 'fear'];
-  const commonAdjectives = ['good', 'new', 'first', 'last', 'long', 'great', 'little', 'own', 'other', 'old', 'right', 'big', 'high', 'different', 'small', 'large', 'next', 'early', 'young', 'important'];
-  const commonAdverbs = ['up', 'so', 'out', 'just', 'now', 'how', 'then', 'more', 'also', 'here', 'well', 'only', 'very', 'even', 'back', 'there', 'down', 'still', 'rather', 'quite'];
-  
-  // Simple heuristics
-  const lowerWord = word.toLowerCase();
-  
-  if (commonNouns.includes(lowerWord)) return 'noun';
-  if (commonVerbs.includes(lowerWord)) return 'verb';
-  if (commonAdjectives.includes(lowerWord)) return 'adjective';
-  if (commonAdverbs.includes(lowerWord)) return 'adverb';
-  
-  // Enhanced patterns for better verb detection
-  if (lowerWord.endsWith('ing')) return 'verb';
-  if (lowerWord.endsWith('ed') && lowerWord.length > 3) return 'verb';
-  if (lowerWord.endsWith('s') && commonVerbs.includes(lowerWord.slice(0, -1))) return 'verb';
-  
-  // Other patterns
-  if (lowerWord.endsWith('ly')) return 'adverb';
-  if (lowerWord.endsWith('ness') || lowerWord.endsWith('ment') || lowerWord.endsWith('ship') || lowerWord.endsWith('ity')) return 'noun';
-  if (lowerWord.endsWith('ful') || lowerWord.endsWith('ous') || lowerWord.endsWith('ive') || lowerWord.endsWith('able') || lowerWord.endsWith('ible')) return 'adjective';
-  
-  // Default to noun for unknown words (most common)
-  return 'noun';
-};
-
-// Helper function to detect emotional shifts in text
-const detectEmotionalShifts = (text: string): any[] => {
-  // Simplified implementation - in reality this would be a complex analysis
-  // Break text into paragraphs
-  const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-  
-  if (paragraphs.length < 2) {
-    return []; // Not enough text to detect shifts
-  }
-  
-  const shifts = [];
-  
-  // Simple random shifts for demo
-  if (Math.random() > 0.5) {
-    shifts.push({
-      position: Math.floor(paragraphs.length / 2),
-      fromEmotion: 'neutral',
-      toEmotion: Math.random() > 0.5 ? 'positive' : 'negative',
-      significance: 0.6 + Math.random() * 0.4
-    });
-  }
-  
-  return shifts;
-};
-
-// Helper function to identify topic clusters
-const identifyTopicClusters = (keywords: KeywordAnalysis[]): any[] => {
-  // Simplified clustering implementation
-  const topics: any[] = [];
-  
-  // Group by similar tones
-  const toneGroups: Record<string, KeywordAnalysis[]> = {};
-  
-  keywords.forEach(keyword => {
-    if (keyword.tone) {
-      if (!toneGroups[keyword.tone]) {
-        toneGroups[keyword.tone] = [];
+      
+      // Get color for this emotional tone
+      const color = emotionalColors[tone] || emotionalColors.Neutral;
+      
+      // Find related words based on co-occurrence in the text
+      const wordIndex = words.indexOf(word);
+      const surroundingWords = words
+        .slice(Math.max(0, wordIndex - 10), wordIndex + 10)
+        .filter(w => w !== word && w.length > 3);
+        
+      // Add some surrounding words to related concepts
+      if (relatedConcepts.length < 3) {
+        const additionalConcepts = surroundingWords
+          .filter(w => !relatedConcepts.includes(w))
+          .slice(0, 3 - relatedConcepts.length);
+          
+        relatedConcepts.push(...additionalConcepts);
       }
-      toneGroups[keyword.tone].push(keyword);
-    }
-  });
-  
-  // Create clusters from tone groups
-  Object.entries(toneGroups).forEach(([tone, words]) => {
-    if (words.length >= 3) { // Only create clusters with at least 3 words
-      topics.push({
-        name: `${tone.charAt(0).toUpperCase() + tone.slice(1)} Cluster`,
-        words: words.map(w => w.word),
-        dominantEmotion: tone,
-        significance: words.reduce((sum, w) => sum + (w.weight || 1), 0) / words.length
+      
+      keywords.push({
+        word,
+        sentiment,
+        tone,
+        relatedConcepts,
+        frequency: wordFrequency[word],
+        color
       });
+      
+      totalSentiment += sentiment;
     }
-  });
-  
-  return topics;
+    
+    // Calculate overall sentiment
+    const overallSentiment = keywords.length > 0 ? totalSentiment / keywords.length : 0.5;
+    
+    // Determine overall emotional tone
+    let overallTone = "Neutral";
+    if (overallSentiment > 0.65) overallTone = "Joy";
+    else if (overallSentiment > 0.6) overallTone = "Contentment";
+    else if (overallSentiment < 0.35) overallTone = "Sadness";
+    else if (overallSentiment < 0.4) overallTone = "Anxiety";
+    
+    // Generate a simple analysis text
+    const emotionalTone = overallTone;
+    const analysis = `The text shows ${overallTone.toLowerCase()} with an overall sentiment score of ${overallSentiment.toFixed(2)}. Analysis identified ${keywords.length} significant words or phrases.`;
+    
+    return {
+      keywords,
+      overallSentiment,
+      overallTone,
+      emotionalTone,
+      analysis
+    };
+  } catch (error) {
+    console.error("Error in BERT analysis:", error);
+    throw error;
+  }
 };

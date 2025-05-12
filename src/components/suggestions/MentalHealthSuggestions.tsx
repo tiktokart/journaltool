@@ -2,10 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Heart } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AdvancedBadge } from "@/components/ui/advanced-badge";
 
 interface MentalHealthSuggestionsProps {
   journalEntries: any[];
@@ -34,71 +30,43 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
 }) => {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [emotionTones, setEmotionTones] = useState<EmotionTone[]>([]);
-  const [isProcessingText, setIsProcessingText] = useState<boolean>(false);
   
   useEffect(() => {
+    // First, analyze the emotions using BERT if available
     const analyzeEmotions = () => {
-      setIsProcessingText(true);
-      console.log("Analyzing emotions from journal entries...");
-
       const emotionCategories: Record<string, { count: number, words: string[] }> = {};
       
       // If BERT analysis is available, use it for more accurate emotional tone detection
-      if (bertAnalysis && bertAnalysis.keywords && bertAnalysis.keywords.length > 0) {
-        console.log("Using BERT analysis with", bertAnalysis.keywords.length, "keywords");
-        
-        // Process the actual BERT keywords
+      if (bertAnalysis && bertAnalysis.keywords) {
         bertAnalysis.keywords.forEach((keyword: any) => {
           if (keyword.tone) {
             const tone = keyword.tone.charAt(0).toUpperCase() + keyword.tone.slice(1);
             if (!emotionCategories[tone]) {
               emotionCategories[tone] = { count: 0, words: [] };
             }
-            emotionCategories[tone].count += keyword.weight ? Math.round(keyword.weight * 1.5) : 1;
+            emotionCategories[tone].count += 1;
             emotionCategories[tone].words.push(keyword.word);
           }
         });
-        
-        // Also add verbs and subjects as action and topic categories
-        const verbs = bertAnalysis.keywords
-          .filter((kw: any) => kw.pos === 'verb')
-          .map((kw: any) => kw.word);
-          
-        if (verbs.length > 0) {
-          emotionCategories["Action"] = { 
-            count: verbs.length, 
-            words: verbs 
-          };
-        }
-        
-        const nouns = bertAnalysis.keywords
-          .filter((kw: any) => kw.pos === 'noun')
-          .map((kw: any) => kw.word);
-          
-        if (nouns.length > 0) {
-          emotionCategories["Topic"] = { 
-            count: nouns.length, 
-            words: nouns 
-          };
-        }
       } else if (journalEntries && journalEntries.length > 0) {
         // Fall back to basic keyword analysis if BERT isn't available
         const combinedText = journalEntries.map(entry => entry.text).join(' ').toLowerCase();
-        console.log("No BERT analysis available, using basic keyword analysis on", combinedText.length, "characters");
         
-        // Add basic emotion detection from the text
         const emotionKeywords = {
-          "Sadness": ["sad", "unhappy", "depressed", "miserable", "grief", "sorrow", "blue"],
-          "Fear": ["fearful", "afraid", "scared", "terrified", "anxious", "nervous", "worried", "panic"],
-          "Anger": ["angry", "mad", "furious", "outraged", "irritated", "annoyed", "frustrated"],
-          "Joy": ["happy", "joyful", "delighted", "pleased", "glad", "content", "cheerful"],
+          'Sadness': ['sad', 'unhappy', 'depressed', 'miserable', 'grief', 'sorrow', 'blue'],
+          'Fear': ['fearful', 'afraid', 'scared', 'terrified', 'anxious', 'nervous', 'worried', 'panic'],
+          'Anger': ['angry', 'mad', 'furious', 'outraged', 'irritated', 'annoyed', 'frustrated'],
+          'Disgust': ['disgusted', 'revolted', 'appalled', 'disgusting', 'gross', 'repulsed'],
+          'Joy': ['happy', 'joyful', 'delighted', 'pleased', 'glad', 'content', 'cheerful'],
+          'Surprise': ['surprised', 'shocked', 'amazed', 'astonished', 'startled'],
+          'Neutral': ['ok', 'fine', 'average', 'neutral', 'normal']
         };
         
         // Check for each emotion keyword in the text
         Object.entries(emotionKeywords).forEach(([emotion, keywords]) => {
           const foundWords: string[] = [];
           keywords.forEach(keyword => {
-            const regex = new RegExp(`\\b${keyword}\\b|\\b${keyword}[a-z]*\\b|\\b[a-z]*${keyword}\\b`, "gi");
+            const regex = new RegExp(`\\b${keyword}\\b|\\b${keyword}[a-z]*\\b|\\b[a-z]*${keyword}\\b`, 'gi');
             const matches = combinedText.match(regex);
             if (matches) {
               foundWords.push(...matches);
@@ -112,108 +80,81 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
             };
           }
         });
-        
-        // Extract common verbs for action analysis
-        const actionVerbs = ["go", "make", "take", "try", "want", "need", "feel", "think", "work", "do"];
-        const foundActions: string[] = [];
-        
-        actionVerbs.forEach(verb => {
-          const regex = new RegExp(`\\b${verb}\\b|\\b${verb}[a-z]*\\b`, "gi");
-          const matches = combinedText.match(regex);
-          if (matches) {
-            foundActions.push(...matches);
-          }
-        });
-        
-        if (foundActions.length > 0) {
-          emotionCategories["Action"] = {
-            count: foundActions.length,
-            words: [...new Set(foundActions)]
-          };
-        }
-        
-        // Extract nouns/topics from the text
-        const words = combinedText.split(/\s+/);
-        const potentialTopics = words.filter(w => w.length > 5);
-        if (potentialTopics.length > 0) {
-          emotionCategories["Topic"] = {
-            count: potentialTopics.length,
-            words: [...new Set(potentialTopics.slice(0, 10))]
-          };
-        }
       }
       
       // Convert to array and sort by count
-      const emotions = Object.entries(emotionCategories).map(([category, data]) => ({
+      return Object.entries(emotionCategories).map(([category, data]) => ({
         category,
         count: data.count,
         words: [...new Set(data.words)].slice(0, 5) // Limit to 5 unique words per emotion
       })).sort((a, b) => b.count - a.count);
-      
-      setEmotionTones(emotions);
-      setIsProcessingText(false);
-      return emotions;
     };
     
     const generateSuggestions = () => {
       const emotions = analyzeEmotions();
+      setEmotionTones(emotions);
       
       // If no emotions detected, provide general suggestions
       if (emotions.length === 0) {
         return [{
-          id: "general",
-          keyword: "wellness",
-          solutionStatement: "Maintain good mental health through regular self-care practices.",
-          actionPlan: "1. Prioritize sleep\n2. Physical activity\n3. Social connections\n4. Daily gratitude practice\n5. Activities you enjoy",
-          resourceLink: "https://www.mentalhealth.gov/basics/what-is-mental-health",
-          emotionCategory: "General"
+          id: 'general',
+          keyword: 'wellness',
+          solutionStatement: 'Maintain good mental health through regular self-care practices.',
+          actionPlan: 'Prioritize sleep, physical activity, and social connections. Consider starting a daily gratitude practice.',
+          resourceLink: 'https://www.mentalhealth.gov/basics/what-is-mental-health',
+          emotionCategory: 'General'
         }];
       }
       
-      // Extract text for specific keyword detection
-      const combinedText = journalEntries.map(entry => entry.text || "").join(' ').toLowerCase();
-      
-      // Map emotions to suggestion types - focusing on action-oriented advice
+      // Map emotions to suggestion types
       const suggestionMap: Record<string, Suggestion> = {
-        "Sadness": {
-          id: "sadness",
-          keyword: "sadness",
-          solutionStatement: "Address feelings of sadness through active coping strategies.",
-          actionPlan: "1. Schedule one enjoyable activity daily\n2. Connect with a supportive friend\n3. Practice 10 minutes of mindful breathing\n4. Write three things you're grateful for\n5. Get 30 minutes of movement each day",
-          resourceLink: "https://www.apa.org/topics/depression",
-          emotionCategory: "Sadness"
+        'Sadness': {
+          id: 'sadness',
+          keyword: 'sadness',
+          solutionStatement: 'Address feelings of sadness to improve emotional wellbeing.',
+          actionPlan: '1. Engage in activities you enjoy\n2. Connect with supportive friends or family\n3. Consider talking to a therapist\n4. Practice self-compassion\n5. Get regular exercise to boost mood',
+          resourceLink: 'https://www.apa.org/topics/depression',
+          emotionCategory: 'Sadness'
         },
-        "Fear": {
-          id: "anxiety",
-          keyword: "anxiety",
-          solutionStatement: "Manage anxiety with practical grounding techniques.",
-          actionPlan: "1. Use the 5-4-3-2-1 grounding technique\n2. Practice 4-7-8 breathing when feeling anxious\n3. Limit news and social media to specific times\n4. Challenge negative thoughts with evidence\n5. Progressive muscle relaxation before bed",
-          resourceLink: "https://adaa.org/understanding-anxiety",
-          emotionCategory: "Fear"
+        'Fear': {
+          id: 'anxiety',
+          keyword: 'anxiety',
+          solutionStatement: 'Develop strategies to manage anxiety symptoms.',
+          actionPlan: '1. Identify anxiety triggers\n2. Practice deep breathing exercises\n3. Try grounding techniques when feeling overwhelmed\n4. Consider speaking with a mental health professional\n5. Limit caffeine and alcohol intake',
+          resourceLink: 'https://adaa.org/understanding-anxiety',
+          emotionCategory: 'Fear'
         },
-        "Anger": {
-          id: "anger",
-          keyword: "anger",
-          solutionStatement: "Channel anger into constructive actions.",
-          actionPlan: "1. Take a 10-minute timeout before responding\n2. Physical exercise to release tension\n3. Journal your thoughts without censoring\n4. Identify specific triggers and plan responses\n5. Practice assertive communication techniques",
-          resourceLink: "https://www.apa.org/topics/anger/control",
-          emotionCategory: "Anger"
+        'Anger': {
+          id: 'anger',
+          keyword: 'anger',
+          solutionStatement: 'Develop healthy ways to manage anger.',
+          actionPlan: '1. Practice identifying anger triggers\n2. Use cooling-off techniques like deep breathing\n3. Write in a journal when feeling angry\n4. Consider physical exercise as an outlet\n5. Try mindfulness meditation',
+          resourceLink: 'https://www.apa.org/topics/anger/control',
+          emotionCategory: 'Anger'
         },
-        "Action": {
-          id: "action",
-          keyword: "action",
-          solutionStatement: "Harness your motivation for positive change.",
-          actionPlan: "1. Break goals into small, achievable steps\n2. Create a visual progress tracker\n3. Schedule specific times for important tasks\n4. Find an accountability partner\n5. Celebrate small wins regularly",
-          resourceLink: "https://www.mindtools.com/pages/article/newHTE_90.htm",
-          emotionCategory: "Motivation"
+        'Disgust': {
+          id: 'disgust',
+          keyword: 'disgust',
+          solutionStatement: 'Process feelings of disgust in healthy ways.',
+          actionPlan: '1. Identify the source of disgust feelings\n2. Challenge thoughts that may be exaggerating the situation\n3. Engage in activities that bring positive emotions\n4. Consider speaking with a therapist\n5. Practice mindfulness and acceptance',
+          resourceLink: 'https://www.psychologytoday.com/us/basics/disgust',
+          emotionCategory: 'Disgust'
         },
-        "Topic": {
-          id: "focus",
-          keyword: "focus",
-          solutionStatement: "Develop clarity around the themes in your writing.",
-          actionPlan: "1. Identify recurring topics in your journal\n2. Explore how these topics connect to your values\n3. Consider what aspects need more attention\n4. Research one area of interest more deeply\n5. Set specific goals related to your main themes",
-          resourceLink: "https://positivepsychology.com/values-clarification/",
-          emotionCategory: "Insight"
+        'Joy': {
+          id: 'joy',
+          keyword: 'joy',
+          solutionStatement: 'Cultivate and maintain positive emotions.',
+          actionPlan: '1. Practice gratitude daily\n2. Share positive experiences with others\n3. Engage in activities that bring joy\n4. Create a positive environment\n5. Celebrate small achievements',
+          resourceLink: 'https://www.pursuit-of-happiness.org/',
+          emotionCategory: 'Joy'
+        },
+        'Surprise': {
+          id: 'surprise',
+          keyword: 'surprise',
+          solutionStatement: 'Process unexpected events and transitions.',
+          actionPlan: '1. Allow yourself time to process surprising information\n2. Talk through unexpected events with trusted friends\n3. Practice adapting to change with flexibility\n4. Use journaling to reflect on surprises\n5. Find the opportunity within unexpected situations',
+          resourceLink: 'https://www.mindtools.com/pages/article/managing-unexpected.htm',
+          emotionCategory: 'Surprise'
         }
       };
       
@@ -230,73 +171,54 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
         }
       });
       
-      // Look for specific triggers in the text
-      const specificTriggers = [
-        {
-          patterns: ["overwhelm", "too much", "can't handle", "stressed out"],
-          suggestion: {
-            id: "overwhelmed",
-            keyword: "overwhelmed",
-            solutionStatement: "Break down overwhelming situations into manageable steps.",
-            actionPlan: "1. List everything that feels overwhelming\n2. Identify one small action for each item\n3. Schedule just 15 minutes for each action\n4. Use a timer to create work boundaries\n5. Ask specifically for help with one task",
-            resourceLink: "https://www.mind.org.uk/information-support/your-stories/10-ways-i-manage-feeling-overwhelmed/",
-            emotionCategory: "Stress",
-          }
-        },
-        {
-          patterns: ["sleep", "tired", "insomnia", "exhausted", "fatigue", "rest"],
-          suggestion: {
-            id: "sleep",
-            keyword: "sleep",
-            solutionStatement: "Improve sleep quality with practical evening routines.",
-            actionPlan: "1. Set a fixed bedtime and wake time\n2. Create a 30-minute wind-down routine\n3. Keep devices out of the bedroom\n4. Limit caffeine after noon\n5. Make your bedroom cool, dark, and quiet",
-            resourceLink: "https://www.sleepfoundation.org/mental-health",
-            emotionCategory: "Physical",
-          }
-        },
-        {
-          patterns: ["lonely", "alone", "isolat", "no one", "disconnected"],
-          suggestion: {
-            id: "lonely",
-            keyword: "lonely",
-            solutionStatement: "Build meaningful connections even during periods of isolation.",
-            actionPlan: "1. Schedule one social contact daily (text, call, or in-person)\n2. Join an online group based on your interests\n3. Volunteer virtually or safely in-person\n4. Create a regular check-in with a friend\n5. Practice being comfortable with solitude through mindfulness",
-            resourceLink: "https://www.mind.org.uk/information-support/tips-for-everyday-living/loneliness/about-loneliness/",
-            emotionCategory: "Social",
-          }
-        }
-      ];
-      
-      // Check for specific triggers in the text
-      specificTriggers.forEach(trigger => {
-        // Check both in text and in BERT keywords
-        const hasPattern = trigger.patterns.some(pattern => 
-          combinedText.includes(pattern) || 
-          (bertAnalysis?.keywords?.some((kw: any) => kw.word.toLowerCase().includes(pattern)))
-        );
-        
-        if (hasPattern) {
-          const matchedTriggerWords = trigger.patterns.filter(pattern => 
-            combinedText.includes(pattern) ||
-            (bertAnalysis?.keywords?.some((kw: any) => kw.word.toLowerCase().includes(pattern)))
-          );
-          
-          relevantSuggestions.push({
-            ...trigger.suggestion,
-            triggeringWords: matchedTriggerWords.slice(0, 3)
-          });
-        }
-      });
-      
       // If we have no suggestions from the emotions, add a general wellness one
       if (relevantSuggestions.length === 0) {
         relevantSuggestions.push({
-          id: "general",
-          keyword: "wellness",
-          solutionStatement: "Build a personalized mental wellness routine.",
-          actionPlan: "1. Start with just 5 minutes of meditation daily\n2. Take a 10-minute walk outside each day\n3. Call or message one person you care about\n4. Write down three positive moments each evening\n5. Schedule one enjoyable activity every day",
-          resourceLink: "https://www.mentalhealth.gov/basics/what-is-mental-health",
-          emotionCategory: "General"
+          id: 'general',
+          keyword: 'wellness',
+          solutionStatement: 'Maintain good mental health through regular self-care practices.',
+          actionPlan: '1. Prioritize sleep\n2. Engage in physical activity\n3. Nurture social connections\n4. Start a daily gratitude practice\n5. Make time for activities you enjoy',
+          resourceLink: 'https://www.mentalhealth.gov/basics/what-is-mental-health',
+          emotionCategory: 'General'
+        });
+      }
+      
+      // Special case suggestions based on specific keywords or patterns
+      const combinedText = journalEntries.map(entry => entry.text).join(' ').toLowerCase();
+      
+      if (combinedText.includes('overwhelm')) {
+        relevantSuggestions.push({
+          id: 'overwhelmed',
+          keyword: 'overwhelmed',
+          solutionStatement: 'Manage feelings of being overwhelmed through structured approaches.',
+          actionPlan: '1. Break tasks into smaller steps\n2. Practice prioritization\n3. Use time-blocking techniques\n4. Take short breaks throughout the day\n5. Don\'t hesitate to ask for help when needed',
+          resourceLink: 'https://www.mind.org.uk/information-support/your-stories/10-ways-i-manage-feeling-overwhelmed/',
+          emotionCategory: 'Stress',
+          triggeringWords: ['overwhelmed', 'overwhelm', 'too much']
+        });
+      }
+      
+      if (combinedText.includes('sleep') || combinedText.includes('tired') || combinedText.includes('insomnia')) {
+        relevantSuggestions.push({
+          id: 'sleep',
+          keyword: 'sleep',
+          solutionStatement: 'Improve sleep quality for better mental health.',
+          actionPlan: '1. Create a consistent sleep schedule\n2. Avoid screens before bed\n3. Create a comfortable sleep environment\n4. Limit caffeine and alcohol\n5. Try relaxation techniques before bedtime',
+          resourceLink: 'https://www.sleepfoundation.org/mental-health',
+          emotionCategory: 'Physical',
+          triggeringWords: ['sleep', 'tired', 'insomnia', 'exhausted']
+        });
+      }
+      
+      if (combinedText.includes('lonely') || combinedText.includes('alone') || combinedText.includes('isolat')) {
+        relevantSuggestions.push({
+          id: 'lonely',
+          keyword: 'lonely',
+          solutionStatement: 'Combat feelings of loneliness to improve wellbeing.',
+          actionPlan: '1. Reach out to friends or family\n2. Join community groups or classes\n3. Consider volunteer opportunities\n4. Use technology to connect with others\n5. Develop a self-care routine',
+          resourceLink: 'https://www.mind.org.uk/information-support/tips-for-everyday-living/loneliness/about-loneliness/',
+          emotionCategory: 'Social',
+          triggeringWords: ['lonely', 'alone', 'isolated', 'disconnected']
         });
       }
       
@@ -304,10 +226,7 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
       return relevantSuggestions.slice(0, 3);
     };
     
-    // Only generate suggestions if we have entries or BERT data
-    if ((journalEntries && journalEntries.length > 0) || bertAnalysis) {
-      setSuggestions(generateSuggestions());
-    }
+    setSuggestions(generateSuggestions());
   }, [journalEntries, bertAnalysis]);
   
   if (suggestions.length === 0) {
@@ -321,86 +240,94 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
           <Heart className="h-5 w-5 mr-2 text-rose-500" /> 
           Suggestions
         </CardTitle>
-        <CardDescription className="mb-4">Based on the journal text analysis, here are some suggestions that might help.</CardDescription>
+        <CardDescription className="mb-4">Based on the text analysis, here are some suggestions that might help.</CardDescription>
         
         {/* Emotion summary chips */}
         {emotionTones.length > 0 && (
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-2 flex items-center">
               <AlertTriangle className="h-4 w-4 mr-1 text-amber-500" />
-              Detected emotions in your journal:
+              Detected emotions:
             </h4>
             
             {/* Group emotions by category */}
-            <ScrollArea className="max-h-[200px]">
-              {emotionTones.map(tone => (
-                <div key={tone.category} className="mb-3">
-                  <div className="text-xs text-gray-600 mb-1">{tone.category}:</div>
-                  <div className="flex flex-wrap gap-1">
-                    {tone.words.map((word, idx) => (
-                      <AdvancedBadge
-                        key={idx}
-                        emotion={tone.category.toLowerCase()}
-                        title={`This word appears in your journal and suggests ${tone.category.toLowerCase()}`}
-                      >
-                        {word}
-                      </AdvancedBadge>
-                    ))}
-                  </div>
+            {emotionTones.map(tone => (
+              <div key={tone.category} className="mb-3">
+                <div className="text-xs text-gray-600 mb-1">{tone.category}:</div>
+                <div className="flex flex-wrap gap-1">
+                  {tone.words.map((word, idx) => (
+                    <span key={idx} className={`inline-block px-2 py-1 rounded-full text-xs ${
+                      tone.category === 'Sadness' ? 'bg-blue-100 text-blue-800' :
+                      tone.category === 'Fear' ? 'bg-amber-100 text-amber-800' :
+                      tone.category === 'Anger' ? 'bg-red-100 text-red-800' : 
+                      tone.category === 'Disgust' ? 'bg-green-100 text-green-800' :
+                      tone.category === 'Joy' ? 'bg-yellow-100 text-yellow-800' :
+                      tone.category === 'Surprise' ? 'bg-teal-100 text-teal-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {word}
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </ScrollArea>
+              </div>
+            ))}
           </div>
         )}
         
-        <div className="space-y-4">
+        {/* Emotional tones count display */}
+        <div className="mb-6">
+          <h4 className="text-sm font-medium mb-2">Emotional tones in your text:</h4>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { tone: "Joyful", count: emotionTones.find(e => e.category === "Joy")?.count || 0, color: "bg-yellow-100 text-yellow-800" },
+              { tone: "Excited", count: emotionTones.find(e => e.category.includes("Joy") || e.category.includes("Surprise"))?.count || 0, color: "bg-orange-100 text-orange-800" },
+              { tone: "Angry", count: emotionTones.find(e => e.category === "Anger")?.count || 0, color: "bg-red-100 text-red-800" },
+              { tone: "Sad", count: emotionTones.find(e => e.category === "Sadness")?.count || 0, color: "bg-blue-100 text-blue-800" },
+              { tone: "Surprised", count: emotionTones.find(e => e.category === "Surprise")?.count || 0, color: "bg-green-100 text-green-800" },
+              { tone: "Anxious", count: emotionTones.find(e => e.category === "Fear")?.count || 0, color: "bg-amber-100 text-amber-800" },
+              { tone: "Neutral", count: emotionTones.find(e => e.category === "Neutral")?.count || 0, color: "bg-gray-100 text-gray-800" },
+              { tone: "Fearful", count: emotionTones.find(e => e.category === "Fear")?.count || 0, color: "bg-purple-100 text-purple-800" },
+              { tone: "Disgusted", count: emotionTones.find(e => e.category === "Disgust")?.count || 0, color: "bg-emerald-100 text-emerald-800" },
+              { tone: "Calm", count: emotionTones.find(e => e.category === "Joy" || e.category === "Neutral")?.count || 0, color: "bg-sky-100 text-sky-800" }
+            ].filter(item => item.count > 0)
+              .sort((a, b) => b.count - a.count)
+              .map((item) => (
+                <span key={item.tone} className={`px-3 py-1 rounded-full ${item.color}`}>
+                  {item.tone} <span className="font-semibold ml-1">{item.count}</span>
+                </span>
+              ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            The suggestions below provide wellbeing resources based on detected emotions.
+          </p>
+        </div>
+        
+        <div className="space-y-6">
           {suggestions.map(suggestion => (
-            <Card key={suggestion.id} className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-base">{suggestion.solutionStatement}</h3>
-                  {suggestion.emotionCategory && (
-                    <Badge variant="secondary" className={`
-                      ${suggestion.emotionCategory === 'Sadness' ? 'bg-blue-100 text-blue-800' :
-                        suggestion.emotionCategory === 'Fear' ? 'bg-amber-100 text-amber-800' :
-                        suggestion.emotionCategory === 'Anger' ? 'bg-red-100 text-red-800' :
-                        suggestion.emotionCategory === 'Stress' ? 'bg-purple-100 text-purple-800' :
-                        suggestion.emotionCategory === 'Social' ? 'bg-green-100 text-green-800' :
-                        suggestion.emotionCategory === 'Motivation' ? 'bg-orange-100 text-orange-800' :
-                        suggestion.emotionCategory === 'Physical' ? 'bg-teal-100 text-teal-800' :
-                        suggestion.emotionCategory === 'Insight' ? 'bg-indigo-100 text-indigo-800' :
-                        'bg-gray-100 text-gray-800'}
-                    `}>
-                      {suggestion.emotionCategory}
-                    </Badge>
-                  )}
-                </div>
-                
+            <div key={suggestion.id} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="font-medium text-orange-700">{suggestion.solutionStatement}</h4>
                 {suggestion.triggeringWords && suggestion.triggeringWords.length > 0 && (
-                  <div className="mb-2 flex flex-wrap gap-1">
-                    <span className="text-xs text-gray-500 mr-1">Based on your journal words:</span>
-                    {suggestion.triggeringWords.map((word, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {word}
-                      </Badge>
-                    ))}
-                  </div>
+                  <span className="text-xs px-2 py-1 bg-orange-100 rounded-full text-orange-800">
+                    Triggered by: "{suggestion.triggeringWords.join(', ')}"
+                  </span>
                 )}
-                
-                <div className="whitespace-pre-line text-sm text-gray-700 mt-3 mb-2">
+              </div>
+              <div className="mt-4">
+                <h5 className="text-sm font-medium mb-1 text-orange-700">Action Plan:</h5>
+                <div className="text-sm text-gray-700 whitespace-pre-line">
                   {suggestion.actionPlan}
                 </div>
-                
                 <a 
-                  href={suggestion.resourceLink} 
+                  href={suggestion.resourceLink}
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-xs text-blue-600 hover:underline mt-2 inline-block"
+                  className="mt-3 text-xs text-orange-600 hover:text-orange-800 inline-block"
                 >
-                  Learn more
+                  Learn more about managing {suggestion.keyword}
                 </a>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       </CardContent>

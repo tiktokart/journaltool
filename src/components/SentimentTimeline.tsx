@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Info } from "lucide-react";
@@ -16,10 +17,9 @@ interface TimelineEntry {
 interface SentimentTimelineProps {
   data: Array<TimelineEntry>;
   sourceDescription?: string;
-  bertData?: any; // Add bertData property
 }
 
-export const SentimentTimeline = ({ data, sourceDescription, bertData }: SentimentTimelineProps) => {
+export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimelineProps) => {
   const { t } = useLanguage();
   const [normalizedData, setNormalizedData] = useState<TimelineEntry[]>([]);
   const [averageSentiment, setAverageSentiment] = useState(0.5);

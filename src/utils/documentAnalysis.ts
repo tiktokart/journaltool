@@ -1,158 +1,200 @@
-// Update the KeywordAnalysis interface to support both string and array color formats
-export interface KeywordAnalysis {
+
+import { generateSummary } from './summaryGeneration';
+import { calculateSentiment } from './sentimentAnalysis';
+import { extractEntities } from './entityExtraction';
+import { extractKeyPhrases } from './keyPhraseExtraction';
+import { generateTimeline } from './timelineGeneration';
+import { generateEmbeddingPoints } from './embeddingGeneration';
+import { extractTextFromPdf } from './pdfExtraction';
+import { analyzeTextWithBert } from './bertIntegration';
+
+// Expanded stopwords list including common prepositions, articles, and PDF-related terms
+const stopWords = [
+  // Basic stopwords
+  'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 
+  'about', 'in', 'under', 'over', 'with', 'without', 'during', 'before', 'after', 'of',
+  // PDF-related words
+  'pdf', 'document', 'file', 'text', 'page', 'content', 'from pdf', 'pdf file',
+  // Additional common stopwords that don't carry emotional weight
+  'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 
+  'this', 'that', 'these', 'those', 'there', 'here', 'where',
+  'who', 'whom', 'which', 'what', 'whose', 'when', 'why', 'how',
+  'all', 'any', 'some', 'many', 'few', 'most', 'no', 'every',
+  'has', 'have', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could',
+  'than', 'then', 'into', 'out', 'only', 'very', 'just', 'more', 'less'
+];
+
+// Part-of-speech weights to prioritize certain types of words
+const posWeights = {
+  VERB: 3.0,     // Action verbs get highest priority
+  NOUN: 2.5,     // Nouns are important for context
+  ADJ: 2.0,      // Adjectives often carry emotional content
+  ADV: 1.5,      // Adverbs can modify emotional intensity
+  DEFAULT: 0.8   // All other types get lower weight
+};
+
+// Identify common PDF metadata patterns
+const pdfMetadataRegex = /from\s+pdf|pdf\s+file|document\s+name|file\s+name|page\s+\d+/gi;
+
+// Define keywordAnalysis interface matching what BERT provides
+// Updated to support different color formats
+interface KeywordAnalysis {
   word: string;
   sentiment: number;
-  weight: number;
-  color: string | [number, number, number];
+  pos?: string;
   tone?: string;
   relatedConcepts?: string[];
   frequency?: number;
-  pos?: string;
+  color?: string | [number, number, number] | number[]; // Support multiple color formats
+  weight?: number;
 }
 
-// Add the missing analyzePdfContent function that was causing the build error
-export const analyzePdfContent = async (pdfText: string) => {
+export const analyzePdfContent = async (file: File, pdfText: string) => {
   try {
-    console.log("Analyzing PDF content:", pdfText.substring(0, 100) + "...");
+    console.log("Starting PDF analysis with BERT...");
     
-    // Create a more comprehensive analysis result
-    return {
-      text: pdfText,
-      fileName: "document.pdf",
-      fileSize: `${Math.round(pdfText.length / 1024)} KB`,
-      wordCount: pdfText.split(/\s+/).filter(Boolean).length,
-      sourceDescription: `Extracted from PDF`,
-      summary: pdfText.substring(0, 200) + "...",
-      // Include empty BERT analysis structure to prevent undefined errors
-      bertAnalysis: {
-        keywords: [],
-        emotionalTones: [],
-        contextualAnalysis: {}
-      }
+    // Use the text provided directly if available, otherwise extract from PDF
+    let text = pdfText;
+    
+    if (!text && file) {
+      // Extract text from PDF if text wasn't provided
+      text = await extractTextFromPdf(file);
+    }
+    
+    if (!text || text.trim().length === 0) {
+      throw new Error("No text could be extracted from the document");
+    }
+    
+    // Calculate total word count
+    const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+    
+    // Clean text by removing PDF metadata patterns
+    let cleanedText = text.replace(pdfMetadataRegex, '');
+    
+    // Enhanced text preprocessing for better context analysis
+    // - Replace multiple spaces with single space
+    // - Ensure proper sentence boundaries for better context analysis
+    // - Maintain original case for better entity detection
+    const processedText = cleanedText
+      .replace(/\s+/g, ' ')
+      .replace(/(\w)\.(\w)/g, '$1. $2') // Add space after periods between words
+      .trim();
+    
+    // Perform BERT analysis first so other analyses can use its results
+    console.log("Running BERT analysis on cleaned text...");
+    const bertAnalysis = await analyzeTextWithBert(processedText);
+    
+    // Filter out stop words and common PDF metadata terms from BERT keywords
+    if (bertAnalysis.keywords && Array.isArray(bertAnalysis.keywords)) {
+      // Filter and prioritize words based on type and importance
+      bertAnalysis.keywords = bertAnalysis.keywords
+        .filter(keyword => {
+          const word = keyword.word?.toLowerCase();
+          return word && 
+                 word.length > 2 && 
+                 !stopWords.includes(word) && 
+                 !word.match(/pdf|document|file|page|content/);
+        })
+        .map(keyword => {
+          // Apply POS-based weights to emphasize action words and nouns
+          const wordType = keyword.pos || 'DEFAULT';
+          const weight = posWeights[wordType as keyof typeof posWeights] || posWeights.DEFAULT;
+          
+          // Boost the sentiment score based on word type
+          const adjustedSentiment = keyword.sentiment * weight;
+          
+          // Enhance color intensity for important words
+          const colorIntensity = Math.min(1.0, Math.abs(adjustedSentiment) * weight);
+          
+          // Determine base color from sentiment
+          let r = 0, g = 0, b = 0;
+          if (adjustedSentiment > 0) {
+            // Positive: green-tinted
+            g = Math.floor(200 * colorIntensity) + 55;
+            r = Math.floor(100 * colorIntensity);
+            b = Math.floor(100 * colorIntensity);
+          } else {
+            // Negative: red-tinted
+            r = Math.floor(200 * colorIntensity) + 55;
+            g = Math.floor(100 * colorIntensity);
+            b = Math.floor(100 * colorIntensity);
+          }
+          
+          // Convert to hex color
+          const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+          
+          return {
+            ...keyword,
+            sentiment: adjustedSentiment,
+            weight,
+            color
+          };
+        })
+        .sort((a, b) => ((b.weight || 0) * Math.abs(b.sentiment)) - ((a.weight || 0) * Math.abs(a.sentiment)));
+    }
+    
+    console.log("BERT analysis complete, found keywords:", bertAnalysis.keywords?.length || 0);
+    
+    // Generate summary with enhanced contextual analysis
+    const summary = await generateSummary(processedText);
+    
+    // Calculate overall sentiment with improved balance
+    const { overallSentiment, distribution } = await calculateSentiment(processedText);
+    
+    // Extract entities with deeper contextual understanding
+    const entities = await extractEntities(processedText);
+    
+    // Extract key phrases with focus on nouns and verbs that have contextual significance
+    const keyPhrases = await extractKeyPhrases(processedText);
+    
+    // Generate timeline with meaningful text markers
+    const timeline = await generateTimeline(processedText);
+    
+    // Generate embedding points with contextual relationships, using BERT keywords if available
+    const embeddingPoints = await generateEmbeddingPoints(processedText);
+    
+    console.log("BERT Analysis complete with the following stats:");
+    console.log(`- Word count: ${wordCount}`);
+    console.log(`- Overall sentiment: ${overallSentiment.label} (${overallSentiment.score.toFixed(2)})`);
+    console.log(`- Embedding points: ${embeddingPoints.length}`);
+    console.log(`- Key phrases: ${keyPhrases.length}`);
+    console.log(`- Entities: ${entities.length}`);
+    console.log(`- Timeline entries: ${timeline.length}`);
+    console.log(`- BERT keywords: ${bertAnalysis.keywords?.length || 0}`);
+    
+    // Make the data available on window.documentEmbeddingPoints for other components
+    window.documentEmbeddingPoints = embeddingPoints;
+    
+    // Create a complete analysis object with all the required data for all tabs
+    const analysisResults = {
+      fileName: file ? file.name : "Text Analysis",
+      fileSize: file ? file.size : new TextEncoder().encode(text).length,
+      wordCount,
+      pdfTextLength: text.length,
+      text: processedText, // Use the processed text for visualization
+      embeddingPoints,
+      summary,
+      overallSentiment,
+      distribution,
+      timeline,
+      entities,
+      keyPhrases,
+      bertAnalysis, // Add the BERT analysis to the results
+      sourceDescription: "Analysis with BERT Model",
+      // Add timestamps to help with caching/refreshing
+      timestamp: new Date().toISOString()
     };
+    
+    // Store the results in sessionStorage for persistence across tab changes
+    try {
+      sessionStorage.setItem('lastAnalysisResults', JSON.stringify(analysisResults));
+    } catch (storageError) {
+      console.warn("Could not save analysis results to sessionStorage:", storageError);
+    }
+    
+    return analysisResults;
   } catch (error) {
     console.error("Error analyzing PDF content:", error);
     throw error;
   }
-};
-
-// Function to filter out common words during BERT analysis - expanded list
-export const shouldFilterWord = (word: string): boolean => {
-  // Common words to filter - prepositions, conjunctions, articles
-  const commonWords = [
-    // Articles
-    'a', 'an', 'the',
-    
-    // Common prepositions
-    'in', 'on', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 
-    'through', 'during', 'before', 'after', 'above', 'below', 'from', 'up', 'down',
-    
-    // Common conjunctions
-    'and', 'but', 'or', 'nor', 'yet', 'so', 'because', 'although', 'since',
-    
-    // Pronouns
-    'i', 'me', 'my', 'mine', 'myself',
-    'you', 'your', 'yours', 'yourself',
-    'he', 'him', 'his', 'himself',
-    'she', 'her', 'hers', 'herself',
-    'it', 'its', 'itself',
-    'we', 'us', 'our', 'ours', 'ourselves',
-    'they', 'them', 'their', 'theirs', 'themselves',
-    'this', 'that', 'these', 'those',
-    'who', 'whom', 'whose',
-    'which', 'what',
-    
-    // Common verbs
-    'is', 'are', 'was', 'were', 'be', 'being', 'been',
-    'have', 'has', 'had', 'having',
-    'do', 'does', 'did', 'doing',
-    'will', 'would', 'shall', 'should',
-    'can', 'could', 'may', 'might', 'must',
-    'go', 'goes', 'went', 'gone', 'going',
-    'get', 'gets', 'got', 'getting',
-    'make', 'makes', 'made', 'making',
-    'say', 'says', 'said', 'saying',
-    'see', 'sees', 'saw', 'seen', 'seeing',
-    'come', 'comes', 'came', 'coming',
-    
-    // Other common words
-    'to', 'of', 'just', 'very', 'too', 'also', 'then', 'than',
-    'only', 'not', 'now', 'even', 'if', 'when', 'where', 'why',
-    'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most',
-    'some', 'such', 'no', 'yes', 'every'
-  ];
-  
-  return commonWords.includes(word.toLowerCase());
-};
-
-// Add contextual awareness to the filtering process
-export const getContextualImportance = (word: string, surroundingWords: string[]): number => {
-  // Words that increase importance when they appear nearby
-  const importanceMarkers = [
-    'extremely', 'very', 'highly', 'deeply', 'truly',
-    'especially', 'particularly', 'significantly',
-    'critical', 'crucial', 'important', 'essential',
-    'never', 'always', 'must', 'definitely',
-    'feeling', 'feel', 'felt', 'experiencing', 'experienced',
-    'believe', 'think', 'thought', 'opinion'
-  ];
-  
-  // Check if any importance markers are nearby
-  const hasImportanceMarker = surroundingWords.some(w => 
-    importanceMarkers.includes(w.toLowerCase())
-  );
-  
-  // Base importance score
-  let score = 1;
-  
-  // Adjust based on contextual factors
-  if (hasImportanceMarker) {
-    score += 0.5;
-  }
-  
-  // Adjust based on word properties
-  if (word.length > 8) {
-    score += 0.3; // Longer words tend to be more significant
-  }
-  
-  // Capitalize words tend to be proper nouns or important concepts
-  if (word[0] === word[0].toUpperCase() && word.length > 1) {
-    score += 0.4;
-  }
-  
-  return score;
-};
-
-// Function to determine emotional tone of a word
-export const determineWordTone = (word: string): string => {
-  const emotionalWords = {
-    positive: [
-      'good', 'great', 'happy', 'excellent', 'positive', 'love', 'enjoy', 'wonderful', 'joy',
-      'pleased', 'delighted', 'grateful', 'thankful', 'excited', 'hopeful', 'optimistic',
-      'brilliant', 'fantastic', 'marvelous', 'superb', 'terrific', 'awesome', 'beautiful'
-    ],
-    negative: [
-      'bad', 'sad', 'terrible', 'negative', 'hate', 'awful', 'horrible', 'poor', 'worry',
-      'annoyed', 'angry', 'upset', 'disappointed', 'frustrated', 'anxious', 'afraid', 'stressed',
-      'depressed', 'miserable', 'gloomy', 'unhappy', 'lonely', 'distressed', 'painful'
-    ],
-    anxious: [
-      'anxious', 'worried', 'nervous', 'tense', 'uneasy', 'scared', 'fearful', 'afraid',
-      'panicked', 'apprehensive', 'alarmed', 'concerned', 'stressed', 'restless'
-    ],
-    calm: [
-      'calm', 'relaxed', 'peaceful', 'serene', 'tranquil', 'composed', 'collected',
-      'centered', 'balanced', 'restful', 'quiet', 'still'
-    ]
-  };
-  
-  const lowerWord = word.toLowerCase();
-  
-  for (const [tone, words] of Object.entries(emotionalWords)) {
-    if (words.includes(lowerWord)) {
-      return tone;
-    }
-  }
-  
-  return 'neutral';
 };

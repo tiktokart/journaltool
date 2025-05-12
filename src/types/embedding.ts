@@ -38,32 +38,4 @@ export interface DocumentEmbeddingProps {
   showAllPoints?: boolean;
   wordCount?: number;
   bertAnalysis?: any;
-  // Add missing props
-  selectedPoint?: Point | null;
-  selectedWord?: string | null;
-  filteredPoints?: Point[];
-  bertData?: any;
-}
-
-// Fix the OrbitControls import issue - use type only, not the actual import
-export interface EmbeddingSceneProps {
-  containerRef: React.RefObject<HTMLDivElement>;
-  cameraRef: React.RefObject<THREE.PerspectiveCamera | null>;
-  controlsRef: React.RefObject<any>; // Use 'any' for OrbitControls to avoid importing issues
-  points: Point[];
-  onPointHover: (point: Point | null) => void;
-  onPointSelect: (point: Point | null) => void;
-  isInteractive?: boolean;
-  depressedJournalReference?: boolean;
-  focusOnWord?: string | null;
-  connectedPoints?: Point[];
-  selectedPoint?: Point | null;
-  comparisonPoint?: Point | null;
-  isCompareMode?: boolean;
-  onFocusEmotionalGroup?: (emotionalTone: string) => void;
-  selectedEmotionalGroup?: string | null;
-  onResetView?: () => void;
-  visibleClusterCount?: number;
-  showAllPoints?: boolean;
-  bertData?: any; // Add bertData property
 }

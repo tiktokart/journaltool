@@ -1,323 +1,449 @@
 
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
-import { useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { Point } from '@/types/embedding';
-import { gsap } from 'gsap';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { Point } from '../../types/embedding';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { toast } from 'sonner';
+import { generateMockPoints } from '../../utils/embeddingUtils';
 
-export interface EmbeddingSceneProps {
-  points: Point[];
-  selectedPoint: Point | null;
-  connectedPoints: Point[];
-  onPointClick: (point: Point) => void;
-  isRotating: boolean;
-  isInteractive: boolean;
-  focusOnWord: string | null;
-  depressedJournalReference?: boolean;
-  visibleClusterCount?: number;
-  onCameraMove?: () => void;
+// Define props for the EmbeddingScene component
+interface EmbeddingSceneProps {
   containerRef: React.RefObject<HTMLDivElement>;
-  cameraRef: React.RefObject<THREE.PerspectiveCamera>;
-  controlsRef?: React.RefObject<any>;
-  visualizationSettings: {
-    pointSize: number;
-    lineWidth: number;
-    connectionOpacity: number;
-  };
-  bertData?: any; // Add bertData as an optional prop
+  cameraRef: React.RefObject<THREE.PerspectiveCamera | null>;
+  controlsRef: React.RefObject<OrbitControls | null>;
+  points: Point[];
+  onPointHover: (point: Point | null) => void;
+  onPointSelect: (point: Point | null) => void;
+  isInteractive?: boolean;
+  depressedJournalReference?: boolean;
+  focusOnWord?: string | null;
+  connectedPoints?: Point[];
+  selectedPoint?: Point | null;
+  comparisonPoint?: Point | null;
+  isCompareMode?: boolean;
+  onFocusEmotionalGroup?: (emotionalTone: string) => void;
+  selectedEmotionalGroup?: string | null;
+  onResetView?: () => void;
+  visibleClusterCount?: number;
+  showAllPoints?: boolean;
 }
 
-// Export these functions for use in DocumentEmbedding.tsx
+// Camera helper functions
 export const zoomIn = (camera: THREE.PerspectiveCamera) => {
-  gsap.to(camera.position, {
-    z: camera.position.z * 0.8,
-    duration: 0.5,
-    ease: "power2.out"
-  });
+  camera.position.multiplyScalar(0.9);
 };
 
 export const zoomOut = (camera: THREE.PerspectiveCamera) => {
-  gsap.to(camera.position, {
-    z: camera.position.z * 1.25,
-    duration: 0.5,
-    ease: "power2.out"
-  });
+  camera.position.multiplyScalar(1.1);
 };
 
-export const resetZoom = (camera: THREE.PerspectiveCamera, controls: any) => {
-  gsap.to(camera.position, {
-    x: 0,
-    y: 0,
-    z: 20,
-    duration: 1,
-    ease: "power2.inOut",
-    onUpdate: () => {
-      camera.lookAt(0, 0, 0);
-      if (controls && controls.update) {
-        controls.update();
-      }
-    }
-  });
+export const resetZoom = (camera: THREE.PerspectiveCamera, controls: OrbitControls) => {
+  // Reset camera to default position
+  camera.position.set(0, 0, 30);
+  camera.lookAt(0, 0, 0);
+  controls.update();
 };
 
-const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
-  points,
-  selectedPoint,
-  connectedPoints,
-  onPointClick,
-  isRotating,
-  isInteractive,
-  focusOnWord,
-  depressedJournalReference,
-  visibleClusterCount = 10,
-  onCameraMove,
+// Main component
+const EmbeddingScene = ({
   containerRef,
   cameraRef,
   controlsRef,
-  visualizationSettings,
-  bertData
-}) => {
-  const { gl, scene, camera } = useThree();
-  const orbitControlsRef = useRef<any>(null);
-  const pointsRef = useRef<THREE.Points>(null);
-  const linesRef = useRef<THREE.LineSegments>(null);
-  const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 20));
-  const { t } = useLanguage();
+  points,
+  onPointHover,
+  onPointSelect,
+  isInteractive = true,
+  depressedJournalReference = false,
+  focusOnWord = null,
+  connectedPoints = [],
+  selectedPoint = null,
+  comparisonPoint = null,
+  isCompareMode = false,
+  onFocusEmotionalGroup,
+  selectedEmotionalGroup,
+  onResetView,
+  visibleClusterCount = 8,
+  showAllPoints = true
+}: EmbeddingSceneProps) => {
+  // Refs for Three.js objects
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const pointsMeshRef = useRef<THREE.Points | null>(null);
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  
+  // State variables for interaction
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [comparisonIndex, setComparisonIndex] = useState<number | null>(null);
+  
+  // Animation state
+  const [animationTimestamp, setAnimationTimestamp] = useState<number>(0);
+  const animationSpeed = useRef<number>(0.002);
+  
+  // Create local camera and controls if not provided
+  const localCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const localControlsRef = useRef<OrbitControls | null>(null);
 
+  // Setup Three.js scene
   useEffect(() => {
-    if (cameraRef) {
-      // Need to clone the reference to avoid TypeScript read-only error
-      const cam = camera as THREE.PerspectiveCamera;
-      cameraRef.current = cam;
+    if (!containerRef.current) return;
+    
+    const container = containerRef.current;
+    
+    // Create a scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#FFFFFF');
+    sceneRef.current = scene;
+    
+    // Set up the camera
+    const camera = new THREE.PerspectiveCamera(
+      75, 
+      container.clientWidth / container.clientHeight, 
+      0.1, 
+      1000
+    );
+    camera.position.z = 30;
+    
+    // Use provided camera ref or local ref
+    if (cameraRef.current === null) {
+      // Store the camera in the provided ref
+      if (cameraRef) {
+        localCameraRef.current = camera;
+      }
     }
     
-    if (controlsRef && orbitControlsRef.current) {
-      controlsRef.current = orbitControlsRef.current;
-    }
-  }, [camera, cameraRef, controlsRef]);
-
-  useEffect(() => {
-    if (orbitControlsRef.current) {
-      orbitControlsRef.current.enabled = isInteractive;
-    }
-  }, [isInteractive]);
-
-  useEffect(() => {
-    if (orbitControlsRef.current) {
-      orbitControlsRef.current.addEventListener('change', () => {
-        setCameraPosition(camera.position.clone());
-        if (onCameraMove) {
-          onCameraMove();
+    // Set up the renderer
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      alpha: true
+    });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+    
+    // Add OrbitControls for camera interaction
+    if (isInteractive) {
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.rotateSpeed = 0.7;
+      
+      // Use provided controls ref or local ref
+      if (controlsRef.current === null) {
+        if (controlsRef) {
+          localControlsRef.current = controls;
         }
-      });
+      }
     }
-  }, [camera, onCameraMove]);
-
+    
+    // Expose actions to window for external components
+    window.documentEmbeddingActions = {
+      focusOnEmotionalGroup: (tone: string) => {
+        if (onFocusEmotionalGroup) onFocusEmotionalGroup(tone);
+      },
+      resetEmotionalGroupFilter: () => {
+        // Reset filter logic here
+      },
+      resetView: () => {
+        if (onResetView) onResetView();
+      }
+    };
+    
+    // Handle window resize
+    const handleResize = () => {
+      if (!camera || !rendererRef.current || !container) return;
+      
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      
+      rendererRef.current.setSize(container.clientWidth, container.clientHeight);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Animation function
+    const animate = () => {
+      requestAnimationFrame(animate);
+      
+      if (localControlsRef.current) {
+        localControlsRef.current.update();
+      } else if (controlsRef.current) {
+        controlsRef.current.update();
+      }
+      
+      // Slowly rotate the point cloud for visual interest
+      if (pointsMeshRef.current && !isCompareMode) {
+        pointsMeshRef.current.rotation.y += animationSpeed.current;
+      }
+      
+      // Update the scene
+      if (rendererRef.current && camera && sceneRef.current) {
+        rendererRef.current.render(sceneRef.current, camera);
+      }
+      
+      // Update timestamp for animation effects
+      setAnimationTimestamp(prev => prev + 1);
+    };
+    
+    animate();
+    
+    // Cleanup function
+    return () => {
+      // Remove the canvas from the DOM
+      if (containerRef.current && rendererRef.current && containerRef.current.contains(rendererRef.current.domElement)) {
+        containerRef.current.removeChild(rendererRef.current.domElement);
+      }
+      
+      // Dispose of Three.js resources
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
+      
+      window.removeEventListener('resize', handleResize);
+      
+      // Clean up the scene
+      if (sceneRef.current) {
+        // Clear all objects from the scene
+        while (sceneRef.current.children.length > 0) {
+          const object = sceneRef.current.children[0];
+          sceneRef.current.remove(object);
+        }
+      }
+    };
+  }, [containerRef, isInteractive]);
+  
+  // Handle point cloud creation and updates
   useEffect(() => {
-    if (!pointsRef.current || !points) return;
-
+    if (!sceneRef.current || !points || !rendererRef.current) return;
+    
+    const scene = sceneRef.current;
+    const renderer = rendererRef.current;
+    const camera = cameraRef.current || localCameraRef.current;
+    if (!camera) return;
+    
+    // Remove existing point cloud if it exists
+    if (pointsMeshRef.current) {
+      scene.remove(pointsMeshRef.current);
+      pointsMeshRef.current.geometry.dispose();
+      (pointsMeshRef.current.material as THREE.Material).dispose();
+      pointsMeshRef.current = null;
+    }
+    
+    // Prepare geometry and material for the point cloud
     const geometry = new THREE.BufferGeometry();
-    const positions = points.map(p => p.position).flat() as number[];
-    const colors = points.map(p => {
-      if (Array.isArray(p.color)) {
-        return p.color;
-      } else if (typeof p.color === 'string') {
-        // Convert hex string to RGB array
-        const color = new THREE.Color(p.color);
-        return [color.r, color.g, color.b];
+    
+    // Extract positions and colors from points data
+    const positionsArray = new Float32Array(points.length * 3);
+    const colorsArray = new Float32Array(points.length * 3);
+    const sizesArray = new Float32Array(points.length);
+    
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      
+      // Set position
+      positionsArray[i * 3] = point.position[0];
+      positionsArray[i * 3 + 1] = point.position[1];
+      positionsArray[i * 3 + 2] = point.position[2];
+      
+      // Set color
+      if (typeof point.color === 'string') {
+        const color = new THREE.Color(point.color);
+        colorsArray[i * 3] = color.r;
+        colorsArray[i * 3 + 1] = color.g;
+        colorsArray[i * 3 + 2] = color.b;
+      } else if (Array.isArray(point.color)) {
+        colorsArray[i * 3] = point.color[0];
+        colorsArray[i * 3 + 1] = point.color[1];
+        colorsArray[i * 3 + 2] = point.color[2];
+      } else {
+        colorsArray[i * 3] = 1;
+        colorsArray[i * 3 + 1] = 1;
+        colorsArray[i * 3 + 2] = 1;
       }
-      // Default color if nothing is provided
-      return [0.5, 0.5, 0.5];
-    }).flat() as number[];
-
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-    pointsRef.current.geometry = geometry;
-    // Correctly access the size property on the PointsMaterial type
-    const material = pointsRef.current.material as THREE.PointsMaterial;
-    if (material) {
-      material.size = visualizationSettings.pointSize;
+      
+      // Set size
+      sizesArray[i] = point.size || 1;
     }
-  }, [points, visualizationSettings.pointSize]);
-
-  useEffect(() => {
-    if (!linesRef.current || !points) return;
-
-    const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0xffffff,
-      linewidth: visualizationSettings.lineWidth,
-      transparent: true,
-      opacity: visualizationSettings.connectionOpacity,
-    });
-
-    const lineGeometry = new THREE.BufferGeometry();
-    const linePositions: number[] = [];
-
-    connectedPoints.forEach(connectedPoint => {
-      if (selectedPoint) {
-        // Ensure all values are numbers
-        const selectedPos = selectedPoint.position.map(Number);
-        const connectedPos = connectedPoint.position.map(Number);
-        linePositions.push(...selectedPos, ...connectedPos);
-      }
-    });
-
-    lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-    linesRef.current.geometry = lineGeometry;
-    linesRef.current.material = lineMaterial;
-  }, [selectedPoint, connectedPoints, visualizationSettings.lineWidth, visualizationSettings.connectionOpacity, points]);
-
-  useEffect(() => {
-    if (focusOnWord && pointsRef.current && points) {
-      const selected = points.find(point => point.word === focusOnWord);
-      if (selected) {
-        // Convert position to numbers
-        const positionAsNumbers = selected.position.map(Number);
-        const targetPosition = new THREE.Vector3(
-          positionAsNumbers[0],
-          positionAsNumbers[1],
-          positionAsNumbers[2]
-        );
-        const animationDuration = 1.5;
-
-        gsap.to(camera.position, {
-          x: targetPosition.x,
-          y: targetPosition.y,
-          z: targetPosition.z + 10,
-          duration: animationDuration,
-          ease: "power3.inOut",
-          onUpdate: () => {
-            camera.lookAt(targetPosition);
-            orbitControlsRef.current?.update();
-          }
-        });
-      }
-    }
-  }, [focusOnWord, camera, points]);
-
-  useFrame(() => {
-    if (isRotating && orbitControlsRef.current) {
-      orbitControlsRef.current.enabled = false;
-      const rotationSpeed = 0.002;
-      camera.position.x = Math.cos(performance.now() * rotationSpeed) * 20;
-      camera.position.z = Math.sin(performance.now() * rotationSpeed) * 20;
-      camera.lookAt(scene.position);
-    } else if (orbitControlsRef.current) {
-      orbitControlsRef.current.enabled = isInteractive;
-    }
-
-    gl.render(scene, camera);
-  });
-
-  const handlePointClickWrapper = (event: THREE.Event) => {
-    if (!isInteractive) return;
-    const pointIndex = event.index;
-    if (pointIndex !== undefined && points && points[pointIndex]) {
-      onPointClick(points[pointIndex]);
-    }
-  };
-
-  return (
-    <>
-      <PerspectiveCamera makeDefault position={cameraPosition.toArray()} fov={45} near={0.1} far={1000} ref={cameraRef} />
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} />
-      <OrbitControls ref={orbitControlsRef} args={[camera, gl.domElement]} enableDamping dampingFactor={0.1} />
-      <Points
-        ref={pointsRef}
-        positions={points.map(p => p.position).flat() as number[]}
-        colors={points.map(p => {
-          if (Array.isArray(p.color)) {
-            return p.color;
-          } else if (typeof p.color === 'string') {
-            // Convert hex string to RGB array
-            const color = new THREE.Color(p.color);
-            return [color.r, color.g, color.b];
-          }
-          return [0.5, 0.5, 0.5];
-        }).flat() as number[]}
-        size={visualizationSettings.pointSize}
-        onClick={handlePointClickWrapper}
-      />
-      <LineSegments ref={linesRef} positions={[]} />
-    </>
-  );
-};
-
-interface PointsProps {
-  positions: number[];
-  colors: number[];
-  size: number;
-  onClick: (event: THREE.Event) => void;
-}
-
-const Points = React.forwardRef<THREE.Points, PointsProps>(({ positions, colors, size, onClick }, ref) => {
-  const { gl } = useThree();
-  const geometryRef = useRef<THREE.BufferGeometry>(null);
-  const materialRef = useRef<THREE.PointsMaterial>(null);
-
-  useEffect(() => {
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    geometryRef.current = geometry;
-
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positionsArray, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizesArray, 1));
+    
+    // Define the point cloud material
     const material = new THREE.PointsMaterial({
-      size: size,
+      size: 1.5,
       vertexColors: true,
       blending: THREE.AdditiveBlending,
       transparent: true,
       sizeAttenuation: true
     });
-    materialRef.current = material;
-  }, [colors, positions, size]);
-
-  useFrame(() => {
-    if (materialRef.current) {
-      materialRef.current.needsUpdate = true;
+    
+    // Create the point cloud
+    const pointsMesh = new THREE.Points(geometry, material);
+    pointsMeshRef.current = pointsMesh;
+    scene.add(pointsMesh);
+    
+    // Initial render
+    renderer.render(scene, camera);
+    
+    // Function to handle visibility based on emotional group
+    const updatePointVisibility = () => {
+      if (!pointsMeshRef.current || !pointsMeshRef.current.geometry) return;
+      
+      const positions = pointsMeshRef.current.geometry.attributes.position.array as Float32Array;
+      const colors = pointsMeshRef.current.geometry.attributes.color.array as Float32Array;
+      const sizes = pointsMeshRef.current.geometry.attributes.size.array as Float32Array;
+      
+      for (let i = 0; i < points.length; i++) {
+        const point = points[i];
+        const isConnected = connectedPoints.some(cp => cp.word === point.word);
+        
+        let isVisible = true;
+        
+        // Apply emotional group filter
+        if (selectedEmotionalGroup && point.emotionalTone !== selectedEmotionalGroup) {
+          isVisible = false;
+        }
+        
+        // Apply focus on word filter
+        if (focusOnWord && point.word !== focusOnWord && !isConnected) {
+          isVisible = false;
+        }
+        
+        // Hide points if showAllPoints is false and cluster is greater than visibleClusterCount
+        if (!showAllPoints && point.cluster && point.cluster > visibleClusterCount) {
+          isVisible = false;
+        }
+        
+        // Apply depressed journal reference filter
+        if (depressedJournalReference && point.sentiment && point.sentiment > 0) {
+          isVisible = false;
+        }
+        
+        // Apply selected point filter
+        if (selectedPoint && selectedPoint.word === point.word) {
+          isVisible = true;
+        }
+        
+        // Apply comparison point filter
+        if (comparisonPoint && comparisonPoint.word === point.word) {
+          isVisible = true;
+        }
+        
+        // Apply connected points filter
+        if (isConnected) {
+          isVisible = true;
+        }
+        
+        // Set visibility by adjusting size and color
+        if (isVisible) {
+          sizes[i] = point.size || 1;
+          if (Array.isArray(point.color)) {
+            colors[i * 3] = point.color[0] || 1;
+            colors[i * 3 + 1] = point.color[1] || 1;
+            colors[i * 3 + 2] = point.color[2] || 1;
+          }
+        } else {
+          sizes[i] = 0;
+          colors[i * 3] = 0;
+          colors[i * 3 + 1] = 0;
+          colors[i * 3 + 2] = 0;
+        }
+      }
+      
+      pointsMeshRef.current.geometry.attributes.size.needsUpdate = true;
+      pointsMeshRef.current.geometry.attributes.color.needsUpdate = true;
+      
+      renderer.render(scene, camera);
+    };
+    
+    updatePointVisibility();
+    
+    // Update point visibility when selectedEmotionalGroup changes
+    useEffect(() => {
+      updatePointVisibility();
+    }, [selectedEmotionalGroup, focusOnWord, visibleClusterCount, showAllPoints, depressedJournalReference, selectedPoint, comparisonPoint, connectedPoints, points]);
+    
+    // Handle raycasting and hover effects
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!containerRef.current || !camera || !pointsMeshRef.current) return;
+      
+      const containerBounds = containerRef.current.getBoundingClientRect();
+      
+      // Calculate mouse position in normalized device coordinates
+      mouseRef.current.x = ((event.clientX - containerBounds.left) / containerBounds.width) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - containerBounds.top) / containerBounds.height) * 2 + 1;
+      
+      // Update the raycaster with the mouse position
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
+      
+      // Calculate objects intersecting the raycaster
+      const intersects = raycasterRef.current.intersectObject(pointsMeshRef.current);
+      
+      if (intersects.length > 0) {
+        const index = intersects[0].index;
+        
+        if (index !== hoveredIndex) {
+          setHoveredIndex(index);
+          onPointHover(points[index]);
+        }
+      } else {
+        setHoveredIndex(null);
+        onPointHover(null);
+      }
+    };
+    
+    // Handle point selection on click
+    const handlePointClick = (event: MouseEvent) => {
+      if (!containerRef.current || !camera || !pointsMeshRef.current) return;
+      
+      event.preventDefault();
+      
+      const containerBounds = containerRef.current.getBoundingClientRect();
+      
+      // Calculate mouse position in normalized device coordinates
+      mouseRef.current.x = ((event.clientX - containerBounds.left) / containerBounds.width) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - containerBounds.top) / containerBounds.height) * 2 + 1;
+      
+      // Update the raycaster with the mouse position
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
+      
+      // Calculate objects intersecting the raycaster
+      const intersects = raycasterRef.current.intersectObject(pointsMeshRef.current);
+      
+      if (intersects.length > 0) {
+        const index = intersects[0].index;
+        setSelectedIndex(index);
+        onPointSelect(points[index]);
+      } else {
+        setSelectedIndex(null);
+        onPointSelect(null);
+      }
+    };
+    
+    // Add event listeners for mouse interaction
+    if (isInteractive && containerRef.current) {
+      containerRef.current.addEventListener('mousemove', handleMouseMove);
+      containerRef.current.addEventListener('click', handlePointClick);
     }
-  });
-
-  const handleIntersection = (event: THREE.Event) => {
-    onClick(event);
-  };
-
-  return (
-    <points
-      ref={ref}
-      geometry={geometryRef.current}
-      material={materialRef.current}
-      onClick={handleIntersection}
-    />
-  );
-});
-
-Points.displayName = 'Points';
-
-interface LineSegmentsProps {
-  positions: number[];
-}
-
-const LineSegments = React.forwardRef<THREE.LineSegments, LineSegmentsProps>(({ positions }, ref) => {
-  const { gl } = useThree();
-  const geometryRef = useRef<THREE.BufferGeometry>(null);
-
-  useEffect(() => {
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometryRef.current = geometry;
-  }, [positions]);
+    
+    // Clean up event listeners
+    return () => {
+      if (isInteractive && containerRef.current) {
+        containerRef.current.removeEventListener('mousemove', handleMouseMove);
+        containerRef.current.removeEventListener('click', handlePointClick);
+      }
+    };
+  }, [points, containerRef, isInteractive, onPointHover, onPointSelect, selectedEmotionalGroup, focusOnWord, visibleClusterCount, showAllPoints, depressedJournalReference, selectedPoint, comparisonPoint, connectedPoints]);
 
   return (
-    <lineSegments ref={ref} geometry={geometryRef.current}>
-      <lineBasicMaterial color={0xffffff} linewidth={2} />
-    </lineSegments>
+    <div className="absolute inset-0">
+      {/* Container managed by Three.js */}
+      {/* We don't need to put anything here as the canvas is appended in useEffect */}
+    </div>
   );
-});
-
-LineSegments.displayName = 'LineSegments';
+};
 
 export default EmbeddingScene;
