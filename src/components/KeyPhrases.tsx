@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, Book, Hash, ArrowDownUp } from 'lucide-react';
+import { KeyRound, Book, ArrowDownUp } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 
@@ -39,6 +39,7 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
     // Define some theme categories
     const themeCategories = [
       'Emotions',
+      'Sadness',
       'Relationships',
       'Work',
       'Health',
@@ -58,13 +59,18 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
       // Use lowercased word for comparison
       const lowerWord = word.toLowerCase();
       
+      // Sadness theme - specifically separated as requested
+      if (lowerWord.includes('sad') || lowerWord.includes('depress') || lowerWord.includes('melanch') ||
+          lowerWord.includes('blue') || lowerWord.includes('sorrow') || lowerWord.includes('grief')) {
+        return 'Sadness';
+      }
+      
       // Emotional themes
-      if (lowerWord.includes('happy') || lowerWord.includes('sad') || 
-          lowerWord.includes('joy') || lowerWord.includes('anger') ||
-          lowerWord.includes('fear') || lowerWord.includes('anxious') ||
-          lowerWord.includes('love') || lowerWord.includes('hate') ||
-          lowerWord.includes('worry') || lowerWord.includes('stress') ||
-          lowerWord.includes('depress') || lowerWord.includes('peace')) {
+      if (lowerWord.includes('happy') || lowerWord.includes('joy') || 
+          lowerWord.includes('anger') || lowerWord.includes('fear') || 
+          lowerWord.includes('anxious') || lowerWord.includes('love') || 
+          lowerWord.includes('hate') || lowerWord.includes('worry') || 
+          lowerWord.includes('stress') || lowerWord.includes('peace')) {
         return 'Emotions';
       }
       
@@ -160,6 +166,7 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
   const getThemeBadgeColor = (category: string) => {
     switch(category) {
       case 'Emotions': return 'bg-pink-100 text-pink-800 hover:bg-pink-200';
+      case 'Sadness': return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
       case 'Relationships': return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
       case 'Work': return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
       case 'Health': return 'bg-green-100 text-green-800 hover:bg-green-200';
@@ -196,10 +203,6 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
             Sort: {sortBy === 'size' ? 'By Size' : 'Alphabetical'}
           </Button>
         </div>
-        
-        {sourceDescription && (
-          <CardDescription>{sourceDescription}</CardDescription>
-        )}
       </CardHeader>
       <CardContent>
         {!data || data.length === 0 ? (

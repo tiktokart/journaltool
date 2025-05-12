@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, Heart, BarChart, Frown, PencilRuler, Star, AlertTriangle, Sparkles, Eye } from 'lucide-react';
+import { X, BarChart, ArrowDownUp, Circle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Point, getSentimentLabel } from '@/types/embedding';
 import { useState, useEffect } from 'react';
@@ -27,6 +27,7 @@ const WordComparison = ({
   const [groupedWords, setGroupedWords] = useState<{[key: string]: Point[]}>({});
   const [selectedWord, setSelectedWord] = useState<Point | null>(null);
   const [connections, setConnections] = useState<{[key: string]: number}>({});
+  const [sortBy, setSortBy] = useState<'size' | 'alphabetical'>('size');
   
   // Define emotion categories with proper ordering
   const emotionCategories = [
@@ -125,29 +126,6 @@ const WordComparison = ({
     }
   };
   
-  const getEmotionIcon = (emotion: string) => {
-    switch(emotion) {
-      case 'Joy':
-        return <Sparkles className="h-4 w-4 text-yellow-500" />;
-      case 'Love':
-        return <Heart className="h-4 w-4 text-pink-500" />;
-      case 'Sadness':
-        return <Frown className="h-4 w-4 text-blue-500" />;
-      case 'Anger':
-        return <BarChart className="h-4 w-4 text-red-500" />; 
-      case 'Fear':
-        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
-      case 'Surprise':
-        return <Eye className="h-4 w-4 text-purple-500" />;
-      case 'Disgust':
-        return <PencilRuler className="h-4 w-4 text-green-600" />;
-      case 'Neutral':
-        return <Star className="h-4 w-4 text-gray-500" />;
-      default:
-        return <Star className="h-4 w-4 text-violet-500" />;
-    }
-  };
-  
   const getEmotionColor = (emotion: string): string => {
     switch(emotion) {
       case 'Joy':
@@ -171,6 +149,20 @@ const WordComparison = ({
     }
   };
   
+  const getBadgeColor = (emotion: string): string => {
+    switch(emotion) {
+      case 'Joy': return 'bg-yellow-100 text-yellow-800';
+      case 'Love': return 'bg-pink-100 text-pink-800';
+      case 'Sadness': return 'bg-blue-100 text-blue-800';
+      case 'Anger': return 'bg-red-100 text-red-800';
+      case 'Fear': return 'bg-orange-100 text-orange-800';
+      case 'Surprise': return 'bg-purple-100 text-purple-800';
+      case 'Disgust': return 'bg-emerald-100 text-emerald-800';
+      case 'Neutral': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-violet-100 text-violet-800';
+    }
+  };
+  
   const getConnectionStrength = (strength: number): string => {
     if (strength >= 0.7) return "Very Strong";
     if (strength >= 0.5) return "Strong";
@@ -191,6 +183,9 @@ const WordComparison = ({
   
   // Sort emotion categories that exist in our data first
   const sortedEmotions = Object.keys(groupedWords).sort((a, b) => {
+    if (sortBy === 'size') {
+      return groupedWords[b].length - groupedWords[a].length;
+    }
     const indexA = emotionCategories.indexOf(a);
     const indexB = emotionCategories.indexOf(b);
     return indexA - indexB;
@@ -210,14 +205,25 @@ const WordComparison = ({
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <CardTitle className="text-base font-pacifico">Emotional Word Groups</CardTitle>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onClearWords}
-            className="h-8 px-2 text-muted-foreground"
-          >
-            Clear All
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setSortBy(sortBy === 'size' ? 'alphabetical' : 'size')}
+              className="h-8 px-2 text-muted-foreground flex items-center"
+            >
+              <ArrowDownUp className="h-3 w-3 mr-1" />
+              {sortBy === 'size' ? 'By Size' : 'ABC'}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClearWords}
+              className="h-8 px-2 text-muted-foreground"
+            >
+              Clear All
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -235,25 +241,20 @@ const WordComparison = ({
                 return (
                   <div 
                     key={`circle-${emotion}`}
-                    className={`rounded-full flex flex-col justify-center items-center border ${getEmotionColor(emotion)} shadow-md transition-all hover:scale-105 cursor-pointer`}
+                    className={`rounded-full flex flex-col justify-center items-center border ${getEmotionColor(emotion)} shadow-md transition-all hover:scale-105`}
                     style={{ 
                       width: `${size}px`, 
                       height: `${size}px`,
-                      position: 'relative'
                     }}
                   >
-                    <div className="flex items-center gap-1 mb-1">
-                      {getEmotionIcon(emotion)}
-                      <span className="font-semibold">{emotion}</span>
-                    </div>
+                    <div className="font-semibold">{emotion}</div>
                     <div className="text-sm font-medium">{count} words</div>
-                    <div className="text-xs text-muted-foreground mt-1">Click to explore</div>
                   </div>
                 );
               })}
             </div>
             
-            {/* Word Groups Details */}
+            {/* Word Lists by Emotion Category */}
             <div className="space-y-5">
               {sortedEmotions.map((emotion) => (
                 <div 
@@ -261,25 +262,23 @@ const WordComparison = ({
                   className={`border rounded-lg p-3 transition-all ${getEmotionColor(emotion)}`}
                 >
                   <h4 className="font-medium mb-3 flex items-center">
-                    {getEmotionIcon(emotion)}
-                    <span className="ml-2">{emotion}</span>
+                    <Circle className="h-3 w-3 mr-1.5 fill-current" />
+                    <span>{emotion}</span>
                     <Badge variant="outline" className="ml-2">{groupedWords[emotion].length}</Badge>
                   </h4>
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="flex flex-wrap gap-2">
                     {groupedWords[emotion].map((word) => (
-                      <div 
+                      <Badge 
                         key={word.id} 
-                        className={`border rounded-lg p-3 relative cursor-pointer transition-all
-                          ${selectedWord?.id === word.id ? 
-                            'ring-2 ring-primary bg-white scale-105' : 
-                            'bg-white hover:bg-muted/20 hover:scale-[1.02]'
-                          } shadow-sm hover:shadow-md`}
+                        variant="secondary"
+                        className={`cursor-pointer transition-colors ${getBadgeColor(emotion)}`}
                         onClick={() => handleWordClick(word)}
                       >
+                        {word.word}
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="absolute top-1 right-1 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          className="h-4 w-4 ml-1 p-0 hover:bg-transparent"
                           onClick={(e) => {
                             e.stopPropagation();
                             onRemoveWord(word.id);
@@ -288,50 +287,9 @@ const WordComparison = ({
                             }
                           }}
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-2 w-2" />
                         </Button>
-                        
-                        <div className="mb-2">
-                          <h4 className="font-medium truncate pr-6">{word.word}</h4>
-                          <Badge 
-                            variant="outline" 
-                            className={`mt-1 ${
-                              emotion === 'Joy' ? 'bg-yellow-100 text-yellow-800' :
-                              emotion === 'Love' ? 'bg-pink-100 text-pink-800' :
-                              emotion === 'Sadness' ? 'bg-blue-100 text-blue-800' :
-                              emotion === 'Anger' ? 'bg-red-100 text-red-800' :
-                              emotion === 'Fear' ? 'bg-orange-100 text-orange-800' :
-                              emotion === 'Surprise' ? 'bg-purple-100 text-purple-800' :
-                              emotion === 'Disgust' ? 'bg-emerald-100 text-emerald-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {emotion}
-                          </Badge>
-                        </div>
-                        
-                        <div className="space-y-1 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Sentiment:</span>
-                            <span className={`font-medium ${
-                              (word.sentiment || 0) > 0.55 ? 'text-green-600' :
-                              (word.sentiment || 0) < 0.45 ? 'text-red-600' :
-                              'text-gray-600'
-                            }`}>
-                              {getSentimentLabel(word.sentiment || 0.5)}
-                            </span>
-                          </div>
-                          
-                          {connections[word.id] !== undefined && selectedWord?.id !== word.id && (
-                            <div className={`flex justify-between mt-1 p-1 rounded ${getConnectionColor(connections[word.id])}`}>
-                              <span className="text-muted-foreground">Connection:</span>
-                              <span className="font-medium">
-                                {getConnectionStrength(connections[word.id])}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      </Badge>
                     ))}
                   </div>
                 </div>
@@ -346,13 +304,37 @@ const WordComparison = ({
               <span className="font-medium">Selected:</span> 
               <span className="ml-2 font-semibold">{selectedWord.word}</span>
               <Badge className="ml-2" variant="outline">
-                {getEmotionIcon(selectedWord.emotionalTone || "Other")}
-                <span className="ml-1">{selectedWord.emotionalTone || "Other"}</span>
+                {selectedWord.emotionalTone || "Other"}
               </Badge>
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Click on other words to see their connection strength
-            </p>
+            
+            {connections && Object.keys(connections).length > 0 && (
+              <div className="mt-2 space-y-1">
+                <p className="text-xs text-muted-foreground">Word connections:</p>
+                <div className="flex flex-wrap gap-1">
+                  {Object.entries(connections)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 5)
+                    .map(([id, strength]) => {
+                      const connectedWord = words.find(w => w.id === id);
+                      if (!connectedWord) return null;
+                      return (
+                        <Badge 
+                          key={id}
+                          className={getConnectionColor(strength)}
+                          variant="outline"
+                        >
+                          {connectedWord.word} 
+                          <span className="ml-1 text-xs">
+                            ({getConnectionStrength(strength)})
+                          </span>
+                        </Badge>
+                      );
+                    })
+                  }
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

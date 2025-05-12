@@ -58,18 +58,17 @@ const JournalAnalysisSection = ({
         page: index + 1,
         score: item.sentiment,
         time: item.date,
-        event: `Journal entry from ${item.date}`
+        event: item.date
       }));
       setFormattedTimelineData(formattedForTimeline);
       
       // Add text snippets to timeline data for JournalSentimentChart
-      const combinedJournalText = journalEntries.map(entry => entry.text).join(" ");
       const processedForChart = timelineData.map((item, index) => {
         // Extract text snippet if possible
         let textSnippet = "";
         if (journalEntries[index]?.text) {
           const text = journalEntries[index].text;
-          textSnippet = text.substring(0, Math.min(50, text.length)) + "...";
+          textSnippet = text.substring(0, Math.min(50, text.length));
         }
         return {
           ...item,
@@ -88,9 +87,7 @@ const JournalAnalysisSection = ({
       setIsAnalyzing(true);
       try {
         const combinedText = journalEntries.map(entry => entry.text).join(" ");
-        console.log("Running BERT analysis on journal entries...");
         const analysis = await analyzeTextWithBert(combinedText);
-        console.log("Journal BERT analysis complete with", analysis.keywords?.length || 0, "keywords");
         setBertAnalysis(analysis);
       } catch (error) {
         console.error("Error running BERT analysis on journal entries:", error);
@@ -150,7 +147,7 @@ const JournalAnalysisSection = ({
                 <div className="my-6" id="text-analysis-section">
                   <TextEmotionViewer 
                     pdfText={combinedJournalText}
-                    sourceDescription="Journal Entries Text Analysis"
+                    sourceDescription="Text Analysis"
                     bertAnalysis={bertAnalysis}
                   />
                 </div>
@@ -163,8 +160,6 @@ const JournalAnalysisSection = ({
                       neutral: bertAnalysis?.neutralWordCount || 50,
                       negative: bertAnalysis?.negativeWordCount || Math.round((1 - averageSentiment) * 100)
                     }}
-                    sourceDescription="Journal entries sentiment distribution"
-                    totalWordCount={totalWordCount}
                   />
                 </div>
                 
@@ -173,9 +168,9 @@ const JournalAnalysisSection = ({
                   <SentimentTimeline
                     data={formattedTimelineData.map((item, index) => ({
                       ...item,
-                      textSnippet: journalEntries[index]?.text.substring(0, 40) + "..." 
+                      textSnippet: journalEntries[index]?.text.substring(0, 40)
                     }))}
-                    sourceDescription="Journal emotional flow over time"
+                    sourceDescription="Emotional flow over time"
                   />
                 </div>
                 
@@ -183,7 +178,6 @@ const JournalAnalysisSection = ({
                 <div className="mt-6" id="keywords">
                   <KeyPhrases 
                     data={bertAnalysis?.keywords || []} 
-                    sourceDescription="Journal entries key themes" 
                   />
                 </div>
                 

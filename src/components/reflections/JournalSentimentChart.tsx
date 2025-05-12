@@ -1,5 +1,5 @@
 
-import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceLine, Label } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
 
 interface JournalSentimentChartProps {
   timelineData: {
@@ -127,7 +127,7 @@ const JournalSentimentChart = ({ timelineData }: JournalSentimentChartProps) => 
           </text>
         ))}
         
-        {/* Enhanced area chart with better dot styling */}
+        {/* Enhanced area chart with better styling */}
         <Area
           type="monotone"
           dataKey="sentiment"

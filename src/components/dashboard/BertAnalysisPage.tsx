@@ -66,23 +66,19 @@ const BertAnalysisPage = ({
     
     try {
       const text = pdfText || "Sample text for analysis";
-      const fileName = file?.name || "Text Analysis";
-      const fileSize = file?.size || 0;
-      const sourceDescription = file ? `Extracted from PDF "${fileName}"` : "Text Analysis";
+      const sourceDescription = "Text Analysis";
       
       // Process text through BERT analysis pipeline
       const analysis = await processBertAnalysis(
         text,
-        fileName,
-        fileSize,
+        file?.name || "Text Analysis",
+        file?.size || 0,
         sourceDescription
       );
       
       // Update state with analysis results
       setSentimentData({
         ...analysis,
-        fileName,
-        fileSize,
         pdfText: text
       });
       
@@ -139,7 +135,7 @@ const BertAnalysisPage = ({
   
   return (
     <div className="container mx-auto p-4 space-y-6" ref={containerRef}>
-      <h1 className="text-2xl font-bold mb-6">BERT Emotional Analysis</h1>
+      <h1 className="text-2xl font-bold mb-6">Emotional Analysis</h1>
       
       <DocumentAnalysisPanel
         file={file}
@@ -155,7 +151,6 @@ const BertAnalysisPage = ({
             <TextEmotionViewer 
               pdfText={sentimentData.pdfText || pdfText}
               embeddingPoints={sentimentData.embeddingPoints}
-              sourceDescription={sentimentData.sourceDescription}
               bertAnalysis={sentimentData.bertAnalysis}
             />
           </div>
