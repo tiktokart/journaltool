@@ -36,6 +36,8 @@ interface AnalysisTabsProps {
   filteredPoints: Point[];
   setFilteredPoints: (points: Point[]) => void;
   uniqueWords: string[];
+  connectedPoints: Point[];
+  setConnectedPoints: (points: Point[]) => void;
   visibleClusterCount: number;
   handlePointClick: (point: Point | null) => void;
   handleResetVisualization: () => void;
