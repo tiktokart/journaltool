@@ -124,9 +124,23 @@ export const analyzeDocumentSentiment = async (text: string) => {
   // Get basic sentiment first
   const basicSentiment = await calculateSentiment(text);
   
+  // Extract keywords for analysis
+  const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+  const wordFreq: {[key: string]: number} = {};
+  words.forEach(word => {
+    wordFreq[word] = (wordFreq[word] || 0) + 1;
+  });
+  
+  // Sort by frequency
+  const sortedWords = Object.entries(wordFreq)
+    .sort(([_, a], [__, b]) => b - a)
+    .slice(0, 20)
+    .map(([word]) => word);
+  
   // Add more detailed analysis components
   return {
     ...basicSentiment,
+    keywords: sortedWords,
     // Add emotional percentages for visualization
     emotionalBreakdown: {
       joy: Math.round(Math.random() * 30) + (basicSentiment.overallSentiment.score > 40 ? 40 : 10),
@@ -145,6 +159,13 @@ export const analyzeDocumentSentiment = async (text: string) => {
         (Math.abs(basicSentiment.overallSentiment.score - 27.5) / 27.5) * 100 + 
         Math.random() * 20
       )
-    )
+    ),
+    // Add trigger words detection
+    triggerWords: {
+      anxiety: ['anxiety', 'worried', 'nervous', 'stress', 'fear'].filter(word => text.toLowerCase().includes(word)),
+      depression: ['sad', 'depressed', 'lonely', 'hopeless', 'miserable'].filter(word => text.toLowerCase().includes(word)),
+      anger: ['angry', 'frustrated', 'mad', 'upset', 'irritated'].filter(word => text.toLowerCase().includes(word)),
+      joy: ['happy', 'joy', 'excited', 'delighted', 'pleased'].filter(word => text.toLowerCase().includes(word))
+    }
   };
 };
