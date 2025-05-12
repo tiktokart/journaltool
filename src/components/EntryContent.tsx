@@ -71,22 +71,22 @@ export const EntryContent: React.FC<EntryContentProps> = ({
 
   if (!sentimentData) return null;
 
-  // Extract action verbs and main topics from BERT analysis if available
+  // Extract action verbs and main topics from BERT analysis if available - Make sure we're using the actual text data
   const actionVerbs = sentimentData.bertAnalysis?.keywords
     ?.filter((kw: any) => kw.pos === 'verb')
     ?.sort((a: any, b: any) => b.weight - a.weight)
     ?.slice(0, 10)
-    ?.map((kw: any) => kw.word) || sentimentData.actionVerbs || [];
+    ?.map((kw: any) => kw.word) || [];
     
   const mainTopics = sentimentData.bertAnalysis?.keywords
     ?.filter((kw: any) => kw.pos === 'noun')
     ?.sort((a: any, b: any) => b.frequency - a.frequency)
     ?.slice(0, 8)
-    ?.map((kw: any) => kw.word) || sentimentData.mainTopics || [];
+    ?.map((kw: any) => kw.word) || [];
 
   return (
     <div className="animate-fade-in space-y-6">
-      {/* Overview Section - FIRST */}
+      {/* FIRST: Overview Section */}
       <Collapsible open={isOverviewOpen} onOpenChange={setIsOverviewOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -104,7 +104,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
+          <CollapsibleContent className="overflow-y-auto max-h-[70vh]">
             <div className="mt-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
@@ -156,12 +156,14 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                             key={i} 
                             emotion="action"
                             className="text-xs"
+                            clickable
+                            title={`Action verb from your journal`}
                           >
                             {verb}
                           </AdvancedBadge>
                         ))
                       ) : (
-                        <p className="text-sm text-gray-500">No action verbs detected</p>
+                        <p className="text-sm text-gray-500">No action verbs detected in your journal</p>
                       )}
                     </div>
                   </CardContent>
@@ -178,12 +180,14 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                             key={i}
                             emotion="topic" 
                             className="text-xs"
+                            clickable
+                            title={`Topic from your journal`}
                           >
                             {topic}
                           </AdvancedBadge>
                         ))
                       ) : (
-                        <p className="text-sm text-gray-500">No main topics detected</p>
+                        <p className="text-sm text-gray-500">No main topics detected in your journal</p>
                       )}
                     </div>
                   </CardContent>
@@ -194,7 +198,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </div>
       </Collapsible>
       
-      {/* Document Text Analysis - SECOND */}
+      {/* SECOND: Document Text Analysis */}
       <Collapsible open={isTextAnalysisOpen} onOpenChange={setIsTextAnalysisOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -212,14 +216,16 @@ export const EntryContent: React.FC<EntryContentProps> = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
-            <div className="mt-4 max-h-[400px] overflow-hidden">
-              <TextEmotionViewer 
-                pdfText={pdfText} 
-                embeddingPoints={sentimentData.embeddingPoints} 
-                sourceDescription={sentimentData.sourceDescription}
-                bertAnalysis={sentimentData.bertAnalysis}
-              />
+          <CollapsibleContent className="overflow-y-auto max-h-[70vh]">
+            <div className="mt-4">
+              <ScrollArea className="h-[400px]">
+                <TextEmotionViewer 
+                  pdfText={pdfText} 
+                  embeddingPoints={sentimentData.embeddingPoints} 
+                  sourceDescription={sentimentData.sourceDescription}
+                  bertAnalysis={sentimentData.bertAnalysis}
+                />
+              </ScrollArea>
               <p className="text-xs text-gray-500 mt-2">
                 Hover over highlighted words to see their emotional tones and contextual importance.
               </p>
@@ -228,7 +234,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </div>
       </Collapsible>
       
-      {/* Latent Emotional Analysis - THIRD */}
+      {/* THIRD: Latent Emotional Analysis */}
       <Collapsible open={isLatentAnalysisOpen} onOpenChange={setIsLatentAnalysisOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -246,7 +252,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
+          <CollapsibleContent className="overflow-y-auto max-h-[70vh]">
             <div className="mt-4">
               <div className="h-[350px] w-full bg-gray-50 rounded-lg overflow-hidden">
                 <DocumentEmbedding 
@@ -269,7 +275,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </div>
       </Collapsible>
       
-      {/* Word Comparison - FOURTH */}
+      {/* FOURTH: Word Comparison */}
       <Collapsible open={isWordComparisonOpen} onOpenChange={setIsWordComparisonOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -287,7 +293,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
+          <CollapsibleContent className="overflow-y-auto max-h-[70vh]">
             <div className="mt-4">
               <WordComparisonController 
                 points={sentimentData.embeddingPoints || []}
@@ -300,7 +306,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </div>
       </Collapsible>
       
-      {/* Timeline - FIFTH */}
+      {/* FIFTH: Timeline */}
       <Collapsible open={isTimelineOpen} onOpenChange={setIsTimelineOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -318,20 +324,20 @@ export const EntryContent: React.FC<EntryContentProps> = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
+          <CollapsibleContent className="overflow-y-auto max-h-[70vh]">
             <div className="mt-4">
-              <div className="max-h-[300px] overflow-y-auto">
+              <ScrollArea className="max-h-[300px]">
                 <SentimentTimeline 
                   data={sentimentData.timelineEvents || []} 
                   sourceDescription={sentimentData.sourceDescription}
                 />
-              </div>
+              </ScrollArea>
             </div>
           </CollapsibleContent>
         </div>
       </Collapsible>
       
-      {/* Keywords - SIXTH */}
+      {/* SIXTH: Keywords */}
       <Collapsible open={isKeywordsOpen} onOpenChange={setIsKeywordsOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -349,7 +355,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
+          <CollapsibleContent className="overflow-y-auto max-h-[70vh]">
             <div className="mt-4">
               <KeyPhrases 
                 data={sentimentData.keyPhrases || []} 

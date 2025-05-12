@@ -2,11 +2,13 @@
 import React from 'react';
 import { Badge, BadgeProps } from './badge';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AdvancedBadgeProps extends BadgeProps {
   emotion?: string;
   sentiment?: number;
   clickable?: boolean;
+  title?: string; // Add title for tooltip
 }
 
 export function AdvancedBadge({
@@ -15,6 +17,7 @@ export function AdvancedBadge({
   emotion,
   sentiment,
   clickable = false,
+  title,
   ...props
 }: AdvancedBadgeProps) {
   // Get emotion-specific colors
@@ -37,6 +40,8 @@ export function AdvancedBadge({
       positive: {bg: 'bg-emerald-100', text: 'text-emerald-800', hover: 'hover:bg-emerald-200'},
       negative: {bg: 'bg-rose-100', text: 'text-rose-800', hover: 'hover:bg-rose-200'},
       neutral: {bg: 'bg-gray-100', text: 'text-gray-800', hover: 'hover:bg-gray-200'},
+      action: {bg: 'bg-blue-100', text: 'text-blue-800', hover: 'hover:bg-blue-200'},
+      topic: {bg: 'bg-purple-100', text: 'text-purple-800', hover: 'hover:bg-purple-200'},
     };
     
     const lowerEmotion = emotion.toLowerCase();
@@ -58,7 +63,7 @@ export function AdvancedBadge({
                        sentiment !== undefined ? getSentimentColor(sentiment) : 
                        { bg: '', text: '', hover: '' };
   
-  return (
+  const badgeContent = (
     <Badge
       className={cn(
         colorClasses.bg,
@@ -73,4 +78,21 @@ export function AdvancedBadge({
       {children}
     </Badge>
   );
+
+  // Wrap with tooltip if title exists
+  if (title) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {badgeContent}
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{title}</p>
+          {emotion && <p>Emotional category: {emotion}</p>}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return badgeContent;
 }

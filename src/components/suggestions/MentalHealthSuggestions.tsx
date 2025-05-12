@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/c
 import { AlertTriangle, Heart } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AdvancedBadge } from "@/components/ui/advanced-badge";
 
 interface MentalHealthSuggestionsProps {
   journalEntries: any[];
@@ -32,15 +34,18 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
 }) => {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [emotionTones, setEmotionTones] = useState<EmotionTone[]>([]);
+  const [isProcessingText, setIsProcessingText] = useState<boolean>(false);
   
   useEffect(() => {
-    // First, analyze the emotions using BERT if available
     const analyzeEmotions = () => {
+      setIsProcessingText(true);
+      console.log("Analyzing emotions from journal entries...");
+
       const emotionCategories: Record<string, { count: number, words: string[] }> = {};
       
       // If BERT analysis is available, use it for more accurate emotional tone detection
-      if (bertAnalysis && bertAnalysis.keywords) {
-        console.log("Using BERT analysis for suggestion generation with", bertAnalysis.keywords.length, "keywords");
+      if (bertAnalysis && bertAnalysis.keywords && bertAnalysis.keywords.length > 0) {
+        console.log("Using BERT analysis with", bertAnalysis.keywords.length, "keywords");
         
         // Process the actual BERT keywords
         bertAnalysis.keywords.forEach((keyword: any) => {
@@ -54,37 +59,39 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
           }
         });
         
-        // If available, also add the actionWords and mainSubjects from contextual analysis
-        if (bertAnalysis.contextualAnalysis) {
-          if (bertAnalysis.contextualAnalysis.actionWords) {
-            if (!emotionCategories["Action"]) {
-              emotionCategories["Action"] = { count: 0, words: [] };
-            }
-            emotionCategories["Action"].words.push(...bertAnalysis.contextualAnalysis.actionWords);
-            emotionCategories["Action"].count = bertAnalysis.contextualAnalysis.actionWords.length;
-          }
+        // Also add verbs and subjects as action and topic categories
+        const verbs = bertAnalysis.keywords
+          .filter((kw: any) => kw.pos === 'verb')
+          .map((kw: any) => kw.word);
           
-          if (bertAnalysis.contextualAnalysis.mainSubjects) {
-            if (!emotionCategories["Topic"]) {
-              emotionCategories["Topic"] = { count: 0, words: [] };
-            }
-            emotionCategories["Topic"].words.push(...bertAnalysis.contextualAnalysis.mainSubjects);
-            emotionCategories["Topic"].count = bertAnalysis.contextualAnalysis.mainSubjects.length;
-          }
+        if (verbs.length > 0) {
+          emotionCategories["Action"] = { 
+            count: verbs.length, 
+            words: verbs 
+          };
+        }
+        
+        const nouns = bertAnalysis.keywords
+          .filter((kw: any) => kw.pos === 'noun')
+          .map((kw: any) => kw.word);
+          
+        if (nouns.length > 0) {
+          emotionCategories["Topic"] = { 
+            count: nouns.length, 
+            words: nouns 
+          };
         }
       } else if (journalEntries && journalEntries.length > 0) {
         // Fall back to basic keyword analysis if BERT isn't available
         const combinedText = journalEntries.map(entry => entry.text).join(' ').toLowerCase();
         console.log("No BERT analysis available, using basic keyword analysis on", combinedText.length, "characters");
         
+        // Add basic emotion detection from the text
         const emotionKeywords = {
           "Sadness": ["sad", "unhappy", "depressed", "miserable", "grief", "sorrow", "blue"],
           "Fear": ["fearful", "afraid", "scared", "terrified", "anxious", "nervous", "worried", "panic"],
           "Anger": ["angry", "mad", "furious", "outraged", "irritated", "annoyed", "frustrated"],
-          "Disgust": ["disgusted", "revolted", "appalled", "disgusting", "gross", "repulsed"],
           "Joy": ["happy", "joyful", "delighted", "pleased", "glad", "content", "cheerful"],
-          "Surprise": ["surprised", "shocked", "amazed", "astonished", "startled"],
-          "Neutral": ["ok", "fine", "average", "neutral", "normal"]
         };
         
         // Check for each emotion keyword in the text
@@ -106,7 +113,7 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
           }
         });
         
-        // Also look for specific verbs that indicate actions
+        // Extract common verbs for action analysis
         const actionVerbs = ["go", "make", "take", "try", "want", "need", "feel", "think", "work", "do"];
         const foundActions: string[] = [];
         
@@ -124,19 +131,32 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
             words: [...new Set(foundActions)]
           };
         }
+        
+        // Extract nouns/topics from the text
+        const words = combinedText.split(/\s+/);
+        const potentialTopics = words.filter(w => w.length > 5);
+        if (potentialTopics.length > 0) {
+          emotionCategories["Topic"] = {
+            count: potentialTopics.length,
+            words: [...new Set(potentialTopics.slice(0, 10))]
+          };
+        }
       }
       
       // Convert to array and sort by count
-      return Object.entries(emotionCategories).map(([category, data]) => ({
+      const emotions = Object.entries(emotionCategories).map(([category, data]) => ({
         category,
         count: data.count,
         words: [...new Set(data.words)].slice(0, 5) // Limit to 5 unique words per emotion
       })).sort((a, b) => b.count - a.count);
+      
+      setEmotionTones(emotions);
+      setIsProcessingText(false);
+      return emotions;
     };
     
     const generateSuggestions = () => {
       const emotions = analyzeEmotions();
-      setEmotionTones(emotions);
       
       // If no emotions detected, provide general suggestions
       if (emotions.length === 0) {
@@ -151,7 +171,7 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
       }
       
       // Extract text for specific keyword detection
-      const combinedText = journalEntries.map(entry => entry.text).join(' ').toLowerCase();
+      const combinedText = journalEntries.map(entry => entry.text || "").join(' ').toLowerCase();
       
       // Map emotions to suggestion types - focusing on action-oriented advice
       const suggestionMap: Record<string, Suggestion> = {
@@ -210,7 +230,7 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
         }
       });
       
-      // Check for actual specific triggers in the text
+      // Look for specific triggers in the text
       const specificTriggers = [
         {
           patterns: ["overwhelm", "too much", "can't handle", "stressed out"],
@@ -249,6 +269,7 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
       
       // Check for specific triggers in the text
       specificTriggers.forEach(trigger => {
+        // Check both in text and in BERT keywords
         const hasPattern = trigger.patterns.some(pattern => 
           combinedText.includes(pattern) || 
           (bertAnalysis?.keywords?.some((kw: any) => kw.word.toLowerCase().includes(pattern)))
@@ -283,7 +304,10 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
       return relevantSuggestions.slice(0, 3);
     };
     
-    setSuggestions(generateSuggestions());
+    // Only generate suggestions if we have entries or BERT data
+    if ((journalEntries && journalEntries.length > 0) || bertAnalysis) {
+      setSuggestions(generateSuggestions());
+    }
   }, [journalEntries, bertAnalysis]);
   
   if (suggestions.length === 0) {
@@ -297,44 +321,35 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
           <Heart className="h-5 w-5 mr-2 text-rose-500" /> 
           Suggestions
         </CardTitle>
-        <CardDescription className="mb-4">Based on the text analysis, here are some suggestions that might help.</CardDescription>
+        <CardDescription className="mb-4">Based on the journal text analysis, here are some suggestions that might help.</CardDescription>
         
         {/* Emotion summary chips */}
         {emotionTones.length > 0 && (
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-2 flex items-center">
               <AlertTriangle className="h-4 w-4 mr-1 text-amber-500" />
-              Detected emotions:
+              Detected emotions in your journal:
             </h4>
             
             {/* Group emotions by category */}
-            {emotionTones.map(tone => (
-              <div key={tone.category} className="mb-3">
-                <div className="text-xs text-gray-600 mb-1">{tone.category}:</div>
-                <div className="flex flex-wrap gap-1">
-                  {tone.words.map((word, idx) => (
-                    <Tooltip key={idx}>
-                      <TooltipTrigger asChild>
-                        <span className={`inline-block px-2 py-1 rounded-full text-xs cursor-help ${
-                          tone.category === 'Sadness' ? 'bg-blue-100 text-blue-800' :
-                          tone.category === 'Fear' ? 'bg-amber-100 text-amber-800' :
-                          tone.category === 'Anger' ? 'bg-red-100 text-red-800' : 
-                          tone.category === 'Disgust' ? 'bg-green-100 text-green-800' :
-                          tone.category === 'Joy' ? 'bg-yellow-100 text-yellow-800' :
-                          tone.category === 'Surprise' ? 'bg-pink-100 text-pink-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {word}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>This word suggests {tone.category.toLowerCase()} in your text</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
+            <ScrollArea className="max-h-[200px]">
+              {emotionTones.map(tone => (
+                <div key={tone.category} className="mb-3">
+                  <div className="text-xs text-gray-600 mb-1">{tone.category}:</div>
+                  <div className="flex flex-wrap gap-1">
+                    {tone.words.map((word, idx) => (
+                      <AdvancedBadge
+                        key={idx}
+                        emotion={tone.category.toLowerCase()}
+                        title={`This word appears in your journal and suggests ${tone.category.toLowerCase()}`}
+                      >
+                        {word}
+                      </AdvancedBadge>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </ScrollArea>
           </div>
         )}
         
@@ -363,7 +378,7 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
                 
                 {suggestion.triggeringWords && suggestion.triggeringWords.length > 0 && (
                   <div className="mb-2 flex flex-wrap gap-1">
-                    <span className="text-xs text-gray-500 mr-1">Triggered by:</span>
+                    <span className="text-xs text-gray-500 mr-1">Based on your journal words:</span>
                     {suggestion.triggeringWords.map((word, idx) => (
                       <Badge key={idx} variant="outline" className="text-xs">
                         {word}
@@ -382,7 +397,7 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
                   rel="noopener noreferrer" 
                   className="text-xs text-blue-600 hover:underline mt-2 inline-block"
                 >
-                  Learn more about {suggestion.keyword}
+                  Learn more
                 </a>
               </CardContent>
             </Card>
