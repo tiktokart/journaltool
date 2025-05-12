@@ -28,6 +28,8 @@ interface AnalysisResultsProps {
   handleClearSearch: () => void;
   onJournalEntryAdded?: () => void;
   onMonthlyReflectionAdded?: () => void;
+  connectedPoints: Point[];
+  setConnectedPoints: (points: Point[]) => void;
 }
 
 const AnalysisResults = ({
@@ -50,9 +52,10 @@ const AnalysisResults = ({
   handleResetVisualization,
   handleClearSearch,
   onJournalEntryAdded,
-  onMonthlyReflectionAdded
+  onMonthlyReflectionAdded,
+  connectedPoints,
+  setConnectedPoints
 }: AnalysisResultsProps) => {
-  const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
   const { t } = useLanguage();
 
   // Expose points to window object for use in visualization
