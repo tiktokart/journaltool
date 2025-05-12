@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FileDown, Bell, Share2, Lightbulb } from "lucide-react";
+import { FileDown, Bell, Share2 } from "lucide-react";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
 import { initBertModel } from "@/utils/bertSentimentAnalysis";
 import JournalWritePopup from "@/components/JournalWritePopup";
@@ -141,7 +141,6 @@ const Dashboard = () => {
   const [isWritePopupOpen, setIsWritePopupOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isHappinessDrawerOpen, setIsHappinessDrawerOpen] = useState(false);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -602,36 +601,6 @@ const Dashboard = () => {
             <div className="grid md:grid-cols-2 gap-6">
               {/* Left Column */}
               <div className="space-y-6 relative">
-                {/* Science of Happiness Button - positioned to the LEFT of the calendar without overlapping */}
-                <div className="absolute -left-16 top-28 z-10">
-                  <Drawer>
-                    <DrawerTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 shadow-md rotate-90 origin-bottom-left"
-                      >
-                        <Lightbulb className="h-4 w-4 mr-2" />
-                        Science of Happiness
-                      </Button>
-                    </DrawerTrigger>
-                    <DrawerContent className="max-h-[90vh] overflow-y-auto">
-                      <div className="mx-auto w-full max-w-3xl p-6">
-                        <DrawerHeader>
-                          <DrawerTitle className="text-center text-2xl font-pacifico text-purple-800">
-                            Science of Happiness
-                          </DrawerTitle>
-                        </DrawerHeader>
-                        <HappinessInfographic />
-                        <DrawerFooter>
-                          <DrawerClose asChild>
-                            <Button variant="outline">Close</Button>
-                          </DrawerClose>
-                        </DrawerFooter>
-                      </div>
-                    </DrawerContent>
-                  </Drawer>
-                </div>
                 
                 <MonthlyCalendar 
                   onSelectDate={handleDateSelect}

@@ -45,11 +45,11 @@ export interface DocumentEmbeddingProps {
   bertData?: any;
 }
 
-// Now update the EmbeddingSceneProps interface to include bertData
+// Fix the OrbitControls import issue - use type only, not the actual import
 export interface EmbeddingSceneProps {
   containerRef: React.RefObject<HTMLDivElement>;
   cameraRef: React.RefObject<THREE.PerspectiveCamera | null>;
-  controlsRef: React.RefObject<THREE.OrbitControls | null>;
+  controlsRef: React.RefObject<any>; // Use 'any' for OrbitControls to avoid importing issues
   points: Point[];
   onPointHover: (point: Point | null) => void;
   onPointSelect: (point: Point | null) => void;

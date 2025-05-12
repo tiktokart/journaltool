@@ -22,6 +22,7 @@ import MentalHealthSuggestions from "@/components/suggestions/MentalHealthSugges
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AnalysisTabsProps {
   activeTab: string;
@@ -90,6 +91,20 @@ export const AnalysisTabs = ({
 
   // Get the text content from either the text or pdfText property
   const textContent = sentimentData?.text || sentimentData?.pdfText || "";
+  
+  // Add scroll controls to fix scrolling issues
+  useEffect(() => {
+    const handleResize = () => {
+      const collapsibleContents = document.querySelectorAll('.collapsible-content');
+      collapsibleContents.forEach((content: any) => {
+        content.style.maxHeight = `${window.innerHeight * 0.6}px`;
+      });
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   useEffect(() => {
     if (!sentimentData) return;
@@ -203,7 +218,7 @@ export const AnalysisTabs = ({
                   </Button>
                 </CollapsibleTrigger>
               </div>
-              <CollapsibleContent>
+              <CollapsibleContent className="collapsible-content overflow-y-auto">
                 <SentimentOverview 
                   data={{
                     overallSentiment: sentimentData.overallSentiment,
@@ -230,13 +245,15 @@ export const AnalysisTabs = ({
                 </Button>
               </CollapsibleTrigger>
             </div>
-            <CollapsibleContent>
+            <CollapsibleContent className="collapsible-content overflow-y-auto">
               {/* If we have BERT data or text content, show suggestions */}
               {(hasBertData || hasTextData) && (
-                <MentalHealthSuggestions 
-                  journalEntries={journalEntries}
-                  bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
-                />
+                <ScrollArea className="max-h-[400px]">
+                  <MentalHealthSuggestions 
+                    journalEntries={journalEntries}
+                    bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
+                  />
+                </ScrollArea>
               )}
             </CollapsibleContent>
           </Collapsible>
@@ -260,7 +277,7 @@ export const AnalysisTabs = ({
                     </Button>
                   </CollapsibleTrigger>
                 </div>
-                <CollapsibleContent>
+                <CollapsibleContent className="collapsible-content overflow-y-auto">
                   <Card className="border border-border shadow-md overflow-hidden bg-white">
                     <CardHeader className="z-10">
                       <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
@@ -356,7 +373,7 @@ export const AnalysisTabs = ({
                           sourceDescription={sentimentData.sourceDescription}
                           onResetView={handleResetVisualization}
                           visibleClusterCount={visibleClusterCount}
-                          bertAnalysis={sentimentData.bertAnalysis || bertAnalysis}
+                          bertData={sentimentData.bertAnalysis || bertAnalysis}
                         />
                       </div>
                     </CardContent>
@@ -371,10 +388,13 @@ export const AnalysisTabs = ({
           {!hasTimelineData ? (
             <DataMissingFallback tabName={t("timelineTab")} />
           ) : (
-            <SentimentTimeline 
-              data={sentimentData.timeline}
-              sourceDescription={sentimentData.sourceDescription}
-            />
+            <ScrollArea className="max-h-[600px]">
+              <SentimentTimeline 
+                data={sentimentData.timeline}
+                sourceDescription={sentimentData.sourceDescription}
+                bertData={sentimentData?.bertAnalysis || bertAnalysis}
+              />
+            </ScrollArea>
           )}
         </TabsContent>
         
@@ -382,10 +402,13 @@ export const AnalysisTabs = ({
           {!hasKeyPhrasesData ? (
             <DataMissingFallback tabName={t("keywordsTab")} />
           ) : (
-            <KeyPhrases 
-              data={sentimentData.keyPhrases}
-              sourceDescription={sentimentData.sourceDescription}
-            />
+            <ScrollArea className="max-h-[600px]">
+              <KeyPhrases 
+                data={sentimentData.keyPhrases}
+                sourceDescription={sentimentData.sourceDescription}
+                bertKeywords={sentimentData?.bertAnalysis?.keywords || bertAnalysis?.keywords || []}
+              />
+            </ScrollArea>
           )}
         </TabsContent>
       </Tabs>
