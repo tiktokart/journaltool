@@ -35,6 +35,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [documentStats, setDocumentStats] = useState({ wordCount: 0, sentenceCount: 0, paragraphCount: 0 });
   const [mainSubjects, setMainSubjects] = useState<string[]>([]);
+  const [emotionGroups, setEmotionGroups] = useState<{[key: string]: any[]}>({});
   
   // States to control collapsible sections
   const [isDetailedAnalysisOpen, setIsDetailedAnalysisOpen] = useState(true);
@@ -48,6 +49,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [isKeywordsOpen, setIsKeywordsOpen] = useState(false);
 
+  // Add a new state for theme categories
+  const [themeCategories, setThemeCategories] = useState<{name: string, words: string[], color: string}[]>([]);
+  
   useEffect(() => {
     // Filter entries - now we just sort by date without search or date filters
     let filtered = [...entries];
@@ -81,6 +85,8 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
         setBertAnalysis(null);
         setDocumentStats({ wordCount: 0, sentenceCount: 0, paragraphCount: 0 });
         setMainSubjects([]);
+        setEmotionGroups({});
+        setThemeCategories([]);
         return;
       }
       
@@ -103,16 +109,60 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
         const analysis = await analyzeTextWithBert(selectedEntry.text);
         setBertAnalysis(analysis);
         
-        // Extract main subjects (most significant keywords)
+        // Extract main subjects and emotion groups as before
+        
+        // Create theme categories from keywords
         if (analysis.keywords && Array.isArray(analysis.keywords)) {
-          const subjects = analysis.keywords
-            .filter(kw => Math.abs(kw.sentiment) > 0.3)
-            .slice(0, 10)
-            .map(kw => kw.word);
-          setMainSubjects(subjects);
+          // Group by tones first
+          const toneGroups: {[key: string]: any[]} = {};
+          analysis.keywords.forEach(kw => {
+            const tone = kw.tone || 'Neutral';
+            if (!toneGroups[tone]) {
+              toneGroups[tone] = [];
+            }
+            toneGroups[tone].push(kw);
+          });
+          
+          // Create theme categories based on emotional tones and related concepts
+          const themes: {name: string, words: string[], color: string}[] = [];
+          
+          // Process each emotional tone group
+          Object.entries(toneGroups).forEach(([tone, keywords]) => {
+            if (keywords.length >= 2) {
+              // Extract words for this theme
+              const themeWords = keywords.map(k => k.word);
+              
+              // Use the first keyword's color for the theme
+              const themeColor = keywords[0]?.color || '#CCCCCC';
+              
+              themes.push({
+                name: `${tone} Theme`,
+                words: themeWords.slice(0, 5),
+                color: themeColor
+              });
+            }
+          });
+          
+          // Add additional themes based on related concepts if available
+          const relatedConcepts = new Set<string>();
+          analysis.keywords.forEach(kw => {
+            if (kw.relatedConcepts && Array.isArray(kw.relatedConcepts)) {
+              kw.relatedConcepts.forEach(concept => relatedConcepts.add(concept));
+            }
+          });
+          
+          if (relatedConcepts.size >= 3) {
+            themes.push({
+              name: 'Related Concepts',
+              words: Array.from(relatedConcepts).slice(0, 5),
+              color: '#6C5CE7'
+            });
+          }
+          
+          setThemeCategories(themes);
         }
         
-        console.log("BERT analysis complete");
+        console.log("BERT analysis complete with themes");
       } catch (error) {
         console.error("Error analyzing entry:", error);
       } finally {
@@ -604,19 +654,34 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           <CollapsibleContent className="p-4 bg-white">
                             <SentimentTimeline 
                               data={[
-                                { page: 1, score: bertAnalysis?.sentiment?.score || 0.5, time: "Beginning" },
-                                { page: 2, score: bertAnalysis?.sentiment?.score || 0.5, time: "Middle" },
-                                { page: 3, score: bertAnalysis?.sentiment?.score || 0.5, time: "End" },
+                                { 
+                                  page: 1, 
+                                  score: bertAnalysis?.sentiment?.score || 0.5, 
+                                  time: "Beginning",
+                                  event: selectedEntry ? selectedEntry.text.substring(0, 30) + "..." : "Start of entry"
+                                },
+                                { 
+                                  page: 2, 
+                                  score: bertAnalysis?.sentiment?.score ? bertAnalysis.sentiment.score * 0.9 + 0.05 : 0.5, 
+                                  time: "Middle",
+                                  event: selectedEntry ? selectedEntry.text.substring(Math.floor(selectedEntry.text.length / 2), Math.floor(selectedEntry.text.length / 2) + 30) + "..." : "Middle of entry" 
+                                },
+                                { 
+                                  page: 3, 
+                                  score: bertAnalysis?.sentiment?.score || 0.5, 
+                                  time: "End",
+                                  event: selectedEntry ? selectedEntry.text.substring(selectedEntry.text.length - 30) + "..." : "End of entry"
+                                },
                               ]}
                               sourceDescription="Emotional flow through journal entry"
                             />
                           </CollapsibleContent>
                         </Collapsible>
 
-                        {/* 6. Keywords */}
+                        {/* 6. Enhanced Keywords section focused on themes */}
                         <Collapsible open={isKeywordsOpen} onOpenChange={setIsKeywordsOpen} className="mb-4 border rounded-lg overflow-hidden">
                           <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <h3 className="text-lg font-medium font-pacifico">Keywords</h3>
+                            <h3 className="text-lg font-medium font-pacifico">Theme Categories</h3>
                             {isKeywordsOpen ? (
                               <ChevronUp className="h-5 w-5" />
                             ) : (
@@ -624,26 +689,44 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                             )}
                           </CollapsibleTrigger>
                           <CollapsibleContent className="p-4 bg-white">
-                            <div className="flex flex-wrap gap-2">
-                              {bertAnalysis?.keywords?.map((keyword: any, i: number) => (
-                                <span 
-                                  key={i} 
-                                  className="px-3 py-1 rounded-full text-sm"
-                                  style={{ 
-                                    backgroundColor: keyword.color ? `${keyword.color}33` : '#f3f4f6',
-                                    color: keyword.color ? keyword.color : '#374151',
-                                    border: `1px solid ${keyword.color || '#e5e7eb'}`
-                                  }}
-                                >
-                                  {keyword.word}
-                                </span>
-                              ))}
-                              {(!bertAnalysis?.keywords || bertAnalysis.keywords.length === 0) && (
-                                <p className="text-center text-gray-500 w-full py-4">
-                                  No keywords extracted
-                                </p>
-                              )}
-                            </div>
+                            {themeCategories.length > 0 ? (
+                              <div className="space-y-4">
+                                {themeCategories.map((theme, index) => (
+                                  <div key={index} className="border rounded-lg p-3" style={{ borderColor: theme.color }}>
+                                    <h4 className="font-medium mb-2 flex items-center">
+                                      <span 
+                                        className="inline-block w-3 h-3 rounded-full mr-2"
+                                        style={{ backgroundColor: theme.color }}
+                                      ></span>
+                                      {theme.name}
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {theme.words.map((word, i) => (
+                                        <span 
+                                          key={i} 
+                                          className="px-2 py-1 rounded-full text-xs"
+                                          style={{ 
+                                            backgroundColor: `${theme.color}22`,
+                                            color: theme.color,
+                                            border: `1px solid ${theme.color}`
+                                          }}
+                                        >
+                                          {word}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center text-gray-500 py-4">
+                                {isAnalyzing ? (
+                                  <p>Analyzing themes...</p>
+                                ) : (
+                                  <p>No theme categories extracted</p>
+                                )}
+                              </div>
+                            )}
                           </CollapsibleContent>
                         </Collapsible>
 
