@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
@@ -605,9 +604,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           <CollapsibleContent className="p-4 bg-white">
                             <SentimentTimeline 
                               data={[
-                                { date: "Begin", sentiment: bertAnalysis?.sentiment?.score || 0.5 },
-                                { date: "Middle", sentiment: bertAnalysis?.sentiment?.score || 0.5 },
-                                { date: "End", sentiment: bertAnalysis?.sentiment?.score || 0.5 },
+                                { page: 1, score: bertAnalysis?.sentiment?.score || 0.5, time: "Beginning" },
+                                { page: 2, score: bertAnalysis?.sentiment?.score || 0.5, time: "Middle" },
+                                { page: 3, score: bertAnalysis?.sentiment?.score || 0.5, time: "End" },
                               ]}
                               sourceDescription="Emotional flow through journal entry"
                             />
