@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -123,84 +122,6 @@ const Goals = () => {
 import { MonthlyReflections } from "@/components/MonthlyReflections";
 import JournalAnalysisSection from "@/components/reflections/JournalAnalysisSection";
 import { DeleteEntryConfirm } from "@/components/DeleteEntryConfirm";
-
-// Science of Happiness component
-const ScienceOfHappiness = () => {
-  return (
-    <div className="p-4">
-      <h2 className="text-2xl font-pacifico text-purple-900 mb-4">The Science of Happiness</h2>
-      
-      <div className="space-y-6">
-        <div className="bg-purple-50 p-4 rounded-lg">
-          <h3 className="text-xl font-semibold mb-2">What is Happiness?</h3>
-          <p className="text-gray-700">
-            Happiness is both a state of mind and a set of behaviors. Research shows that about 40% of our happiness is under our direct control through daily choices and activities.
-          </p>
-        </div>
-        
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Key Practices for Well-being:</h3>
-          <ul className="space-y-4">
-            <li className="bg-green-50 p-3 rounded-lg flex">
-              <span className="font-bold mr-2">1.</span>
-              <div>
-                <p className="font-medium">Gratitude Practice</p>
-                <p className="text-sm text-gray-600">Regularly acknowledging things you're thankful for rewires your brain toward positivity.</p>
-              </div>
-            </li>
-            <li className="bg-blue-50 p-3 rounded-lg flex">
-              <span className="font-bold mr-2">2.</span>
-              <div>
-                <p className="font-medium">Social Connection</p>
-                <p className="text-sm text-gray-600">Quality relationships are the strongest predictor of happiness across cultures.</p>
-              </div>
-            </li>
-            <li className="bg-yellow-50 p-3 rounded-lg flex">
-              <span className="font-bold mr-2">3.</span>
-              <div>
-                <p className="font-medium">Mindfulness</p>
-                <p className="text-sm text-gray-600">Regular meditation and present-moment awareness reduce stress and enhance joy.</p>
-              </div>
-            </li>
-            <li className="bg-orange-50 p-3 rounded-lg flex">
-              <span className="font-bold mr-2">4.</span>
-              <div>
-                <p className="font-medium">Acts of Kindness</p>
-                <p className="text-sm text-gray-600">Helping others triggers a "helper's high" through endorphin release.</p>
-              </div>
-            </li>
-            <li className="bg-red-50 p-3 rounded-lg flex">
-              <span className="font-bold mr-2">5.</span>
-              <div>
-                <p className="font-medium">Physical Activity</p>
-                <p className="text-sm text-gray-600">Regular exercise boosts mood through endorphin release and improved brain function.</p>
-              </div>
-            </li>
-          </ul>
-        </div>
-        
-        <div className="bg-indigo-50 p-4 rounded-lg">
-          <h3 className="text-xl font-semibold mb-2">The Science Behind Journaling</h3>
-          <p className="text-gray-700 mb-2">
-            Regular journaling has been shown to:
-          </p>
-          <ul className="list-disc pl-5 space-y-1 text-gray-700">
-            <li>Reduce stress and anxiety by up to 28%</li>
-            <li>Improve immune function</li>
-            <li>Enhance emotional processing</li>
-            <li>Accelerate healing from trauma</li>
-            <li>Improve memory and cognitive function</li>
-          </ul>
-        </div>
-        
-        {/* Add the happiness infographic back into the drawer */}
-        <div className="mt-4">
-          <HappinessInfographic />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 interface JournalEntry {
   id: string;
@@ -701,7 +622,7 @@ const Dashboard = () => {
                             Science of Happiness
                           </DrawerTitle>
                         </DrawerHeader>
-                        <ScienceOfHappiness />
+                        <HappinessInfographic />
                         <DrawerFooter>
                           <DrawerClose asChild>
                             <Button variant="outline">Close</Button>
@@ -782,6 +703,9 @@ const Dashboard = () => {
                     )}
                   </div>
                 </Card>
+                
+                {/* Add HappinessInfographic here */}
+                <HappinessInfographic />
               </div>
               
               {/* Right Column */}
