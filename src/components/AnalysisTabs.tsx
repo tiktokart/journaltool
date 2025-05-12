@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollToSection } from "@/components/ScrollToSection";
+import { SentimentDistribution } from "@/components/SentimentDistribution";
+import WordComparisonController from "@/components/WordComparisonController";
 
 interface AnalysisTabsProps {
   activeTab: string;
@@ -58,6 +60,8 @@ export const AnalysisTabs = ({
   filteredPoints,
   setFilteredPoints,
   uniqueWords,
+  connectedPoints,
+  setConnectedPoints,
   visibleClusterCount,
   handlePointClick,
   handleResetVisualization,
@@ -67,8 +71,9 @@ export const AnalysisTabs = ({
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
-  const [isOverviewOpen, setIsOverviewOpen] = useState(false);
-  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [isOverviewOpen, setIsOverviewOpen] = useState(true);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(true);
+  const [isDistributionOpen, setIsDistributionOpen] = useState(true);
 
   // Check if the required data for each tab is available
   const hasEmbeddingData = sentimentData?.embeddingPoints && sentimentData.embeddingPoints.length > 0;
@@ -87,6 +92,14 @@ export const AnalysisTabs = ({
 
   // Get the text content from either the text or pdfText property
   const textContent = sentimentData?.text || sentimentData?.pdfText || "";
+  
+  // Calculate total word count for distribution stats
+  const calculateWordCount = (text: string): number => {
+    if (!text) return 0;
+    return text.split(/\s+/).filter(word => word.trim().length > 0).length;
+  };
+  
+  const totalWordCount = calculateWordCount(textContent);
   
   useEffect(() => {
     if (!sentimentData) return;
@@ -165,6 +178,7 @@ export const AnalysisTabs = ({
           <TabsTrigger value="overview" className="min-w-max">{t("overviewTab")}</TabsTrigger>
           <TabsTrigger value="timeline" className="min-w-max">{t("timelineTab")}</TabsTrigger>
           <TabsTrigger value="keyphrases" className="min-w-max">{t("keywordsTab")}</TabsTrigger>
+          <TabsTrigger value="wordcomparison" className="min-w-max">Word Connection</TabsTrigger>
         </TabsList>
       </div>
       
@@ -172,42 +186,13 @@ export const AnalysisTabs = ({
         {!hasOverviewData ? (
           <DataMissingFallback tabName={t("overviewTab")} />
         ) : (
-          <Collapsible open={isOverviewOpen} onOpenChange={setIsOverviewOpen} className="w-full">
-            <div className="flex justify-between items-center pb-2">
-              <h2 className="text-xl font-bold text-purple-900">{t("overviewTab")}</h2>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-9 p-0">
-                  {isOverviewOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            <CollapsibleContent>
-              <SentimentOverview 
-                data={{
-                  overallSentiment: sentimentData.overallSentiment,
-                  distribution: sentimentData.distribution,
-                  fileName: sentimentData.fileName
-                }}
-                sourceDescription={sentimentData.sourceDescription}
-              />
-            </CollapsibleContent>
-          </Collapsible>
-        )}
-        
-        {/* Additional analysis like sentiment distribution can go here */}
-        {hasOverviewData && (
-          <div className="mt-6">
-            <ScrollToSection isOpen={true} elementId="suggestions-section" />
-            <Collapsible open={isSuggestionsOpen} onOpenChange={setIsSuggestionsOpen} className="w-full">
+          <>
+            <Collapsible open={isOverviewOpen} onOpenChange={setIsOverviewOpen} className="w-full mb-6">
               <div className="flex justify-between items-center pb-2">
-                <h2 className="text-xl font-bold text-purple-900">Analysis Insights</h2>
+                <h2 className="text-xl font-bold text-purple-900">{t("overviewTab")}</h2>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-9 p-0">
-                    {isSuggestionsOpen ? (
+                    {isOverviewOpen ? (
                       <ChevronUp className="h-4 w-4" />
                     ) : (
                       <ChevronDown className="h-4 w-4" />
@@ -216,17 +201,67 @@ export const AnalysisTabs = ({
                 </CollapsibleTrigger>
               </div>
               <CollapsibleContent>
-                <div id="suggestions-section">
-                  {(hasBertData || hasTextData) && (
-                    <MentalHealthSuggestions 
-                      journalEntries={journalEntries}
-                      bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
-                    />
-                  )}
-                </div>
+                <SentimentOverview 
+                  data={{
+                    overallSentiment: sentimentData.overallSentiment,
+                    distribution: sentimentData.distribution,
+                    fileName: sentimentData.fileName
+                  }}
+                  sourceDescription={sentimentData.sourceDescription}
+                />
               </CollapsibleContent>
             </Collapsible>
-          </div>
+            
+            <Collapsible open={isDistributionOpen} onOpenChange={setIsDistributionOpen} className="w-full mb-6">
+              <div className="flex justify-between items-center pb-2">
+                <h2 className="text-xl font-bold text-purple-900">Word Sentiment Distribution</h2>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-9 p-0">
+                    {isDistributionOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent>
+                <SentimentDistribution
+                  distribution={sentimentData.distribution}
+                  sourceDescription="Word sentiment distribution in text"
+                  totalWordCount={totalWordCount}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          
+            <div className="mt-6">
+              <ScrollToSection isOpen={true} elementId="suggestions-section" />
+              <Collapsible open={isSuggestionsOpen} onOpenChange={setIsSuggestionsOpen} className="w-full">
+                <div className="flex justify-between items-center pb-2">
+                  <h2 className="text-xl font-bold text-purple-900">Analysis Insights</h2>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-9 p-0">
+                      {isSuggestionsOpen ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+                <CollapsibleContent>
+                  <div id="suggestions-section">
+                    {(hasBertData || hasTextData) && (
+                      <MentalHealthSuggestions 
+                        journalEntries={journalEntries}
+                        bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
+                      />
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </>
         )}
       </TabsContent>
       
@@ -248,6 +283,17 @@ export const AnalysisTabs = ({
           <KeyPhrases 
             data={sentimentData.keyPhrases}
             sourceDescription={sentimentData.sourceDescription}
+          />
+        )}
+      </TabsContent>
+      
+      <TabsContent value="wordcomparison" className="mt-6">
+        {!hasEmbeddingData ? (
+          <DataMissingFallback tabName="Word Connection" />
+        ) : (
+          <WordComparisonController 
+            points={filteredPoints}
+            bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
           />
         )}
       </TabsContent>

@@ -19,7 +19,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Plus } from 'lucide-react';
+import { Plus, ListOrdered } from 'lucide-react';
 
 interface WordComparisonControllerProps {
   points: Point[];
@@ -31,11 +31,21 @@ const WordComparisonController = ({ points, bertAnalysis }: WordComparisonContro
   const [availablePoints, setAvailablePoints] = useState<Point[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [emotionCategories, setEmotionCategories] = useState<string[]>([]);
   
   // Set up available points when the component mounts
   useEffect(() => {
     if (points && points.length) {
       setAvailablePoints(points);
+      
+      // Extract emotion categories
+      const emotions = new Set<string>();
+      points.forEach(point => {
+        if (point.emotionalTone) {
+          emotions.add(point.emotionalTone);
+        }
+      });
+      setEmotionCategories(Array.from(emotions));
     }
   }, [points]);
 
@@ -54,15 +64,8 @@ const WordComparisonController = ({ points, bertAnalysis }: WordComparisonContro
       return;
     }
     
-    // Limit to 3 words
-    if (selectedWords.length >= 3) {
-      // Replace the last word
-      const newSelectedWords = [...selectedWords.slice(0, 2), point];
-      setSelectedWords(newSelectedWords);
-    } else {
-      setSelectedWords([...selectedWords, point]);
-    }
-    
+    // We'll remove the limit and allow more words for better comparison
+    setSelectedWords([...selectedWords, point]);
     setDialogOpen(false);
   };
 
@@ -117,26 +120,54 @@ const WordComparisonController = ({ points, bertAnalysis }: WordComparisonContro
     return suggestedPoints;
   };
 
+  // Calculate connectivity between two words based on semantic and emotion similarity
+  const calculateWordConnectivity = (word1: Point, word2: Point): number => {
+    if (!word1 || !word2) return 0;
+    
+    // Base connectivity on shared emotional tone
+    let connectivity = 0;
+    
+    // Check for emotional similarity (30% weight)
+    if (word1.emotionalTone === word2.emotionalTone) {
+      connectivity += 0.3;
+    }
+    
+    // Check for sentiment similarity (40% weight)
+    const sentimentDiff = Math.abs((word1.sentiment || 0.5) - (word2.sentiment || 0.5));
+    connectivity += (1 - sentimentDiff) * 0.4;
+    
+    // Check for word proximity in document (30% weight)
+    // This is a simulated value since we don't have actual document positions
+    // In a real implementation, you would use word positions from the text
+    const randomProximity = Math.random() * 0.3;
+    connectivity += randomProximity;
+    
+    return Math.min(1, connectivity);
+  };
+
   const emotionalWords = findEmotionalWords();
   const keywordSuggestions = getKeywordSuggestions();
   
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Word Comparison</h3>
+        <h3 className="text-lg font-medium flex items-center">
+          <ListOrdered className="h-5 w-5 mr-2" />
+          Word Connection Analysis
+        </h3>
         
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
               <Plus className="h-4 w-4 mr-1" />
-              Add Word
+              Add Words
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Select Word</DialogTitle>
+              <DialogTitle>Select Words to Compare</DialogTitle>
               <DialogDescription>
-                Choose a word to add to your comparison
+                Choose words to analyze their emotional connections
               </DialogDescription>
             </DialogHeader>
             
@@ -166,6 +197,20 @@ const WordComparisonController = ({ points, bertAnalysis }: WordComparisonContro
                     </CommandItem>
                   ))}
                 </CommandGroup>
+                
+                {emotionCategories.length > 0 && (
+                  <CommandGroup heading="Browse by Emotion" className="border-t">
+                    {emotionCategories.map((emotion) => (
+                      <CommandItem
+                        key={emotion}
+                        value={emotion}
+                        onSelect={() => setSearchTerm(emotion)}
+                      >
+                        <span>{emotion}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
                 
                 {keywordSuggestions.length > 0 && (
                   <CommandGroup heading="Key Words" className="border-t">
@@ -210,11 +255,12 @@ const WordComparisonController = ({ points, bertAnalysis }: WordComparisonContro
         words={selectedWords} 
         onRemoveWord={handleRemoveWord} 
         onClearWords={handleClearWords}
+        onWordConnectivityCheck={calculateWordConnectivity}
       />
       
       {selectedWords.length === 0 && (
         <div className="text-center p-6 text-muted-foreground bg-muted/30 rounded-md">
-          <p>Add words to compare their emotional patterns</p>
+          <p>Add words to analyze their emotional connections within the text</p>
         </div>
       )}
     </div>

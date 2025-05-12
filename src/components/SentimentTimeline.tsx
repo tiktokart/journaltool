@@ -1,9 +1,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Info } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, LineChart, Line } from "recharts";
+import { Info, Calendar, ArrowRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface TimelineEntry {
   page: number; 
@@ -24,6 +25,12 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
   const [normalizedData, setNormalizedData] = useState<TimelineEntry[]>([]);
   const [averageSentiment, setAverageSentiment] = useState(0.5);
   const [isDataValid, setIsDataValid] = useState(true);
+  const [selectedPoint, setSelectedPoint] = useState<TimelineEntry | null>(null);
+  const [energyFlow, setEnergyFlow] = useState<{positive: number, negative: number, neutral: number}>({
+    positive: 0,
+    negative: 0,
+    neutral: 0
+  });
 
   useEffect(() => {
     try {
@@ -63,6 +70,24 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
         ? processed.reduce((acc, item) => acc + item.score, 0) / processed.length
         : 0.5;
       setAverageSentiment(avg);
+      
+      // Calculate energy flow
+      let positive = 0;
+      let negative = 0;
+      let neutral = 0;
+      
+      processed.forEach(item => {
+        if (item.score > 0.6) positive++;
+        else if (item.score < 0.4) negative++;
+        else neutral++;
+      });
+      
+      setEnergyFlow({
+        positive,
+        negative,
+        neutral
+      });
+      
       setIsDataValid(true);
     } catch (error) {
       console.error("Error processing timeline data:", error);
@@ -80,11 +105,50 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
     if (score >= 0.4) return "#3498DB";
     return "#E74C3C";
   };
+  
+  const handlePointClick = (point: TimelineEntry) => {
+    setSelectedPoint(point === selectedPoint ? null : point);
+  };
+
+  const calculateTrend = () => {
+    if (normalizedData.length < 2) return "stable";
+    
+    const firstHalf = normalizedData.slice(0, Math.floor(normalizedData.length / 2));
+    const secondHalf = normalizedData.slice(Math.floor(normalizedData.length / 2));
+    
+    const firstHalfAvg = firstHalf.reduce((sum, point) => sum + point.score, 0) / firstHalf.length;
+    const secondHalfAvg = secondHalf.reduce((sum, point) => sum + point.score, 0) / secondHalf.length;
+    
+    const difference = secondHalfAvg - firstHalfAvg;
+    
+    if (difference > 0.1) return "improving";
+    if (difference < -0.1) return "declining";
+    return "stable";
+  };
 
   return (
     <Card className="border-0 shadow-md w-full bg-white">
       <CardHeader>
-        <CardTitle className="text-orange font-pacifico">Sentiment Timeline</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-orange font-pacifico flex items-center">
+            <Calendar className="h-5 w-5 mr-2" />
+            Emotional Flow Timeline
+          </CardTitle>
+          
+          <Badge 
+            variant="outline" 
+            className={`${
+              calculateTrend() === 'improving' ? 'bg-green-50 text-green-700' :
+              calculateTrend() === 'declining' ? 'bg-red-50 text-red-700' :
+              'bg-blue-50 text-blue-700'
+            }`}
+          >
+            {calculateTrend() === 'improving' ? 'Improving Trend' :
+             calculateTrend() === 'declining' ? 'Declining Trend' :
+             'Stable Trend'}
+          </Badge>
+        </div>
+        
         {sourceDescription && (
           <p className="text-sm text-muted-foreground font-georgia">{sourceDescription}</p>
         )}
@@ -95,114 +159,167 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
             <p className="text-muted-foreground font-georgia">{t("noDataAvailable")}</p>
           </div>
         ) : (
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={normalizedData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
-              >
-                <defs>
-                  <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0.2} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis 
-                  dataKey="page" 
-                  label={{ value: "sequencePoint", position: 'insideBottom', offset: -10 }} 
-                  // Use time property for labels instead of just "Page X"
-                  tickFormatter={(value) => {
-                    const point = normalizedData.find(d => d.page === value);
-                    return point?.time || `Section ${value}`;
-                  }}
-                  // Adjust for better readability if we have many points
-                  tick={{ 
-                    fontSize: 12,
-                    textAnchor: normalizedData.length > 7 ? 'end' : 'middle',
-                    transform: normalizedData.length > 7 ? 'rotate(-45)' : 'rotate(0)'
-                  }}
-                  height={60}
-                />
-                <YAxis 
-                  domain={[0, 1]} 
-                  label={{ value: "Sentiment Score", position: 'insideLeft', offset: 5 }}
-                  ticks={[0, 0.2, 0.4, 0.6, 0.8, 1]}
-                  width={40}
-                />
-                <Tooltip 
-                  formatter={(value: number) => [
-                    `Score: ${value.toFixed(2)}`,
-                    "Sentiment"
-                  ]}
-                  // Show time and event instead of just "Page X"
-                  labelFormatter={(label) => {
-                    const point = normalizedData.find(d => d.page === label);
-                    return point?.time ? `${point.time}: ${point.event || ''}` : `Section ${label}`;
-                  }}
-                  contentStyle={{ 
-                    borderRadius: '0.5rem',
-                    border: 'none',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                  }}
-                />
-                <ReferenceLine 
-                  y={averageSentiment} 
-                  stroke="#8884d8" 
-                  strokeDasharray="3 3" 
-                  label={{ value: `Average: ${averageSentiment.toFixed(2)}`, position: 'right', className: "font-georgia" }} 
-                />
-                <ReferenceLine 
-                  y={0.6} 
-                  stroke="#27AE60" 
-                  strokeDasharray="3 3" 
-                  label={{ value: "Positive", position: 'left', fill: '#27AE60', className: "font-georgia" }} 
-                />
-                <ReferenceLine 
-                  y={0.4} 
-                  stroke="#E74C3C" 
-                  strokeDasharray="3 3" 
-                  label={{ value: "Negative", position: 'left', fill: '#E74C3C', className: "font-georgia" }} 
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="score" 
-                  stroke="#8884d8" 
-                  fillOpacity={1} 
-                  fill="url(#colorScore)" 
-                  dot={(props: any) => {
-                    if (!props || !props.cx || !props.cy) return null;
-                    const { cx, cy, payload } = props;
-                    if (!payload) return null;
-                    
-                    // Use the provided color if available, otherwise fall back to calculated color
-                    const dotColor = payload.color || getColor(payload.score);
-                    return (
-                      <circle 
-                        key={`dot-${cx}-${cy}`}
-                        cx={cx} 
-                        cy={cy} 
-                        r={5} 
-                        fill={dotColor} 
-                        stroke="white" 
-                        strokeWidth={2} 
-                      />
-                    );
-                  }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-        <div className="mt-4 text-sm text-center text-muted-foreground font-georgia">
-          {sourceDescription ? (
-            <div className="flex items-center justify-center">
-              <Info className="h-4 w-4 mr-1" />
-              Analysis with BERT Model
+          <>
+            <div className="mb-4 grid grid-cols-3 gap-4 text-center">
+              <div className="border rounded-md p-2 bg-green-50">
+                <div className="text-green-600 font-medium">Positive Energy</div>
+                <div className="text-2xl font-semibold">{energyFlow.positive}</div>
+                <div className="text-xs text-muted-foreground">points</div>
+              </div>
+              <div className="border rounded-md p-2 bg-blue-50">
+                <div className="text-blue-600 font-medium">Neutral Energy</div>
+                <div className="text-2xl font-semibold">{energyFlow.neutral}</div>
+                <div className="text-xs text-muted-foreground">points</div>
+              </div>
+              <div className="border rounded-md p-2 bg-red-50">
+                <div className="text-red-600 font-medium">Negative Energy</div>
+                <div className="text-2xl font-semibold">{energyFlow.negative}</div>
+                <div className="text-xs text-muted-foreground">points</div>
+              </div>
             </div>
-          ) : (
-            t("timelineDescription")
-          )}
+            
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={normalizedData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis 
+                    dataKey="page" 
+                    label={{ value: "Content Flow", position: 'insideBottom', offset: -10 }} 
+                    // Use time property for labels
+                    tickFormatter={(value) => {
+                      const point = normalizedData.find(d => d.page === value);
+                      return point?.time ? point.time.substring(0, 10) + '...' : `Point ${value}`;
+                    }}
+                    // Adjust for better readability if we have many points
+                    tick={{ 
+                      fontSize: 10,
+                      textAnchor: normalizedData.length > 7 ? 'end' : 'middle',
+                      transform: normalizedData.length > 7 ? 'rotate(-45)' : 'rotate(0)'
+                    }}
+                    height={60}
+                  />
+                  <YAxis 
+                    domain={[0, 1]} 
+                    label={{ value: "Emotional Energy", position: 'insideLeft', angle: -90, offset: 10 }}
+                    ticks={[0, 0.2, 0.4, 0.6, 0.8, 1]}
+                    width={40}
+                    tickFormatter={(value) => {
+                      if (value >= 0.6) return "Positive";
+                      if (value === 0.4) return "Neutral";
+                      if (value === 0) return "Negative";
+                      return "";
+                    }}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => [
+                      `Energy: ${value.toFixed(2)}`,
+                      "Emotional Energy"
+                    ]}
+                    labelFormatter={(label) => {
+                      const point = normalizedData.find(d => d.page === label);
+                      return point?.time ? `${point.time}: ${point.event || ''}` : `Point ${label}`;
+                    }}
+                    contentStyle={{ 
+                      borderRadius: '0.5rem',
+                      border: 'none',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <ReferenceLine 
+                    y={averageSentiment} 
+                    stroke="#8884d8" 
+                    strokeDasharray="3 3" 
+                    label={{ value: `Average`, position: 'right', className: "font-georgia text-xs" }} 
+                  />
+                  <ReferenceLine 
+                    y={0.6} 
+                    stroke="#27AE60" 
+                    strokeDasharray="3 3" 
+                    label={{ value: "Positive", position: 'left', fill: '#27AE60', className: "font-georgia text-xs" }} 
+                  />
+                  <ReferenceLine 
+                    y={0.4} 
+                    stroke="#E74C3C" 
+                    strokeDasharray="3 3" 
+                    label={{ value: "Negative", position: 'left', fill: '#E74C3C', className: "font-georgia text-xs" }} 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="score" 
+                    stroke="#8884d8" 
+                    strokeWidth={2}
+                    activeDot={{ 
+                      onClick: (props: any) => {
+                        if (props && props.payload) {
+                          handlePointClick(props.payload);
+                        }
+                      },
+                      style: { cursor: 'pointer' }
+                    }}
+                    dot={(props: any) => {
+                      if (!props || !props.cx || !props.cy) return null;
+                      const { cx, cy, payload } = props;
+                      if (!payload) return null;
+                      
+                      // Use the provided color if available, otherwise fall back to calculated color
+                      const dotColor = payload.color || getColor(payload.score);
+                      const isSelected = selectedPoint && selectedPoint.page === payload.page;
+                      
+                      return (
+                        <circle 
+                          key={`dot-${cx}-${cy}`}
+                          cx={cx} 
+                          cy={cy} 
+                          r={isSelected ? 7 : 5} 
+                          fill={dotColor} 
+                          stroke="white" 
+                          strokeWidth={isSelected ? 3 : 2} 
+                          style={{ cursor: 'pointer' }}
+                        />
+                      );
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {selectedPoint && (
+              <div className="mt-4 p-3 bg-muted rounded-md">
+                <h4 className="font-medium">{selectedPoint.time}</h4>
+                <p className="text-sm mt-1">{selectedPoint.event}</p>
+                <div className="flex items-center mt-2">
+                  <span className="text-sm text-muted-foreground">Emotional energy:</span>
+                  <span 
+                    className={`ml-2 text-sm font-medium ${
+                      selectedPoint.score >= 0.6 ? 'text-green-600' :
+                      selectedPoint.score <= 0.4 ? 'text-red-600' :
+                      'text-blue-600'
+                    }`}
+                  >
+                    {selectedPoint.score >= 0.6 ? 'Positive' :
+                     selectedPoint.score <= 0.4 ? 'Negative' :
+                     'Neutral'}
+                    {' '}({Math.round(selectedPoint.score * 100)}%)
+                  </span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        
+        <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground font-georgia border-t pt-4">
+          <div className="flex items-center">
+            <ArrowRight className="h-4 w-4 mr-1" />
+            <span>Text progresses left to right</span>
+          </div>
+          
+          <div className="flex items-center">
+            <Info className="h-4 w-4 mr-1" />
+            <span>Click on points for details</span>
+          </div>
         </div>
       </CardContent>
     </Card>
