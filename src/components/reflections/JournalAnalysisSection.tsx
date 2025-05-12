@@ -20,6 +20,7 @@ import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Card } from "@/components/ui/card";
 import MentalHealthSuggestions from "../suggestions/MentalHealthSuggestions";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
+import { TextEmotionViewer } from "@/components/TextEmotionViewer";
 
 interface JournalAnalysisSectionProps {
   journalEntries: any[];
@@ -152,6 +153,7 @@ const JournalAnalysisSection = ({
 
   const embeddingPoints = generateEmotionalEmbeddings();
   const keywords = extractKeywords();
+  const combinedJournalText = journalEntries.map(entry => entry.text).join(" ");
 
   // Function to scroll to section when expanded
   const scrollToSection = (element: HTMLElement) => {
@@ -195,6 +197,16 @@ const JournalAnalysisSection = ({
             </div>
           ) : (
             <>
+              {/* Document Text Visualization - Moved to the top */}
+              <div className="mb-6">
+                <TextEmotionViewer 
+                  pdfText={combinedJournalText}
+                  embeddingPoints={embeddingPoints}
+                  sourceDescription="Journal Entries Text Analysis"
+                  bertAnalysis={bertAnalysis}
+                />
+              </div>
+
               <JournalSentimentSummary 
                 overallSentimentChange={overallSentimentChange} 
                 averageSentiment={averageSentiment} 
@@ -336,3 +348,4 @@ const JournalAnalysisSection = ({
 };
 
 export default JournalAnalysisSection;
+

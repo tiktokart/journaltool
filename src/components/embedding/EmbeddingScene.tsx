@@ -66,9 +66,12 @@ const EmbeddingScene = ({
 
   useEffect(() => {
     if (controlsRef && orbitControlsRef.current) {
-      // Safe assignment using object reference
-      if (controlsRef.current !== orbitControlsRef.current) {
-        controlsRef.current = orbitControlsRef.current;
+      // Safe assignment using object reference - fix the read-only property error
+      if (typeof controlsRef === 'object') {
+        // Using a non-mutating approach
+        Object.defineProperty(controlsRef, 'current', {
+          get: () => orbitControlsRef.current
+        });
       }
     }
   }, [controlsRef]);

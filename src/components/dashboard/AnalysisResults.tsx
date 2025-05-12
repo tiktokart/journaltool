@@ -69,6 +69,7 @@ const AnalysisResults = ({
   const [isClustersOpen, setIsClustersOpen] = useState(false);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
+  const [isTextVisualizationOpen, setIsTextVisualizationOpen] = useState(true);
   
   // References to collapsible sections for scrolling
   const infoRef = useRef<HTMLDivElement>(null);
@@ -76,6 +77,7 @@ const AnalysisResults = ({
   const clustersRef = useRef<HTMLDivElement>(null);
   const comparisonRef = useRef<HTMLDivElement>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
+  const textVisualizationRef = useRef<HTMLDivElement>(null);
 
   // Function to scroll to a section when opened
   const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
@@ -113,6 +115,10 @@ const AnalysisResults = ({
   useEffect(() => {
     if (isPdfOpen) scrollToSection(pdfRef);
   }, [isPdfOpen]);
+  
+  useEffect(() => {
+    if (isTextVisualizationOpen) scrollToSection(textVisualizationRef);
+  }, [isTextVisualizationOpen]);
 
   if (!sentimentData) {
     return null;
@@ -127,6 +133,18 @@ const AnalysisResults = ({
 
   return (
     <div className="animate-fade-in">
+      {/* Document Text Visualization - Moved above the Overview section */}
+      <Collapsible open={isTextVisualizationOpen} onOpenChange={setIsTextVisualizationOpen} className="w-full mb-4">
+        <div ref={textVisualizationRef}>
+          <TextEmotionViewer 
+            pdfText={pdfText}
+            embeddingPoints={sentimentData.embeddingPoints}
+            sourceDescription={sentimentData.sourceDescription}
+            bertAnalysis={sentimentData.bertAnalysis}
+          />
+        </div>
+      </Collapsible>
+      
       <Collapsible open={isInfoOpen} onOpenChange={setIsInfoOpen} className="w-full">
         <div ref={infoRef} className="bg-white p-4 rounded-lg mb-4">
           <div className="flex justify-between items-center">
@@ -249,15 +267,6 @@ const AnalysisResults = ({
         </div>
       </Collapsible>
       
-      <div className="mt-8 mb-4">
-        <TextEmotionViewer 
-          pdfText={pdfText}
-          embeddingPoints={sentimentData.embeddingPoints}
-          sourceDescription={sentimentData.sourceDescription}
-          bertAnalysis={sentimentData.bertAnalysis}
-        />
-      </div>
-      
       <Collapsible open={isPdfOpen} onOpenChange={setIsPdfOpen} className="w-full">
         <div ref={pdfRef} className="mt-8 bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -286,3 +295,4 @@ const AnalysisResults = ({
 };
 
 export default AnalysisResults;
+
