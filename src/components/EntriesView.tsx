@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
@@ -41,6 +40,18 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [documentStats, setDocumentStats] = useState({ wordCount: 0, sentenceCount: 0, paragraphCount: 0 });
   const [mainSubjects, setMainSubjects] = useState<string[]>([]);
+  
+  // States to control collapsible sections
+  const [isDetailedAnalysisOpen, setIsDetailedAnalysisOpen] = useState(true);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  
+  // States for Entry Analysis tab sections
+  const [isOverviewOpen, setIsOverviewOpen] = useState(false);
+  const [isDocTextAnalysisOpen, setIsDocTextAnalysisOpen] = useState(false);
+  const [isLatentEmotionalOpen, setIsLatentEmotionalOpen] = useState(false);
+  const [isWordComparisonOpen, setIsWordComparisonOpen] = useState(false);
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+  const [isKeywordsOpen, setIsKeywordsOpen] = useState(false);
 
   useEffect(() => {
     // Filter entries based on search query and selected date
@@ -297,58 +308,17 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                     </CollapsibleContent>
                   </Collapsible>
                   
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="border-purple-200 text-purple-700"
-                    >
-                      Export as PDF
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="border-red-200 text-red-700"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center text-center p-4">
-                  <div>
-                    <p className="text-gray-500 mb-3">Select an entry from the list to view it</p>
-                    {filteredEntries.length > 0 && (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleEntryClick(filteredEntries[0])}
-                      >
-                        View Latest Entry
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="analysis" className="flex-grow overflow-y-auto p-4">
-              {selectedEntry ? (
-                <div>
-                  <div className="mb-4">
-                    <h2 className="text-xl font-semibold mb-1 font-pacifico">
-                      Detailed Analysis Data
-                    </h2>
-                    <p className="text-gray-600">
-                      In-depth analysis of your journal entry
-                    </p>
-                    <div className="w-16 h-1 bg-purple-400 mt-1"></div>
-                  </div>
-                  
-                  {isAnalyzing ? (
-                    <div className="flex justify-center items-center h-64">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700 mb-4"></div>
-                      <p className="ml-3 text-gray-600">Analyzing with BERT...</p>
-                    </div>
-                  ) : (
-                    <>
+                  {/* Detailed Analyzed Data Section */}
+                  <Collapsible open={isDetailedAnalysisOpen} onOpenChange={setIsDetailedAnalysisOpen} className="mb-4 border rounded-lg overflow-hidden">
+                    <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <h3 className="text-lg font-medium font-pacifico">Detailed Analyzed Data</h3>
+                      {isDetailedAnalysisOpen ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-4 bg-white">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div className="bg-white p-4 rounded-lg border shadow-sm">
                           <h3 className="text-lg font-medium mb-3">Content Overview</h3>
@@ -420,62 +390,103 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                           </div>
                         </div>
                       </div>
+                    </CollapsibleContent>
+                  </Collapsible>
 
-                      {/* Collapsible sections for expanded analysis */}
-                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
-                        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <h3 className="text-lg font-medium font-pacifico">Latent Emotional Analysis</h3>
-                          <ChevronDown className="h-5 w-5" />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="p-4 bg-white">
-                          <div className="bg-gray-50 rounded-lg p-5">
-                            {bertAnalysis ? (
-                              <TextEmotionViewer 
-                                pdfText={selectedEntry.text}
-                                bertAnalysis={bertAnalysis}
-                              />
-                            ) : (
-                              <p className="text-center text-gray-500 py-4">
-                                No emotional analysis available
-                              </p>
-                            )}
+                  {/* Suggestions Section */}
+                  <Collapsible open={isSuggestionsOpen} onOpenChange={setIsSuggestionsOpen} className="mb-4 border rounded-lg overflow-hidden">
+                    <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <h3 className="text-lg font-medium font-pacifico">Suggestions</h3>
+                      {isSuggestionsOpen ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-4 bg-white">
+                      <p className="text-gray-700 mb-4">
+                        Based on your journal entry, here are some suggestions that might be helpful:
+                      </p>
+                      {bertAnalysis ? (
+                        <div className="space-y-4">
+                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <h4 className="font-medium mb-1">Consider adding more details</h4>
+                            <p className="text-sm">Your entry could benefit from more specific examples or situations.</p>
                           </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-
-                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
-                        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <h3 className="text-lg font-medium font-pacifico">Word Comparison</h3>
-                          <ChevronDown className="h-5 w-5" />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="p-4 bg-white">
-                          <p className="text-gray-700 mb-4">
-                            Compare the emotional relationships between key words in your entry.
-                          </p>
-                          {bertAnalysis?.keywords?.length > 5 ? (
-                            <div className="grid grid-cols-3 gap-3">
-                              {bertAnalysis.keywords.slice(0, 9).map((kw: any, i: number) => (
-                                <div key={i} className="flex items-center bg-gray-50 p-2 rounded-lg">
-                                  <div 
-                                    className="w-3 h-3 rounded-full mr-2"
-                                    style={{ backgroundColor: kw.color || "#aaaaaa" }}
-                                  ></div>
-                                  <span className="text-sm">{kw.word}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-center text-gray-500">
-                              Not enough keywords for meaningful comparison
-                            </p>
-                          )}
-                        </CollapsibleContent>
-                      </Collapsible>
-
-                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
+                          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <h4 className="font-medium mb-1">Reflect on your emotions</h4>
+                            <p className="text-sm">Try exploring why you felt the way you did during these events.</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-center text-gray-500 py-4">
+                          No suggestions available yet
+                        </p>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                  
+                  <div className="flex justify-end gap-2 mt-6">
+                    <Button 
+                      variant="outline" 
+                      className="border-purple-200 text-purple-700"
+                    >
+                      Export as PDF
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="border-red-200 text-red-700"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-center p-4">
+                  <div>
+                    <p className="text-gray-500 mb-3">Select an entry from the list to view it</p>
+                    {filteredEntries.length > 0 && (
+                      <Button
+                        variant="outline"
+                        onClick={() => handleEntryClick(filteredEntries[0])}
+                      >
+                        View Latest Entry
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="analysis" className="flex-grow overflow-y-auto p-4">
+              {selectedEntry ? (
+                <div>
+                  <div className="mb-4">
+                    <h2 className="text-xl font-semibold mb-1 font-pacifico">
+                      Entry Analysis
+                    </h2>
+                    <p className="text-gray-600">
+                      In-depth analysis of your journal entry
+                    </p>
+                    <div className="w-16 h-1 bg-purple-400 mt-1"></div>
+                  </div>
+                  
+                  {isAnalyzing ? (
+                    <div className="flex justify-center items-center h-64">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700 mb-4"></div>
+                      <p className="ml-3 text-gray-600">Analyzing with BERT...</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* 1. Overview Section */}
+                      <Collapsible open={isOverviewOpen} onOpenChange={setIsOverviewOpen} className="mb-4 border rounded-lg overflow-hidden">
                         <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
                           <h3 className="text-lg font-medium font-pacifico">Overview</h3>
-                          <ChevronDown className="h-5 w-5" />
+                          {isOverviewOpen ? (
+                            <ChevronUp className="h-5 w-5" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5" />
+                          )}
                         </CollapsibleTrigger>
                         <CollapsibleContent className="p-4 bg-white">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -548,10 +559,114 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                         </CollapsibleContent>
                       </Collapsible>
 
-                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
+                      {/* 2. Document Text Analysis */}
+                      <Collapsible open={isDocTextAnalysisOpen} onOpenChange={setIsDocTextAnalysisOpen} className="mb-4 border rounded-lg overflow-hidden">
+                        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <h3 className="text-lg font-medium font-pacifico">Document Text Analysis</h3>
+                          {isDocTextAnalysisOpen ? (
+                            <ChevronUp className="h-5 w-5" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5" />
+                          )}
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-medium mb-2">Text Structure</h4>
+                              <div className="grid grid-cols-3 gap-4 text-center">
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                  <p className="text-3xl font-bold">{documentStats.wordCount}</p>
+                                  <p className="text-sm text-gray-600">Words</p>
+                                </div>
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                  <p className="text-3xl font-bold">{documentStats.sentenceCount}</p>
+                                  <p className="text-sm text-gray-600">Sentences</p>
+                                </div>
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                  <p className="text-3xl font-bold">{documentStats.paragraphCount}</p>
+                                  <p className="text-sm text-gray-600">Paragraphs</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-4">
+                              <h4 className="font-medium mb-2">Text Sample</h4>
+                              <div className="bg-gray-50 p-3 rounded-lg border">
+                                <p className="text-gray-700">{selectedEntry.text.substring(0, 200)}...</p>
+                              </div>
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+
+                      {/* 3. Latent Emotional Analysis */}
+                      <Collapsible open={isLatentEmotionalOpen} onOpenChange={setIsLatentEmotionalOpen} className="mb-4 border rounded-lg overflow-hidden">
+                        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <h3 className="text-lg font-medium font-pacifico">Latent Emotional Analysis</h3>
+                          {isLatentEmotionalOpen ? (
+                            <ChevronUp className="h-5 w-5" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5" />
+                          )}
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <div className="bg-gray-50 rounded-lg p-5">
+                            {bertAnalysis ? (
+                              <TextEmotionViewer 
+                                pdfText={selectedEntry.text}
+                                bertAnalysis={bertAnalysis}
+                              />
+                            ) : (
+                              <p className="text-center text-gray-500 py-4">
+                                No emotional analysis available
+                              </p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+
+                      {/* 4. Word Comparison */}
+                      <Collapsible open={isWordComparisonOpen} onOpenChange={setIsWordComparisonOpen} className="mb-4 border rounded-lg overflow-hidden">
+                        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <h3 className="text-lg font-medium font-pacifico">Word Comparison</h3>
+                          {isWordComparisonOpen ? (
+                            <ChevronUp className="h-5 w-5" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5" />
+                          )}
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 bg-white">
+                          <p className="text-gray-700 mb-4">
+                            Compare the emotional relationships between key words in your entry.
+                          </p>
+                          {bertAnalysis?.keywords?.length > 5 ? (
+                            <div className="grid grid-cols-3 gap-3">
+                              {bertAnalysis.keywords.slice(0, 9).map((kw: any, i: number) => (
+                                <div key={i} className="flex items-center bg-gray-50 p-2 rounded-lg">
+                                  <div 
+                                    className="w-3 h-3 rounded-full mr-2"
+                                    style={{ backgroundColor: kw.color || "#aaaaaa" }}
+                                  ></div>
+                                  <span className="text-sm">{kw.word}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-center text-gray-500">
+                              Not enough keywords for meaningful comparison
+                            </p>
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
+
+                      {/* 5. Timeline */}
+                      <Collapsible open={isTimelineOpen} onOpenChange={setIsTimelineOpen} className="mb-4 border rounded-lg overflow-hidden">
                         <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
                           <h3 className="text-lg font-medium font-pacifico">Timeline</h3>
-                          <ChevronDown className="h-5 w-5" />
+                          {isTimelineOpen ? (
+                            <ChevronUp className="h-5 w-5" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5" />
+                          )}
                         </CollapsibleTrigger>
                         <CollapsibleContent className="p-4 bg-white">
                           <p className="text-gray-500 text-center py-4">
@@ -560,10 +675,15 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                         </CollapsibleContent>
                       </Collapsible>
 
-                      <Collapsible className="mb-4 border rounded-lg overflow-hidden">
+                      {/* 6. Keywords */}
+                      <Collapsible open={isKeywordsOpen} onOpenChange={setIsKeywordsOpen} className="mb-4 border rounded-lg overflow-hidden">
                         <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
                           <h3 className="text-lg font-medium font-pacifico">Keywords</h3>
-                          <ChevronDown className="h-5 w-5" />
+                          {isKeywordsOpen ? (
+                            <ChevronUp className="h-5 w-5" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5" />
+                          )}
                         </CollapsibleTrigger>
                         <CollapsibleContent className="p-4 bg-white">
                           <div className="flex flex-wrap gap-2">

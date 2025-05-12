@@ -27,7 +27,8 @@ export const DocumentEmbedding = ({
   onResetView,
   visibleClusterCount = 8,
   showAllPoints = true,
-  wordCount
+  wordCount,
+  bertAnalysis
 }: DocumentEmbeddingProps) => {
   const { t } = useLanguage();
   const location = useLocation();
@@ -371,6 +372,7 @@ export const DocumentEmbedding = ({
         onResetView={handleResetView}
         visibleClusterCount={visibleClusterCount}
         showAllPoints={showAllPoints}
+        bertAnalysis={bertAnalysis}
       />
       
       {isInteractive && (

@@ -26,6 +26,7 @@ interface EmbeddingSceneProps {
   onResetView?: () => void;
   visibleClusterCount?: number;
   showAllPoints?: boolean;
+  bertAnalysis?: any;
 }
 
 // Camera helper functions
@@ -63,7 +64,8 @@ const EmbeddingScene = ({
   selectedEmotionalGroup,
   onResetView,
   visibleClusterCount = 8,
-  showAllPoints = true
+  showAllPoints = true,
+  bertAnalysis
 }: EmbeddingSceneProps) => {
   // Refs for Three.js objects
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -106,11 +108,9 @@ const EmbeddingScene = ({
     camera.position.z = 30;
     
     // Use provided camera ref or local ref
-    if (cameraRef.current === null) {
+    if (cameraRef && cameraRef.current === null) {
       // Store the camera in the provided ref
-      if (cameraRef) {
-        localCameraRef.current = camera;
-      }
+      cameraRef.current = camera;
     }
     
     // Set up the renderer
@@ -131,10 +131,8 @@ const EmbeddingScene = ({
       controls.rotateSpeed = 0.7;
       
       // Use provided controls ref or local ref
-      if (controlsRef.current === null) {
-        if (controlsRef) {
-          localControlsRef.current = controls;
-        }
+      if (controlsRef && controlsRef.current === null) {
+        controlsRef.current = controls;
       }
     }
     
@@ -212,7 +210,7 @@ const EmbeddingScene = ({
         }
       }
     };
-  }, [containerRef, isInteractive]);
+  }, [containerRef, isInteractive, cameraRef, controlsRef, isCompareMode, onFocusEmotionalGroup, onResetView]);
   
   // Handle point cloud creation and updates
   useEffect(() => {
@@ -220,7 +218,7 @@ const EmbeddingScene = ({
     
     const scene = sceneRef.current;
     const renderer = rendererRef.current;
-    const camera = cameraRef.current || localCameraRef.current;
+    const camera = (cameraRef && cameraRef.current) || localCameraRef.current;
     if (!camera) return;
     
     // Remove existing point cloud if it exists
@@ -436,7 +434,7 @@ const EmbeddingScene = ({
         containerRef.current.removeEventListener('click', handlePointClick);
       }
     };
-  }, [points, containerRef, isInteractive, onPointHover, onPointSelect, selectedEmotionalGroup, focusOnWord, visibleClusterCount, showAllPoints, depressedJournalReference, selectedPoint, comparisonPoint, connectedPoints]);
+  }, [points, containerRef, isInteractive, onPointHover, onPointSelect, selectedEmotionalGroup, focusOnWord, visibleClusterCount, showAllPoints, depressedJournalReference, selectedPoint, comparisonPoint, connectedPoints, cameraRef]);
 
   return (
     <div className="absolute inset-0">
