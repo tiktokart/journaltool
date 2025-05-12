@@ -158,7 +158,7 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
           id: 'sadness',
           keyword: 'sadness',
           solutionStatement: 'Address feelings of sadness through active coping strategies.',
-          actionPlan: '1. Schedule one enjoyable activity daily\n2. Connect with a supportive friend\n3. Practice 10 minutes of mindful breathing\n4. Write three things you're grateful for\n5. Get 30 minutes of movement each day',
+          actionPlan: "1. Schedule one enjoyable activity daily\n2. Connect with a supportive friend\n3. Practice 10 minutes of mindful breathing\n4. Write three things you're grateful for\n5. Get 30 minutes of movement each day",
           resourceLink: 'https://www.apa.org/topics/depression',
           emotionCategory: 'Sadness'
         },
