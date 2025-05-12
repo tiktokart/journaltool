@@ -22,18 +22,26 @@ export const extractKeyPhrases = async (text: string): Promise<KeyPhrase[]> => {
     const phraseCounts: Record<string, number> = {};
     
     // Common verbs, nouns and adjectives for better phrase extraction
-    const commonVerbs = ['is', 'are', 'was', 'were', 'be', 'being', 'been', 'have', 'has', 'had', 
-      'do', 'does', 'did', 'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 
-      'must', 'feel', 'think', 'know', 'see', 'say', 'go', 'come', 'make', 'take', 'get', 'use'];
+    // Enhanced with more significant words for BERT analysis
+    const significantVerbs = ['feel', 'think', 'know', 'see', 'say', 'go', 'come', 'make', 'take', 
+      'get', 'use', 'love', 'hate', 'wish', 'hope', 'need', 'want', 'try', 'believe', 
+      'understand', 'remember', 'forget', 'imagine', 'consider', 'expect'];
     
-    const commonNouns = ['time', 'person', 'year', 'way', 'day', 'thing', 'man', 'world', 
+    const significantNouns = ['time', 'person', 'year', 'way', 'day', 'thing', 'man', 'world', 
       'life', 'hand', 'part', 'child', 'woman', 'place', 'work', 'week', 'case', 'point', 
-      'government', 'company', 'number', 'group', 'problem', 'fact', 'experience', 'feeling'];
+      'government', 'company', 'number', 'group', 'problem', 'fact', 'experience', 'feeling', 
+      'family', 'friend', 'relationship', 'heart', 'mind', 'soul', 'body', 'emotion', 'thought',
+      'joy', 'sadness', 'fear', 'anger', 'surprise', 'trust', 'disgust', 'love'];
       
-    const commonAdjectives = ['good', 'new', 'first', 'last', 'long', 'great', 'little', 'own', 
+    const significantAdjectives = ['good', 'new', 'first', 'last', 'long', 'great', 'little', 'own', 
       'other', 'old', 'right', 'big', 'high', 'different', 'small', 'large', 'early', 'young', 
       'important', 'few', 'public', 'bad', 'same', 'able', 'beautiful', 'happy', 'sad', 'angry',
-      'peaceful', 'excited', 'nervous', 'calm', 'anxious', 'wonderful', 'terrible', 'lovely'];
+      'peaceful', 'excited', 'nervous', 'calm', 'anxious', 'wonderful', 'terrible', 'lovely',
+      'joyful', 'content', 'depressed', 'anxious', 'worried', 'ecstatic', 'miserable', 'proud',
+      'disappointed', 'frustrated', 'grateful', 'hopeful', 'desperate', 'confident', 'ashamed'];
+    
+    // Lower thresholds for significant words
+    const wordSignificanceThreshold = 3; // Lower threshold from typical 5+
     
     // Extract 2-3 word phrases from each sentence
     sentences.forEach(sentence => {
@@ -44,15 +52,21 @@ export const extractKeyPhrases = async (text: string): Promise<KeyPhrase[]> => {
         const word1 = words[i].toLowerCase().replace(/[^\w]/g, '');
         const word2 = words[i+1].toLowerCase().replace(/[^\w]/g, '');
         
-        // Check if either is a common verb/noun/adjective or if words are long enough to likely be meaningful
-        const isWord1Meaningful = commonVerbs.includes(word1) || commonNouns.includes(word1) || 
-                                 commonAdjectives.includes(word1) || word1.length > 5;
-        const isWord2Meaningful = commonVerbs.includes(word2) || commonNouns.includes(word2) || 
-                                 commonAdjectives.includes(word2) || word2.length > 5;
+        // Check if words are significant with lower threshold
+        const isWord1Significant = significantVerbs.includes(word1) || 
+                                 significantNouns.includes(word1) || 
+                                 significantAdjectives.includes(word1) || 
+                                 word1.length > wordSignificanceThreshold;
+                                 
+        const isWord2Significant = significantVerbs.includes(word2) || 
+                                 significantNouns.includes(word2) || 
+                                 significantAdjectives.includes(word2) || 
+                                 word2.length > wordSignificanceThreshold;
         
-        if ((isWord1Meaningful || isWord2Meaningful) && word1.length > 2 && word2.length > 2) {
+        // Accept more word combinations
+        if ((isWord1Significant || isWord2Significant) && word1.length > 2 && word2.length > 2) {
           const phrase = `${word1} ${word2}`;
-          if (phrase.length > 5) {
+          if (phrase.length > 4) { // Reduced from 5 to 4
             phraseCounts[phrase] = (phraseCounts[phrase] || 0) + 1;
           }
         }
@@ -64,24 +78,27 @@ export const extractKeyPhrases = async (text: string): Promise<KeyPhrase[]> => {
         const word2 = words[i+1].toLowerCase().replace(/[^\w]/g, '');
         const word3 = words[i+2].toLowerCase().replace(/[^\w]/g, '');
         
-        const containsMeaningful = 
-          commonVerbs.includes(word1) || commonNouns.includes(word1) || commonAdjectives.includes(word1) ||
-          commonVerbs.includes(word2) || commonNouns.includes(word2) || commonAdjectives.includes(word2) ||
-          commonVerbs.includes(word3) || commonNouns.includes(word3) || commonAdjectives.includes(word3) ||
-          word1.length > 5 || word2.length > 5 || word3.length > 5;
+        const containsSignificant = 
+          significantVerbs.includes(word1) || significantNouns.includes(word1) || significantAdjectives.includes(word1) ||
+          significantVerbs.includes(word2) || significantNouns.includes(word2) || significantAdjectives.includes(word2) ||
+          significantVerbs.includes(word3) || significantNouns.includes(word3) || significantAdjectives.includes(word3) ||
+          word1.length > wordSignificanceThreshold || word2.length > wordSignificanceThreshold || word3.length > wordSignificanceThreshold;
         
-        if (containsMeaningful && word1.length > 2 && word2.length > 2 && word3.length > 2) {
+        // Lowered threshold for word acceptance
+        if (containsSignificant && word1.length > 2 && word2.length > 2 && word3.length > 1) {
           const phrase = `${word1} ${word2} ${word3}`;
-          if (phrase.length > 8) {
+          if (phrase.length > 6) { // Reduced from 8 to 6
             phraseCounts[phrase] = (phraseCounts[phrase] || 0) + 1;
           }
         }
       }
       
-      // Also try to extract single adjectives to populate tertiary themes
+      // Also extract single significant words (especially emotional adjectives)
       for (let i = 0; i < words.length; i++) {
         const word = words[i].toLowerCase().replace(/[^\w]/g, '');
-        if (commonAdjectives.includes(word) || word.length > 6) {
+        if (significantAdjectives.includes(word) || 
+            significantNouns.includes(word) || 
+            word.length > wordSignificanceThreshold) {
           phraseCounts[word] = (phraseCounts[word] || 0) + 1;
         }
       }

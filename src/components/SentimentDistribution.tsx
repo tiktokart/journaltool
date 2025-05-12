@@ -24,12 +24,12 @@ export const SentimentDistribution = ({
   
   // Ensure we have non-zero values for each sentiment type
   const ensureValidDistribution = (dist: typeof distribution) => {
-    const positive = Math.max(1, dist.positive || 0);
-    const neutral = Math.max(1, dist.neutral || 0);
-    const negative = Math.max(1, dist.negative || 0);
+    const positive = Math.max(5, dist.positive || 0);
+    const neutral = Math.max(5, dist.neutral || 0);
+    const negative = Math.max(5, dist.negative || 0);
     
     // If all values are minimal defaults, create a more realistic distribution
-    if (positive === 1 && neutral === 1 && negative === 1) {
+    if (positive === 5 && neutral === 5 && negative === 5) {
       return { positive: 20, neutral: 60, negative: 20 };
     }
     
@@ -51,12 +51,6 @@ export const SentimentDistribution = ({
   const getPercentage = (value: number) => {
     if (total === 0) return 0;
     return Math.round((value / total) * 100);
-  };
-
-  // Calculate percentage of total text
-  const getTextPercentage = (value: number) => {
-    if (!totalWordCount || totalWordCount === 0) return 0;
-    return Math.round((value / totalWordCount) * 100);
   };
 
   return (

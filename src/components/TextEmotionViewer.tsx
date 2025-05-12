@@ -87,7 +87,7 @@ export const TextEmotionViewer = ({
       console.log("Adding BERT keywords to embedding points for highlighting");
       const bertPoints = localBertAnalysis.keywords.map((kw: any) => ({
         word: kw.word,
-        emotionalTone: kw.tone,
+        emotionalTone: kw.tone && kw.tone.replace(/\sTheme$/, ''), // Remove "Theme" from tone
         color: kw.color,
         sentiment: kw.sentiment
       }));
@@ -132,6 +132,12 @@ export const TextEmotionViewer = ({
     // Log some sample points to check if they have proper emotions and colors
     const samplePoints = points.slice(0, 5);
     console.log("Sample points for highlighting:", samplePoints);
+
+    // Clean up emotion labels to remove "Theme" suffix
+    points = points.map(point => ({
+      ...point,
+      emotionalTone: point.emotionalTone?.replace(/\sTheme$/, '') || point.emotionalTone
+    }));
 
     // Create a map of words to their emotional tones and colors
     const wordEmotionMap = new Map();
@@ -364,9 +370,6 @@ export const TextEmotionViewer = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          {sourceDescription && (
-            <p className="text-sm text-muted-foreground mt-1 font-georgia">{sourceDescription}</p>
-          )}
         </CardHeader>
         <CollapsibleContent>
           <CardHeader className="pt-2 pb-3">
