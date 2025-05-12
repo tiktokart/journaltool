@@ -1,7 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Point } from "@/types/embedding";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
 import { ScrollToSection } from "@/components/ScrollToSection";
@@ -65,7 +64,20 @@ const AnalysisResults = ({
     }
   }, [filteredPoints]);
   
-  // Parse and format data for sentiment displays
+  // Add total word count to data for distribution stats
+  const totalWordCount = pdfText ? pdfText.split(/\s+/).filter(word => word.trim().length > 0).length : 0;
+  
+  if (!sentimentData) {
+    return null;
+  }
+
+  // Format numbers to avoid adding strings
+  const formatNumber = (value: number | string | undefined): number => {
+    if (value === undefined) return 0;
+    return typeof value === 'string' ? parseFloat(value) : value;
+  };
+
+  // Format sentiment for display
   const formatSentiment = (value: number | undefined): string => {
     if (value === undefined) return "0%";
     return `${Math.round(Number(value) * 100)}%`;
@@ -76,23 +88,14 @@ const AnalysisResults = ({
       return "neutral";
     }
     
-    const firstSentiment = sentimentData.timeline[0].sentiment;
-    const lastSentiment = sentimentData.timeline[sentimentData.timeline.length - 1].sentiment;
+    const firstSentiment = sentimentData.timeline[0].sentiment || sentimentData.timeline[0].score;
+    const lastSentiment = sentimentData.timeline[sentimentData.timeline.length - 1].sentiment || 
+      sentimentData.timeline[sentimentData.timeline.length - 1].score;
     
     const diff = Number(lastSentiment) - Number(firstSentiment);
     if (diff > 0.05) return "improving";
     if (diff < -0.05) return "declining";
     return "stable";
-  };
-  
-  if (!sentimentData) {
-    return null;
-  }
-
-  // Format numbers to avoid adding strings
-  const formatNumber = (value: number | string | undefined): number => {
-    if (value === undefined) return 0;
-    return typeof value === 'string' ? parseFloat(value) : value;
   };
 
   return (
@@ -107,7 +110,7 @@ const AnalysisResults = ({
           <div className="flex-1 min-w-[150px]">
             <div className="text-sm text-muted-foreground">{t("overallSentiment")}</div>
             <div className="text-2xl font-semibold">
-              {formatSentiment(sentimentData.overallSentiment)}
+              {formatSentiment(sentimentData.overallSentiment?.score || sentimentData.overallSentiment)}
             </div>
             <div className={`text-sm ${
               calculateSentimentChange() === "improving" ? "text-green-600" :
@@ -121,7 +124,7 @@ const AnalysisResults = ({
           <div className="flex-1 min-w-[150px]">
             <div className="text-sm text-muted-foreground">{t("keywordCount")}</div>
             <div className="text-2xl font-semibold">
-              {sentimentData.keyPhrases?.length || 0}
+              {sentimentData.keyPhrases?.length || (sentimentData.bertAnalysis?.keywords?.length) || 0}
             </div>
           </div>
           
@@ -136,7 +139,14 @@ const AnalysisResults = ({
         <AnalysisTabs 
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          sentimentData={sentimentData}
+          sentimentData={{
+            ...sentimentData,
+            distribution: sentimentData.distribution || {
+              positive: sentimentData.bertAnalysis?.positiveWordCount || 25,
+              neutral: sentimentData.bertAnalysis?.neutralWordCount || 50,
+              negative: sentimentData.bertAnalysis?.negativeWordCount || 25
+            }
+          }}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           selectedPoint={selectedPoint}

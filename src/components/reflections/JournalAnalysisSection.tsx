@@ -23,6 +23,7 @@ import { ScrollToSection } from "@/components/ScrollToSection";
 import { KeyPhrases } from "@/components/KeyPhrases";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SentimentDistribution } from "@/components/SentimentDistribution";
 
 interface JournalAnalysisSectionProps {
   journalEntries: any[];
@@ -46,31 +47,20 @@ const JournalAnalysisSection = ({
   const [bertAnalysis, setBertAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
+  const [formattedTimelineData, setFormattedTimelineData] = useState<any[]>([]);
 
-  // Extract keywords from journal entries
-  const extractKeywords = () => {
-    if (!journalEntries.length) return [];
-    
-    if (bertAnalysis?.keywords) {
-      return bertAnalysis.keywords.map((kw: any) => kw.word);
+  // Transform timeline data for SentimentTimeline component
+  useEffect(() => {
+    if (timelineData && timelineData.length > 0) {
+      const formatted = timelineData.map((item, index) => ({
+        page: index + 1,
+        score: item.sentiment,
+        time: item.date,
+        event: `Journal entry from ${item.date}`
+      }));
+      setFormattedTimelineData(formatted);
     }
-    
-    const allText = journalEntries.map(entry => entry.text).join(" ");
-    const words = allText.toLowerCase().split(/\s+/);
-    const wordCount: Record<string, number> = {};
-    
-    words.forEach(word => {
-      if (word.length > 4) {
-        wordCount[word] = (wordCount[word] || 0) + 1;
-      }
-    });
-    
-    return Object.entries(wordCount)
-      .filter(([_, count]) => count > 1) // Only words that appear more than once
-      .sort(([_a, countA], [_b, countB]) => Number(countB) - Number(countA))
-      .slice(0, 20)
-      .map(([word]) => word);
-  };
+  }, [timelineData]);
 
   // Run BERT analysis on journal entries
   useEffect(() => {
@@ -95,6 +85,7 @@ const JournalAnalysisSection = ({
   }, [journalEntries, refreshTrigger]);
 
   const combinedJournalText = journalEntries.map(entry => entry.text).join(" ");
+  const totalWordCount = combinedJournalText ? combinedJournalText.split(/\s+/).filter(word => word.trim().length > 0).length : 0;
 
   return (
     <div className="mt-6">
@@ -130,15 +121,6 @@ const JournalAnalysisSection = ({
                 <ScrollToSection isOpen={activeAccordion === 'timeline'} elementId="timeline" />
                 <ScrollToSection isOpen={activeAccordion === 'keywords'} elementId="keywords" />
                 
-                {/* Document Text Visualization - Moved to the top */}
-                <div className="mb-6" id="text-analysis-section">
-                  <TextEmotionViewer 
-                    pdfText={combinedJournalText}
-                    sourceDescription="Journal Entries Text Analysis"
-                    bertAnalysis={bertAnalysis}
-                  />
-                </div>
-
                 <JournalSentimentSummary 
                   overallSentimentChange={overallSentimentChange} 
                   averageSentiment={averageSentiment} 
@@ -146,9 +128,31 @@ const JournalAnalysisSection = ({
                   getSentimentColor={getSentimentColor}
                 />
 
+                {/* Document Text Visualization */}
+                <div className="my-6" id="text-analysis-section">
+                  <TextEmotionViewer 
+                    pdfText={combinedJournalText}
+                    sourceDescription="Journal Entries Text Analysis"
+                    bertAnalysis={bertAnalysis}
+                  />
+                </div>
+
+                {/* Add Sentiment Distribution */}
+                <div className="my-6">
+                  <SentimentDistribution
+                    distribution={{
+                      positive: bertAnalysis?.positiveWordCount || Math.round(averageSentiment * 100),
+                      neutral: bertAnalysis?.neutralWordCount || 50,
+                      negative: bertAnalysis?.negativeWordCount || Math.round((1 - averageSentiment) * 100)
+                    }}
+                    sourceDescription="Journal entries sentiment distribution"
+                    totalWordCount={totalWordCount}
+                  />
+                </div>
+                
                 <div className="my-6" id="timeline">
                   <SentimentTimeline
-                    data={timelineData}
+                    data={formattedTimelineData}
                     sourceDescription="Journal emotional flow over time"
                   />
                 </div>

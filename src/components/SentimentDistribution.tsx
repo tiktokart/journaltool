@@ -22,14 +22,16 @@ export const SentimentDistribution = ({
 }: SentimentDistributionProps) => {
   const { t } = useLanguage();
   
+  // Format the data to ensure we have positive values
   const data = [
-    { name: 'Positive', value: distribution.positive, color: '#27AE60' },
-    { name: 'Neutral', value: distribution.neutral, color: '#3498DB' },
-    { name: 'Negative', value: distribution.negative, color: '#E74C3C' }
-  ].filter(item => item.value > 0);
+    { name: 'Positive', value: Math.max(1, distribution.positive || 0), color: '#27AE60' },
+    { name: 'Neutral', value: Math.max(1, distribution.neutral || 0), color: '#3498DB' },
+    { name: 'Negative', value: Math.max(1, distribution.negative || 0), color: '#E74C3C' }
+  ];
 
   // Calculate percentages for display
-  const total = distribution.positive + distribution.neutral + distribution.negative;
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  
   const getPercentage = (value: number) => {
     if (total === 0) return 0;
     return Math.round((value / total) * 100);
@@ -58,96 +60,88 @@ export const SentimentDistribution = ({
         )}
       </CardHeader>
       <CardContent>
-        {data.length === 0 ? (
-          <div className="h-60 flex items-center justify-center">
-            <p className="text-muted-foreground">{t("No distribution data available")}</p>
+        <div className="h-60">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+                  const RADIAN = Math.PI / 180;
+                  const radius = innerRadius + (outerRadius - innerRadius) * 0.7;
+                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                  return (
+                    <text 
+                      x={x} 
+                      y={y} 
+                      fill="white" 
+                      textAnchor={x > cx ? 'start' : 'end'} 
+                      dominantBaseline="central"
+                      className="text-xs font-medium"
+                    >
+                      {`${(percent * 100).toFixed(0)}%`}
+                    </text>
+                  );
+                }}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Legend />
+              <Tooltip 
+                formatter={(value: number, name: string) => [
+                  `${value} words (${getPercentage(value)}%)`,
+                  name
+                ]}
+                contentStyle={{
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          <div className="border rounded-md p-2 text-center bg-green-50">
+            <div className="text-green-600 font-medium">Positive</div>
+            <div className="text-xl font-semibold">{data[0].value}</div>
+            <div className="text-xs text-muted-foreground">words ({getPercentage(data[0].value)}% of analyzed)</div>
+            {totalWordCount && (
+              <div className="text-xs text-muted-foreground">
+                {getTextPercentage(data[0].value)}% of total text
+              </div>
+            )}
           </div>
-        ) : (
-          <>
-            <div className="h-60">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
-                      const RADIAN = Math.PI / 180;
-                      const radius = innerRadius + (outerRadius - innerRadius) * 0.7;
-                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                      return (
-                        <text 
-                          x={x} 
-                          y={y} 
-                          fill="white" 
-                          textAnchor={x > cx ? 'start' : 'end'} 
-                          dominantBaseline="central"
-                          className="text-xs font-medium"
-                        >
-                          {`${(percent * 100).toFixed(0)}%`}
-                        </text>
-                      );
-                    }}
-                  >
-                    {data.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                  <Tooltip 
-                    formatter={(value: number, name: string) => [
-                      `${value} words (${getPercentage(value)}%)`,
-                      name
-                    ]}
-                    contentStyle={{
-                      borderRadius: '0.5rem',
-                      border: 'none',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4 mt-4">
-              <div className="border rounded-md p-2 text-center bg-green-50">
-                <div className="text-green-600 font-medium">Positive</div>
-                <div className="text-xl font-semibold">{distribution.positive}</div>
-                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.positive)}% of analyzed)</div>
-                {totalWordCount && (
-                  <div className="text-xs text-muted-foreground">
-                    {getTextPercentage(distribution.positive)}% of total text
-                  </div>
-                )}
+          <div className="border rounded-md p-2 text-center bg-blue-50">
+            <div className="text-blue-600 font-medium">Neutral</div>
+            <div className="text-xl font-semibold">{data[1].value}</div>
+            <div className="text-xs text-muted-foreground">words ({getPercentage(data[1].value)}% of analyzed)</div>
+            {totalWordCount && (
+              <div className="text-xs text-muted-foreground">
+                {getTextPercentage(data[1].value)}% of total text
               </div>
-              <div className="border rounded-md p-2 text-center bg-blue-50">
-                <div className="text-blue-600 font-medium">Neutral</div>
-                <div className="text-xl font-semibold">{distribution.neutral}</div>
-                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.neutral)}% of analyzed)</div>
-                {totalWordCount && (
-                  <div className="text-xs text-muted-foreground">
-                    {getTextPercentage(distribution.neutral)}% of total text
-                  </div>
-                )}
+            )}
+          </div>
+          <div className="border rounded-md p-2 text-center bg-red-50">
+            <div className="text-red-600 font-medium">Negative</div>
+            <div className="text-xl font-semibold">{data[2].value}</div>
+            <div className="text-xs text-muted-foreground">words ({getPercentage(data[2].value)}% of analyzed)</div>
+            {totalWordCount && (
+              <div className="text-xs text-muted-foreground">
+                {getTextPercentage(data[2].value)}% of total text
               </div>
-              <div className="border rounded-md p-2 text-center bg-red-50">
-                <div className="text-red-600 font-medium">Negative</div>
-                <div className="text-xl font-semibold">{distribution.negative}</div>
-                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.negative)}% of analyzed)</div>
-                {totalWordCount && (
-                  <div className="text-xs text-muted-foreground">
-                    {getTextPercentage(distribution.negative)}% of total text
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
+            )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

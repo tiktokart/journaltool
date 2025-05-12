@@ -1,4 +1,3 @@
-
 interface TimelineEvent {
   time: string;
   event: string;
@@ -39,22 +38,21 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
     // Generate timeline events from text units
     const timeline: TimelineEvent[] = [];
     
-    // Time expressions to look for - expanded list for more diverse timeline markers
+    // Time expressions to look for - focused list for timeline markers
     const timeExpressions = [
       'first', 'initially', 'then', 'after', 'before', 'during', 'finally', 
-      'later', 'next', 'previously', 'subsequently', 'yesterday', 'today', 
-      'tomorrow', 'morning', 'afternoon', 'evening', 'night', 'beginning',
-      'meanwhile', 'afterwards', 'early', 'late', 'soon', 'following',
-      'suddenly', 'gradually', 'immediately', 'eventually', 'currently',
-      'ultimately', 'originally', 'recently', 'formerly'
+      'later', 'next', 'previously', 'yesterday', 'today', 
+      'tomorrow', 'morning', 'afternoon', 'evening', 'night',
+      'suddenly', 'gradually', 'immediately', 'eventually'
     ];
     
     // Color mapping for emotional tones - more distinctive colors
     const getColorForSentiment = (score: number): string => {
       if (score >= 0.7) return "#27AE60"; // Positive - Green
-      if (score >= 0.6) return "#3498DB"; // Neutral-positive - Blue
-      if (score >= 0.4) return "#F39C12"; // Neutral - Orange
-      if (score >= 0.3) return "#E67E22"; // Neutral-negative - Dark Orange
+      if (score >= 0.6) return "#2ECC71"; // Positive - Light Green
+      if (score >= 0.5) return "#3498DB"; // Neutral-positive - Blue
+      if (score >= 0.4) return "#F1C40F"; // Neutral - Yellow
+      if (score >= 0.3) return "#E67E22"; // Neutral-negative - Orange
       return "#E74C3C"; // Negative - Red
     };
     
@@ -77,7 +75,45 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
       return "Point";
     };
     
+    // Calculate sentiment for text unit (improved version)
+    const calculateSentimentForText = (text: string): number => {
+      if (!text) return 0.5;
+      
+      // These are simplistic just for the demonstration
+      const positiveWords = ['good', 'great', 'happy', 'excellent', 'love', 'enjoy', 'wonderful', 'joy',
+                           'pleased', 'delighted', 'thankful', 'excited', 'hopeful', 'optimistic'];
+      const negativeWords = ['bad', 'sad', 'terrible', 'hate', 'awful', 'horrible', 'poor', 'worry',
+                           'annoyed', 'angry', 'upset', 'disappointed', 'frustrated', 'anxious', 'afraid'];
+                           
+      const words = text.toLowerCase().split(/\s+/);
+      let positiveCount = 0;
+      let negativeCount = 0;
+      
+      words.forEach(word => {
+        if (positiveWords.includes(word)) positiveCount++;
+        if (negativeWords.includes(word)) negativeCount++;
+      });
+      
+      if (positiveCount === 0 && negativeCount === 0) {
+        // No sentiment words found, return slightly randomized neutral value
+        return 0.45 + (Math.random() * 0.1);  // 0.45-0.55
+      }
+      
+      // Calculate sentiment based on positive/negative ratio
+      const totalSentimentWords = positiveCount + negativeCount;
+      
+      // Base score from 0-1 representing the positive ratio
+      let sentiment = positiveCount / totalSentimentWords;
+      
+      // Add slight randomization but keep the general trend
+      sentiment = sentiment * 0.8 + 0.1 + (Math.random() * 0.1);
+      
+      // Ensure value is between 0 and 1
+      return Math.max(0.1, Math.min(0.9, sentiment));
+    };
+    
     // Safely process each text unit
+    let prevSentiment: number | null = null;
     textUnits.forEach((unit, index) => {
       try {
         // Skip empty units
@@ -117,13 +153,14 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
           }
         }
         
-        // Only add to timeline if it has a time expression or it's a key paragraph
-        if (timeExpression || index === 0 || index === textUnits.length - 1 || index % 3 === 0) {
+        // Only add significant points to timeline to avoid too many points
+        const sentiment = calculateSentimentForText(unit);
+        const sentimentChange = prevSentiment !== null ? Math.abs(sentiment - prevSentiment) : 0;
+        const isSignificantChange = sentimentChange > 0.15;
+        
+        if (isSignificantChange || index === 0 || index === textUnits.length - 1 || index % Math.max(1, Math.floor(textUnits.length / 10)) === 0) {
           // Extract a suitable event description (first 50 chars or so)
           const event = unit.length > 50 ? unit.substring(0, 50) + '...' : unit;
-          
-          // Generate sentiment between 0.3 and 0.8, with increased weight toward emotional detection
-          const sentiment = 0.3 + (Math.random() * 0.5);
           
           // For compatibility with visualization components
           const page = index + 1;
@@ -140,6 +177,8 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
             sentiment,
             color // Add color property for visualization
           });
+          
+          prevSentiment = sentiment;
         }
       } catch (error) {
         console.error("Error processing timeline unit:", error);
