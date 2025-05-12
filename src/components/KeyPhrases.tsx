@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { KeyRound, Book, Tag, Filter, ArrowDownUp, Hash } from 'lucide-react';
+import { KeyRound, Book, Hash, ArrowDownUp } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Button } from '@/components/ui/button';
 
 interface KeyPhrase {
   word: string;
@@ -24,15 +23,13 @@ interface KeyPhrasesProps {
 
 export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('themes');
-  const [sortedData, setSortedData] = useState<KeyPhrase[]>([]);
-  const [sortBy, setSortBy] = useState<'score' | 'alphabetical'>('score');
+  const [sortBy, setSortBy] = useState<'size' | 'alphabetical'>('size');
   const [themesByCategory, setThemesByCategory] = useState<{[key: string]: KeyPhrase[]}>({});
   
   // Process data to organize phrases by theme and category
   useEffect(() => {
     if (!data || !Array.isArray(data)) {
-      setSortedData([]);
+      setThemesByCategory({});
       return;
     }
     
@@ -144,39 +141,20 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
       themes[category].push(enrichedPhrase);
     });
     
-    // Order categories according to themeCategories array
+    // Order categories according to themeCategories array and sort by count
     const orderedThemes: {[key: string]: KeyPhrase[]} = {};
     
-    // First add categories from our predefined list that exist in the data
-    themeCategories.forEach(category => {
-      if (themes[category] && themes[category].length > 0) {
-        orderedThemes[category] = themes[category];
-      }
-    });
+    // Sort categories by size or alphabetically
+    const sortedCategories = sortBy === 'size' 
+      ? Object.keys(themes).sort((a, b) => themes[b].length - themes[a].length)
+      : Object.keys(themes).sort();
     
-    // Then add any other categories that weren't in our list
-    Object.keys(themes).forEach(category => {
-      if (!themeCategories.includes(category)) {
-        orderedThemes[category] = themes[category];
-      }
+    // Add sorted categories to the ordered themes
+    sortedCategories.forEach(category => {
+      orderedThemes[category] = themes[category];
     });
     
     setThemesByCategory(orderedThemes);
-    
-    // Sort data for regular view
-    let sorted = [...data];
-    
-    if (sortBy === 'score') {
-      sorted = sorted.sort((a, b) => 
-        ((b.score || 0) > (a.score || 0)) ? 1 : -1
-      );
-    } else {
-      sorted = sorted.sort((a, b) => 
-        a.word.localeCompare(b.word)
-      );
-    }
-    
-    setSortedData(sorted);
   }, [data, sortBy]);
 
   const getThemeBadgeColor = (category: string) => {
@@ -199,32 +177,23 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
     return 'text-blue-600';
   };
   
-  const getSentimentLabel = (sentiment: number | undefined) => {
-    if (sentiment === undefined) return 'Neutral';
-    if (sentiment >= 0.8) return 'Very Positive';
-    if (sentiment >= 0.6) return 'Positive';
-    if (sentiment <= 0.2) return 'Very Negative';
-    if (sentiment <= 0.4) return 'Negative';
-    return 'Neutral';
-  };
-  
   return (
     <Card className="border shadow-md bg-white">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-xl flex items-center font-pacifico">
             <KeyRound className="h-5 w-5 mr-2" />
-            Thematic Keywords
+            Content Theme Analysis
           </CardTitle>
           
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => setSortBy(sortBy === 'score' ? 'alphabetical' : 'score')}
+            onClick={() => setSortBy(sortBy === 'size' ? 'alphabetical' : 'size')}
             className="flex items-center text-xs h-8"
           >
             <ArrowDownUp className="h-3 w-3 mr-1.5" />
-            Sort: {sortBy === 'score' ? 'By Relevance' : 'Alphabetical'}
+            Sort: {sortBy === 'size' ? 'By Size' : 'Alphabetical'}
           </Button>
         </div>
         
@@ -235,78 +204,68 @@ export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
       <CardContent>
         {!data || data.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No key phrases or themes available
+            No themes available in the content
+          </div>
+        ) : Object.keys(themesByCategory).length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">
+            Processing content themes...
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="themes" className="flex items-center">
-                <Book className="h-4 w-4 mr-1.5" />
-                Themes
-              </TabsTrigger>
-              <TabsTrigger value="keywords" className="flex items-center">
-                <Tag className="h-4 w-4 mr-1.5" />
-                Keywords
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="themes" className="space-y-4">
-              {Object.keys(themesByCategory).length > 0 ? (
-                Object.entries(themesByCategory).map(([category, phrases]) => (
-                  <div key={category} className="mb-4">
-                    <h3 className="text-sm font-medium flex items-center mb-2">
-                      <Hash className="h-4 w-4 mr-1.5" />
-                      {category}
-                      <Badge variant="outline" className="ml-2">{phrases.length}</Badge>
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {phrases.map((phrase, i) => (
-                        <Badge 
-                          key={`${phrase.word}-${i}`}
-                          variant="secondary"
-                          className={`cursor-default transition-colors ${getThemeBadgeColor(category)}`}
-                        >
-                          {phrase.word}
-                          {phrase.sentiment !== undefined && (
-                            <span className={`ml-1 text-xs ${getSentimentColor(phrase.sentiment)}`}>
-                              ({getSentimentLabel(phrase.sentiment)})
-                            </span>
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  No themes detected in the text
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="keywords" className="p-0">
-              <div className="flex flex-wrap gap-2">
-                {sortedData.map((phrase, index) => (
-                  <Badge 
-                    key={`${phrase.word}-${index}`}
-                    variant="secondary" 
-                    className={`cursor-default ${
-                      phrase.sentiment && phrase.sentiment > 0.6 ? 'bg-green-100 text-green-800' : 
-                      phrase.sentiment && phrase.sentiment < 0.4 ? 'bg-red-100 text-red-800' : 
-                      'bg-blue-100 text-blue-800'
-                    }`}
+          <div className="space-y-6">
+            {/* Theme Visualization */}
+            <div className="flex flex-wrap gap-3 justify-center">
+              {Object.entries(themesByCategory).map(([category, phrases]) => {
+                // Calculate size based on number of phrases
+                const minSize = 70;
+                const maxSize = 180; 
+                const maxPhrases = Math.max(...Object.values(themesByCategory).map(p => p.length));
+                const size = minSize + (phrases.length / maxPhrases) * (maxSize - minSize);
+                
+                return (
+                  <div 
+                    key={`bubble-${category}`}
+                    className={`rounded-full flex flex-col items-center justify-center ${getThemeBadgeColor(category).split(' ')[0]} border shadow-md transition-all hover:scale-105 p-2 text-center`}
+                    style={{ 
+                      width: `${size}px`, 
+                      height: `${size}px`
+                    }}
                   >
-                    {phrase.word}
-                    {phrase.score && (
-                      <span className="ml-1 opacity-70 text-xs">
-                        {phrase.score.toFixed(2)}
-                      </span>
-                    )}
-                  </Badge>
-                ))}
+                    <div className="font-semibold text-sm">{category}</div>
+                    <div className="text-xs mt-1">{phrases.length} elements</div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Theme Categories Details */}
+            {Object.entries(themesByCategory).map(([category, phrases]) => (
+              <div key={category} className="mb-6">
+                <h3 className="text-sm font-medium flex items-center mb-2">
+                  <Book className="h-4 w-4 mr-1.5" />
+                  {category}
+                  <Badge variant="outline" className="ml-2">{phrases.length}</Badge>
+                </h3>
+                <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-slate-50">
+                  {phrases.map((phrase, i) => (
+                    <Badge 
+                      key={`${phrase.word}-${i}`}
+                      variant="secondary"
+                      className={`cursor-default transition-colors ${getThemeBadgeColor(category)}`}
+                    >
+                      {phrase.word}
+                      {phrase.sentiment !== undefined && (
+                        <span className={`ml-1 text-xs ${getSentimentColor(phrase.sentiment)}`}>
+                          {phrase.sentiment >= 0.6 ? "+" : 
+                           phrase.sentiment <= 0.4 ? "-" : 
+                           "~"}
+                        </span>
+                      )}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </TabsContent>
-          </Tabs>
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>

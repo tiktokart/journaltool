@@ -13,6 +13,7 @@ interface TimelineEntry {
   event?: string;
   index?: number;
   time?: string;
+  textSnippet?: string; // Added for text snippets
 }
 
 interface SentimentTimelineProps {
@@ -46,7 +47,8 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
             // Ensure score is between 0 and 1
             score: Math.max(0, Math.min(1, item.score || 0.5)),
             // Make sure we have a time property
-            time: item.time || `Section ${index + 1}`
+            time: item.time || `Section ${index + 1}`,
+            textSnippet: item.textSnippet || item.event || `Content point ${index + 1}`
           };
         }
         // Fallback for unexpected data format
@@ -54,7 +56,8 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
           page: index + 1,
           score: 0.5,
           time: `Section ${index + 1}`,
-          index
+          index,
+          textSnippet: `Content point ${index + 1}`
         };
       });
 
@@ -100,6 +103,25 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
     return "stable";
   };
 
+  // Find significant sentiment changes for displaying text snippets
+  const findSignificantPoints = () => {
+    if (normalizedData.length <= 2) return normalizedData;
+    
+    return normalizedData.filter((point, index) => {
+      if (index === 0 || index === normalizedData.length - 1) return true;
+      
+      const prevPoint = normalizedData[index - 1];
+      const nextPoint = normalizedData[index + 1];
+      
+      const diffPrev = Math.abs(point.score - prevPoint.score);
+      const diffNext = Math.abs(point.score - nextPoint.score);
+      
+      return diffPrev > 0.1 || diffNext > 0.1;
+    });
+  };
+
+  const significantPoints = findSignificantPoints();
+
   return (
     <Card className="border-0 shadow-md w-full bg-white">
       <CardHeader>
@@ -143,13 +165,27 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                   <XAxis 
                     dataKey="page" 
-                    label={{ value: "Content Flow", position: 'insideBottom', offset: -10 }} 
-                    tickFormatter={(value) => {
-                      const point = normalizedData.find(d => d.page === value);
-                      return point?.time ? point.time.substring(0, 8) : `Point ${value}`;
-                    }}
-                    height={60}
+                    tick={false} 
+                    tickLine={false} 
+                    axisLine={{ stroke: '#eaeaea' }}
+                    height={35}
                   />
+                  
+                  {/* Text Snippets above significant points */}
+                  {significantPoints.map((point) => (
+                    <text
+                      key={`text-${point.page}`}
+                      x={`${(point.page / normalizedData.length) * 95}%`}
+                      y={20}
+                      textAnchor="middle"
+                      fill="#333"
+                      fontSize={9}
+                      fontWeight="500"
+                    >
+                      {point.textSnippet?.substring(0, 12)}...
+                    </text>
+                  ))}
+                  
                   <YAxis 
                     domain={[0, 1]} 
                     label={{ value: "Sentiment", position: 'insideLeft', angle: -90, offset: 10 }}
@@ -167,7 +203,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                     formatter={(value: number) => [`Sentiment: ${value.toFixed(2)}`, ""]}
                     labelFormatter={(label) => {
                       const point = normalizedData.find(d => d.page === label);
-                      return point?.time ? `${point.time}${point.event ? `: ${point.event}` : ''}` : `Point ${label}`;
+                      return point?.textSnippet || point?.time || `Point ${label}`;
                     }}
                     contentStyle={{ 
                       borderRadius: '0.5rem',
@@ -215,13 +251,11 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                       const { cx, cy, payload } = props;
                       if (!payload) return null;
                       
-                      // Only show dots for significant sentiment changes
-                      const prevPoint = normalizedData[payload.page - 2];
-                      const sentimentChange = prevPoint ? Math.abs(payload.score - prevPoint.score) : 0;
-                      const isSignificantChange = sentimentChange > 0.1;
+                      // Check if this is a significant point
+                      const isSignificant = significantPoints.some(p => p.page === payload.page);
                       
-                      if (!isSignificantChange && payload.page !== 1 && payload.page !== normalizedData.length) {
-                        return null; // Don't show dot for insignificant changes
+                      if (!isSignificant && payload.page !== 1 && payload.page !== normalizedData.length) {
+                        return null; // Don't show dots for insignificant points
                       }
                       
                       const dotColor = getColor(payload.score);
@@ -247,7 +281,9 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
             {selectedPoint && (
               <div className="mt-4 p-3 bg-muted rounded-md">
                 <h4 className="font-medium">{selectedPoint.time}</h4>
-                {selectedPoint.event && <p className="text-sm mt-1">{selectedPoint.event}</p>}
+                <p className="text-sm mt-1">
+                  {selectedPoint.textSnippet || selectedPoint.event || "No text available"}
+                </p>
                 <div className="flex items-center mt-2">
                   <span className="text-sm text-muted-foreground">Sentiment:</span>
                   <span 

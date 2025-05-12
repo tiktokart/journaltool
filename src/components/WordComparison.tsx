@@ -151,23 +151,23 @@ const WordComparison = ({
   const getEmotionColor = (emotion: string): string => {
     switch(emotion) {
       case 'Joy':
-        return 'bg-yellow-50 border-yellow-200 shadow-[inset_0_1px_4px_rgba(255,210,0,0.2)]';
+        return 'bg-yellow-50 border-yellow-200';
       case 'Love':
-        return 'bg-pink-50 border-pink-200 shadow-[inset_0_1px_4px_rgba(240,100,120,0.2)]';
+        return 'bg-pink-50 border-pink-200';
       case 'Sadness':
-        return 'bg-blue-50 border-blue-200 shadow-[inset_0_1px_4px_rgba(100,150,255,0.2)]';
+        return 'bg-blue-50 border-blue-200';
       case 'Anger':
-        return 'bg-red-50 border-red-200 shadow-[inset_0_1px_4px_rgba(240,80,80,0.2)]';
+        return 'bg-red-50 border-red-200';
       case 'Fear':
-        return 'bg-orange-50 border-orange-200 shadow-[inset_0_1px_4px_rgba(255,150,80,0.2)]';
+        return 'bg-orange-50 border-orange-200';
       case 'Surprise':
-        return 'bg-purple-50 border-purple-200 shadow-[inset_0_1px_4px_rgba(180,100,240,0.2)]';
+        return 'bg-purple-50 border-purple-200';
       case 'Disgust':
-        return 'bg-emerald-50 border-emerald-200 shadow-[inset_0_1px_4px_rgba(80,200,150,0.2)]';
+        return 'bg-emerald-50 border-emerald-200';
       case 'Neutral':
-        return 'bg-gray-50 border-gray-200 shadow-[inset_0_1px_4px_rgba(150,150,150,0.1)]';
+        return 'bg-gray-50 border-gray-200';
       default:
-        return 'bg-violet-50 border-violet-200 shadow-[inset_0_1px_4px_rgba(170,120,240,0.2)]';
+        return 'bg-violet-50 border-violet-200';
     }
   };
   
@@ -196,6 +196,15 @@ const WordComparison = ({
     return indexA - indexB;
   });
   
+  // Calculate circle sizes based on word counts
+  const maxWordCount = Math.max(...Object.values(groupedWords).map(group => group.length));
+  const getCircleSize = (count: number) => {
+    const minSize = 100;
+    const maxSize = 220;
+    const size = minSize + (count / maxWordCount) * (maxSize - minSize);
+    return size;
+  };
+  
   return (
     <Card className="border shadow-md bg-white transition-all">
       <CardHeader className="pb-3">
@@ -217,89 +226,118 @@ const WordComparison = ({
             No words selected for comparison
           </div>
         ) : (
-          <div className="space-y-5">
-            {sortedEmotions.map((emotion) => (
-              <div 
-                key={emotion} 
-                className={`border rounded-lg p-3 transition-all ${getEmotionColor(emotion)}`}
-              >
-                <h4 className="font-medium mb-3 flex items-center">
-                  {getEmotionIcon(emotion)}
-                  <span className="ml-2">{emotion}</span>
-                  <Badge variant="outline" className="ml-2">{groupedWords[emotion].length}</Badge>
-                </h4>
-                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {groupedWords[emotion].map((word) => (
-                    <div 
-                      key={word.id} 
-                      className={`border rounded-lg p-3 relative cursor-pointer transition-all
-                        ${selectedWord?.id === word.id ? 
-                          'ring-2 ring-primary bg-white scale-105' : 
-                          'bg-white hover:bg-muted/20 hover:scale-[1.02]'
-                        } shadow-sm hover:shadow-md`}
-                      onClick={() => handleWordClick(word)}
-                    >
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute top-1 right-1 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemoveWord(word.id);
-                          if (selectedWord?.id === word.id) {
-                            setSelectedWord(null);
-                          }
-                        }}
+          <>
+            {/* Emotion Circles Visualization */}
+            <div className="flex flex-wrap justify-center items-center gap-3 mb-6">
+              {sortedEmotions.map(emotion => {
+                const count = groupedWords[emotion].length;
+                const size = getCircleSize(count);
+                return (
+                  <div 
+                    key={`circle-${emotion}`}
+                    className={`rounded-full flex flex-col justify-center items-center border ${getEmotionColor(emotion)} shadow-md transition-all hover:scale-105 cursor-pointer`}
+                    style={{ 
+                      width: `${size}px`, 
+                      height: `${size}px`,
+                      position: 'relative'
+                    }}
+                  >
+                    <div className="flex items-center gap-1 mb-1">
+                      {getEmotionIcon(emotion)}
+                      <span className="font-semibold">{emotion}</span>
+                    </div>
+                    <div className="text-sm font-medium">{count} words</div>
+                    <div className="text-xs text-muted-foreground mt-1">Click to explore</div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Word Groups Details */}
+            <div className="space-y-5">
+              {sortedEmotions.map((emotion) => (
+                <div 
+                  key={emotion} 
+                  className={`border rounded-lg p-3 transition-all ${getEmotionColor(emotion)}`}
+                >
+                  <h4 className="font-medium mb-3 flex items-center">
+                    {getEmotionIcon(emotion)}
+                    <span className="ml-2">{emotion}</span>
+                    <Badge variant="outline" className="ml-2">{groupedWords[emotion].length}</Badge>
+                  </h4>
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {groupedWords[emotion].map((word) => (
+                      <div 
+                        key={word.id} 
+                        className={`border rounded-lg p-3 relative cursor-pointer transition-all
+                          ${selectedWord?.id === word.id ? 
+                            'ring-2 ring-primary bg-white scale-105' : 
+                            'bg-white hover:bg-muted/20 hover:scale-[1.02]'
+                          } shadow-sm hover:shadow-md`}
+                        onClick={() => handleWordClick(word)}
                       >
-                        <X className="h-3 w-3" />
-                      </Button>
-                      
-                      <div className="mb-2">
-                        <h4 className="font-medium truncate pr-6">{word.word}</h4>
-                        <Badge 
-                          variant="outline" 
-                          className={`mt-1 ${
-                            emotion === 'Joy' ? 'bg-yellow-100 text-yellow-800' :
-                            emotion === 'Love' ? 'bg-pink-100 text-pink-800' :
-                            emotion === 'Sadness' ? 'bg-blue-100 text-blue-800' :
-                            emotion === 'Anger' ? 'bg-red-100 text-red-800' :
-                            emotion === 'Fear' ? 'bg-orange-100 text-orange-800' :
-                            emotion === 'Surprise' ? 'bg-purple-100 text-purple-800' :
-                            emotion === 'Disgust' ? 'bg-emerald-100 text-emerald-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="absolute top-1 right-1 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveWord(word.id);
+                            if (selectedWord?.id === word.id) {
+                              setSelectedWord(null);
+                            }
+                          }}
                         >
-                          {emotion}
-                        </Badge>
-                      </div>
-                      
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Sentiment:</span>
-                          <span className={`font-medium ${
-                            (word.sentiment || 0) > 0.55 ? 'text-green-600' :
-                            (word.sentiment || 0) < 0.45 ? 'text-red-600' :
-                            'text-gray-600'
-                          }`}>
-                            {getSentimentLabel(word.sentiment || 0.5)}
-                          </span>
+                          <X className="h-3 w-3" />
+                        </Button>
+                        
+                        <div className="mb-2">
+                          <h4 className="font-medium truncate pr-6">{word.word}</h4>
+                          <Badge 
+                            variant="outline" 
+                            className={`mt-1 ${
+                              emotion === 'Joy' ? 'bg-yellow-100 text-yellow-800' :
+                              emotion === 'Love' ? 'bg-pink-100 text-pink-800' :
+                              emotion === 'Sadness' ? 'bg-blue-100 text-blue-800' :
+                              emotion === 'Anger' ? 'bg-red-100 text-red-800' :
+                              emotion === 'Fear' ? 'bg-orange-100 text-orange-800' :
+                              emotion === 'Surprise' ? 'bg-purple-100 text-purple-800' :
+                              emotion === 'Disgust' ? 'bg-emerald-100 text-emerald-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {emotion}
+                          </Badge>
                         </div>
                         
-                        {connections[word.id] !== undefined && selectedWord?.id !== word.id && (
-                          <div className={`flex justify-between mt-1 p-1 rounded ${getConnectionColor(connections[word.id])}`}>
-                            <span className="text-muted-foreground">Connection:</span>
-                            <span className="font-medium">
-                              {getConnectionStrength(connections[word.id])}
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Sentiment:</span>
+                            <span className={`font-medium ${
+                              (word.sentiment || 0) > 0.55 ? 'text-green-600' :
+                              (word.sentiment || 0) < 0.45 ? 'text-red-600' :
+                              'text-gray-600'
+                            }`}>
+                              {getSentimentLabel(word.sentiment || 0.5)}
                             </span>
                           </div>
-                        )}
+                          
+                          {connections[word.id] !== undefined && selectedWord?.id !== word.id && (
+                            <div className={`flex justify-between mt-1 p-1 rounded ${getConnectionColor(connections[word.id])}`}>
+                              <span className="text-muted-foreground">Connection:</span>
+                              <span className="font-medium">
+                                {getConnectionStrength(connections[word.id])}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
         
         {selectedWord && (

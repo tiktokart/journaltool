@@ -48,19 +48,37 @@ const JournalAnalysisSection = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
   const [formattedTimelineData, setFormattedTimelineData] = useState<any[]>([]);
+  const [processedTimelineData, setProcessedTimelineData] = useState<any[]>([]);
 
-  // Transform timeline data for SentimentTimeline component
+  // Transform timeline data for SentimentTimeline and JournalSentimentChart components
   useEffect(() => {
     if (timelineData && timelineData.length > 0) {
-      const formatted = timelineData.map((item, index) => ({
+      // Format for SentimentTimeline
+      const formattedForTimeline = timelineData.map((item, index) => ({
         page: index + 1,
         score: item.sentiment,
         time: item.date,
         event: `Journal entry from ${item.date}`
       }));
-      setFormattedTimelineData(formatted);
+      setFormattedTimelineData(formattedForTimeline);
+      
+      // Add text snippets to timeline data for JournalSentimentChart
+      const combinedJournalText = journalEntries.map(entry => entry.text).join(" ");
+      const processedForChart = timelineData.map((item, index) => {
+        // Extract text snippet if possible
+        let textSnippet = "";
+        if (journalEntries[index]?.text) {
+          const text = journalEntries[index].text;
+          textSnippet = text.substring(0, Math.min(50, text.length)) + "...";
+        }
+        return {
+          ...item,
+          textSnippet
+        };
+      });
+      setProcessedTimelineData(processedForChart);
     }
-  }, [timelineData]);
+  }, [timelineData, journalEntries]);
 
   // Run BERT analysis on journal entries
   useEffect(() => {
@@ -150,9 +168,13 @@ const JournalAnalysisSection = ({
                   />
                 </div>
                 
+                {/* Timeline Visualization with actual text snippets */}
                 <div className="my-6" id="timeline">
                   <SentimentTimeline
-                    data={formattedTimelineData}
+                    data={formattedTimelineData.map((item, index) => ({
+                      ...item,
+                      textSnippet: journalEntries[index]?.text.substring(0, 40) + "..." 
+                    }))}
                     sourceDescription="Journal emotional flow over time"
                   />
                 </div>

@@ -5,6 +5,7 @@ interface JournalSentimentChartProps {
   timelineData: {
     date: string;
     sentiment: number;
+    textSnippet?: string; // Add text snippets
   }[];
 }
 
@@ -14,11 +15,16 @@ const JournalSentimentChart = ({ timelineData }: JournalSentimentChartProps) => 
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-2 border border-gray-200 shadow-sm rounded-md">
+        <div className="bg-white p-3 border border-gray-200 shadow-sm rounded-md">
           <p className="text-xs font-pacifico">{data.date}</p>
           <p className="text-xs font-georgia">
             Sentiment: {(data.sentiment * 100).toFixed(0)}%
           </p>
+          {data.textSnippet && (
+            <p className="text-xs font-georgia mt-1 max-w-[200px] truncate">
+              {data.textSnippet}
+            </p>
+          )}
         </div>
       );
     }
@@ -30,26 +36,17 @@ const JournalSentimentChart = ({ timelineData }: JournalSentimentChartProps) => 
     ? timelineData.reduce((sum, item) => sum + item.sentiment, 0) / timelineData.length
     : 0.5;
     
-  // Get the sentiment trend
-  const getSentimentTrend = () => {
-    if (timelineData.length < 2) return null;
-    
-    const firstValue = timelineData[0].sentiment;
-    const lastValue = timelineData[timelineData.length - 1].sentiment;
-    const difference = lastValue - firstValue;
-    
-    if (Math.abs(difference) < 0.1) return null; // Not significant change
-    
-    return difference > 0 ? {
-      label: "Positive trend",
-      color: "#27AE60"
-    } : {
-      label: "Declining trend",
-      color: "#E74C3C"
-    };
-  };
-  
-  const trend = getSentimentTrend();
+  // Find significant changes in sentiment for highlighting
+  const significantPoints = timelineData.length > 2
+    ? timelineData.filter((item, index) => {
+        if (index === 0 || index === timelineData.length - 1) return true;
+        const prevItem = timelineData[index - 1];
+        const nextItem = timelineData[index + 1];
+        const diffPrev = Math.abs(item.sentiment - prevItem.sentiment);
+        const diffNext = Math.abs(item.sentiment - nextItem.sentiment);
+        return diffPrev > 0.1 || diffNext > 0.1;
+      })
+    : timelineData;
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -97,21 +94,52 @@ const JournalSentimentChart = ({ timelineData }: JournalSentimentChartProps) => 
           strokeDasharray="3 3"
           label={{ value: "Average", position: "insideRight", fontSize: 10 }}
         />
-        {trend && (
-          <ReferenceLine
-            y={0}
-            stroke={trend.color}
-            strokeDasharray="5 5"
-            label={{ value: trend.label, position: "insideBottom", fontSize: 10, fill: trend.color }}
-          />
-        )}
+        
+        {/* Add text snippets for significant points */}
+        {significantPoints.map((point, index) => (
+          <text
+            key={`text-${index}`}
+            x={`${(index / (significantPoints.length - 1)) * 90 + 5}%`}
+            y={15}
+            textAnchor="middle"
+            fill="#333"
+            fontSize={9}
+          >
+            {point.textSnippet ? point.textSnippet.substring(0, 10) + '...' : point.date}
+          </text>
+        ))}
+        
         <Area
           type="monotone"
           dataKey="sentiment"
           stroke="#8884d8"
           strokeWidth={2}
           fill="url(#colorSentiment)"
-          dot={{ fill: '#27AE60', r: 4 }}
+          dot={(props: any) => {
+            if (!props || !props.cx || !props.cy || !props.payload) return null;
+            
+            // Check if this is a significant point to display
+            const isSignificant = significantPoints.some(point => point.date === props.payload.date);
+            if (!isSignificant && props.index !== 0 && props.index !== timelineData.length - 1) {
+              return null;
+            }
+            
+            // Get color based on sentiment
+            let fill = '#27AE60';  // default: positive
+            if (props.payload.sentiment < 0.4) fill = '#E74C3C';  // negative
+            else if (props.payload.sentiment < 0.6) fill = '#3498DB';  // neutral
+            
+            return (
+              <circle 
+                cx={props.cx} 
+                cy={props.cy} 
+                r={4} 
+                fill={fill} 
+                stroke="#fff"
+                strokeWidth={2} 
+              />
+            );
+          }}
           activeDot={{ fill: '#219653', r: 6 }}
         />
       </AreaChart>

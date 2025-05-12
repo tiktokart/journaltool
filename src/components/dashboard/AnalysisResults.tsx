@@ -56,6 +56,7 @@ const AnalysisResults = ({
   setConnectedPoints
 }: AnalysisResultsProps) => {
   const { t } = useLanguage();
+  const [processedData, setProcessedData] = useState<any>(null);
 
   // Expose points to window object for use in visualization
   useEffect(() => {
@@ -63,6 +64,39 @@ const AnalysisResults = ({
       window.documentEmbeddingPoints = filteredPoints;
     }
   }, [filteredPoints]);
+  
+  // Process data for visualization
+  useEffect(() => {
+    if (!sentimentData) return;
+    
+    // Extract text snippets for timeline data
+    const processTimeline = (timeline: any[]) => {
+      if (!timeline || !Array.isArray(timeline)) return timeline;
+      
+      return timeline.map((item, index) => {
+        // Try to extract text snippets from the document
+        let textSnippet = item.event || "";
+        if (pdfText) {
+          const wordCount = 20;
+          const position = Math.floor((index / timeline.length) * pdfText.length);
+          const startPos = Math.max(0, pdfText.indexOf(' ', position - 100) + 1);
+          const endPos = pdfText.indexOf('.', startPos + 10) + 1 || startPos + wordCount;
+          textSnippet = pdfText.substring(startPos, endPos).trim();
+        }
+        
+        return {
+          ...item,
+          textSnippet
+        };
+      });
+    };
+    
+    // Process data for visualization
+    setProcessedData({
+      ...sentimentData,
+      timeline: processTimeline(sentimentData.timeline)
+    });
+  }, [sentimentData, pdfText]);
   
   // Add total word count to data for distribution stats
   const totalWordCount = pdfText ? pdfText.split(/\s+/).filter(word => word.trim().length > 0).length : 0;
@@ -96,6 +130,29 @@ const AnalysisResults = ({
     if (diff > 0.05) return "improving";
     if (diff < -0.05) return "declining";
     return "stable";
+  };
+
+  // Ensure we have properly structured distribution data
+  const ensureDistribution = () => {
+    if (sentimentData.distribution) return sentimentData.distribution;
+    
+    if (sentimentData.bertAnalysis) {
+      return {
+        positive: sentimentData.bertAnalysis.positiveWordCount || 25,
+        neutral: sentimentData.bertAnalysis.neutralWordCount || 50,
+        negative: sentimentData.bertAnalysis.negativeWordCount || 25
+      };
+    }
+    
+    // Generate a basic distribution based on overall sentiment
+    const overallSentiment = sentimentData.overallSentiment?.score || 
+                            sentimentData.overallSentiment || 0.5;
+                            
+    return {
+      positive: Math.round(overallSentiment * 100),
+      negative: Math.round((1 - overallSentiment) * 0.7 * 100),
+      neutral: 100 - Math.round(overallSentiment * 100) - Math.round((1 - overallSentiment) * 0.7 * 100)
+    };
   };
 
   return (
@@ -141,11 +198,8 @@ const AnalysisResults = ({
           setActiveTab={setActiveTab}
           sentimentData={{
             ...sentimentData,
-            distribution: sentimentData.distribution || {
-              positive: sentimentData.bertAnalysis?.positiveWordCount || 25,
-              neutral: sentimentData.bertAnalysis?.neutralWordCount || 50,
-              negative: sentimentData.bertAnalysis?.negativeWordCount || 25
-            }
+            distribution: ensureDistribution(),
+            timeline: processedData?.timeline || sentimentData.timeline
           }}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
