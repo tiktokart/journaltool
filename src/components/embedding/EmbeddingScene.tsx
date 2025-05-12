@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
@@ -24,9 +25,10 @@ interface EmbeddingSceneProps {
   onCameraMove?: () => void;
   containerRef?: React.RefObject<HTMLDivElement>;
   cameraRef?: React.RefObject<THREE.PerspectiveCamera>;
-  controlsRef?: React.RefObject<OrbitControls>;
+  controlsRef?: React.RefObject<any>; // Changed from OrbitControls to any
   visualizationSettings?: any;
   bertAnalysis?: any;
+  onPointSelect?: (point: any | null) => void; // Added this prop
 }
 
 const EmbeddingScene = ({
@@ -44,10 +46,11 @@ const EmbeddingScene = ({
   cameraRef,
   controlsRef,
   visualizationSettings = { pointSize: 5, lineWidth: 2, connectionOpacity: 0.5 },
-  bertAnalysis
+  bertAnalysis,
+  onPointSelect
 }: EmbeddingSceneProps) => {
   const { gl, scene, camera } = useThree();
-  const orbitControlsRef = useRef<OrbitControls | null>(null);
+  const orbitControlsRef = useRef<any | null>(null);
   const pointsRef = useRef<THREE.Points | null>(null);
   const linesRef = useRef<THREE.LineSegments | null>(null);
   const [cameraPosition, setCameraPosition] = useState(new THREE.Vector3(0, 0, 20));
@@ -63,7 +66,10 @@ const EmbeddingScene = ({
 
   useEffect(() => {
     if (controlsRef && orbitControlsRef.current) {
-      controlsRef.current = orbitControlsRef.current;
+      // Safe assignment using object reference
+      if (controlsRef.current !== orbitControlsRef.current) {
+        controlsRef.current = orbitControlsRef.current;
+      }
     }
   }, [controlsRef]);
 
@@ -152,8 +158,18 @@ const EmbeddingScene = ({
       const index = intersects[0].index;
       const clickedPoint = points[index];
       onPointClick(clickedPoint);
+      
+      // Call onPointSelect if provided
+      if (onPointSelect) {
+        onPointSelect(clickedPoint);
+      }
     } else {
       onPointClick(null);
+      
+      // Call onPointSelect with null if provided
+      if (onPointSelect) {
+        onPointSelect(null);
+      }
     }
   };
 
@@ -170,7 +186,6 @@ const EmbeddingScene = ({
       <pointLight position={[10, 10, 10]} />
       <OrbitControls
         ref={orbitControlsRef}
-        args={[camera, gl.domElement]}
         enableDamping
         dampingFactor={0.1}
       />
@@ -242,7 +257,7 @@ export const zoomOut = (camera: THREE.PerspectiveCamera) => {
   });
 };
 
-export const resetZoom = (camera: THREE.PerspectiveCamera, controls: OrbitControls) => {
+export const resetZoom = (camera: THREE.PerspectiveCamera, controls: any) => {
   gsap.to(camera.position, {
     x: 0,
     y: 0,

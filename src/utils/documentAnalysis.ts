@@ -1,3 +1,4 @@
+
 import { faker } from '@faker-js/faker';
 
 export function processTextForVisualization(text: string, name: string): any {
@@ -70,6 +71,11 @@ export function processTextForVisualization(text: string, name: string): any {
     keywordAnalysis,
     wordCount: uniqueWords.length
   };
+}
+
+// Add the missing function that's referenced in Dashboard.tsx
+export function analyzePdfContent(pdfText: string, filename: string) {
+  return processTextForVisualization(pdfText, filename);
 }
 
 function extractKeywords(text: string): string[] {

@@ -35,7 +35,7 @@ export const DocumentEmbedding = ({
   const isHomepage = location.pathname === '/';
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
+  const controlsRef = useRef<any | null>(null);
   
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
@@ -359,14 +359,13 @@ export const DocumentEmbedding = ({
         controlsRef={controlsRef}
         points={displayPoints}
         onPointHover={handlePointHover}
-        onPointSelect={handlePointSelect}
+        onPointClick={handlePointSelect} 
+        onPointSelect={handlePointSelect} 
         isInteractive={isInteractive}
         depressedJournalReference={depressedJournalReference}
         focusOnWord={currentFocusWord}
         connectedPoints={connectedPoints}
         selectedPoint={selectedPoint}
-        comparisonPoint={comparisonPoint}
-        isCompareMode={isCompareMode}
         onFocusEmotionalGroup={handleFocusEmotionalGroup}
         selectedEmotionalGroup={selectedEmotionalGroup}
         onResetView={handleResetView}
