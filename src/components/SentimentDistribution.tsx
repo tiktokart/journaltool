@@ -28,6 +28,13 @@ export const SentimentDistribution = ({
     { name: 'Negative', value: distribution.negative, color: '#E74C3C' }
   ].filter(item => item.value > 0);
 
+  // Calculate percentages for display
+  const total = distribution.positive + distribution.neutral + distribution.negative;
+  const getPercentage = (value: number) => {
+    if (total === 0) return 0;
+    return Math.round((value / total) * 100);
+  };
+
   return (
     <Card className="border border-border shadow-md bg-white">
       <CardHeader>
@@ -83,7 +90,7 @@ export const SentimentDistribution = ({
                   <Legend />
                   <Tooltip 
                     formatter={(value: number, name: string) => [
-                      `${value}${totalWordCount ? ` (${Math.round(value / totalWordCount * 100)}%)` : ''}`,
+                      `${value} words (${getPercentage(value)}%)`,
                       name
                     ]}
                     contentStyle={{
@@ -100,17 +107,17 @@ export const SentimentDistribution = ({
               <div className="border rounded-md p-2 text-center bg-green-50">
                 <div className="text-green-600 font-medium">Positive</div>
                 <div className="text-xl font-semibold">{distribution.positive}</div>
-                <div className="text-xs text-muted-foreground">words</div>
+                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.positive)}%)</div>
               </div>
               <div className="border rounded-md p-2 text-center bg-blue-50">
                 <div className="text-blue-600 font-medium">Neutral</div>
                 <div className="text-xl font-semibold">{distribution.neutral}</div>
-                <div className="text-xs text-muted-foreground">words</div>
+                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.neutral)}%)</div>
               </div>
               <div className="border rounded-md p-2 text-center bg-red-50">
                 <div className="text-red-600 font-medium">Negative</div>
                 <div className="text-xl font-semibold">{distribution.negative}</div>
-                <div className="text-xs text-muted-foreground">words</div>
+                <div className="text-xs text-muted-foreground">words ({getPercentage(distribution.negative)}%)</div>
               </div>
             </div>
           </>
