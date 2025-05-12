@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -70,9 +69,9 @@ export const AnalysisTabs = ({
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
-  const [isOverviewOpen, setIsOverviewOpen] = useState(true);
-  const [isEmbeddingOpen, setIsEmbeddingOpen] = useState(true);
-  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(true);
+  const [isOverviewOpen, setIsOverviewOpen] = useState(false); // Start closed
+  const [isEmbeddingOpen, setIsEmbeddingOpen] = useState(false); // Start closed
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false); // Start closed
 
   // Check if the required data for each tab is available
   const hasEmbeddingData = sentimentData?.embeddingPoints && sentimentData.embeddingPoints.length > 0;

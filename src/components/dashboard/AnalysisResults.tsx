@@ -1,4 +1,3 @@
-
 import { FileInfoDisplay } from "@/components/FileInfoDisplay";
 import { ViewDetailedAnalysis } from "@/components/ViewDetailedAnalysis";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
@@ -116,7 +115,7 @@ const AnalysisResults = ({
           </div>
         </Collapsible>
         
-        {/* Detailed Analysis Section */}
+        {/* Detailed Analysis Section - This one stays open */}
         <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen} className="w-full">
           <div className="bg-white p-4 rounded-lg mb-4">
             <div className="flex justify-between items-center">
