@@ -31,6 +31,11 @@ interface EmbeddingSceneProps {
   onPointSelect?: (point: any | null) => void;
 }
 
+// Updated event type for Three.js
+type ThreeMouseEvent = THREE.Event & {
+  nativeEvent: MouseEvent;
+};
+
 const EmbeddingScene = ({
   points,
   selectedPoint,
@@ -142,7 +147,7 @@ const EmbeddingScene = ({
     }
   }, [selectedPoint, connectedPoints, visualizationSettings.lineWidth, visualizationSettings.connectionOpacity, points]);
 
-  const handlePointClickWrapper = (event: THREE.ThreeEvent<MouseEvent>) => {
+  const handlePointClickWrapper = (event: ThreeMouseEvent) => {
     event.stopPropagation();
     const array = points.map(point => new THREE.Vector3(point.position[0], point.position[1], point.position[2]));
     const geometry = new THREE.BufferGeometry().setFromPoints(array);
@@ -208,7 +213,7 @@ const EmbeddingScene = ({
   );
 };
 
-const Points = React.forwardRef<THREE.Points, { positions: number[]; colors: number[]; size: number; onClick: (event: THREE.ThreeEvent<MouseEvent>) => void }>(
+const Points = React.forwardRef<THREE.Points, { positions: number[]; colors: number[]; size: number; onClick: (event: ThreeMouseEvent) => void }>(
   ({ positions, colors, size, onClick }, ref) => {
     const geometryRef = useRef(new THREE.BufferGeometry());
     const materialRef = useRef(new THREE.PointsMaterial({ size, vertexColors: true }));

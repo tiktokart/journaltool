@@ -1,3 +1,4 @@
+
 import { FileInfoDisplay } from "@/components/FileInfoDisplay";
 import { ViewDetailedAnalysis } from "@/components/ViewDetailedAnalysis";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
@@ -10,7 +11,7 @@ import { Point } from "@/types/embedding";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ScrollToSection } from "@/components/ScrollToSection";
 
 interface AnalysisResultsProps {
