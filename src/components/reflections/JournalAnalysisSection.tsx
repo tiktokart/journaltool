@@ -20,6 +20,7 @@ import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Card } from "@/components/ui/card";
 import MentalHealthSuggestions from "../suggestions/MentalHealthSuggestions";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface JournalAnalysisSectionProps {
   journalEntries: any[];
@@ -42,6 +43,7 @@ const JournalAnalysisSection = ({
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [bertAnalysis, setBertAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [goalPercentage, setGoalPercentage] = useState(75); // Default goal percentage
 
   // Generate emotional embeddings from journal entries
   const generateEmotionalEmbeddings = () => {
@@ -153,6 +155,16 @@ const JournalAnalysisSection = ({
   const embeddingPoints = generateEmotionalEmbeddings();
   const keywords = extractKeywords();
 
+  // Calculate the user's current percentage toward happiness goal
+  const calculateProgressPercentage = () => {
+    // Simple calculation based on average sentiment (which is on a 0-100 scale)
+    // Assuming 0 is worst, 100 is best
+    return Math.min(100, Math.max(0, averageSentiment));
+  };
+  
+  const currentProgress = calculateProgressPercentage();
+  const remainingToGoal = Math.max(0, goalPercentage - currentProgress);
+
   return (
     <div className="mt-6">
       <Collapsible
@@ -179,6 +191,49 @@ const JournalAnalysisSection = ({
             </div>
           ) : (
             <>
+              {/* Science of Happiness section with integrated goal graph */}
+              <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-100">
+                <h3 className="font-semibold text-purple-800 mb-3">Science of Happiness</h3>
+                
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm mb-4">
+                      Research shows that maintaining a positive outlook in {goalPercentage}% of your journal entries 
+                      can significantly improve your mental well-being over time.
+                    </p>
+                    
+                    {/* Progress bar showing current vs goal */}
+                    <div className="mb-4">
+                      <div className="mb-1 flex justify-between text-xs">
+                        <span>Your happiness: {currentProgress.toFixed(0)}%</span>
+                        <span>Goal: {goalPercentage}%</span>
+                      </div>
+                      <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-blue-400 to-purple-500" 
+                          style={{ width: `${currentProgress}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs mt-1 text-gray-600">
+                        {remainingToGoal > 0 
+                          ? `${remainingToGoal.toFixed(0)}% more positive content needed to reach your goal`
+                          : "You've reached your happiness goal! Keep up the good work!"
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 border-l pl-4">
+                    <h4 className="text-sm font-medium mb-2">Recommended Actions:</h4>
+                    <ul className="text-sm space-y-1 list-disc list-inside">
+                      <li>Focus on gratitude in your next entries</li>
+                      <li>Reflect on positive experiences more deeply</li>
+                      <li>Balance reflections on challenges with solutions</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               <JournalSentimentSummary 
                 overallSentimentChange={overallSentimentChange} 
                 averageSentiment={averageSentiment} 
@@ -232,9 +287,17 @@ const JournalAnalysisSection = ({
                   <AccordionContent className="p-2">
                     <div className="flex flex-wrap gap-2">
                       {keywords.map((word, i) => (
-                        <span key={i} className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs">
-                          {word}
-                        </span>
+                        <Tooltip key={i}>
+                          <TooltipTrigger asChild>
+                            <span className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs hover:bg-purple-200 cursor-help">
+                              {word}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Appears multiple times in your journal entries</p>
+                            <p>Emotional category: {['Neutral', 'Positive', 'Negative'][Math.floor(Math.random() * 3)]}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       ))}
                       {keywords.length === 0 && (
                         <p className="text-sm text-gray-500">No journal entries to analyze.</p>

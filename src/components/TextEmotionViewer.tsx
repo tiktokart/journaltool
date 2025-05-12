@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { shouldFilterWord } from "@/utils/documentAnalysis";
 
 interface TextEmotionViewerProps {
   pdfText: string;
@@ -34,7 +34,7 @@ export const TextEmotionViewer = ({
   const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal'>('minimal');
   const [localBertAnalysis, setLocalBertAnalysis] = useState<any>(bertAnalysis);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Default to open
 
   // Unified color function for emotional tones - ensuring consistency across the app
   const getUnifiedEmotionColor = (emotion: string): string => {
@@ -167,14 +167,10 @@ export const TextEmotionViewer = ({
 
     console.log("Word emotion map size:", wordEmotionMap.size);
 
-    // Words to filter out - significantly reduced filtering, only the most common/basic words
-    const wordsToFilter = filteringLevel === 'minimal' ? [
-      // Minimal filtering - only articles, prepositions, conjunctions, and question words
-      'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'being', 'been',
-      'and', 'but', 'or', 'nor', 'for', 'yet', 'so',
-      'in', 'on', 'at', 'by', 'to', 'from', 'with', 'about', 'against', 'before', 'after',
-      'what', 'where', 'when', 'why', 'how', 'which', 'who', 'whom', 'whose', 'that'
-    ] : [];
+    // Filter words using the utility function
+    const wordsToFilter = filteringLevel === 'minimal' 
+      ? Array.from(wordEmotionMap.keys()).filter(shouldFilterWord)
+      : [];
 
     // Split text into words while preserving whitespace and punctuation
     const textSegments: { text: string; emotion: string | null; color?: string }[] = [];
@@ -280,7 +276,7 @@ export const TextEmotionViewer = ({
         <CardHeader>
           <CardTitle className="flex items-center text-xl font-pacifico">
             <Highlighter className="h-5 w-5 mr-2 text-primary" />
-            {t("Document Text Visualization")}
+            {t("Document Text Analysis")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-10 font-georgia">
@@ -296,7 +292,7 @@ export const TextEmotionViewer = ({
         <CardHeader>
           <CardTitle className="flex items-center text-xl font-pacifico">
             <Highlighter className="h-5 w-5 mr-2 text-primary" />
-            {t("Document Text Visualization")}
+            {t("Document Text Analysis")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-10 font-georgia">
@@ -314,7 +310,7 @@ export const TextEmotionViewer = ({
           <div className="flex justify-between items-center">
             <CardTitle className="flex items-center text-xl font-pacifico">
               <Highlighter className="h-5 w-5 mr-2 text-primary" />
-              {t("Document Text Visualization")}
+              {t("Document Text Analysis")}
             </CardTitle>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="w-9 p-0">
