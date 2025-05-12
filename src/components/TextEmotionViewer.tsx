@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,21 +30,24 @@ export const TextEmotionViewer = ({
   const [highlightedText, setHighlightedText] = useState<React.ReactNode[]>([]);
   const [showHighlights, setShowHighlights] = useState(true);
   const [hideNonHighlighted, setHideNonHighlighted] = useState(false);
-  const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal' | 'strict'>('strict');
+  const [filteringLevel, setFilteringLevel] = useState<'none' | 'minimal' | 'strict'>('minimal');
   const [localBertAnalysis, setLocalBertAnalysis] = useState<any>(bertAnalysis);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
 
   // Unified color function for emotional tones - ensuring consistency across the app
   const getUnifiedEmotionColor = (emotion: string): string => {
+    // Remove "Theme" suffix if present
+    const cleanEmotion = emotion.replace(/\sTheme$/, '');
+    
     // Prioritize BERT emotional colors for consistency
-    const bertColor = getBertEmotionColor(emotion);
+    const bertColor = getBertEmotionColor(cleanEmotion);
     if (bertColor !== "#95A5A6") { // Not the default gray
       return bertColor;
     }
     
     // Fall back to embedding utils color if BERT doesn't have a specific color
-    return getEmotionColor(emotion);
+    return getEmotionColor(cleanEmotion);
   };
 
   // Run BERT analysis when pdfText changes
@@ -179,11 +181,10 @@ export const TextEmotionViewer = ({
       
       // Basic words to filter in minimal mode
       const minimalFilters = [
-        // Articles, prepositions, conjunctions, and question words
-        'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'being', 'been',
-        'and', 'but', 'or', 'nor', 'for', 'yet', 'so',
-        'in', 'on', 'at', 'by', 'to', 'from', 'with', 'about', 'against', 'before', 'after',
-        'what', 'where', 'when', 'why', 'how', 'which', 'who', 'whom', 'whose', 'that'
+        // Articles, prepositions, conjunctions
+        'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be',
+        'and', 'but', 'or', 'nor',
+        'in', 'on', 'at', 'by', 'to', 'from'
       ];
       
       // More extensive filtering for strict mode
@@ -203,9 +204,9 @@ export const TextEmotionViewer = ({
           'very', 'really', 'quite', 'just', 'too', 'enough', 'even',
           'almost', 'only', 'merely', 'nearly', 'hardly',
           
-          // Common adjectives
-          'good', 'bad', 'big', 'small', 'high', 'low',
-          'many', 'much', 'few', 'some', 'any', 'all', 'most',
+          // More prepositions and conjunctions
+          'for', 'yet', 'so', 'with', 'about', 'against', 'before', 'after',
+          'what', 'where', 'when', 'why', 'how', 'which', 'who', 'whom', 'whose', 'that',
           
           // Common auxiliaries
           'can', 'could', 'may', 'might', 'shall', 'should',

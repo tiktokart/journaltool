@@ -25,18 +25,24 @@ export const SentimentDistribution = ({
   const ensureValidDistribution = (dist: typeof distribution) => {
     // Only use default values if all values are zero or undefined
     if ((dist.positive || 0) === 0 && (dist.neutral || 0) === 0 && (dist.negative || 0) === 0) {
+      console.log("Using default distribution values because all values were zero");
       return { positive: 20, neutral: 60, negative: 20 };
     }
     
     // Otherwise keep the existing values but ensure they're not zero
-    return {
+    const result = {
       positive: Math.max(1, dist.positive || 0),
       neutral: Math.max(1, dist.neutral || 0),
       negative: Math.max(1, dist.negative || 0)
     };
+    
+    console.log("Using distribution values:", result);
+    return result;
   };
   
   const validDistribution = ensureValidDistribution(distribution);
+  console.log("Distribution before validation:", distribution);
+  console.log("Distribution after validation:", validDistribution);
   
   // Format the data
   const data = [

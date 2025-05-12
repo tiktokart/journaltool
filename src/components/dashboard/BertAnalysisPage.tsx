@@ -37,13 +37,21 @@ const BertAnalysisPage = ({
   // Initialize uniqueWords from points with emotional data
   useEffect(() => {
     if (sentimentData?.embeddingPoints && sentimentData.embeddingPoints.length > 0) {
-      const words = sentimentData.embeddingPoints
+      console.log("Setting up unique words from embedding points", sentimentData.embeddingPoints.length);
+      
+      // Clean up emotion labels by removing "Theme" suffix
+      const cleanedPoints = sentimentData.embeddingPoints.map((point: Point) => ({
+        ...point,
+        emotionalTone: point.emotionalTone?.replace(/\sTheme$/, '') || point.emotionalTone
+      }));
+      
+      const words = cleanedPoints
         .filter((point: Point) => point.word && point.emotionalTone)
         .map((point: Point) => point.word || "");
         
       // Fixed TS error by ensuring we have array of strings
       setUniqueWords([...new Set(words)] as string[]);
-      setFilteredPoints(sentimentData.embeddingPoints);
+      setFilteredPoints(cleanedPoints);
     }
   }, [sentimentData?.embeddingPoints]);
   
@@ -70,6 +78,8 @@ const BertAnalysisPage = ({
       const text = pdfText || "Sample text for analysis";
       const sourceDescription = ""; // Remove file description from visualization
       
+      console.log("Starting analysis with text length:", text.length);
+      
       // Process text through BERT analysis pipeline
       const analysis = await processBertAnalysis(
         text,
@@ -77,6 +87,27 @@ const BertAnalysisPage = ({
         file?.size || 0,
         sourceDescription
       );
+      
+      console.log("Analysis complete with results:", {
+        bertKeywordsCount: analysis.bertAnalysis?.keywords?.length,
+        embeddingPointsCount: analysis.embeddingPoints?.length,
+        distribution: analysis.distribution
+      });
+      
+      // Clean up emotion labels by removing "Theme" suffix
+      if (analysis.bertAnalysis?.keywords) {
+        analysis.bertAnalysis.keywords = analysis.bertAnalysis.keywords.map((kw: any) => ({
+          ...kw,
+          tone: kw.tone?.replace(/\sTheme$/, '') || kw.tone
+        }));
+      }
+      
+      if (analysis.embeddingPoints) {
+        analysis.embeddingPoints = analysis.embeddingPoints.map((point: Point) => ({
+          ...point,
+          emotionalTone: point.emotionalTone?.replace(/\sTheme$/, '') || point.emotionalTone
+        }));
+      }
       
       // Update state with analysis results
       setSentimentData({

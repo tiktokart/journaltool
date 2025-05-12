@@ -37,11 +37,13 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
         return;
       }
 
+      console.log("SentimentTimeline received data:", data);
+
       // Process and normalize the data
       const processed: TimelineEntry[] = data.map((item, index) => {
         if (typeof item === 'object' && item !== null) {
           // Ensure we have valid data for visualization
-          return {
+          const entry = {
             ...item,
             page: item.page || index + 1,
             // Ensure score is between 0 and 1
@@ -51,6 +53,8 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
             // Ensure we have a text snippet
             textSnippet: item.textSnippet || item.event || `Content point ${index + 1}`
           };
+          console.log(`Timeline point ${index}:`, entry);
+          return entry;
         }
         // Fallback for unexpected data format
         return {
@@ -85,6 +89,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
   };
   
   const handlePointClick = (point: TimelineEntry) => {
+    console.log("Timeline point clicked:", point);
     setSelectedPoint(point === selectedPoint ? null : point);
   };
 
@@ -98,6 +103,12 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
     const secondHalfAvg = secondHalf.reduce((sum, point) => sum + point.score, 0) / secondHalf.length;
     
     const difference = secondHalfAvg - firstHalfAvg;
+    console.log("Timeline trend calculation:", { 
+      firstHalfAvg, 
+      secondHalfAvg, 
+      difference,
+      trend: difference > 0.1 ? "improving" : difference < -0.1 ? "declining" : "stable"
+    });
     
     if (difference > 0.1) return "improving";
     if (difference < -0.1) return "declining";
@@ -122,6 +133,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
   };
 
   const significantPoints = findSignificantPoints();
+  console.log("Significant timeline points:", significantPoints);
 
   return (
     <Card className="border-0 shadow-md w-full bg-white">

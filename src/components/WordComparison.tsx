@@ -49,6 +49,8 @@ const WordComparison = ({
       return;
     }
     
+    console.log("WordComparison: Processing", words.length, "words for grouping");
+    
     const grouped: {[key: string]: Point[]} = {};
     
     // Initialize categories
@@ -57,8 +59,8 @@ const WordComparison = ({
     });
     
     words.forEach(word => {
-      // Determine which category this word belongs to
-      let emotion = word.emotionalTone || 'Neutral';
+      // Remove "Theme" suffix and normalize emotion
+      let emotion = word.emotionalTone ? word.emotionalTone.replace(/\sTheme$/, '') : 'Neutral';
       
       // Map similar emotions to main categories
       const emotionLower = emotion.toLowerCase();
@@ -95,6 +97,9 @@ const WordComparison = ({
         filteredGroups[key] = value;
       }
     }
+    
+    console.log("Word groups created:", Object.keys(filteredGroups), "with counts:", 
+      Object.entries(filteredGroups).map(([k, v]) => `${k}: ${v.length}`).join(", "));
     
     setGroupedWords(filteredGroups);
   }, [words]);
@@ -204,7 +209,9 @@ const WordComparison = ({
     <Card className="border shadow-md bg-white transition-all">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-base font-pacifico">Emotional Word Groups</CardTitle>
+          <CardTitle className="flex items-center text-base font-pacifico">
+            Emotional Word Groups
+          </CardTitle>
           <div className="flex space-x-2">
             <Button 
               variant="outline" 

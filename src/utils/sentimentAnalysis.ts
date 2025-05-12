@@ -18,11 +18,17 @@ export const calculateSentiment = async (text: string): Promise<{
     // Extended positive and negative word lists for better accuracy
     const positiveWords = [
       'good', 'great', 'happy', 'excellent', 'positive', 'love', 'enjoy', 'wonderful', 'joy',
-      'pleased', 'delighted', 'grateful', 'thankful', 'excited', 'hopeful', 'optimistic'
+      'pleased', 'delighted', 'grateful', 'thankful', 'excited', 'hopeful', 'optimistic',
+      'amazing', 'awesome', 'fantastic', 'superb', 'terrific', 'brilliant', 'outstanding',
+      'perfect', 'pleasant', 'satisfied', 'triumph', 'victory', 'win', 'success', 'achieve',
+      'friend', 'friendship', 'supportive', 'caring', 'kindness', 'generous', 'healing'
     ];
     const negativeWords = [
       'bad', 'sad', 'terrible', 'negative', 'hate', 'awful', 'horrible', 'poor', 'worry',
-      'annoyed', 'angry', 'upset', 'disappointed', 'frustrated', 'anxious', 'afraid', 'stressed'
+      'annoyed', 'angry', 'upset', 'disappointed', 'frustrated', 'anxious', 'afraid', 'stressed',
+      'miserable', 'depressed', 'gloomy', 'painful', 'hurt', 'unhappy', 'tragedy', 'tragic',
+      'failure', 'fail', 'lose', 'lost', 'worst', 'trouble', 'difficult', 'trauma', 'traumatic',
+      'suffering', 'suffer', 'pain', 'agony', 'distress', 'misfortune', 'disaster'
     ];
     
     let positiveCount = 0;
@@ -33,32 +39,27 @@ export const calculateSentiment = async (text: string): Promise<{
       if (negativeWords.includes(word)) negativeCount++;
     });
     
-    const totalSentimentWords = positiveCount + negativeCount || 1; // Avoid division by zero
+    const neutralCount = words.length - positiveCount - negativeCount;
+    const totalSentimentWords = words.length || 1; // Avoid division by zero
     
-    // Calculate a more balanced sentiment score, with a bias toward neutral rather than positive
-    // Previously we were using: (positiveCount / totalSentimentWords) || 0.5;
-    // Now we're adding randomization for more realistic results
-    let sentimentScore;
-    if (totalSentimentWords < 5) {
-      // For short texts with few sentiment words, use a more balanced score
-      sentimentScore = 0.4 + (Math.random() * 0.2); // 0.4 to 0.6 range
-    } else {
-      // Calculate a more realistic score based on positive and negative word counts
-      const baseScore = (positiveCount / totalSentimentWords) || 0.5;
-      // Add some variability for realism
-      sentimentScore = Math.min(0.9, Math.max(0.1, baseScore - 0.1 + (Math.random() * 0.2)));
-    }
+    // Calculate a more balanced sentiment score 
+    const positivePercentage = (positiveCount / totalSentimentWords) * 100;
+    const negativePercentage = (negativeCount / totalSentimentWords) * 100;
+    const neutralPercentage = 100 - positivePercentage - negativePercentage;
+    
+    // Calculate sentiment score (0-1)
+    const sentimentScore = 0.5 + ((positiveCount - negativeCount) / totalSentimentWords) * 0.5;
     
     // Determine sentiment label
     let sentimentLabel = "Neutral";
     if (sentimentScore > 0.65) sentimentLabel = "Positive";
     else if (sentimentScore < 0.35) sentimentLabel = "Negative";
     
-    // Calculate distribution percentages with better spread
-    // Ensure we have a more balanced distribution rather than heavily positive
-    const positivePercentage = Math.round(sentimentScore * 100);
-    const negativePercentage = Math.round((1 - sentimentScore) * 0.8 * 100);
-    const neutralPercentage = 100 - positivePercentage - negativePercentage;
+    console.log("Calculated sentiment distribution:", {
+      positive: positivePercentage,
+      neutral: neutralPercentage,
+      negative: negativePercentage
+    });
     
     return {
       overallSentiment: {
@@ -66,9 +67,9 @@ export const calculateSentiment = async (text: string): Promise<{
         label: sentimentLabel
       },
       distribution: {
-        positive: positivePercentage,
-        neutral: neutralPercentage,
-        negative: negativePercentage
+        positive: Math.round(positivePercentage),
+        neutral: Math.round(neutralPercentage),
+        negative: Math.round(negativePercentage)
       }
     };
   } catch (error) {
