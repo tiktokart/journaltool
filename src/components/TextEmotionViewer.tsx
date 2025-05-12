@@ -37,6 +37,8 @@ export const TextEmotionViewer = ({
 
   // Unified color function for emotional tones - ensuring consistency across the app
   const getUnifiedEmotionColor = (emotion: string): string => {
+    if (!emotion) return "#95A5A6"; // Default gray for undefined
+    
     // Remove "Theme" suffix if present
     const cleanEmotion = emotion.replace(/\sTheme$/, '');
     
@@ -68,9 +70,9 @@ export const TextEmotionViewer = ({
         const analysis = await analyzeTextWithBert(pdfText);
         setLocalBertAnalysis(analysis);
         console.log("Completed BERT analysis with", analysis.keywords?.length || 0, "keywords");
-        setIsProcessing(false);
       } catch (error) {
         console.error("Error running BERT analysis:", error);
+      } finally {
         setIsProcessing(false);
       }
     };
@@ -239,20 +241,20 @@ export const TextEmotionViewer = ({
       // Add word segment
       const word = match[0];
       const wordLower = word.toLowerCase();
-      const shouldFilter = wordsToFilter.includes(wordLower);
       const emotionData = wordEmotionMap.get(wordLower);
       
-      // If it has an emotion, never filter it regardless of its type
+      // If it has an emotion, include it for highlighting
       if (emotionData) {
         textSegments.push({ 
           text: word, 
           emotion: emotionData.emotion,
           color: emotionData.color
         });
-      } else if (shouldFilter) {
-        // Only filter if it's in our filtered list AND has no emotion assigned
+      } else if (wordsToFilter.includes(wordLower)) {
+        // Filter only if it's in our filtered list AND has no emotion assigned
         textSegments.push({ text: word, emotion: null });
       } else {
+        // Other words that aren't filtered but don't have emotions
         textSegments.push({ text: word, emotion: null });
       }
 
@@ -401,13 +403,13 @@ export const TextEmotionViewer = ({
                   </Toggle>
                   <div className="flex gap-1">
                     <Toggle
-                      pressed={filteringLevel === 'strict'}
-                      onPressedChange={() => setFilteringLevel('strict')}
+                      pressed={filteringLevel === 'none'}
+                      onPressedChange={() => setFilteringLevel('none')}
                       size="sm"
-                      aria-label="Use strict filtering"
-                      className={`self-start font-georgia ${filteringLevel === 'strict' ? 'bg-green-100' : ''}`}
+                      aria-label="No filtering"
+                      className={`self-start font-georgia ${filteringLevel === 'none' ? 'bg-red-100' : ''}`}
                     >
-                      Strict
+                      None
                     </Toggle>
                     <Toggle
                       pressed={filteringLevel === 'minimal'}
@@ -419,13 +421,13 @@ export const TextEmotionViewer = ({
                       Minimal
                     </Toggle>
                     <Toggle
-                      pressed={filteringLevel === 'none'}
-                      onPressedChange={() => setFilteringLevel('none')}
+                      pressed={filteringLevel === 'strict'}
+                      onPressedChange={() => setFilteringLevel('strict')}
                       size="sm"
-                      aria-label="No filtering"
-                      className={`self-start font-georgia ${filteringLevel === 'none' ? 'bg-red-100' : ''}`}
+                      aria-label="Use strict filtering"
+                      className={`self-start font-georgia ${filteringLevel === 'strict' ? 'bg-green-100' : ''}`}
                     >
-                      None
+                      Strict
                     </Toggle>
                   </div>
                 </>
