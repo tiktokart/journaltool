@@ -38,4 +38,9 @@ export interface DocumentEmbeddingProps {
   showAllPoints?: boolean;
   wordCount?: number;
   bertAnalysis?: any;
+  // Add missing props
+  selectedPoint?: Point | null;
+  selectedWord?: string | null;
+  filteredPoints?: Point[];
+  bertData?: any;
 }

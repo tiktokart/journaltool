@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Info } from "lucide-react";
@@ -14,13 +13,15 @@ interface KeyPhrasesProps {
   data?: string[] | KeyPhrase[];
   keywords?: any[];  // Support for the older API
   sourceDescription?: string;
+  scoreMax?: number; // Add the missing property
+  bertKeywords?: any[]; // Add the missing property
 }
 
-export const KeyPhrases = ({ data = [], keywords = [], sourceDescription }: KeyPhrasesProps) => {
+export const KeyPhrases = ({ data = [], keywords = [], sourceDescription, scoreMax = 1.0, bertKeywords = [] }: KeyPhrasesProps) => {
   const { t } = useLanguage();
 
   // Use keywords prop if data is empty
-  const dataToUse = data.length > 0 ? data : keywords;
+  const dataToUse = data.length > 0 ? data : keywords.length > 0 ? keywords : bertKeywords;
 
   // Filter out prepositions, conjunctions, and question words
   const stopWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 
