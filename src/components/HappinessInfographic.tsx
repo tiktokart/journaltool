@@ -1,13 +1,9 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 export const HappinessInfographic = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   // Data from the Berkeley Greater Good Science Center 
   // (based on Lyubomirsky, S., Sheldon, K. M., & Schkade, D. (2005))
   const data = [
@@ -104,101 +100,111 @@ export const HappinessInfographic = () => {
 
   return (
     <Card className="w-full overflow-hidden border border-purple-100 mb-6">
-      <div 
-        className="p-4 bg-white border-b border-purple-100 flex justify-between items-center cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
+      <div className="p-4 bg-white border-b border-purple-100">
         <h2 className="text-xl font-semibold text-purple-900">The Science of Happiness</h2>
-        <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
       </div>
       
-      {isExpanded && (
-        <div className="p-4 bg-white">
-          <div className="grid md:grid-cols-2 gap-6 items-center">
-            <div>
-              <h3 className="text-lg font-medium text-purple-800 mb-3">What Determines Happiness?</h3>
-              <p className="text-gray-700 mb-4">
-                Research from the Greater Good Science Center at UC Berkeley shows that your happiness is determined by:
-              </p>
-              
-              <div className="mb-4 bg-gray-50 p-4 rounded-lg">
-                <ul className="space-y-2">
-                  <li className="flex items-center">
-                    <div className="w-4 h-4 rounded-full mr-2" style={{backgroundColor: '#F97316'}}></div>
-                    <span className="font-medium">50% Genetics</span> - Your natural "set point" for happiness
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-4 h-4 rounded-full mr-2" style={{backgroundColor: '#FEC84B'}}></div>
-                    <span className="font-medium">40% Intentional Activities</span> - What you choose to do
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-4 h-4 rounded-full mr-2" style={{backgroundColor: '#60A5FA'}}></div>
-                    <span className="font-medium">10% Life Circumstances</span> - Your situation and environment
-                  </li>
-                </ul>
-              </div>
-              
-              <h3 className="text-lg font-medium text-purple-800 mb-2">What This Means For You</h3>
-              <p className="text-gray-700 mb-3">
-                While genetics play a significant role, a full <span className="font-medium">40%</span> of your happiness 
-                is under your direct control through the choices you make daily.
-              </p>
-              <p className="text-gray-700">
-                Focus on intentional activities that bring you joy and meaning, rather than changing external circumstances, 
-                which have surprisingly little impact on long-term happiness.
-              </p>
+      <div className="p-4 bg-white">
+        <div className="grid md:grid-cols-2 gap-6 items-center">
+          <div>
+            <h3 className="text-lg font-medium text-purple-800 mb-3">What is Happiness?</h3>
+            <p className="text-gray-700 mb-4">
+              Research from the Greater Good Science Center at UC Berkeley shows that your happiness is determined by:
+            </p>
+            
+            <div className="mb-4 bg-gray-50 p-4 rounded-lg">
+              <ul className="space-y-2">
+                <li className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-2" style={{backgroundColor: '#F97316'}}></div>
+                  <span className="font-medium">50% Genetics</span> - Your natural "set point" for happiness
+                </li>
+                <li className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-2" style={{backgroundColor: '#FEC84B'}}></div>
+                  <span className="font-medium">40% Intentional Activities</span> - What you choose to do
+                </li>
+                <li className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-2" style={{backgroundColor: '#60A5FA'}}></div>
+                  <span className="font-medium">10% Life Circumstances</span> - Your situation and environment
+                </li>
+              </ul>
             </div>
             
-            <div>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={data}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend verticalAlign="bottom" height={36} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              
-              <div className="bg-purple-50 p-4 rounded-lg mt-4">
-                <h4 className="font-medium text-purple-800 mb-2">Happiness Suggestions</h4>
-                <ul className="space-y-2 text-sm">
-                  {randomSuggestions.map((suggestion, index) => (
-                    <li key={index} className="flex items-start">
-                      <div className="w-3 h-3 mt-1 rounded-full mr-2" 
-                        style={{
-                          backgroundColor: suggestion.type === 'intentional' ? '#FEC84B' : 
-                                         suggestion.type === 'circumstance' ? '#60A5FA' : '#F97316'
-                        }}></div>
-                      <span>{suggestion.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            <div className="h-64 mb-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend verticalAlign="bottom" height={36} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
+
+            <div className="mb-4 bg-purple-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-purple-800 mb-2">Sentiment Score Guide</h3>
+              <ul className="space-y-2">
+                <li className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-2 bg-red-500"></div>
+                  <span className="font-medium">0-20</span> - Poor sentiment score, may indicate emotional challenges
+                </li>
+                <li className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-2 bg-yellow-500"></div>
+                  <span className="font-medium">20-30</span> - Average sentiment score, typical emotional range
+                </li>
+                <li className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-2 bg-green-500"></div>
+                  <span className="font-medium">30-55</span> - Amazing sentiment score, excellent emotional wellbeing
+                </li>
+              </ul>
+            </div>
+
+            <h3 className="text-lg font-medium text-purple-800 mb-2">What This Means For You</h3>
+            <p className="text-gray-700 mb-3">
+              While genetics play a significant role, a full <span className="font-medium">40%</span> of your happiness 
+              is under your direct control through the choices you make daily.
+            </p>
+            <p className="text-gray-700">
+              Focus on intentional activities that bring you joy and meaning, rather than changing external circumstances, 
+              which have surprisingly little impact on long-term happiness.
+            </p>
           </div>
           
-          <div className="mt-4 text-sm text-gray-500">
-            <p>Source: Lyubomirsky, S., Sheldon, K. M., & Schkade, D. (2005). Pursuing happiness: The architecture of sustainable change. 
-            Review of General Psychology, 9, 111-131.</p>
+          <div>
+            <div className="bg-purple-50 p-4 rounded-lg mt-4">
+              <h4 className="font-medium text-purple-800 mb-2">Happiness Suggestions</h4>
+              <ul className="space-y-2 text-sm">
+                {randomSuggestions.map((suggestion, index) => (
+                  <li key={index} className="flex items-start">
+                    <div className="w-3 h-3 mt-1 rounded-full mr-2" 
+                      style={{
+                        backgroundColor: suggestion.type === 'intentional' ? '#FEC84B' : 
+                                       suggestion.type === 'circumstance' ? '#60A5FA' : '#F97316'
+                      }}></div>
+                    <span>{suggestion.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-      )}
+        
+        <div className="mt-4 text-sm text-gray-500">
+          <p>Source: Lyubomirsky, S., Sheldon, K. M., & Schkade, D. (2005). Pursuing happiness: The architecture of sustainable change. 
+          Review of General Psychology, 9, 111-131.</p>
+        </div>
+      </div>
     </Card>
   );
 };
