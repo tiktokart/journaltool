@@ -47,7 +47,7 @@ export interface DocumentEmbeddingProps {
 // Type for getSentimentLabel function that might be needed
 export type SentimentLabel = "Positive" | "Neutral" | "Negative" | "Very Positive" | "Very Negative";
 
-// Helper function for sentiment labels
+// Helper function for sentiment labels - exported for use in other components
 export function getSentimentLabel(value: number): SentimentLabel {
   if (value >= 0.7) return "Very Positive";
   if (value >= 0.55) return "Positive";

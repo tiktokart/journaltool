@@ -1,39 +1,35 @@
 
 import { useEffect, useRef } from 'react';
 
-interface ScrollToSectionProps {
+export interface ScrollToSectionProps {
   isOpen: boolean;
   elementId: string;
-  offset?: number;
 }
 
-export const ScrollToSection = ({ isOpen, elementId, offset = 80 }: ScrollToSectionProps) => {
-  const isFirstRender = useRef(true);
+export const ScrollToSection = ({ isOpen, elementId }: ScrollToSectionProps) => {
+  const hasScrolled = useRef(false);
 
   useEffect(() => {
-    // Skip on first render to avoid unwanted scrolling when component mounts
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (isOpen) {
-      setTimeout(() => {
-        const element = document.getElementById(elementId);
-        if (element) {
+    if (isOpen && !hasScrolled.current) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        setTimeout(() => {
+          const headerOffset = 80;
           const elementPosition = element.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.pageYOffset - offset;
+          const offsetPosition = elementPosition + window.scrollY - headerOffset;
           
           window.scrollTo({
             top: offsetPosition,
             behavior: "smooth"
           });
-        }
-      }, 100); // Small delay to ensure content is visible
+          hasScrolled.current = true;
+        }, 100);
+      }
+    } else if (!isOpen) {
+      hasScrolled.current = false;
     }
-  }, [isOpen, elementId, offset]);
+  }, [isOpen, elementId]);
 
   return null;
 };
 
-export default ScrollToSection;

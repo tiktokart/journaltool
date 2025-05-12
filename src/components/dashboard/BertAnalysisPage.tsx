@@ -38,9 +38,10 @@ const BertAnalysisPage = ({
     if (sentimentData?.embeddingPoints && sentimentData.embeddingPoints.length > 0) {
       const words = sentimentData.embeddingPoints
         .filter((point: Point) => point.word)
-        .map((point: Point) => point.word);
+        .map((point: Point) => point.word || "");
         
-      setUniqueWords([...new Set(words)]);
+      // Fixed TS error by ensuring we have array of strings
+      setUniqueWords([...new Set(words)] as string[]);
       setFilteredPoints(sentimentData.embeddingPoints);
     }
   }, [sentimentData?.embeddingPoints]);

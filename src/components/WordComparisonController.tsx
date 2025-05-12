@@ -1,322 +1,224 @@
 
-import { useState, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { GitCompareArrows, Search, X, Info } from "lucide-react";
-import { Point } from "@/types/embedding";
-import { WordComparison } from "@/components/WordComparison";
-import { toast } from "sonner";
-import { getEmotionColor } from "@/utils/embeddingUtils";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { Badge } from "@/components/ui/badge";
-import { useLocation } from "react-router-dom";
-import { getHomepageEmotionColor } from "@/utils/colorUtils";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import WordComparison from './WordComparison';
+import { Point } from '@/types/embedding';
+import { 
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Plus } from 'lucide-react';
 
 interface WordComparisonControllerProps {
   points: Point[];
-  selectedPoint: Point | null;
-  sourceDescription?: string;
-  calculateRelationship: (point1: Point, point2: Point) => any;
+  bertAnalysis?: any;
 }
 
-export const WordComparisonController = ({
-  points,
-  selectedPoint,
-  sourceDescription,
-  calculateRelationship
-}: WordComparisonControllerProps) => {
-  const { t, language } = useLanguage();
-  const [compareWords, setCompareWords] = useState<Point[]>([]);
-  const [compareSearchOpen, setCompareSearchOpen] = useState(false);
-  const [compareSearchTerm, setCompareSearchTerm] = useState("");
-  const [compareSearchResults, setCompareSearchResults] = useState<Point[]>([]);
-  const [availableEmotions, setAvailableEmotions] = useState<string[]>([]);
-  const [forceUpdate, setForceUpdate] = useState(0);
-  const location = useLocation();
-  const isHomepage = location.pathname === '/';
-
-  // Automatically add selected point to comparison
+const WordComparisonController = ({ points, bertAnalysis }: WordComparisonControllerProps) => {
+  const [selectedWords, setSelectedWords] = useState<Point[]>([]);
+  const [availablePoints, setAvailablePoints] = useState<Point[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Set up available points when the component mounts
   useEffect(() => {
-    if (selectedPoint && !compareWords.some(word => word.id === selectedPoint.id)) {
-      if (compareWords.length < 4) {
-        setCompareWords(prev => [...prev, selectedPoint]);
-      } else {
-        // Replace the last word
-        setCompareWords(prev => [...prev.slice(0, 3), selectedPoint]);
-        toast.info(`Replaced a word with "${selectedPoint.word}" in comparison`);
-      }
+    if (points && points.length) {
+      setAvailablePoints(points);
     }
-  }, [selectedPoint]);
-
-  // Get the correct color for a point based on the current page
-  const getPointColor = (point: Point): string => {
-    // For homepage, use our special random pastel colors
-    if (isHomepage && point.emotionalTone) {
-      const homepageColor = getHomepageEmotionColor(point.emotionalTone, true);
-      if (homepageColor) {
-        return homepageColor;
-      }
-    }
-    
-    // For other pages or fallback, use the standard colors
-    if (point.emotionalTone) {
-      return getEmotionColor(point.emotionalTone);
-    }
-    
-    // If no emotional tone or color in RGB format, convert to hex
-    if (point.color && Array.isArray(point.color)) {
-      return `rgb(${Math.round(point.color[0] * 255)}, ${Math.round(point.color[1] * 255)}, ${Math.round(point.color[2] * 255)})`;
-    }
-    
-    return '#95A5A6'; // Default gray if no color information is available
-  };
-
-  // Memoize common words to suggest when no search term
-  const commonEmotionalWords = useMemo(() => {
-    if (!points || points.length === 0) return [];
-    
-    // Count occurrence of each emotional tone
-    const emotionCount: Record<string, number> = {};
-    points.forEach(point => {
-      if (point.emotionalTone) {
-        emotionCount[point.emotionalTone] = (emotionCount[point.emotionalTone] || 0) + 1;
-      }
-    });
-    
-    // Get the most common emotional tones
-    const topEmotions = Object.entries(emotionCount)
-      .sort(([, countA], [, countB]) => countB - countA)
-      .slice(0, 5)
-      .map(([emotion]) => emotion);
-      
-    // Get one representative word for each top emotion
-    return topEmotions.flatMap(emotion => {
-      const words = points.filter(p => p.emotionalTone === emotion);
-      return words.length > 0 ? [words[0]] : [];
-    });
   }, [points]);
 
-  // Update search results and extract available emotions when points change
-  useEffect(() => {
-    if (points && points.length > 0) {
-      // Default to showing common emotional words or just the first few entries
-      const initialResults = commonEmotionalWords.length > 0 
-        ? commonEmotionalWords 
-        : points.slice(0, 15);
-        
-      setCompareSearchResults(initialResults);
-      
-      // Extract unique emotions
-      const emotions = new Set<string>();
-      points.forEach(point => {
-        if (point.emotionalTone) {
-          emotions.add(point.emotionalTone);
-        }
-      });
-      setAvailableEmotions(Array.from(emotions).sort());
-    }
-  }, [points, commonEmotionalWords]);
+  // Filter points based on search term
+  const filteredPoints = searchTerm === '' 
+    ? availablePoints
+    : availablePoints.filter(point => 
+        point.word?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        point.emotionalTone?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
-  // Force re-render when language changes
-  useEffect(() => {
-    setForceUpdate(prev => prev + 1);
-    
-    if (compareSearchTerm) {
-      const currentTerm = compareSearchTerm;
-      setCompareSearchTerm("");
-      setTimeout(() => setCompareSearchTerm(currentTerm), 0);
-    }
-  }, [language]);
-
-  const handleCompareSearchChange = (value: string) => {
-    setCompareSearchTerm(value);
-    
-    if (!value.trim()) {
-      // Show default suggestions when search is cleared
-      setCompareSearchResults(commonEmotionalWords.length > 0 
-        ? commonEmotionalWords 
-        : points.slice(0, 15));
+  // Add a word to comparison
+  const handleAddWord = (point: Point) => {
+    // Don't add duplicates
+    if (selectedWords.some(w => w.id === point.id)) {
       return;
     }
     
-    if (!points.length) return;
+    // Limit to 3 words
+    if (selectedWords.length >= 3) {
+      // Replace the last word
+      const newSelectedWords = [...selectedWords.slice(0, 2), point];
+      setSelectedWords(newSelectedWords);
+    } else {
+      setSelectedWords([...selectedWords, point]);
+    }
     
-    const results = points.filter((point: Point) => 
-      (point.emotionalTone && point.emotionalTone.toLowerCase().includes(value.toLowerCase())) ||
-      point.word.toLowerCase().includes(value.toLowerCase()) ||
-      (point.keywords && point.keywords.some(keyword => 
-        keyword.toLowerCase().includes(value.toLowerCase())
-      ))
-    );
+    setDialogOpen(false);
+  };
+
+  // Remove a word from comparison
+  const handleRemoveWord = (id: string) => {
+    setSelectedWords(selectedWords.filter(word => word.id !== id));
+  };
+
+  // Clear all selected words
+  const handleClearWords = () => {
+    setSelectedWords([]);
+  };
+
+  // Find most emotional words for suggestions
+  const findEmotionalWords = (): Point[] => {
+    if (!points || points.length === 0) return [];
     
-    results.sort((a: Point, b: Point) => {
-      const aEmotionMatch = a.emotionalTone && a.emotionalTone.toLowerCase().includes(value.toLowerCase());
-      const bEmotionMatch = b.emotionalTone && b.emotionalTone.toLowerCase().includes(value.toLowerCase());
-      
-      if (aEmotionMatch && !bEmotionMatch) return -1;
-      if (!aEmotionMatch && bEmotionMatch) return 1;
-      
-      // If exact word match, prioritize those
-      const aExactMatch = a.word.toLowerCase() === value.toLowerCase();
-      const bExactMatch = b.word.toLowerCase() === value.toLowerCase();
-      
-      if (aExactMatch && !bExactMatch) return -1;
-      if (!aExactMatch && bExactMatch) return 1;
-      
-      return 0;
+    // Sort by sentiment difference from neutral (0.5)
+    return [...points]
+      .filter(p => p.sentiment !== undefined && p.word)
+      .sort((a, b) => 
+        Math.abs((b.sentiment || 0.5) - 0.5) - Math.abs((a.sentiment || 0.5) - 0.5)
+      )
+      .slice(0, 6);
+  };
+
+  // Get keyword-based suggestions from BERT analysis
+  const getKeywordSuggestions = (): Point[] => {
+    if (!bertAnalysis || !points || points.length === 0) return [];
+    
+    // Get BERT keywords if available
+    const keywordsList = bertAnalysis.keywords || [];
+    
+    if (keywordsList.length === 0) return [];
+    
+    // Match keywords to points
+    const suggestedPoints: Point[] = [];
+    
+    keywordsList.slice(0, 6).forEach((keywordItem: any) => {
+      if (keywordItem && keywordItem.word) {
+        // Find matching point
+        const matchedPoint = points.find(p => 
+          p.word && p.word.toLowerCase() === keywordItem.word.toLowerCase()
+        );
+        
+        if (matchedPoint) {
+          suggestedPoints.push(matchedPoint);
+        }
+      }
     });
     
-    setCompareSearchResults(results);
+    return suggestedPoints;
   };
 
-  const handleAddToComparison = (point: Point) => {
-    if (compareWords.length >= 4) {
-      toast.error(t("maxComparisonWordsError"));
-      return;
-    }
-    
-    if (compareWords.some(p => p.id === point.id)) {
-      toast.info(`"${point.word}" ${t("alreadyInComparison")}`);
-      return;
-    }
-    
-    setCompareWords([...compareWords, point]);
-    setCompareSearchOpen(false);
-    toast.success(`${t("addedToComparison")} "${point.word}" ${t("toComparison")}`);
-  };
-
-  const handleRemoveFromComparison = (point: Point) => {
-    setCompareWords(compareWords.filter(p => p.id !== point.id));
-    toast.info(`${t("removedFromComparison")} "${point.word}" ${t("fromComparison")}`);
-  };
-
-  const handleClearComparison = () => {
-    setCompareWords([]);
-    toast.info(t("clearedAllComparisonWords"));
-  };
-
-  const handleEmotionFilter = (emotion: string) => {
-    // Filter points by the selected emotion and add up to 4 to comparison
-    const emotionPoints = points
-      .filter(point => point.emotionalTone === emotion)
-      .slice(0, 4);
-    
-    if (emotionPoints.length === 0) {
-      toast.info(`No words with emotion "${emotion}" found`);
-      return;
-    }
-    
-    setCompareWords(emotionPoints);
-    toast.success(`Added ${emotionPoints.length} words with "${emotion}" emotion to comparison`);
-  };
-
-  // Add suggestion buttons for available emotions
-  const renderEmotionFilters = () => {
-    if (availableEmotions.length === 0) return null;
-    
-    return (
-      <div className="mt-3 space-y-1">
-        <p className="text-xs text-muted-foreground">{t("quickAdd")}:</p>
-        <div className="flex flex-wrap gap-2">
-          {availableEmotions.slice(0, 5).map(emotion => (
-            <Badge
-              key={emotion}
-              variant="outline"
-              className="cursor-pointer hover:bg-secondary"
-              onClick={() => handleEmotionFilter(emotion)}
-              style={{
-                backgroundColor: `${getEmotionColor(emotion)}20`,
-                borderColor: getEmotionColor(emotion)
-              }}
-            >
-              {emotion}
-            </Badge>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
+  const emotionalWords = findEmotionalWords();
+  const keywordSuggestions = getKeywordSuggestions();
+  
   return (
-    <Card className="border border-border shadow-md">
-      <CardHeader>
-        <div className="flex justify-between items-center flex-wrap gap-2">
-          <CardTitle className="flex items-center text-xl">
-            <GitCompareArrows className="h-5 w-5 mr-2 icon-dance" />
-            {t("wordComparison")}
-          </CardTitle>
-          
-          <div className="flex gap-2">
-            <Popover 
-              open={compareSearchOpen} 
-              onOpenChange={setCompareSearchOpen}
-            >
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9">
-                  <Search className="h-4 w-4 mr-2" />
-                  Add Word
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0" align="end">
-                <Command>
-                  <CommandInput 
-                    placeholder={t("searchWords")} 
-                    value={compareSearchTerm}
-                    onValueChange={handleCompareSearchChange}
-                  />
-                  <CommandList>
-                    <CommandEmpty>{t("noMatchingWords")}</CommandEmpty>
-                    <CommandGroup>
-                      {compareSearchResults.map((point) => (
-                        <CommandItem 
-                          key={`${point.id}-${language}-${forceUpdate}`} 
-                          onSelect={() => handleAddToComparison(point)}
-                        >
-                          <div className="flex items-center">
-                            <div 
-                              className="w-3 h-3 rounded-full mr-2" 
-                              style={{ backgroundColor: getPointColor(point) }} 
-                            />
-                            <span>{point.word}</span>
-                          </div>
-                          <span className="ml-auto text-xs text-muted-foreground">
-                            {point.emotionalTone ? t(point.emotionalTone.toLowerCase()) || point.emotionalTone : t("neutral")}
-                          </span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                    
-                    {renderEmotionFilters()}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Word Comparison</h3>
+        
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              Add Word
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Select Word</DialogTitle>
+              <DialogDescription>
+                Choose a word to add to your comparison
+              </DialogDescription>
+            </DialogHeader>
             
-            {compareWords.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-9"
-                onClick={handleClearComparison}
-              >
-                <X className="h-4 w-4 mr-2" />
-                {t("clearAll")}
-              </Button>
-            )}
-          </div>
+            <div className="py-4">
+              <Label className="mb-2 block">Search words</Label>
+              <Command className="rounded-lg border shadow-md">
+                <CommandInput 
+                  placeholder="Search by word or emotion..." 
+                  className="h-9" 
+                  value={searchTerm}
+                  onValueChange={setSearchTerm}
+                />
+                
+                <CommandEmpty>No words found.</CommandEmpty>
+                
+                <CommandGroup heading="Results" className="max-h-64 overflow-auto">
+                  {filteredPoints.slice(0, 50).map((point) => (
+                    <CommandItem
+                      key={point.id}
+                      value={point.word}
+                      onSelect={() => handleAddWord(point)}
+                    >
+                      <div className="flex justify-between w-full">
+                        <span>{point.word}</span>
+                        <span className="text-muted-foreground">{point.emotionalTone}</span>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                
+                {keywordSuggestions.length > 0 && (
+                  <CommandGroup heading="Key Words" className="border-t">
+                    {keywordSuggestions.map((point) => (
+                      <CommandItem
+                        key={point.id}
+                        value={point.word}
+                        onSelect={() => handleAddWord(point)}
+                      >
+                        <div className="flex justify-between w-full">
+                          <span>{point.word}</span>
+                          <span className="text-muted-foreground">{point.emotionalTone}</span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+                
+                {emotionalWords.length > 0 && (
+                  <CommandGroup heading="Most Emotional Words" className="border-t">
+                    {emotionalWords.map((point) => (
+                      <CommandItem
+                        key={point.id}
+                        value={point.word}
+                        onSelect={() => handleAddWord(point)}
+                      >
+                        <div className="flex justify-between w-full">
+                          <span>{point.word}</span>
+                          <span className="text-muted-foreground">{point.emotionalTone}</span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </Command>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+      
+      <WordComparison 
+        words={selectedWords} 
+        onRemoveWord={handleRemoveWord} 
+        onClearWords={handleClearWords}
+      />
+      
+      {selectedWords.length === 0 && (
+        <div className="text-center p-6 text-muted-foreground bg-muted/30 rounded-md">
+          <p>Add words to compare their emotional patterns</p>
         </div>
-      </CardHeader>
-      <CardContent>
-        <WordComparison 
-          words={compareWords}
-          onRemoveWord={handleRemoveFromComparison}
-          calculateRelationship={calculateRelationship}
-          onAddWordClick={() => setCompareSearchOpen(true)}
-          sourceDescription={sourceDescription}
-        />
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };
+
+export default WordComparisonController;

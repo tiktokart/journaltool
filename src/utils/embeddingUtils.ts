@@ -56,8 +56,10 @@ export const enrichPoints = (points: Point[], isHomepage: boolean = false): Poin
   }
   
   return points.map((point) => {
-    // Ensure point has valid position
-    const position = Array.isArray(point.position) ? point.position : [0, 0, 0];
+    // Make sure position is typed correctly as [number, number, number]
+    const x = point.x !== undefined ? point.x : (point.position ? point.position[0] : 0);
+    const y = point.y !== undefined ? point.y : (point.position ? point.position[1] : 0);
+    const z = point.z !== undefined ? point.z : (point.position ? point.position[2] : 0);
     
     // Add sentiment-based color if not present
     let color = point.color;
@@ -100,7 +102,7 @@ export const enrichPoints = (points: Point[], isHomepage: boolean = false): Poin
       id,
       word,
       text: word,
-      position,
+      position: [x, y, z] as [number, number, number], // Explicitly type as tuple
       color,
       emotionalTone,
       sentiment: point.sentiment || 0.5,

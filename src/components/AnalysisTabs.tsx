@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/command";
 import { useState, useEffect, useRef } from "react";
 import { Point } from "@/types/embedding";
-import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { SentimentOverview } from "@/components/SentimentOverview";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { KeyPhrases } from "@/components/KeyPhrases";
@@ -22,6 +21,7 @@ import MentalHealthSuggestions from "@/components/suggestions/MentalHealthSugges
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollToSection } from "@/components/ScrollToSection";
 
 interface AnalysisTabsProps {
   activeTab: string;
@@ -36,8 +36,6 @@ interface AnalysisTabsProps {
   filteredPoints: Point[];
   setFilteredPoints: (points: Point[]) => void;
   uniqueWords: string[];
-  connectedPoints: Point[];
-  setConnectedPoints: (points: Point[]) => void;
   visibleClusterCount: number;
   handlePointClick: (point: Point | null) => void;
   handleResetVisualization: () => void;
@@ -58,8 +56,6 @@ export const AnalysisTabs = ({
   filteredPoints,
   setFilteredPoints,
   uniqueWords,
-  connectedPoints,
-  setConnectedPoints,
   visibleClusterCount,
   handlePointClick,
   handleResetVisualization,
@@ -70,7 +66,6 @@ export const AnalysisTabs = ({
   const [open, setOpen] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
-  const [isEmbeddingOpen, setIsEmbeddingOpen] = useState(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
 
   // Check if the required data for each tab is available
@@ -130,7 +125,7 @@ export const AnalysisTabs = ({
     };
   }, [open]);
   
-  // Define the handleSelectWord function that was used above
+  // Define the handleSelectWord function 
   function handleSelectWord(word: string) {
     setSearchTerm(word);
     setSelectedWord(word);
@@ -143,20 +138,7 @@ export const AnalysisTabs = ({
       
       if (selected) {
         setSelectedPoint(selected);
-        
-        if (selected.relationships && selected.relationships.length > 0) {
-          const sortedRelationships = [...selected.relationships]
-            .sort((a, b) => b.strength - a.strength)
-            .slice(0, 3);
-            
-          const connected = sentimentData.embeddingPoints
-            .filter((p: Point) => sortedRelationships.some(rel => rel.id === p.id));
-          
-          setConnectedPoints(connected);
-          toast(`${t("selected")}: "${selected.word}" (${selected.emotionalTone || t("neutral")})`);
-        } else {
-          setConnectedPoints([]);
-        }
+        toast(`${t("selected")}: "${selected.word}" (${selected.emotionalTone || t("neutral")})`);
       }
     }
   }
@@ -179,7 +161,6 @@ export const AnalysisTabs = ({
       <div className="overflow-x-auto">
         <TabsList className="inline-flex w-full justify-start space-x-1 overflow-x-auto bg-white">
           <TabsTrigger value="overview" className="min-w-max">{t("overviewTab")}</TabsTrigger>
-          <TabsTrigger value="embedding" className="min-w-max">{t("latentEmotionalAnalysisTab")}</TabsTrigger>
           <TabsTrigger value="timeline" className="min-w-max">{t("timelineTab")}</TabsTrigger>
           <TabsTrigger value="keyphrases" className="min-w-max">{t("keywordsTab")}</TabsTrigger>
         </TabsList>
@@ -214,159 +195,14 @@ export const AnalysisTabs = ({
             </CollapsibleContent>
           </Collapsible>
         )}
-      </TabsContent>
-      
-      <TabsContent value="embedding" className="mt-6">
-        {!hasEmbeddingData ? (
-          <DataMissingFallback tabName={t("embedding")} />
-        ) : (
-          <>
-            <Collapsible open={isOverviewOpen} onOpenChange={setIsOverviewOpen} className="w-full mb-6">
+        
+        {/* Additional analysis like sentiment distribution can go here */}
+        {hasOverviewData && (
+          <div className="mt-6">
+            <ScrollToSection isOpen={true} elementId="suggestions-section" />
+            <Collapsible open={isSuggestionsOpen} onOpenChange={setIsSuggestionsOpen} className="w-full">
               <div className="flex justify-between items-center pb-2">
-                <h2 className="text-xl font-bold text-purple-900">{t("overviewTab")}</h2>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-9 p-0">
-                    {isOverviewOpen ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-              </div>
-              <CollapsibleContent>
-                <SentimentOverview 
-                  data={{
-                    overallSentiment: sentimentData.overallSentiment,
-                    distribution: sentimentData.distribution,
-                    fileName: sentimentData.fileName
-                  }}
-                  sourceDescription={sentimentData.sourceDescription}
-                />
-              </CollapsibleContent>
-            </Collapsible>
-            
-            <Collapsible open={isEmbeddingOpen} onOpenChange={setIsEmbeddingOpen} className="w-full">
-              <div className="flex justify-between items-center pb-2">
-                <h2 className="text-xl font-bold text-purple-900">{t("latentEmotionalAnalysis")}</h2>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-9 p-0">
-                    {isEmbeddingOpen ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-              </div>
-              <CollapsibleContent>
-                <Card className="border border-border shadow-md overflow-hidden bg-white">
-                  <CardHeader className="z-10">
-                    <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-                      <CardTitle className="flex items-center">
-                        <span>{t("latentEmotionalAnalysis")}</span>
-                      </CardTitle>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={handleResetVisualization}
-                          className="h-9"
-                        >
-                          <RotateCcw className="h-4 w-4 mr-2 icon-dance" />
-                          {t("resetView")}
-                        </Button>
-                        
-                        <div className="relative w-full md:w-64">
-                          <div className="relative w-full">
-                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground icon-dance" />
-                            <Input 
-                              placeholder={t("searchWordsOrEmotions")}
-                              className="pl-8 w-full pr-8"
-                              value={searchTerm}
-                              onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                              }}
-                              onFocus={() => {
-                                if (uniqueWords.length > 0) {
-                                  setOpen(true);
-                                }
-                              }}
-                            />
-                            {searchTerm && (
-                              <button 
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                                onClick={handleClearSearch}
-                              >
-                                <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                              </button>
-                            )}
-                          </div>
-                          {uniqueWords.length > 0 && open && (
-                            <div 
-                              ref={searchDropdownRef}
-                              className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-md z-50 max-h-[300px] overflow-y-auto"
-                            >
-                              <Command>
-                                <CommandInput 
-                                  placeholder={t("searchWords")}
-                                  value={searchTerm}
-                                  onValueChange={setSearchTerm}
-                                />
-                                <CommandList>
-                                  <CommandEmpty>{t("noResultsFound")}</CommandEmpty>
-                                  <CommandGroup>
-                                    {uniqueWords
-                                      .filter(word => word.toLowerCase().includes(searchTerm.toLowerCase()))
-                                      .slice(0, 100)
-                                      .map((word) => (
-                                        <CommandItem 
-                                          key={word} 
-                                          value={word}
-                                          onSelect={(value) => handleSelectWord(value)}
-                                        >
-                                          {word}
-                                        </CommandItem>
-                                      ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-sm font-normal flex items-center text-muted-foreground">
-                      <CircleDot className="h-4 w-4 mr-2 icon-dance" />
-                      <span>{t("hoverOrClick")}</span>
-                    </div>
-                    {sentimentData?.sourceDescription && (
-                      <p className="text-sm mt-2 text-black">{sentimentData.sourceDescription}</p>
-                    )}
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="h-[500px] relative">
-                      <DocumentEmbedding 
-                        points={filteredPoints}
-                        onPointClick={handlePointClick}
-                        isInteractive={true}
-                        focusOnWord={selectedWord || null}
-                        sourceDescription={sentimentData.sourceDescription}
-                        onResetView={handleResetVisualization}
-                        visibleClusterCount={visibleClusterCount}
-                        bertAnalysis={sentimentData.bertAnalysis || bertAnalysis}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </CollapsibleContent>
-            </Collapsible>
-            
-            {/* Suggestions section based on BERT analysis */}
-            <Collapsible open={isSuggestionsOpen} onOpenChange={setIsSuggestionsOpen} className="w-full mt-8">
-              <div className="flex justify-between items-center pb-2">
-                <h2 className="text-xl font-bold text-purple-900">Suggestions Based on Analysis</h2>
+                <h2 className="text-xl font-bold text-purple-900">Analysis Insights</h2>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-9 p-0">
                     {isSuggestionsOpen ? (
@@ -378,16 +214,17 @@ export const AnalysisTabs = ({
                 </CollapsibleTrigger>
               </div>
               <CollapsibleContent>
-                {/* If we have BERT data or text content, show suggestions */}
-                {(hasBertData || hasTextData) && (
-                  <MentalHealthSuggestions 
-                    journalEntries={journalEntries}
-                    bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
-                  />
-                )}
+                <div id="suggestions-section">
+                  {(hasBertData || hasTextData) && (
+                    <MentalHealthSuggestions 
+                      journalEntries={journalEntries}
+                      bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
+                    />
+                  )}
+                </div>
               </CollapsibleContent>
             </Collapsible>
-          </>
+          </div>
         )}
       </TabsContent>
       

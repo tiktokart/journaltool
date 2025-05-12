@@ -1,291 +1,94 @@
 
-import React, { useEffect, useState } from 'react';
-import { Point } from '@/types/embedding';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight, X, Search, GitCompareArrows, Info } from 'lucide-react';
+import { 
+  Card, 
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { getEmotionColor, getSentimentLabel } from '@/utils/embeddingUtils';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useLocation } from 'react-router-dom';
-import { getHomepageEmotionColor } from '@/utils/colorUtils';
+import { X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Point, getSentimentLabel } from '@/types/embedding';
 
 interface WordComparisonProps {
   words: Point[];
-  onRemoveWord: (point: Point) => void;
-  calculateRelationship: (point1: Point, point2: Point) => {
-    spatialSimilarity: number;
-    sentimentSimilarity: number;
-    sameEmotionalGroup: boolean;
-    sharedKeywords: string[];
-  } | null;
-  onAddWordClick: () => void;
-  sourceDescription?: string; // Add this to show where words came from
+  onRemoveWord: (id: string) => void;
+  onClearWords: () => void;
 }
 
-export const WordComparison: React.FC<WordComparisonProps> = ({ 
-  words, 
-  onRemoveWord, 
-  calculateRelationship,
-  onAddWordClick,
-  sourceDescription
-}) => {
-  const { t, language } = useLanguage();
-  const [forceUpdate, setForceUpdate] = useState<number>(0);
-  const location = useLocation();
-  const isHomepage = location.pathname === '/';
-
-  // Force re-render on language change
-  useEffect(() => {
-    setForceUpdate(prev => prev + 1);
-  }, [language]);
-
-  // Handle document clicks to close any open dropdowns
-  useEffect(() => {
-    const handleDocumentClick = (e: MouseEvent) => {
-      // This component doesn't have any dropdowns of its own,
-      // but we're adding this for future-proofing
-      // and consistency with the overall click-outside behavior
-    };
-    
-    document.addEventListener('mousedown', handleDocumentClick);
-    
-    return () => {
-      document.removeEventListener('mousedown', handleDocumentClick);
-    };
-  }, []);
-
-  // Function to get the correct color for the word based on location
-  const getWordColor = (point: Point): string => {
-    if (isHomepage && point.emotionalTone) {
-      // For homepage, use our special random pastel colors
-      const homepageColor = getHomepageEmotionColor(point.emotionalTone, true);
-      if (homepageColor) {
-        return homepageColor;
-      }
-    }
-    
-    // For other pages or fallback, use the standard colors
-    if (point.emotionalTone) {
-      return getEmotionColor(point.emotionalTone);
-    }
-    
-    // If no emotional tone or color in RGB format, convert to hex
-    if (point.color && Array.isArray(point.color)) {
-      return `rgb(${Math.round(point.color[0] * 255)}, ${Math.round(point.color[1] * 255)}, ${Math.round(point.color[2] * 255)})`;
-    }
-    
-    return '#95A5A6'; // Default gray if no color information is available
-  };
-
-  // Translate sentiment label
-  const getTranslatedSentiment = (sentiment: string): string => {
-    const key = sentiment.toLowerCase().replace(/\s+/g, '');
-    if (t(key)) {
-      return t(key);
-    }
-    return sentiment;
-  };
-
-  // Translate emotional tone
-  const getTranslatedEmotion = (emotion: string): string => {
-    const lowerCaseEmotion = emotion?.toLowerCase();
-    if (lowerCaseEmotion && t(lowerCaseEmotion)) {
-      return t(lowerCaseEmotion);
-    }
-    return emotion || t("neutral");
-  };
-
+const WordComparison = ({ words, onRemoveWord, onClearWords }: WordComparisonProps) => {
   if (words.length === 0) {
-    return (
-      <div className="py-12 flex flex-col items-center justify-center text-center">
-        <div className="mb-3 p-4 rounded-full bg-muted/50">
-          <GitCompareArrows className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-medium">No Words Selected</h3>
-        <p className="text-sm text-muted-foreground mt-1 max-w-md">
-          {sourceDescription ? (
-            <>
-              {t("addWordsFromDocument")}
-            </>
-          ) : (
-            <>
-              {t("addWordsToCompare")}
-            </>
-          )}
-        </p>
-        <Button 
-          variant="outline" 
-          className="mt-4"
-          onClick={onAddWordClick}
-        >
-          <Search className="h-4 w-4 mr-2" />
-          {t("searchWords")}
-        </Button>
-        
-        {sourceDescription && (
-          <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
-            <Info className="h-4 w-4 mr-1" />
-            {sourceDescription}
-          </div>
-        )}
-      </div>
-    );
+    return null;
   }
-
+  
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {words.map((word) => (
-          <div key={`${word.id}-${forceUpdate}`} className="border rounded-md p-4 relative">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="absolute top-2 right-2 h-6 w-6"
-              onClick={() => onRemoveWord(word)}
+    <Card className="border">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-base">Comparison</CardTitle>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClearWords}
+            className="h-8 px-2 text-muted-foreground"
+          >
+            Clear All
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+          {words.map((word) => (
+            <div 
+              key={word.id} 
+              className="border rounded-lg p-3 relative"
             >
-              <X className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2 mb-3">
-              <div 
-                className="w-4 h-4 rounded-full" 
-                style={{ backgroundColor: getWordColor(word) }}
-              />
-              <h3 className="font-bold truncate">{word.word}</h3>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">{t("emotionalTones")}</p>
-              <p className="text-sm font-medium">{getTranslatedEmotion(word.emotionalTone)}</p>
-            </div>
-            <div className="mt-2">
-              <p className="text-xs text-muted-foreground mb-1">{t("sentiment")}</p>
-              <p className="text-sm font-medium">
-                {word.sentiment.toFixed(2)}{" "}
-                {getTranslatedSentiment(
-                  word.sentiment >= 0.7 ? "veryPositive" : 
-                  word.sentiment >= 0.5 ? "positive" : 
-                  word.sentiment >= 0.4 ? "neutral" : 
-                  word.sentiment >= 0.25 ? "negative" : "veryNegative"
-                )}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {words.length > 1 && (
-        <div>
-          <h3 className="text-lg font-medium mb-4">{t("relationshipAnalysis")}</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {words.flatMap((word1, i) => 
-              words.slice(i+1).map((word2, j) => {
-                const relationship = calculateRelationship(word1, word2);
-                if (!relationship) return null;
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-1 right-1 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                onClick={() => onRemoveWord(word.id)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+              
+              <div className="mb-3">
+                <h4 className="font-medium truncate pr-6">{word.word}</h4>
+                <Badge variant="outline" className="mt-1">
+                  {word.emotionalTone || 'Neutral'}
+                </Badge>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Sentiment:</span>
+                  <span className={`font-medium ${
+                    (word.sentiment || 0) > 0.55 ? 'text-green-600' :
+                    (word.sentiment || 0) < 0.45 ? 'text-red-600' :
+                    'text-gray-600'
+                  }`}>
+                    {getSentimentLabel(word.sentiment || 0.5)}
+                  </span>
+                </div>
                 
-                const {
-                  spatialSimilarity,
-                  sentimentSimilarity,
-                  sameEmotionalGroup,
-                  sharedKeywords
-                } = relationship;
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Score:</span>
+                  <span>{Math.round((word.sentiment || 0.5) * 100)}%</span>
+                </div>
                 
-                const overallSimilarity = (
-                  spatialSimilarity * 0.4 + 
-                  sentimentSimilarity * 0.4 + 
-                  (sameEmotionalGroup ? 0.2 : 0)
-                );
-                
-                return (
-                  <div 
-                    key={`${word1.id}-${word2.id}-${forceUpdate}`} 
-                    className="border rounded-md p-4"
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: getWordColor(word1) }}
-                        />
-                        <span className="font-bold">{word1.word}</span>
-                      </div>
-                      <ArrowLeftRight className="h-4 w-4 text-muted-foreground mx-2" />
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: getWordColor(word2) }}
-                        />
-                        <span className="font-bold">{word2.word}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">{t("overallRelationship")}</p>
-                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary rounded-full" 
-                            style={{ width: `${overallSimilarity * 100}%` }}
-                          />
-                        </div>
-                        <p className="text-sm mt-1">
-                          {t(
-                            overallSimilarity >= 0.8 ? "stronglyRelated" :
-                            overallSimilarity >= 0.6 ? "related" :
-                            overallSimilarity >= 0.4 ? "moderatelyRelated" :
-                            overallSimilarity >= 0.2 ? "weaklyRelated" : "barelyRelated"
-                          )}
-                          {" "}
-                          ({Math.round(overallSimilarity * 100)}%)
-                        </p>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3 pt-2">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">{t("contextualSimilarity")}</p>
-                          <p className="text-sm font-medium">{Math.round(spatialSimilarity * 100)}%</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">{t("emotionalAlignment")}</p>
-                          <p className="text-sm font-medium">{Math.round(sentimentSimilarity * 100)}%</p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">{t("emotionalGroupType")}</p>
-                        <p className="text-sm font-medium">
-                          {sameEmotionalGroup 
-                            ? `${t("bothIn")} "${getTranslatedEmotion(word1.emotionalTone)}" ${t("group")}` 
-                            : `${t("differentGroups")} (${getTranslatedEmotion(word1.emotionalTone)} ${t("vs")} ${getTranslatedEmotion(word2.emotionalTone)})`}
-                        </p>
-                      </div>
-                      
-                      {sharedKeywords && sharedKeywords.length > 0 && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">{t("sharedConcepts")}</p>
-                          <div className="flex flex-wrap gap-1">
-                            {sharedKeywords.map((keyword, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {keyword}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                {word.frequency !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Frequency:</span>
+                    <span>{word.frequency}</span>
                   </div>
-                );
-              })
-            )}
-          </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      )}
-      
-      {sourceDescription && words.length > 0 && (
-        <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
-          <Info className="h-4 w-4 mr-1" />
-          {sourceDescription}
-        </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
+
+export default WordComparison;

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, BarChart2 } from "lucide-react";
@@ -15,7 +16,6 @@ import {
 } from "@/components/ui/collapsible";
 import JournalSentimentChart from "./JournalSentimentChart";
 import JournalSentimentSummary from "./JournalSentimentSummary";
-import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { Card } from "@/components/ui/card";
 import MentalHealthSuggestions from "../suggestions/MentalHealthSuggestions";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
@@ -44,70 +44,6 @@ const JournalAnalysisSection = ({
   const [bertAnalysis, setBertAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
-
-  // Generate emotional embeddings from journal entries
-  const generateEmotionalEmbeddings = () => {
-    if (!journalEntries.length) return [];
-    
-    // Create simulated embeddings with emotional tones
-    return journalEntries.flatMap((entry, entryIndex) => {
-      const words = entry.text.split(/\s+/);
-      
-      return words.filter(word => word.length > 3).map((word, index) => {
-        // Generate consistent but seemingly random values for each word based on its characters
-        const hash = [...word].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const x = Math.sin(hash) * 5;
-        const y = Math.cos(hash * 0.5) * 5;
-        const z = Math.sin(hash * 0.3) * Math.cos(hash * 0.7) * 5;
-        
-        // Assign emotional tones based on word patterns or entry sentiment
-        const emotionalTones = ['Joy', 'Sadness', 'Anxiety', 'Contentment', 'Confusion', 'Anger', 'Fear', 'Surprise'];
-        const toneIndex = hash % emotionalTones.length;
-        const emotionalTone = emotionalTones[toneIndex];
-        
-        // Create color based on emotional tone
-        let color;
-        switch(emotionalTone) {
-          case 'Joy':
-            color = [1, 0.9, 0.4]; // Yellow
-            break;
-          case 'Sadness':
-            color = [0.4, 0.6, 0.9]; // Blue
-            break;
-          case 'Anxiety':
-            color = [0.9, 0.5, 0.2]; // Orange
-            break;
-          case 'Contentment':
-            color = [0.5, 0.9, 0.5]; // Green
-            break;
-          case 'Confusion':
-            color = [0.7, 0.5, 0.9]; // Purple
-            break;
-          case 'Anger':
-            color = [0.9, 0.3, 0.3]; // Red
-            break;
-          case 'Fear':
-            color = [0.7, 0.3, 0.7]; // Dark Purple
-            break;
-          case 'Surprise':
-            color = [0.4, 0.9, 0.9]; // Cyan
-            break;
-          default:
-            color = [0.7, 0.7, 0.7]; // Gray
-        }
-        
-        return {
-          id: `${entryIndex}-${index}`,
-          word: word.replace(/[^\w]/g, ''),
-          position: [x, y, z],
-          color: color,
-          emotionalTone: emotionalTone,
-          frequency: 1,
-          relationships: []
-        };
-      });
-    });
-  };
 
   // Extract keywords from journal entries
   const extractKeywords = () => {
@@ -152,25 +88,8 @@ const JournalAnalysisSection = ({
     runAnalysis();
   }, [journalEntries, refreshTrigger]);
 
-  const embeddingPoints = generateEmotionalEmbeddings();
   const keywords = extractKeywords();
   const combinedJournalText = journalEntries.map(entry => entry.text).join(" ");
-
-  // Function to scroll to section when expanded
-  const scrollToSection = (element: HTMLElement) => {
-    if (!element) return;
-    
-    setTimeout(() => {
-      const headerOffset = 80; // Adjust based on your header height
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-      
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth"
-      });
-    }, 100); // Small delay to ensure content is visible
-  };
 
   return (
     <div className="mt-6">
@@ -203,13 +122,11 @@ const JournalAnalysisSection = ({
               <ScrollToSection isOpen={activeAccordion === 'emotional-analysis'} elementId="emotional-analysis" />
               <ScrollToSection isOpen={activeAccordion === 'timeline'} elementId="timeline" />
               <ScrollToSection isOpen={activeAccordion === 'keywords'} elementId="keywords" />
-              <ScrollToSection isOpen={activeAccordion === 'latent-emotional-analysis'} elementId="latent-emotional-analysis" />
               
               {/* Document Text Visualization - Moved to the top */}
               <div className="mb-6" id="text-analysis-section">
                 <TextEmotionViewer 
                   pdfText={combinedJournalText}
-                  embeddingPoints={embeddingPoints}
                   sourceDescription="Journal Entries Text Analysis"
                   bertAnalysis={bertAnalysis}
                 />
@@ -285,63 +202,12 @@ const JournalAnalysisSection = ({
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                
-                <AccordionItem value="latent-emotional-analysis" id="latent-emotional-analysis">
-                  <AccordionTrigger className="text-purple-700 hover:text-purple-800">
-                    Latent Emotional Analysis
-                  </AccordionTrigger>
-                  <AccordionContent className="p-2">
-                    <div className="space-y-4">
-                      <div className="border rounded-md p-3 bg-white">
-                        <h4 className="font-medium mb-2">3D Visualization</h4>
-                        <div className="h-[300px] w-full bg-gray-50 rounded-lg overflow-hidden">
-                          <DocumentEmbedding 
-                            points={embeddingPoints} 
-                            isInteractive={true} 
-                            depressedJournalReference={overallSentimentChange.includes("negative")}
-                            bertAnalysis={bertAnalysis}
-                          />
-                        </div>
-                      </div>
-                      
-                      <Card className="p-3">
-                        <h4 className="font-medium mb-2">Emotional Insights</h4>
-                        <p className="text-sm mb-2">
-                          This visualization represents the latent emotional patterns in your journal entries. 
-                          Similar emotions are clustered together in 3D space.
-                        </p>
-                        <ul className="list-disc list-inside text-sm space-y-1">
-                          <li>Emotions are represented as colored points</li>
-                          <li>Closer points indicate similar emotional states</li>
-                          <li>Colors represent different emotional categories</li>
-                        </ul>
-                      </Card>
-                      
-                      <Card className="p-3">
-                        <h4 className="font-medium mb-2">Primary Emotional Clusters</h4>
-                        <div className="grid grid-cols-2 gap-2">
-                          {["Joy", "Sadness", "Anxiety", "Contentment"].map(emotion => (
-                            <div key={emotion} className="flex items-center">
-                              <div className={`w-3 h-3 rounded-full mr-2 ${
-                                emotion === "Joy" ? "bg-yellow-400" :
-                                emotion === "Sadness" ? "bg-blue-400" :
-                                emotion === "Anxiety" ? "bg-red-400" :
-                                "bg-green-400"
-                              }`}></div>
-                              <span className="text-sm">{emotion}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </Card>
-                      
-                      <MentalHealthSuggestions 
-                        journalEntries={journalEntries} 
-                        bertAnalysis={bertAnalysis}
-                      />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
               </Accordion>
+              
+              <MentalHealthSuggestions 
+                journalEntries={journalEntries} 
+                bertAnalysis={bertAnalysis}
+              />
             </>
           )}
         </CollapsibleContent>
