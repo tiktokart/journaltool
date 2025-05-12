@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
@@ -19,6 +20,7 @@ export interface EmbeddingSceneProps {
   onCameraMove?: () => void;
   containerRef: React.RefObject<HTMLDivElement>;
   cameraRef: React.RefObject<THREE.PerspectiveCamera>;
+  controlsRef?: React.RefObject<any>;
   visualizationSettings: {
     pointSize: number;
     lineWidth: number;
@@ -26,6 +28,39 @@ export interface EmbeddingSceneProps {
   };
   bertData?: any; // Add bertData as an optional prop
 }
+
+// Export these functions for use in DocumentEmbedding.tsx
+export const zoomIn = (camera: THREE.PerspectiveCamera) => {
+  gsap.to(camera.position, {
+    z: camera.position.z * 0.8,
+    duration: 0.5,
+    ease: "power2.out"
+  });
+};
+
+export const zoomOut = (camera: THREE.PerspectiveCamera) => {
+  gsap.to(camera.position, {
+    z: camera.position.z * 1.25,
+    duration: 0.5,
+    ease: "power2.out"
+  });
+};
+
+export const resetZoom = (camera: THREE.PerspectiveCamera, controls: any) => {
+  gsap.to(camera.position, {
+    x: 0,
+    y: 0,
+    z: 20,
+    duration: 1,
+    ease: "power2.inOut",
+    onUpdate: () => {
+      camera.lookAt(0, 0, 0);
+      if (controls && controls.update) {
+        controls.update();
+      }
+    }
+  });
+};
 
 const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   points,
@@ -40,11 +75,12 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
   onCameraMove,
   containerRef,
   cameraRef,
+  controlsRef,
   visualizationSettings,
   bertData
 }) => {
   const { gl, scene, camera } = useThree();
-  const orbitControlsRef = useRef<OrbitControls>(null);
+  const orbitControlsRef = useRef<any>(null);
   const pointsRef = useRef<THREE.Points>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
   const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 20));
@@ -52,9 +88,15 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
   useEffect(() => {
     if (cameraRef) {
-      cameraRef.current = camera as THREE.PerspectiveCamera;
+      // Need to clone the reference to avoid TypeScript read-only error
+      const cam = camera as THREE.PerspectiveCamera;
+      cameraRef.current = cam;
     }
-  }, [camera, cameraRef]);
+    
+    if (controlsRef && orbitControlsRef.current) {
+      controlsRef.current = orbitControlsRef.current;
+    }
+  }, [camera, cameraRef, controlsRef]);
 
   useEffect(() => {
     if (orbitControlsRef.current) {
@@ -77,14 +119,28 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     if (!pointsRef.current || !points) return;
 
     const geometry = new THREE.BufferGeometry();
-    const positions = points.map(p => p.position).flat();
-    const colors = points.map(p => p.color).flat();
+    const positions = points.map(p => p.position).flat() as number[];
+    const colors = points.map(p => {
+      if (Array.isArray(p.color)) {
+        return p.color;
+      } else if (typeof p.color === 'string') {
+        // Convert hex string to RGB array
+        const color = new THREE.Color(p.color);
+        return [color.r, color.g, color.b];
+      }
+      // Default color if nothing is provided
+      return [0.5, 0.5, 0.5];
+    }).flat() as number[];
 
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
     pointsRef.current.geometry = geometry;
-    pointsRef.current.material.size = visualizationSettings.pointSize;
+    // Correctly access the size property on the PointsMaterial type
+    const material = pointsRef.current.material as THREE.PointsMaterial;
+    if (material) {
+      material.size = visualizationSettings.pointSize;
+    }
   }, [points, visualizationSettings.pointSize]);
 
   useEffect(() => {
@@ -102,7 +158,10 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
     connectedPoints.forEach(connectedPoint => {
       if (selectedPoint) {
-        linePositions.push(...selectedPoint.position, ...connectedPoint.position);
+        // Ensure all values are numbers
+        const selectedPos = selectedPoint.position.map(Number);
+        const connectedPos = connectedPoint.position.map(Number);
+        linePositions.push(...selectedPos, ...connectedPos);
       }
     });
 
@@ -115,7 +174,13 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
     if (focusOnWord && pointsRef.current && points) {
       const selected = points.find(point => point.word === focusOnWord);
       if (selected) {
-        const targetPosition = new THREE.Vector3(...selected.position);
+        // Convert position to numbers
+        const positionAsNumbers = selected.position.map(Number);
+        const targetPosition = new THREE.Vector3(
+          positionAsNumbers[0],
+          positionAsNumbers[1],
+          positionAsNumbers[2]
+        );
         const animationDuration = 1.5;
 
         gsap.to(camera.position, {
@@ -157,14 +222,23 @@ const EmbeddingScene: React.FC<EmbeddingSceneProps> = ({
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={cameraPosition} fov={45} near={0.1} far={1000} ref={cameraRef} />
+      <PerspectiveCamera makeDefault position={cameraPosition.toArray()} fov={45} near={0.1} far={1000} ref={cameraRef} />
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
       <OrbitControls ref={orbitControlsRef} args={[camera, gl.domElement]} enableDamping dampingFactor={0.1} />
       <Points
         ref={pointsRef}
-        positions={points.map(p => p.position).flat()}
-        colors={points.map(p => p.color).flat()}
+        positions={points.map(p => p.position).flat() as number[]}
+        colors={points.map(p => {
+          if (Array.isArray(p.color)) {
+            return p.color;
+          } else if (typeof p.color === 'string') {
+            // Convert hex string to RGB array
+            const color = new THREE.Color(p.color);
+            return [color.r, color.g, color.b];
+          }
+          return [0.5, 0.5, 0.5];
+        }).flat() as number[]}
         size={visualizationSettings.pointSize}
         onClick={handlePointClickWrapper}
       />

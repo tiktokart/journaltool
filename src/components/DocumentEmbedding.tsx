@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import { Point, DocumentEmbeddingProps } from '../types/embedding';
 import { generateMockPoints } from '../utils/embeddingUtils';
 import { HoverInfoPanel } from './embedding/HoverInfoPanel';
-import EmbeddingScene, { zoomIn, zoomOut, resetZoom } from './embedding/EmbeddingScene';
+import EmbeddingScene from './embedding/EmbeddingScene';
 import ParticleBackground from './embedding/ParticleBackground';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { gsap } from 'gsap';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { WellbeingResources } from './WellbeingResources';
@@ -36,7 +36,7 @@ export const DocumentEmbedding = ({
   const isHomepage = location.pathname === '/';
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
+  const controlsRef = useRef<any>(null);
   
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
@@ -160,19 +160,46 @@ export const DocumentEmbedding = ({
   
   const handleZoomIn = () => {
     if (cameraRef.current) {
-      zoomIn(cameraRef.current);
+      // Manually implement zoom without importing
+      const camera = cameraRef.current;
+      gsap.to(camera.position, {
+        z: camera.position.z * 0.8,
+        duration: 0.5,
+        ease: "power2.out"
+      });
     }
   };
   
   const handleZoomOut = () => {
     if (cameraRef.current) {
-      zoomOut(cameraRef.current);
+      // Manually implement zoom without importing
+      const camera = cameraRef.current;
+      gsap.to(camera.position, {
+        z: camera.position.z * 1.25,
+        duration: 0.5,
+        ease: "power2.out"
+      });
     }
   };
   
   const handleResetZoom = () => {
     if (cameraRef.current && controlsRef.current) {
-      resetZoom(cameraRef.current, controlsRef.current);
+      // Manually implement reset without importing
+      const camera = cameraRef.current;
+      const controls = controlsRef.current;
+      gsap.to(camera.position, {
+        x: 0,
+        y: 0,
+        z: 20,
+        duration: 1,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          camera.lookAt(0, 0, 0);
+          if (controls && controls.update) {
+            controls.update();
+          }
+        }
+      });
     }
   };
   
@@ -383,6 +410,11 @@ export const DocumentEmbedding = ({
         visibleClusterCount={visibleClusterCount}
         showAllPoints={showAllPoints}
         bertData={bertData}
+        visualizationSettings={{
+          pointSize: 5,
+          lineWidth: 2,
+          connectionOpacity: 0.7
+        }}
       />
       
       {isInteractive && (
