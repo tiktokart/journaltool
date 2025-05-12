@@ -11,7 +11,7 @@ import { Point } from "@/types/embedding";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface AnalysisResultsProps {
   sentimentData: any;
@@ -69,6 +69,50 @@ const AnalysisResults = ({
   const [isClustersOpen, setIsClustersOpen] = useState(false);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
+  
+  // References to collapsible sections for scrolling
+  const infoRef = useRef<HTMLDivElement>(null);
+  const detailsRef = useRef<HTMLDivElement>(null);
+  const clustersRef = useRef<HTMLDivElement>(null);
+  const comparisonRef = useRef<HTMLDivElement>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
+
+  // Function to scroll to a section when opened
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
+    if (!ref.current) return;
+    
+    setTimeout(() => {
+      const headerOffset = 80; // Adjust based on your header height
+      const elementPosition = ref.current?.getBoundingClientRect().top || 0;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+    }, 100);
+  };
+  
+  // Add effects to scroll to sections when they're opened
+  useEffect(() => {
+    if (isInfoOpen) scrollToSection(infoRef);
+  }, [isInfoOpen]);
+  
+  useEffect(() => {
+    if (isDetailsOpen) scrollToSection(detailsRef);
+  }, [isDetailsOpen]);
+  
+  useEffect(() => {
+    if (isClustersOpen) scrollToSection(clustersRef);
+  }, [isClustersOpen]);
+  
+  useEffect(() => {
+    if (isComparisonOpen) scrollToSection(comparisonRef);
+  }, [isComparisonOpen]);
+  
+  useEffect(() => {
+    if (isPdfOpen) scrollToSection(pdfRef);
+  }, [isPdfOpen]);
 
   if (!sentimentData) {
     return null;
@@ -84,7 +128,7 @@ const AnalysisResults = ({
   return (
     <div className="animate-fade-in">
       <Collapsible open={isInfoOpen} onOpenChange={setIsInfoOpen} className="w-full">
-        <div className="bg-white p-4 rounded-lg mb-4">
+        <div ref={infoRef} className="bg-white p-4 rounded-lg mb-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">File Information</h2>
             <CollapsibleTrigger asChild>
@@ -97,7 +141,7 @@ const AnalysisResults = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
+          <CollapsibleContent className="overflow-hidden">
             <FileInfoDisplay 
               fileName={sentimentData.fileName}
               fileSize={sentimentData.fileSize}
@@ -108,7 +152,7 @@ const AnalysisResults = ({
       </Collapsible>
       
       <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen} className="w-full">
-        <div className="bg-white p-4 rounded-lg mb-4">
+        <div ref={detailsRef} className="bg-white p-4 rounded-lg mb-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Document Summary</h2>
             <CollapsibleTrigger asChild>
@@ -121,7 +165,7 @@ const AnalysisResults = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
+          <CollapsibleContent className="overflow-hidden">
             <ViewDetailedAnalysis 
               summary={sentimentData.summary} 
               text={sentimentData.text || sentimentData.pdfText}
@@ -157,7 +201,7 @@ const AnalysisResults = ({
       </div>
       
       <Collapsible open={isClustersOpen} onOpenChange={setIsClustersOpen} className="w-full">
-        <div className="mt-8 mb-4">
+        <div ref={clustersRef} className="mt-8 mb-4">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-semibold">Emotional Clusters</h2>
             <CollapsibleTrigger asChild>
@@ -170,7 +214,7 @@ const AnalysisResults = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
+          <CollapsibleContent className="overflow-hidden">
             <EmotionalClustersControl 
               visibleClusterCount={visibleClusterCount}
               setVisibleClusterCount={setVisibleClusterCount}
@@ -181,7 +225,7 @@ const AnalysisResults = ({
       </Collapsible>
       
       <Collapsible open={isComparisonOpen} onOpenChange={setIsComparisonOpen} className="w-full">
-        <div className="mt-8 mb-4 bg-white rounded-lg p-4">
+        <div ref={comparisonRef} className="mt-8 mb-4 bg-white rounded-lg p-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Word Comparison</h2>
             <CollapsibleTrigger asChild>
@@ -194,7 +238,7 @@ const AnalysisResults = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
+          <CollapsibleContent className="overflow-hidden">
             <WordComparisonController 
               points={sentimentData.embeddingPoints}
               selectedPoint={selectedPoint}
@@ -215,7 +259,7 @@ const AnalysisResults = ({
       </div>
       
       <Collapsible open={isPdfOpen} onOpenChange={setIsPdfOpen} className="w-full">
-        <div className="mt-8 bg-white p-4 rounded-lg">
+        <div ref={pdfRef} className="mt-8 bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Export Options</h2>
             <CollapsibleTrigger asChild>
@@ -228,7 +272,7 @@ const AnalysisResults = ({
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent>
+          <CollapsibleContent className="overflow-hidden">
             <PdfExport 
               sentimentData={sentimentData}
               onJournalEntryAdded={onJournalEntryAdded}

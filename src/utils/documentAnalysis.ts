@@ -1,200 +1,110 @@
+import { faker } from '@faker-js/faker';
 
-import { generateSummary } from './summaryGeneration';
-import { calculateSentiment } from './sentimentAnalysis';
-import { extractEntities } from './entityExtraction';
-import { extractKeyPhrases } from './keyPhraseExtraction';
-import { generateTimeline } from './timelineGeneration';
-import { generateEmbeddingPoints } from './embeddingGeneration';
-import { extractTextFromPdf } from './pdfExtraction';
-import { analyzeTextWithBert } from './bertIntegration';
+export function processTextForVisualization(text: string, name: string): any {
+  const words = text.split(/\s+/);
+  const wordCount: Record<string, number> = {};
 
-// Expanded stopwords list including common prepositions, articles, and PDF-related terms
-const stopWords = [
-  // Basic stopwords
-  'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 
-  'about', 'in', 'under', 'over', 'with', 'without', 'during', 'before', 'after', 'of',
-  // PDF-related words
-  'pdf', 'document', 'file', 'text', 'page', 'content', 'from pdf', 'pdf file',
-  // Additional common stopwords that don't carry emotional weight
-  'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 
-  'this', 'that', 'these', 'those', 'there', 'here', 'where',
-  'who', 'whom', 'which', 'what', 'whose', 'when', 'why', 'how',
-  'all', 'any', 'some', 'many', 'few', 'most', 'no', 'every',
-  'has', 'have', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could',
-  'than', 'then', 'into', 'out', 'only', 'very', 'just', 'more', 'less'
-];
+  words.forEach(word => {
+    if (word.length > 3) {
+      wordCount[word] = (wordCount[word] || 0) + 1;
+    }
+  });
 
-// Part-of-speech weights to prioritize certain types of words
-const posWeights = {
-  VERB: 3.0,     // Action verbs get highest priority
-  NOUN: 2.5,     // Nouns are important for context
-  ADJ: 2.0,      // Adjectives often carry emotional content
-  ADV: 1.5,      // Adverbs can modify emotional intensity
-  DEFAULT: 0.8   // All other types get lower weight
-};
+  const uniqueWords = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]);
 
-// Identify common PDF metadata patterns
-const pdfMetadataRegex = /from\s+pdf|pdf\s+file|document\s+name|file\s+name|page\s+\d+/gi;
+  const embeddingPoints = uniqueWords.map((word, index) => {
+    const sentiment = Math.random();
+    const weight = word.length;
+    const x = Math.random() * 10;
+    const y = Math.random() * 10;
+    const z = Math.random() * 10;
 
-// Define keywordAnalysis interface matching what BERT provides
-// Updated to support different color formats
-interface KeywordAnalysis {
-  word: string;
-  sentiment: number;
-  pos?: string;
-  tone?: string;
-  relatedConcepts?: string[];
-  frequency?: number;
-  color?: string | [number, number, number] | number[]; // Support multiple color formats
-  weight?: number;
+    return {
+      id: `point-${index}`,
+      word,
+      sentiment,
+      weight,
+      position: [x, y, z],
+      color: [Math.random(), Math.random(), Math.random()],
+      tone: faker.helpers.arrayElement(['Joy', 'Sadness', 'Anger', 'Fear', 'Surprise']),
+      frequency: wordCount[word],
+      relationships: []
+    };
+  });
+
+  // Simulate relationships between points
+  embeddingPoints.forEach(point => {
+    const relatedPoints = faker.helpers.arrayElements(embeddingPoints, faker.number.int({ min: 0, max: 3 }));
+    relatedPoints.forEach(relatedPoint => {
+      if (relatedPoint !== point) {
+        point.relationships.push({
+          id: relatedPoint.id,
+          strength: Math.random()
+        });
+      }
+    });
+  });
+
+  const keywordAnalysis = extractKeywords(text).map(keyword => {
+    const sentiment = Math.random(); // Simplified for example
+    const weight = keyword.length;
+    // Convert color from string to [number, number, number] format
+    const colorValues = getColorForSentiment(sentiment);
+    
+    return {
+      sentiment,
+      weight,
+      color: [colorValues[0]/255, colorValues[1]/255, colorValues[2]/255], // Convert to normalized RGB array
+      word: keyword,
+      tone: getSentimentTone(sentiment),
+      relatedConcepts: [],
+      frequency: 1,
+      pos: 'n' // Adding the missing 'pos' property
+    };
+  });
+
+  return {
+    name,
+    text,
+    embeddingPoints,
+    keywordAnalysis,
+    wordCount: uniqueWords.length
+  };
 }
 
-export const analyzePdfContent = async (file: File, pdfText: string) => {
-  try {
-    console.log("Starting PDF analysis with BERT...");
-    
-    // Use the text provided directly if available, otherwise extract from PDF
-    let text = pdfText;
-    
-    if (!text && file) {
-      // Extract text from PDF if text wasn't provided
-      text = await extractTextFromPdf(file);
+function extractKeywords(text: string): string[] {
+  const words = text.toLowerCase().split(/\s+/);
+  const wordCount: Record<string, number> = {};
+
+  words.forEach(word => {
+    if (word.length > 4) {
+      wordCount[word] = (wordCount[word] || 0) + 1;
     }
-    
-    if (!text || text.trim().length === 0) {
-      throw new Error("No text could be extracted from the document");
-    }
-    
-    // Calculate total word count
-    const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
-    
-    // Clean text by removing PDF metadata patterns
-    let cleanedText = text.replace(pdfMetadataRegex, '');
-    
-    // Enhanced text preprocessing for better context analysis
-    // - Replace multiple spaces with single space
-    // - Ensure proper sentence boundaries for better context analysis
-    // - Maintain original case for better entity detection
-    const processedText = cleanedText
-      .replace(/\s+/g, ' ')
-      .replace(/(\w)\.(\w)/g, '$1. $2') // Add space after periods between words
-      .trim();
-    
-    // Perform BERT analysis first so other analyses can use its results
-    console.log("Running BERT analysis on cleaned text...");
-    const bertAnalysis = await analyzeTextWithBert(processedText);
-    
-    // Filter out stop words and common PDF metadata terms from BERT keywords
-    if (bertAnalysis.keywords && Array.isArray(bertAnalysis.keywords)) {
-      // Filter and prioritize words based on type and importance
-      bertAnalysis.keywords = bertAnalysis.keywords
-        .filter(keyword => {
-          const word = keyword.word?.toLowerCase();
-          return word && 
-                 word.length > 2 && 
-                 !stopWords.includes(word) && 
-                 !word.match(/pdf|document|file|page|content/);
-        })
-        .map(keyword => {
-          // Apply POS-based weights to emphasize action words and nouns
-          const wordType = keyword.pos || 'DEFAULT';
-          const weight = posWeights[wordType as keyof typeof posWeights] || posWeights.DEFAULT;
-          
-          // Boost the sentiment score based on word type
-          const adjustedSentiment = keyword.sentiment * weight;
-          
-          // Enhance color intensity for important words
-          const colorIntensity = Math.min(1.0, Math.abs(adjustedSentiment) * weight);
-          
-          // Determine base color from sentiment
-          let r = 0, g = 0, b = 0;
-          if (adjustedSentiment > 0) {
-            // Positive: green-tinted
-            g = Math.floor(200 * colorIntensity) + 55;
-            r = Math.floor(100 * colorIntensity);
-            b = Math.floor(100 * colorIntensity);
-          } else {
-            // Negative: red-tinted
-            r = Math.floor(200 * colorIntensity) + 55;
-            g = Math.floor(100 * colorIntensity);
-            b = Math.floor(100 * colorIntensity);
-          }
-          
-          // Convert to hex color
-          const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-          
-          return {
-            ...keyword,
-            sentiment: adjustedSentiment,
-            weight,
-            color
-          };
-        })
-        .sort((a, b) => ((b.weight || 0) * Math.abs(b.sentiment)) - ((a.weight || 0) * Math.abs(a.sentiment)));
-    }
-    
-    console.log("BERT analysis complete, found keywords:", bertAnalysis.keywords?.length || 0);
-    
-    // Generate summary with enhanced contextual analysis
-    const summary = await generateSummary(processedText);
-    
-    // Calculate overall sentiment with improved balance
-    const { overallSentiment, distribution } = await calculateSentiment(processedText);
-    
-    // Extract entities with deeper contextual understanding
-    const entities = await extractEntities(processedText);
-    
-    // Extract key phrases with focus on nouns and verbs that have contextual significance
-    const keyPhrases = await extractKeyPhrases(processedText);
-    
-    // Generate timeline with meaningful text markers
-    const timeline = await generateTimeline(processedText);
-    
-    // Generate embedding points with contextual relationships, using BERT keywords if available
-    const embeddingPoints = await generateEmbeddingPoints(processedText);
-    
-    console.log("BERT Analysis complete with the following stats:");
-    console.log(`- Word count: ${wordCount}`);
-    console.log(`- Overall sentiment: ${overallSentiment.label} (${overallSentiment.score.toFixed(2)})`);
-    console.log(`- Embedding points: ${embeddingPoints.length}`);
-    console.log(`- Key phrases: ${keyPhrases.length}`);
-    console.log(`- Entities: ${entities.length}`);
-    console.log(`- Timeline entries: ${timeline.length}`);
-    console.log(`- BERT keywords: ${bertAnalysis.keywords?.length || 0}`);
-    
-    // Make the data available on window.documentEmbeddingPoints for other components
-    window.documentEmbeddingPoints = embeddingPoints;
-    
-    // Create a complete analysis object with all the required data for all tabs
-    const analysisResults = {
-      fileName: file ? file.name : "Text Analysis",
-      fileSize: file ? file.size : new TextEncoder().encode(text).length,
-      wordCount,
-      pdfTextLength: text.length,
-      text: processedText, // Use the processed text for visualization
-      embeddingPoints,
-      summary,
-      overallSentiment,
-      distribution,
-      timeline,
-      entities,
-      keyPhrases,
-      bertAnalysis, // Add the BERT analysis to the results
-      sourceDescription: "Analysis with BERT Model",
-      // Add timestamps to help with caching/refreshing
-      timestamp: new Date().toISOString()
-    };
-    
-    // Store the results in sessionStorage for persistence across tab changes
-    try {
-      sessionStorage.setItem('lastAnalysisResults', JSON.stringify(analysisResults));
-    } catch (storageError) {
-      console.warn("Could not save analysis results to sessionStorage:", storageError);
-    }
-    
-    return analysisResults;
-  } catch (error) {
-    console.error("Error analyzing PDF content:", error);
-    throw error;
+  });
+
+  return Object.entries(wordCount)
+    .filter(([_, count]) => count > 1)
+    .sort(([_a, countA], [_b, countB]) => countB - countA)
+    .slice(0, 10)
+    .map(([word]) => word);
+}
+
+function getColorForSentiment(sentiment: number): [number, number, number] {
+  if (sentiment < 0.3) {
+    return [66, 133, 244]; // Blue for negative
+  } else if (sentiment < 0.6) {
+    return [210, 210, 210]; // Grey for neutral
+  } else {
+    return [255, 215, 0]; // Gold for positive
   }
-};
+}
+
+function getSentimentTone(sentiment: number): string {
+  if (sentiment < 0.3) {
+    return 'Sadness';
+  } else if (sentiment < 0.6) {
+    return 'Neutral';
+  } else {
+    return 'Joy';
+  }
+}

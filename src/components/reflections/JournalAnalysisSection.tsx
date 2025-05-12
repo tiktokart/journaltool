@@ -153,6 +153,22 @@ const JournalAnalysisSection = ({
   const embeddingPoints = generateEmotionalEmbeddings();
   const keywords = extractKeywords();
 
+  // Function to scroll to section when expanded
+  const scrollToSection = (element: HTMLElement) => {
+    if (!element) return;
+    
+    setTimeout(() => {
+      const headerOffset = 80; // Adjust based on your header height
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+    }, 100); // Small delay to ensure content is visible
+  };
+
   return (
     <div className="mt-6">
       <Collapsible
@@ -172,7 +188,7 @@ const JournalAnalysisSection = ({
             <ChevronRight className={`h-5 w-5 transition-transform ${isAnalysisOpen ? 'rotate-90' : ''}`} />
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="p-4 bg-white">
+        <CollapsibleContent className="p-4 bg-white max-h-[80vh] overflow-y-auto">
           {journalEntries.length < 2 ? (
             <div className="text-center py-4 text-black">
               <p>Need at least two journal entries to analyze trends.</p>
@@ -193,8 +209,20 @@ const JournalAnalysisSection = ({
               </div>
               
               {/* Emotional Analysis Accordion */}
-              <Accordion type="single" collapsible className="mt-6">
-                <AccordionItem value="emotional-analysis">
+              <Accordion 
+                type="single" 
+                collapsible 
+                className="mt-6"
+                onValueChange={(value) => {
+                  if (value) {
+                    const element = document.getElementById(value);
+                    if (element) {
+                      scrollToSection(element);
+                    }
+                  }
+                }}
+              >
+                <AccordionItem value="emotional-analysis" id="emotional-analysis">
                   <AccordionTrigger className="text-purple-700 hover:text-purple-800">
                     Emotional Analysis
                   </AccordionTrigger>
@@ -212,7 +240,7 @@ const JournalAnalysisSection = ({
                   </AccordionContent>
                 </AccordionItem>
                 
-                <AccordionItem value="timeline">
+                <AccordionItem value="timeline" id="timeline">
                   <AccordionTrigger className="text-purple-700 hover:text-purple-800">
                     Timeline
                   </AccordionTrigger>
@@ -225,7 +253,7 @@ const JournalAnalysisSection = ({
                   </AccordionContent>
                 </AccordionItem>
                 
-                <AccordionItem value="keywords">
+                <AccordionItem value="keywords" id="keywords">
                   <AccordionTrigger className="text-purple-700 hover:text-purple-800">
                     Keywords
                   </AccordionTrigger>
@@ -243,7 +271,7 @@ const JournalAnalysisSection = ({
                   </AccordionContent>
                 </AccordionItem>
                 
-                <AccordionItem value="latent-emotional-analysis">
+                <AccordionItem value="latent-emotional-analysis" id="latent-emotional-analysis">
                   <AccordionTrigger className="text-purple-700 hover:text-purple-800">
                     Latent Emotional Analysis
                   </AccordionTrigger>
