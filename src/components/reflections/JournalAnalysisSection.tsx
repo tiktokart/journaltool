@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, BarChart2 } from "lucide-react";
@@ -21,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import MentalHealthSuggestions from "../suggestions/MentalHealthSuggestions";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
 import { TextEmotionViewer } from "@/components/TextEmotionViewer";
+import { ScrollToSection } from "@/components/ScrollToSection";
 
 interface JournalAnalysisSectionProps {
   journalEntries: any[];
@@ -43,6 +43,7 @@ const JournalAnalysisSection = ({
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [bertAnalysis, setBertAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
 
   // Generate emotional embeddings from journal entries
   const generateEmotionalEmbeddings = () => {
@@ -197,8 +198,15 @@ const JournalAnalysisSection = ({
             </div>
           ) : (
             <>
+              {/* Add scroll helpers for accordion sections */}
+              <ScrollToSection isOpen={activeAccordion === 'text-analysis'} elementId="text-analysis-section" />
+              <ScrollToSection isOpen={activeAccordion === 'emotional-analysis'} elementId="emotional-analysis" />
+              <ScrollToSection isOpen={activeAccordion === 'timeline'} elementId="timeline" />
+              <ScrollToSection isOpen={activeAccordion === 'keywords'} elementId="keywords" />
+              <ScrollToSection isOpen={activeAccordion === 'latent-emotional-analysis'} elementId="latent-emotional-analysis" />
+              
               {/* Document Text Visualization - Moved to the top */}
-              <div className="mb-6">
+              <div className="mb-6" id="text-analysis-section">
                 <TextEmotionViewer 
                   pdfText={combinedJournalText}
                   embeddingPoints={embeddingPoints}
@@ -226,12 +234,7 @@ const JournalAnalysisSection = ({
                 collapsible 
                 className="mt-6"
                 onValueChange={(value) => {
-                  if (value) {
-                    const element = document.getElementById(value);
-                    if (element) {
-                      scrollToSection(element);
-                    }
-                  }
+                  setActiveAccordion(value);
                 }}
               >
                 <AccordionItem value="emotional-analysis" id="emotional-analysis">
@@ -348,4 +351,3 @@ const JournalAnalysisSection = ({
 };
 
 export default JournalAnalysisSection;
-

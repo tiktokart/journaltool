@@ -1,4 +1,3 @@
-
 import { FileInfoDisplay } from "@/components/FileInfoDisplay";
 import { ViewDetailedAnalysis } from "@/components/ViewDetailedAnalysis";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
@@ -11,7 +10,8 @@ import { Point } from "@/types/embedding";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
+import { ScrollToSection } from "@/components/ScrollToSection";
 
 interface AnalysisResultsProps {
   sentimentData: any;
@@ -133,9 +133,17 @@ const AnalysisResults = ({
 
   return (
     <div className="animate-fade-in">
+      {/* Scroll helpers */}
+      <ScrollToSection isOpen={isInfoOpen} elementId="file-info-section" />
+      <ScrollToSection isOpen={isDetailsOpen} elementId="document-summary-section" />
+      <ScrollToSection isOpen={isClustersOpen} elementId="emotional-clusters-section" />
+      <ScrollToSection isOpen={isComparisonOpen} elementId="word-comparison-section" />
+      <ScrollToSection isOpen={isPdfOpen} elementId="export-options-section" />
+      <ScrollToSection isOpen={isTextVisualizationOpen} elementId="text-visualization-section" />
+      
       {/* Document Text Visualization - Moved above the Overview section */}
       <Collapsible open={isTextVisualizationOpen} onOpenChange={setIsTextVisualizationOpen} className="w-full mb-4">
-        <div ref={textVisualizationRef}>
+        <div id="text-visualization-section">
           <TextEmotionViewer 
             pdfText={pdfText}
             embeddingPoints={sentimentData.embeddingPoints}
@@ -146,7 +154,7 @@ const AnalysisResults = ({
       </Collapsible>
       
       <Collapsible open={isInfoOpen} onOpenChange={setIsInfoOpen} className="w-full">
-        <div ref={infoRef} className="bg-white p-4 rounded-lg mb-4">
+        <div id="file-info-section" className="bg-white p-4 rounded-lg mb-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">File Information</h2>
             <CollapsibleTrigger asChild>
@@ -170,7 +178,7 @@ const AnalysisResults = ({
       </Collapsible>
       
       <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen} className="w-full">
-        <div ref={detailsRef} className="bg-white p-4 rounded-lg mb-4">
+        <div id="document-summary-section" className="bg-white p-4 rounded-lg mb-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Document Summary</h2>
             <CollapsibleTrigger asChild>
@@ -219,7 +227,7 @@ const AnalysisResults = ({
       </div>
       
       <Collapsible open={isClustersOpen} onOpenChange={setIsClustersOpen} className="w-full">
-        <div ref={clustersRef} className="mt-8 mb-4">
+        <div id="emotional-clusters-section" className="mt-8 mb-4">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-semibold">Emotional Clusters</h2>
             <CollapsibleTrigger asChild>
@@ -243,7 +251,7 @@ const AnalysisResults = ({
       </Collapsible>
       
       <Collapsible open={isComparisonOpen} onOpenChange={setIsComparisonOpen} className="w-full">
-        <div ref={comparisonRef} className="mt-8 mb-4 bg-white rounded-lg p-4">
+        <div id="word-comparison-section" className="mt-8 mb-4 bg-white rounded-lg p-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Word Comparison</h2>
             <CollapsibleTrigger asChild>
@@ -268,7 +276,7 @@ const AnalysisResults = ({
       </Collapsible>
       
       <Collapsible open={isPdfOpen} onOpenChange={setIsPdfOpen} className="w-full">
-        <div ref={pdfRef} className="mt-8 bg-white p-4 rounded-lg">
+        <div id="export-options-section" className="mt-8 bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Export Options</h2>
             <CollapsibleTrigger asChild>
@@ -295,4 +303,3 @@ const AnalysisResults = ({
 };
 
 export default AnalysisResults;
-

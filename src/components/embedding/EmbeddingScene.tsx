@@ -25,10 +25,10 @@ interface EmbeddingSceneProps {
   onCameraMove?: () => void;
   containerRef?: React.RefObject<HTMLDivElement>;
   cameraRef?: React.RefObject<THREE.PerspectiveCamera>;
-  controlsRef?: React.RefObject<any>; // Changed from OrbitControls to any
+  controlsRef?: React.RefObject<any>;
   visualizationSettings?: any;
   bertAnalysis?: any;
-  onPointSelect?: (point: any | null) => void; // Added this prop
+  onPointSelect?: (point: any | null) => void;
 }
 
 const EmbeddingScene = ({
@@ -66,11 +66,12 @@ const EmbeddingScene = ({
 
   useEffect(() => {
     if (controlsRef && orbitControlsRef.current) {
-      // Safe assignment using object reference - fix the read-only property error
-      if (typeof controlsRef === 'object') {
-        // Using a non-mutating approach
+      // Safe assignment using object reference - properly handling the reference
+      if (typeof controlsRef === 'object' && controlsRef !== null) {
+        // Create a non-enumerable property that forwards the reference
         Object.defineProperty(controlsRef, 'current', {
-          get: () => orbitControlsRef.current
+          get: () => orbitControlsRef.current,
+          configurable: true
         });
       }
     }
@@ -141,7 +142,7 @@ const EmbeddingScene = ({
     }
   }, [selectedPoint, connectedPoints, visualizationSettings.lineWidth, visualizationSettings.connectionOpacity, points]);
 
-  const handlePointClickWrapper = (event: THREE.Event) => {
+  const handlePointClickWrapper = (event: THREE.ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
     const array = points.map(point => new THREE.Vector3(point.position[0], point.position[1], point.position[2]));
     const geometry = new THREE.BufferGeometry().setFromPoints(array);
@@ -150,8 +151,8 @@ const EmbeddingScene = ({
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     
-    mouse.x = (event.clientX / gl.domElement.clientWidth) * 2 - 1;
-    mouse.y = - (event.clientY / gl.domElement.clientHeight) * 2 + 1;
+    mouse.x = (event.nativeEvent.clientX / gl.domElement.clientWidth) * 2 - 1;
+    mouse.y = - (event.nativeEvent.clientY / gl.domElement.clientHeight) * 2 + 1;
     
     raycaster.setFromCamera(mouse, camera);
     
@@ -207,7 +208,7 @@ const EmbeddingScene = ({
   );
 };
 
-const Points = React.forwardRef<THREE.Points, { positions: number[]; colors: number[]; size: number; onClick: (event: THREE.Event) => void }>(
+const Points = React.forwardRef<THREE.Points, { positions: number[]; colors: number[]; size: number; onClick: (event: THREE.ThreeEvent<MouseEvent>) => void }>(
   ({ positions, colors, size, onClick }, ref) => {
     const geometryRef = useRef(new THREE.BufferGeometry());
     const materialRef = useRef(new THREE.PointsMaterial({ size, vertexColors: true }));
