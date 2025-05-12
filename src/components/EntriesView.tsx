@@ -344,9 +344,12 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                                       .replace(/issues/g, '<span style="background-color: #F7A4AF;">issues</span>')
                                       .replace(/personality defects/g, '<span style="background-color: #FCA5A5;">personality defects</span>')
                                   }} />
-                                ) : selectedEntry.text
+                                ) : (
+                                  selectedEntry.text
+                                )
                               }
-                            </pre>
+                              </pre>
+                            )}
                           </div>
                         </div>
                       </div>
