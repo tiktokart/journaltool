@@ -265,8 +265,8 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
           <Tabs defaultValue="entry" className="h-full flex flex-col">
             <div className="border-b">
               <TabsList className="p-3">
-                <TabsTrigger value="entry">Journal Entry</TabsTrigger>
-                <TabsTrigger value="analysis">Entry Analysis</TabsTrigger>
+                <TabsTrigger value="entry">Entry</TabsTrigger>
+                <TabsTrigger value="analysis">Analysis</TabsTrigger>
               </TabsList>
             </div>
             
