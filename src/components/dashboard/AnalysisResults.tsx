@@ -2,9 +2,6 @@
 import { FileInfoDisplay } from "@/components/FileInfoDisplay";
 import { ViewDetailedAnalysis } from "@/components/ViewDetailedAnalysis";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
-import { EmotionalClustersControl } from "@/components/EmotionalClustersControl";
-import { WordComparisonController } from "@/components/WordComparisonController";
-import { PdfExport } from "@/components/PdfExport";
 import { EntryContent } from "@/components/EntryContent";
 import { Point } from "@/types/embedding";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -12,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, BarChart2, BookOpen } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PdfExport } from "@/components/PdfExport";
 
 interface AnalysisResultsProps {
   sentimentData: any;

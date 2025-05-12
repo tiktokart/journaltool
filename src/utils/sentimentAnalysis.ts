@@ -141,6 +141,9 @@ export const analyzeDocumentSentiment = async (text: string) => {
   const verbs = extractActionVerbs(text);
   const topics = extractMainTopics(text);
   
+  console.log("Extracted action verbs:", verbs.slice(0, 5), "...");
+  console.log("Extracted main topics:", topics.slice(0, 5), "...");
+  
   // Add more detailed analysis components
   return {
     ...basicSentiment,
@@ -270,4 +273,3 @@ function isLikelyNoun(word: string): boolean {
   // Default - longer words are more likely to be nouns than short function words
   return word.length > 5;
 }
-

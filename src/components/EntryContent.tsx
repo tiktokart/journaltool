@@ -192,7 +192,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
             </CollapsibleTrigger>
           </div>
           <CollapsibleContent>
-            <div className="mt-4">
+            <div className="mt-4 max-h-[400px] overflow-y-auto">
               <TextEmotionViewer 
                 pdfText={pdfText} 
                 embeddingPoints={sentimentData.embeddingPoints} 
@@ -231,16 +231,15 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                 <DocumentEmbedding 
                   points={sentimentData.embeddingPoints || []} 
                   isInteractive={true}
-                  searchTerm={searchTerm}
+                  onPointSelect={handlePointClick}
                   selectedPoint={selectedPoint}
-                  setSelectedPoint={setSelectedPoint}
+                  onSelectedPointChange={setSelectedPoint}
                   selectedWord={selectedWord}
-                  setSelectedWord={setSelectedWord}
+                  onSelectedWordChange={setSelectedWord}
                   filteredPoints={filteredPoints}
-                  setFilteredPoints={setFilteredPoints}
+                  onFilteredPointsChange={setFilteredPoints}
                   visibleClusterCount={visibleClusterCount}
-                  handlePointClick={handlePointClick}
-                  bertAnalysis={sentimentData.bertAnalysis}
+                  bertData={sentimentData.bertAnalysis}
                 />
               </div>
               <p className="text-xs text-gray-500 mt-2">
@@ -305,8 +304,8 @@ export const EntryContent: React.FC<EntryContentProps> = ({
             <div className="mt-4">
               <div className="max-h-[300px] overflow-y-auto">
                 <SentimentTimeline 
-                  data={sentimentData.timelineEvents || []} 
-                  showPoints={true}
+                  events={sentimentData.timelineEvents || []} 
+                  highlighted={true}
                 />
               </div>
             </div>
@@ -335,9 +334,9 @@ export const EntryContent: React.FC<EntryContentProps> = ({
           <CollapsibleContent>
             <div className="mt-4">
               <KeyPhrases 
-                phrases={sentimentData.keyPhrases || []} 
-                maxScore={1.0}
-                sourceDescription={sentimentData.sourceDescription}
+                keyPhrases={sentimentData.keyPhrases || []} 
+                scoreMax={1.0}
+                description={sentimentData.sourceDescription}
                 bertKeywords={sentimentData.bertAnalysis?.keywords || []}
               />
             </div>
