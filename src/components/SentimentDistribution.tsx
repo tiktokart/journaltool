@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -24,16 +23,17 @@ export const SentimentDistribution = ({
   
   // Ensure we have non-zero values for each sentiment type
   const ensureValidDistribution = (dist: typeof distribution) => {
-    const positive = Math.max(5, dist.positive || 0);
-    const neutral = Math.max(5, dist.neutral || 0);
-    const negative = Math.max(5, dist.negative || 0);
-    
-    // If all values are minimal defaults, create a more realistic distribution
-    if (positive === 5 && neutral === 5 && negative === 5) {
+    // Only use default values if all values are zero or undefined
+    if ((dist.positive || 0) === 0 && (dist.neutral || 0) === 0 && (dist.negative || 0) === 0) {
       return { positive: 20, neutral: 60, negative: 20 };
     }
     
-    return { positive, neutral, negative };
+    // Otherwise keep the existing values but ensure they're not zero
+    return {
+      positive: Math.max(1, dist.positive || 0),
+      neutral: Math.max(1, dist.neutral || 0),
+      negative: Math.max(1, dist.negative || 0)
+    };
   };
   
   const validDistribution = ensureValidDistribution(distribution);

@@ -40,7 +40,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
       // Process and normalize the data
       const processed: TimelineEntry[] = data.map((item, index) => {
         if (typeof item === 'object' && item !== null) {
-          // Add a page number if it doesn't exist (using index + 1)
+          // Ensure we have valid data for visualization
           return {
             ...item,
             page: item.page || index + 1,
@@ -48,6 +48,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
             score: Math.max(0, Math.min(1, item.score || 0.5)),
             // Make sure we have a time property
             time: item.time || `Section ${index + 1}`,
+            // Ensure we have a text snippet
             textSnippet: item.textSnippet || item.event || `Content point ${index + 1}`
           };
         }
@@ -144,10 +145,6 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
              'Stable Trend'}
           </Badge>
         </div>
-        
-        {sourceDescription && (
-          <p className="text-sm text-muted-foreground font-georgia">{sourceDescription}</p>
-        )}
       </CardHeader>
       <CardContent>
         {!isDataValid || normalizedData.length === 0 ? (

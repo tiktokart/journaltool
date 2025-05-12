@@ -1,19 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { KeyRound, Book, ArrowDownUp } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Info, Lightbulb, Tag, PlusCircle, MinusCircle } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Badge } from "@/components/ui/badge";
 
 interface KeyPhrase {
-  word: string;
-  score?: number;
-  type?: string;
-  count?: number;
-  sentiment?: number;
-  category?: string;
-  theme?: string;
+  phrase: string;
+  score: number;
+  count: number;
 }
 
 interface KeyPhrasesProps {
@@ -23,253 +18,185 @@ interface KeyPhrasesProps {
 
 export const KeyPhrases = ({ data, sourceDescription }: KeyPhrasesProps) => {
   const { t } = useLanguage();
-  const [sortBy, setSortBy] = useState<'size' | 'alphabetical'>('size');
-  const [themesByCategory, setThemesByCategory] = useState<{[key: string]: KeyPhrase[]}>({});
-  
-  // Process data to organize phrases by theme and category
+  const [showAll, setShowAll] = useState(false);
+  const [primaryPhrases, setPrimaryPhrases] = useState<KeyPhrase[]>([]);
+  const [secondaryPhrases, setSecondaryPhrases] = useState<KeyPhrase[]>([]);
+  const [tertiaryPhrases, setTertiaryPhrases] = useState<KeyPhrase[]>([]);
+
+  // Group emotional categories based on score
   useEffect(() => {
-    if (!data || !Array.isArray(data)) {
-      setThemesByCategory({});
-      return;
+    try {
+      if (!data || !Array.isArray(data)) {
+        console.warn("Invalid data provided to KeyPhrases component:", data);
+        return;
+      }
+      
+      // Sort by score (highest first)
+      const sortedData = [...data].sort((a, b) => b.score - a.score);
+      
+      // Divide into primary (high score), secondary (medium), and tertiary (lower) phrases
+      const primary = sortedData.filter(phrase => phrase.score >= 0.65);
+      const secondary = sortedData.filter(phrase => phrase.score >= 0.5 && phrase.score < 0.65);
+      const tertiary = sortedData.filter(phrase => phrase.score < 0.5);
+      
+      setPrimaryPhrases(primary);
+      setSecondaryPhrases(secondary);
+      setTertiaryPhrases(tertiary);
+    } catch (error) {
+      console.error("Error processing key phrases:", error);
     }
-    
-    // First organize by theme categories
-    const themes: {[key: string]: KeyPhrase[]} = {};
-    
-    // Define some theme categories
-    const themeCategories = [
-      'Emotions',
-      'Sadness',
-      'Relationships',
-      'Work',
-      'Health',
-      'Personal Development',
-      'Life Events',
-      'Activities',
-      'Other'
-    ];
-    
-    // Function to determine theme category based on word
-    const getThemeCategory = (word: string, type?: string, theme?: string): string => {
-      if (!word) return 'Other';
-      
-      // First check if the item already has a theme
-      if (theme) return theme;
-      
-      // Use lowercased word for comparison
-      const lowerWord = word.toLowerCase();
-      
-      // Sadness theme - specifically separated as requested
-      if (lowerWord.includes('sad') || lowerWord.includes('depress') || lowerWord.includes('melanch') ||
-          lowerWord.includes('blue') || lowerWord.includes('sorrow') || lowerWord.includes('grief')) {
-        return 'Sadness';
-      }
-      
-      // Emotional themes
-      if (lowerWord.includes('happy') || lowerWord.includes('joy') || 
-          lowerWord.includes('anger') || lowerWord.includes('fear') || 
-          lowerWord.includes('anxious') || lowerWord.includes('love') || 
-          lowerWord.includes('hate') || lowerWord.includes('worry') || 
-          lowerWord.includes('stress') || lowerWord.includes('peace')) {
-        return 'Emotions';
-      }
-      
-      // Relationship themes
-      if (lowerWord.includes('friend') || lowerWord.includes('family') ||
-          lowerWord.includes('parent') || lowerWord.includes('child') ||
-          lowerWord.includes('spouse') || lowerWord.includes('partner') ||
-          lowerWord.includes('marriage') || lowerWord.includes('divorce') ||
-          lowerWord.includes('relationship')) {
-        return 'Relationships';
-      }
-      
-      // Work themes
-      if (lowerWord.includes('work') || lowerWord.includes('job') ||
-          lowerWord.includes('career') || lowerWord.includes('boss') ||
-          lowerWord.includes('coworker') || lowerWord.includes('project') ||
-          lowerWord.includes('office') || lowerWord.includes('meeting') ||
-          lowerWord.includes('deadline')) {
-        return 'Work';
-      }
-      
-      // Health themes
-      if (lowerWord.includes('health') || lowerWord.includes('sick') ||
-          lowerWord.includes('doctor') || lowerWord.includes('hospital') ||
-          lowerWord.includes('pain') || lowerWord.includes('symptom') ||
-          lowerWord.includes('ill') || lowerWord.includes('medicine') ||
-          lowerWord.includes('exercise') || lowerWord.includes('diet')) {
-        return 'Health';
-      }
-      
-      // Personal development
-      if (lowerWord.includes('goal') || lowerWord.includes('improve') ||
-          lowerWord.includes('learn') || lowerWord.includes('growth') ||
-          lowerWord.includes('change') || lowerWord.includes('skill') ||
-          lowerWord.includes('better') || lowerWord.includes('progress') ||
-          lowerWord.includes('success') || lowerWord.includes('achievement')) {
-        return 'Personal Development';
-      }
-      
-      // Life events
-      if (lowerWord.includes('birthday') || lowerWord.includes('wedding') ||
-          lowerWord.includes('funeral') || lowerWord.includes('graduation') ||
-          lowerWord.includes('vacation') || lowerWord.includes('holiday') ||
-          lowerWord.includes('anniversary') || lowerWord.includes('event')) {
-        return 'Life Events';
-      }
-      
-      // Activities
-      if (lowerWord.includes('hobby') || lowerWord.includes('sport') ||
-          lowerWord.includes('game') || lowerWord.includes('read') ||
-          lowerWord.includes('movie') || lowerWord.includes('travel') ||
-          lowerWord.includes('music') || lowerWord.includes('art') ||
-          lowerWord.includes('cook') || lowerWord.includes('play')) {
-        return 'Activities';
-      }
-      
-      // Default to Other if no category matches
-      return 'Other';
+  }, [data]);
+
+  // Function to categorize key phrases into emotional groups
+  const categorizeEmotions = (phrases: KeyPhrase[]) => {
+    const emotionCategories = {
+      'Joy': ['happy', 'joy', 'excitement', 'delight', 'pleased', 'cheerful', 'content', 'love', 'thrill', 'elation'],
+      'Sadness': ['sad', 'grief', 'sorrow', 'depression', 'melancholy', 'upset', 'unhappy', 'blue', 'regret'],
+      'Fear': ['afraid', 'fear', 'anxiety', 'nervous', 'worry', 'panic', 'dread', 'terror', 'scared', 'horror'],
+      'Anger': ['angry', 'rage', 'fury', 'mad', 'irritated', 'annoyed', 'hostile', 'bitter', 'resentment', 'hatred'],
+      'Surprise': ['surprised', 'shock', 'amazement', 'astonishment', 'wonder', 'startled', 'unexpected'],
+      'Trust': ['trust', 'believe', 'faith', 'confidence', 'reliance', 'assurance', 'conviction', 'dependence'],
+      'Anticipation': ['anticipation', 'waiting', 'expecting', 'looking forward', 'hope', 'excitement', 'preparation'],
+      'Disgust': ['disgust', 'revulsion', 'repulsion', 'distaste', 'aversion', 'loathing', 'dislike']
     };
     
-    // Go through each phrase and assign it to a theme
-    data.forEach(phrase => {
-      const category = getThemeCategory(phrase.word, phrase.type, phrase.theme);
+    const categorized: Record<string, KeyPhrase[]> = {};
+    
+    phrases.forEach(phrase => {
+      let matchFound = false;
       
-      // Add theme info to the phrase
-      const enrichedPhrase = {
-        ...phrase,
-        category
-      };
-      
-      if (!themes[category]) {
-        themes[category] = [];
+      for (const [emotionCategory, keywords] of Object.entries(emotionCategories)) {
+        for (const keyword of keywords) {
+          if (phrase.phrase.toLowerCase().includes(keyword)) {
+            if (!categorized[emotionCategory]) {
+              categorized[emotionCategory] = [];
+            }
+            categorized[emotionCategory].push(phrase);
+            matchFound = true;
+            break;
+          }
+        }
+        if (matchFound) break;
       }
-      themes[category].push(enrichedPhrase);
+      
+      if (!matchFound) {
+        if (!categorized['Other']) {
+          categorized['Other'] = [];
+        }
+        categorized['Other'].push(phrase);
+      }
     });
     
-    // Order categories according to themeCategories array and sort by count
-    const orderedThemes: {[key: string]: KeyPhrase[]} = {};
-    
-    // Sort categories by size or alphabetically
-    const sortedCategories = sortBy === 'size' 
-      ? Object.keys(themes).sort((a, b) => themes[b].length - themes[a].length)
-      : Object.keys(themes).sort();
-    
-    // Add sorted categories to the ordered themes
-    sortedCategories.forEach(category => {
-      orderedThemes[category] = themes[category];
-    });
-    
-    setThemesByCategory(orderedThemes);
-  }, [data, sortBy]);
+    return categorized;
+  };
 
-  const getThemeBadgeColor = (category: string) => {
-    switch(category) {
-      case 'Emotions': return 'bg-pink-100 text-pink-800 hover:bg-pink-200';
-      case 'Sadness': return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
-      case 'Relationships': return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
-      case 'Work': return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
-      case 'Health': return 'bg-green-100 text-green-800 hover:bg-green-200';
-      case 'Personal Development': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
-      case 'Life Events': return 'bg-orange-100 text-orange-800 hover:bg-orange-200';
-      case 'Activities': return 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200';
-      default: return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+  // Group key phrases by emotional categories
+  const emotionGroups = categorizeEmotions([...primaryPhrases, ...secondaryPhrases, ...tertiaryPhrases]);
+
+  // Select color based on emotion category
+  const getEmotionColor = (emotion: string) => {
+    switch(emotion) {
+      case 'Joy': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'Sadness': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'Fear': return 'bg-purple-100 text-purple-800 border-purple-300';
+      case 'Anger': return 'bg-red-100 text-red-800 border-red-300';
+      case 'Surprise': return 'bg-pink-100 text-pink-800 border-pink-300';
+      case 'Trust': return 'bg-green-100 text-green-800 border-green-300';
+      case 'Anticipation': return 'bg-amber-100 text-amber-800 border-amber-300';
+      case 'Disgust': return 'bg-stone-100 text-stone-800 border-stone-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
-  
-  const getSentimentColor = (sentiment: number | undefined) => {
-    if (sentiment === undefined) return 'text-gray-600';
-    if (sentiment >= 0.6) return 'text-green-600';
-    if (sentiment <= 0.4) return 'text-red-600';
-    return 'text-blue-600';
-  };
-  
+
   return (
-    <Card className="border shadow-md bg-white">
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-xl flex items-center font-pacifico">
-            <KeyRound className="h-5 w-5 mr-2" />
-            Content Theme Analysis
-          </CardTitle>
-          
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setSortBy(sortBy === 'size' ? 'alphabetical' : 'size')}
-            className="flex items-center text-xs h-8"
-          >
-            <ArrowDownUp className="h-3 w-3 mr-1.5" />
-            Sort: {sortBy === 'size' ? 'By Size' : 'Alphabetical'}
-          </Button>
-        </div>
+    <Card className="border border-border shadow-md bg-white">
+      <CardHeader>
+        <CardTitle className="flex items-center text-xl font-pacifico">
+          <Lightbulb className="h-5 w-5 mr-2 text-amber-500" />
+          {t("keyPhrases")}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        {!data || data.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No themes available in the content
-          </div>
-        ) : Object.keys(themesByCategory).length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            Processing content themes...
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Theme Visualization */}
-            <div className="flex flex-wrap gap-3 justify-center">
-              {Object.entries(themesByCategory).map(([category, phrases]) => {
-                // Calculate size based on number of phrases
-                const minSize = 70;
-                const maxSize = 180; 
-                const maxPhrases = Math.max(...Object.values(themesByCategory).map(p => p.length));
-                const size = minSize + (phrases.length / maxPhrases) * (maxSize - minSize);
-                
-                return (
-                  <div 
-                    key={`bubble-${category}`}
-                    className={`rounded-full flex flex-col items-center justify-center ${getThemeBadgeColor(category).split(' ')[0]} border shadow-md transition-all hover:scale-105 p-2 text-center`}
-                    style={{ 
-                      width: `${size}px`, 
-                      height: `${size}px`
-                    }}
-                  >
-                    <div className="font-semibold text-sm">{category}</div>
-                    <div className="text-xs mt-1">{phrases.length} elements</div>
-                  </div>
-                );
-              })}
-            </div>
-            
-            {/* Theme Categories Details */}
-            {Object.entries(themesByCategory).map(([category, phrases]) => (
-              <div key={category} className="mb-6">
-                <h3 className="text-sm font-medium flex items-center mb-2">
-                  <Book className="h-4 w-4 mr-1.5" />
-                  {category}
-                  <Badge variant="outline" className="ml-2">{phrases.length}</Badge>
-                </h3>
-                <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-slate-50">
-                  {phrases.map((phrase, i) => (
-                    <Badge 
-                      key={`${phrase.word}-${i}`}
-                      variant="secondary"
-                      className={`cursor-default transition-colors ${getThemeBadgeColor(category)}`}
-                    >
-                      {phrase.word}
-                      {phrase.sentiment !== undefined && (
-                        <span className={`ml-1 text-xs ${getSentimentColor(phrase.sentiment)}`}>
-                          {phrase.sentiment >= 0.6 ? "+" : 
-                           phrase.sentiment <= 0.4 ? "-" : 
-                           "~"}
-                        </span>
-                      )}
+        <div className="mb-6">
+          <h3 className="text-lg font-medium mb-3">Theme Categories</h3>
+          
+          <div className="flex flex-wrap gap-3">
+            {Object.keys(emotionGroups).map(emotion => (
+              <div key={emotion} className={`p-3 rounded-md border ${getEmotionColor(emotion)}`}>
+                <div className="font-medium mb-2">{emotion}</div>
+                <div className="flex flex-wrap gap-2">
+                  {emotionGroups[emotion].slice(0, showAll ? undefined : 3).map((phrase, idx) => (
+                    <Badge key={idx} variant="outline" className="bg-white">
+                      {phrase.phrase}
                     </Badge>
                   ))}
+                  
+                  {emotionGroups[emotion].length > 3 && !showAll && (
+                    <Badge variant="outline" className="bg-white/50 cursor-pointer" onClick={() => setShowAll(true)}>
+                      +{emotionGroups[emotion].length - 3} more
+                    </Badge>
+                  )}
                 </div>
               </div>
             ))}
           </div>
-        )}
+          
+          <button 
+            className="flex items-center text-sm text-muted-foreground mt-4" 
+            onClick={() => setShowAll(!showAll)}
+          >
+            {showAll ? (
+              <>
+                <MinusCircle className="h-4 w-4 mr-1" />
+                Show less
+              </>
+            ) : (
+              <>
+                <PlusCircle className="h-4 w-4 mr-1" />
+                Show all phrases
+              </>
+            )}
+          </button>
+        </div>
+        
+        <div>
+          <h3 className="text-lg font-medium mb-3">Key Phrases</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <h4 className="text-sm font-medium text-purple-800 mb-2">Primary Themes</h4>
+              <div className="flex flex-wrap gap-2">
+                {primaryPhrases.slice(0, showAll ? undefined : 5).map((phrase, idx) => (
+                  <Badge key={idx} variant="secondary" className="bg-purple-50 text-purple-800 hover:bg-purple-100">
+                    {phrase.phrase}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium text-blue-800 mb-2">Secondary Themes</h4>
+              <div className="flex flex-wrap gap-2">
+                {secondaryPhrases.slice(0, showAll ? undefined : 5).map((phrase, idx) => (
+                  <Badge key={idx} variant="secondary" className="bg-blue-50 text-blue-800 hover:bg-blue-100">
+                    {phrase.phrase}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium text-green-800 mb-2">Supporting Themes</h4>
+              <div className="flex flex-wrap gap-2">
+                {tertiaryPhrases.slice(0, showAll ? undefined : 5).map((phrase, idx) => (
+                  <Badge key={idx} variant="secondary" className="bg-green-50 text-green-800 hover:bg-green-100">
+                    {phrase.phrase}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

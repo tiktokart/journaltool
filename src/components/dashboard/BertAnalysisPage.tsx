@@ -30,6 +30,7 @@ const BertAnalysisPage = ({
   const [activeTab, setActiveTab] = useState<string>("analysis");
   const [visibleClusterCount, setVisibleClusterCount] = useState<number>(8);
   const [connectedPoints, setConnectedPoints] = useState<Point[]>([]);
+  const [dataSource, setDataSource] = useState<string>("uploaded");
   
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -52,6 +53,7 @@ const BertAnalysisPage = ({
       
       if (extractedText) {
         setPdfText(extractedText);
+        setDataSource("uploaded"); // Mark that we're using uploaded data
       }
     }
   };
@@ -66,12 +68,12 @@ const BertAnalysisPage = ({
     
     try {
       const text = pdfText || "Sample text for analysis";
-      const sourceDescription = "Text Analysis";
+      const sourceDescription = ""; // Remove file description from visualization
       
       // Process text through BERT analysis pipeline
       const analysis = await processBertAnalysis(
         text,
-        file?.name || "Text Analysis",
+        file?.name || "",
         file?.size || 0,
         sourceDescription
       );
@@ -79,7 +81,8 @@ const BertAnalysisPage = ({
       // Update state with analysis results
       setSentimentData({
         ...analysis,
-        pdfText: text
+        pdfText: text,
+        dataSource: "uploaded" // Mark data as coming from upload
       });
       
       toast.success("Analysis complete!");

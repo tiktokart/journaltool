@@ -41,7 +41,7 @@ export const extractKeyPhrases = async (text: string): Promise<KeyPhrase[]> => {
       'disappointed', 'frustrated', 'grateful', 'hopeful', 'desperate', 'confident', 'ashamed'];
     
     // Lower thresholds for significant words
-    const wordSignificanceThreshold = 3; // Lower threshold from typical 5+
+    const wordSignificanceThreshold = 2; // Even lower threshold for word significance
     
     // Extract 2-3 word phrases from each sentence
     sentences.forEach(sentence => {
@@ -64,9 +64,9 @@ export const extractKeyPhrases = async (text: string): Promise<KeyPhrase[]> => {
                                  word2.length > wordSignificanceThreshold;
         
         // Accept more word combinations
-        if ((isWord1Significant || isWord2Significant) && word1.length > 2 && word2.length > 2) {
+        if ((isWord1Significant || isWord2Significant) && word1.length > 1 && word2.length > 1) {
           const phrase = `${word1} ${word2}`;
-          if (phrase.length > 4) { // Reduced from 5 to 4
+          if (phrase.length > 3) { // Reduced from 4 to 3
             phraseCounts[phrase] = (phraseCounts[phrase] || 0) + 1;
           }
         }
@@ -85,9 +85,9 @@ export const extractKeyPhrases = async (text: string): Promise<KeyPhrase[]> => {
           word1.length > wordSignificanceThreshold || word2.length > wordSignificanceThreshold || word3.length > wordSignificanceThreshold;
         
         // Lowered threshold for word acceptance
-        if (containsSignificant && word1.length > 2 && word2.length > 2 && word3.length > 1) {
+        if (containsSignificant && word1.length > 1 && word2.length > 1 && word3.length > 1) {
           const phrase = `${word1} ${word2} ${word3}`;
-          if (phrase.length > 6) { // Reduced from 8 to 6
+          if (phrase.length > 5) { // Reduced from 6 to 5
             phraseCounts[phrase] = (phraseCounts[phrase] || 0) + 1;
           }
         }
