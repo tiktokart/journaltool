@@ -6,9 +6,8 @@ import { EntryContent } from "@/components/EntryContent";
 import { Point } from "@/types/embedding";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, BarChart2, BookOpen } from "lucide-react";
+import { ChevronDown, ChevronUp, BarChart2 } from "lucide-react";
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PdfExport } from "@/components/PdfExport";
 
 interface AnalysisResultsProps {
@@ -128,22 +127,30 @@ const AnalysisResults = ({
             <CollapsibleContent>
               <ViewDetailedAnalysis 
                 summary={sentimentData.summary} 
-                text={sentimentData.text || sentimentData.pdfText}
                 wordCount={sentimentData.wordCount}
                 sourceDescription={sentimentData.sourceDescription}
+                bertAnalysis={sentimentData.bertAnalysis}
               />
             </CollapsibleContent>
           </div>
         </Collapsible>
         
-        {/* Tabs to switch between Analysis and Entry views */}
+        {/* Tab Selection */}
         <div className="flex justify-center w-full mb-4">
-          <Tabs value={viewType} onValueChange={setViewType} className="w-full max-w-md">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="analysis">Analysis</TabsTrigger>
-              <TabsTrigger value="entry">Entry</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="grid w-full max-w-md grid-cols-2 rounded-lg overflow-hidden border border-gray-200">
+            <button 
+              onClick={() => setViewType("analysis")}
+              className={`py-2 px-4 text-center transition-colors ${viewType === "analysis" ? "bg-purple-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+            >
+              Analysis
+            </button>
+            <button 
+              onClick={() => setViewType("entry")}
+              className={`py-2 px-4 text-center transition-colors ${viewType === "entry" ? "bg-purple-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+            >
+              Entry
+            </button>
+          </div>
         </div>
         
         {/* Tab Content */}

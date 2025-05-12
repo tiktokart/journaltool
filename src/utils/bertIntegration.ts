@@ -51,15 +51,24 @@ export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisRes
       }
     }
     
-    // Generate keyword analysis
+    // Generate keyword analysis with enhanced focus on verbs and actions
     const keywordAnalysis: KeywordAnalysis[] = Object.entries(wordFrequencies)
       .filter(([_, count]) => count > 0)  // Filter out words that appear only once
       .map(([word, frequency]) => {
         // Get surrounding words for context
         const surroundingWords = surroundingWordsMap[word] || [];
         
+        // Determine part of speech with enhanced focus on verbs
+        const pos = determinePartOfSpeech(word);
+        
+        // Give verbs higher weight to prioritize actions
+        const posWeight = pos === 'verb' ? 1.5 : (pos === 'noun' ? 1.2 : 1.0);
+        
         // Determine importance based on context
-        const contextualImportance = getContextualImportance(word, surroundingWords);
+        const rawContextualImportance = getContextualImportance(word, surroundingWords);
+        
+        // Apply part-of-speech weighting to importance
+        const contextualImportance = rawContextualImportance * posWeight;
         
         // Determine emotional tone
         const tone = determineWordTone(word);
@@ -101,10 +110,21 @@ export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisRes
           tone,
           relatedConcepts: surroundingWords.slice(0, 5),
           frequency,
-          pos: determinePartOfSpeech(word) // Adding part of speech analysis
+          pos
         };
       })
-      .sort((a, b) => (b.weight * b.frequency) - (a.weight * a.frequency)) // Sort by importance and frequency
+      .sort((a, b) => {
+        // Sort by part of speech priority first (verbs > nouns > others)
+        const posOrderA = a.pos === 'verb' ? 0 : (a.pos === 'noun' ? 1 : 2);
+        const posOrderB = b.pos === 'verb' ? 0 : (b.pos === 'noun' ? 1 : 2);
+        
+        if (posOrderA !== posOrderB) {
+          return posOrderA - posOrderB;
+        }
+        
+        // Within the same part of speech, sort by weight and frequency
+        return (b.weight * b.frequency) - (a.weight * a.frequency);
+      })
       .slice(0, 50); // Limit to top 50 words
     
     // Count tone distributions
@@ -121,22 +141,24 @@ export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisRes
     })).sort((a, b) => b.count - a.count);
     
     // Add contextual analysis - focusing more on verbs and action words
+    const actionWords = keywordAnalysis
+      .filter(kw => kw.pos === 'verb')
+      .sort((a, b) => b.weight - a.weight)
+      .slice(0, 10)
+      .map(kw => kw.word);
+      
+    const mainSubjects = keywordAnalysis
+      .filter(kw => kw.pos === 'noun')
+      .sort((a, b) => b.frequency - a.frequency)
+      .slice(0, 8)
+      .map(kw => kw.word);
+      
     const contextualAnalysis = {
       dominantEmotions: emotionalTones.slice(0, 3).map(e => e.tone),
       emotionalShifts: detectEmotionalShifts(text),
       topicClusters: identifyTopicClusters(keywordAnalysis),
-      // Add more focus on verbs and action words
-      actionWords: keywordAnalysis
-        .filter(kw => kw.pos === 'verb')
-        .sort((a, b) => b.weight - a.weight)
-        .slice(0, 10)
-        .map(kw => kw.word),
-      // Extract main subjects (nouns) from the text
-      mainSubjects: keywordAnalysis
-        .filter(kw => kw.pos === 'noun')
-        .sort((a, b) => b.frequency - a.frequency)
-        .slice(0, 8)
-        .map(kw => kw.word)
+      actionWords,
+      mainSubjects
     };
     
     console.log("BERT analysis complete with", keywordAnalysis.length, "keywords");

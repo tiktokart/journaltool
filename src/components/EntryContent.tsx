@@ -8,11 +8,11 @@ import { DocumentEmbedding } from "@/components/DocumentEmbedding";
 import { WordComparisonController } from "@/components/WordComparisonController";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { KeyPhrases } from "@/components/KeyPhrases";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp, BarChart2, BookOpen, Clock, KeySquare, Network } from "lucide-react";
 import { Point } from "@/types/embedding";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { AdvancedBadge } from "./ui/advanced-badge";
 
 interface EntryContentProps {
   sentimentData: any;
@@ -71,9 +71,22 @@ export const EntryContent: React.FC<EntryContentProps> = ({
 
   if (!sentimentData) return null;
 
+  // Extract action verbs and main topics from BERT analysis if available
+  const actionVerbs = sentimentData.bertAnalysis?.keywords
+    ?.filter((kw: any) => kw.pos === 'verb')
+    ?.sort((a: any, b: any) => b.weight - a.weight)
+    ?.slice(0, 10)
+    ?.map((kw: any) => kw.word) || sentimentData.actionVerbs || [];
+    
+  const mainTopics = sentimentData.bertAnalysis?.keywords
+    ?.filter((kw: any) => kw.pos === 'noun')
+    ?.sort((a: any, b: any) => b.frequency - a.frequency)
+    ?.slice(0, 8)
+    ?.map((kw: any) => kw.word) || sentimentData.mainTopics || [];
+
   return (
     <div className="animate-fade-in space-y-6">
-      {/* Overview Section */}
+      {/* Overview Section - FIRST */}
       <Collapsible open={isOverviewOpen} onOpenChange={setIsOverviewOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -137,11 +150,15 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                   </CardHeader>
                   <CardContent className="p-4 pt-1">
                     <div className="flex flex-wrap gap-1">
-                      {sentimentData.actionVerbs ? (
-                        sentimentData.actionVerbs.map((verb: string, i: number) => (
-                          <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                      {actionVerbs && actionVerbs.length > 0 ? (
+                        actionVerbs.map((verb: string, i: number) => (
+                          <AdvancedBadge 
+                            key={i} 
+                            emotion="action"
+                            className="text-xs"
+                          >
                             {verb}
-                          </span>
+                          </AdvancedBadge>
                         ))
                       ) : (
                         <p className="text-sm text-gray-500">No action verbs detected</p>
@@ -155,11 +172,15 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                   </CardHeader>
                   <CardContent className="p-4 pt-1">
                     <div className="flex flex-wrap gap-1">
-                      {sentimentData.mainTopics ? (
-                        sentimentData.mainTopics.map((topic: string, i: number) => (
-                          <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                      {mainTopics && mainTopics.length > 0 ? (
+                        mainTopics.map((topic: string, i: number) => (
+                          <AdvancedBadge 
+                            key={i}
+                            emotion="topic" 
+                            className="text-xs"
+                          >
                             {topic}
-                          </span>
+                          </AdvancedBadge>
                         ))
                       ) : (
                         <p className="text-sm text-gray-500">No main topics detected</p>
@@ -173,7 +194,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </div>
       </Collapsible>
       
-      {/* Document Text Analysis */}
+      {/* Document Text Analysis - SECOND */}
       <Collapsible open={isTextAnalysisOpen} onOpenChange={setIsTextAnalysisOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -192,7 +213,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
             </CollapsibleTrigger>
           </div>
           <CollapsibleContent>
-            <div className="mt-4 max-h-[400px] overflow-y-auto">
+            <div className="mt-4 max-h-[400px] overflow-hidden">
               <TextEmotionViewer 
                 pdfText={pdfText} 
                 embeddingPoints={sentimentData.embeddingPoints} 
@@ -207,7 +228,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </div>
       </Collapsible>
       
-      {/* Latent Emotional Analysis */}
+      {/* Latent Emotional Analysis - THIRD */}
       <Collapsible open={isLatentAnalysisOpen} onOpenChange={setIsLatentAnalysisOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -231,13 +252,10 @@ export const EntryContent: React.FC<EntryContentProps> = ({
                 <DocumentEmbedding 
                   points={sentimentData.embeddingPoints || []} 
                   isInteractive={true}
-                  onPointSelect={handlePointClick}
+                  onPointClick={handlePointClick}
                   selectedPoint={selectedPoint}
-                  onSelectedPointChange={setSelectedPoint}
                   selectedWord={selectedWord}
-                  onSelectedWordChange={setSelectedWord}
                   filteredPoints={filteredPoints}
-                  onFilteredPointsChange={setFilteredPoints}
                   visibleClusterCount={visibleClusterCount}
                   bertData={sentimentData.bertAnalysis}
                 />
@@ -251,7 +269,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </div>
       </Collapsible>
       
-      {/* Word Comparison */}
+      {/* Word Comparison - FOURTH */}
       <Collapsible open={isWordComparisonOpen} onOpenChange={setIsWordComparisonOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -282,7 +300,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </div>
       </Collapsible>
       
-      {/* Timeline */}
+      {/* Timeline - FIFTH */}
       <Collapsible open={isTimelineOpen} onOpenChange={setIsTimelineOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -304,8 +322,8 @@ export const EntryContent: React.FC<EntryContentProps> = ({
             <div className="mt-4">
               <div className="max-h-[300px] overflow-y-auto">
                 <SentimentTimeline 
-                  events={sentimentData.timelineEvents || []} 
-                  highlighted={true}
+                  data={sentimentData.timelineEvents || []} 
+                  sourceDescription={sentimentData.sourceDescription}
                 />
               </div>
             </div>
@@ -313,7 +331,7 @@ export const EntryContent: React.FC<EntryContentProps> = ({
         </div>
       </Collapsible>
       
-      {/* Keywords */}
+      {/* Keywords - SIXTH */}
       <Collapsible open={isKeywordsOpen} onOpenChange={setIsKeywordsOpen} className="w-full">
         <div className="bg-white p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -334,9 +352,9 @@ export const EntryContent: React.FC<EntryContentProps> = ({
           <CollapsibleContent>
             <div className="mt-4">
               <KeyPhrases 
-                keyPhrases={sentimentData.keyPhrases || []} 
+                data={sentimentData.keyPhrases || []} 
                 scoreMax={1.0}
-                description={sentimentData.sourceDescription}
+                sourceDescription={sentimentData.sourceDescription}
                 bertKeywords={sentimentData.bertAnalysis?.keywords || []}
               />
             </div>

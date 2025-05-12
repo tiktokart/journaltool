@@ -19,7 +19,7 @@ export function AdvancedBadge({
 }: AdvancedBadgeProps) {
   // Get emotion-specific colors
   const getEmotionColor = (emotion?: string) => {
-    if (!emotion) return {};
+    if (!emotion) return { bg: '', text: '', hover: '' };
     
     const colorMap: Record<string, {bg: string, text: string, hover: string}> = {
       joy: {bg: 'bg-yellow-100', text: 'text-yellow-800', hover: 'hover:bg-yellow-200'},
@@ -45,7 +45,7 @@ export function AdvancedBadge({
 
   // Get sentiment-specific colors
   const getSentimentColor = (sentiment?: number) => {
-    if (sentiment === undefined) return {};
+    if (sentiment === undefined) return { bg: '', text: '', hover: '' };
     
     if (sentiment >= 0.7) return {bg: 'bg-emerald-100', text: 'text-emerald-800', hover: 'hover:bg-emerald-200'};
     if (sentiment >= 0.5) return {bg: 'bg-green-100', text: 'text-green-800', hover: 'hover:bg-green-200'};
@@ -56,14 +56,15 @@ export function AdvancedBadge({
   
   const colorClasses = emotion ? getEmotionColor(emotion) : 
                        sentiment !== undefined ? getSentimentColor(sentiment) : 
-                       {bg: '', text: '', hover: ''};
+                       { bg: '', text: '', hover: '' };
   
   return (
     <Badge
       className={cn(
         colorClasses.bg,
         colorClasses.text,
-        clickable && 'cursor-pointer ' + colorClasses.hover,
+        clickable && 'cursor-pointer',
+        clickable && colorClasses.hover,
         clickable && 'transition-colors duration-200',
         className
       )}
