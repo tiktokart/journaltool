@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Info } from "lucide-react";
 
 interface ActionPlan {
   title: string;
@@ -27,7 +27,7 @@ const ActionPlans: React.FC<ActionPlansProps> = ({
     switch(emotion) {
       case "Joy":
       case "Joyful":
-        return "bg-amber-100 text-amber-800"; // Updated to amber for better readability
+        return "bg-amber-100 text-amber-800"; // Amber for joy
       case "Sadness":
       case "Sad":
         return "bg-blue-100 text-blue-800";

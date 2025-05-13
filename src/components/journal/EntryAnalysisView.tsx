@@ -9,6 +9,7 @@ import { SentimentTimeline } from "../SentimentTimeline";
 import JournalSentimentChart from "../reflections/JournalSentimentChart";
 import { KeyPhrases } from "../KeyPhrases";
 import { generateTimeline } from "@/utils/timelineGeneration";
+import { Slider } from "../ui/slider";
 
 interface Entry {
   id: string;
@@ -58,6 +59,28 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
   setIsKeywordsOpen
 }) => {
   const [timelineData, setTimelineData] = useState<any[]>([]);
+  const [sentimentScore, setSentimentScore] = useState(0.5);
+  const [sentimentLabel, setSentimentLabel] = useState("Neutral");
+  
+  // Process BERT analysis data when available
+  useEffect(() => {
+    if (bertAnalysis?.sentiment) {
+      // Ensure score is between 0-1
+      const score = Math.max(0, Math.min(1, bertAnalysis.sentiment.score || 0.5));
+      setSentimentScore(score);
+      
+      // Set sentiment label based on score or use the one provided
+      if (bertAnalysis.sentiment.label) {
+        setSentimentLabel(bertAnalysis.sentiment.label);
+      } else {
+        if (score >= 0.7) setSentimentLabel("Very Positive");
+        else if (score >= 0.55) setSentimentLabel("Positive");
+        else if (score >= 0.45) setSentimentLabel("Neutral");
+        else if (score >= 0.3) setSentimentLabel("Negative");
+        else setSentimentLabel("Very Negative");
+      }
+    }
+  }, [bertAnalysis]);
   
   // Generate timeline data from the entry text
   useEffect(() => {
@@ -208,17 +231,19 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
               <div className="bg-green-50 p-4 rounded-lg">
                 <h4 className="font-medium mb-2">Overall Sentiment</h4>
                 <p className="text-xl font-semibold mb-1">
-                  {bertAnalysis?.sentiment?.label || "Neutral"}
+                  {sentimentLabel}
                 </p>
                 <p className="text-gray-700">
-                  Score: {Math.round((bertAnalysis?.sentiment?.score || 0.5) * 100)}%
+                  Score: {Math.round(sentimentScore * 100)}%
                 </p>
-                <div className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${bertAnalysis?.sentiment?.score > 0.6 ? 'bg-green-500' : 
-                      bertAnalysis?.sentiment?.score < 0.4 ? 'bg-red-500' : 'bg-yellow-500'}`}
-                    style={{ width: `${Math.round((bertAnalysis?.sentiment?.score || 0.5) * 100)}%` }}
-                  ></div>
+                <div className="mt-4">
+                  <Slider
+                    value={[sentimentScore * 100]}
+                    max={100}
+                    step={1}
+                    disabled={true}
+                    className="cursor-default"
+                  />
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
                   <span>Negative</span>

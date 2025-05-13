@@ -24,7 +24,7 @@ const EmotionCategories: React.FC<EmotionCategoriesProps> = ({
     switch(emotion) {
       case "Joy":
       case "Joyful":
-        return "bg-amber-100 text-amber-800"; // Amber for better readability
+        return "bg-amber-100 text-amber-800"; // Amber for joy
       case "Sadness":
       case "Sad":
         return "bg-blue-100 text-blue-800";

@@ -134,40 +134,36 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
             )}
           </CollapsibleTrigger>
           <CollapsibleContent>
-            {/* Use ScrollArea to ensure all content is scrollable */}
-            <ScrollArea className="max-h-[600px]">
-              <div className="p-4 bg-white">
-                <p className="text-gray-700 mb-4">
-                  Based on the text analysis, here are some suggestions that might help.
-                </p>
+            <div className="p-4 bg-white">
+              <p className="text-gray-700 mb-4">
+                Based on the text analysis, here are some suggestions that might help.
+              </p>
 
-                {/* Detected emotions section - only show if emotions are detected */}
-                {hasEmotions && (
-                  <div className="flex items-start mb-6">
-                    <AlertTriangle className="h-5 w-5 mr-2 text-amber-500 mt-0.5 flex-shrink-0" />
-                    <EmotionCategories 
-                      emotionCategories={emotionCategories} 
-                      emotionTones={emotionTones} 
-                    />
-                  </div>
-                )}
-                
-                {/* Action Plans */}
-                <ActionPlans 
-                  actionPlans={actionPlans}
-                  expandedPlans={expandedPlans}
-                  togglePlanExpansion={togglePlanExpansion}
-                />
-                
-                {/* Show a message if no specific suggestions are available */}
-                {!hasEmotions && !hasActionPlans && (
-                  <div className="flex items-center justify-center p-4 text-gray-500">
-                    <Info className="h-5 w-5 mr-2" />
-                    <p>No specific emotional patterns detected in this entry.</p>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+              {/* Detected emotions section - only show if emotions detected */}
+              {hasEmotions && (
+                <div className="mb-6">
+                  <EmotionCategories 
+                    emotionCategories={emotionCategories} 
+                    emotionTones={emotionTones} 
+                  />
+                </div>
+              )}
+              
+              {/* Action Plans - display directly in the flow to ensure visibility */}
+              <ActionPlans 
+                actionPlans={actionPlans}
+                expandedPlans={expandedPlans}
+                togglePlanExpansion={togglePlanExpansion}
+              />
+              
+              {/* Show a message if no specific suggestions are available */}
+              {!hasEmotions && !hasActionPlans && (
+                <div className="flex items-center justify-center p-4 text-gray-500">
+                  <Info className="h-5 w-5 mr-2" />
+                  <p>No specific emotional patterns detected in this entry.</p>
+                </div>
+              )}
+            </div>
           </CollapsibleContent>
         </Collapsible>
       )}
