@@ -23,7 +23,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollToSection } from "@/components/ScrollToSection";
 import { SentimentDistribution } from "@/components/SentimentDistribution";
-import WordComparisonController from "@/components/WordComparisonController";
 
 interface AnalysisTabsProps {
   activeTab: string;
@@ -178,7 +177,6 @@ export const AnalysisTabs = ({
           <TabsTrigger value="overview" className="min-w-max">{t("overviewTab")}</TabsTrigger>
           <TabsTrigger value="timeline" className="min-w-max">{t("timelineTab")}</TabsTrigger>
           <TabsTrigger value="keyphrases" className="min-w-max">{t("keywordsTab")}</TabsTrigger>
-          <TabsTrigger value="wordcomparison" className="min-w-max">Word Connection</TabsTrigger>
         </TabsList>
       </div>
       
@@ -286,17 +284,7 @@ export const AnalysisTabs = ({
           />
         )}
       </TabsContent>
-      
-      <TabsContent value="wordcomparison" className="mt-6">
-        {!hasEmbeddingData ? (
-          <DataMissingFallback tabName="Word Connection" />
-        ) : (
-          <WordComparisonController 
-            points={filteredPoints}
-            bertAnalysis={sentimentData?.bertAnalysis || bertAnalysis}
-          />
-        )}
-      </TabsContent>
     </Tabs>
   );
 };
+
