@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SentimentOverview } from "@/components/SentimentOverview";
@@ -9,6 +10,10 @@ import { WellbeingResources } from "@/components/WellbeingResources";
 import { EmotionalClusterView } from "@/components/embedding/EmotionalClusterView";
 import { Point } from "@/types/embedding";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, X } from "lucide-react";
+import { SentimentDistribution } from "@/components/SentimentDistribution";
 
 interface AnalysisTabsProps {
   activeTab: string;

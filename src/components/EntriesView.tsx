@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
@@ -42,10 +43,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   
   // States for Entry Analysis tab sections
-  const [isOverviewOpen, setIsOverviewOpen] = useState(false);
+  const [isOverviewOpen, setIsOverviewOpen] = useState(true);
   const [isDocTextAnalysisOpen, setIsDocTextAnalysisOpen] = useState(false);
   const [isLatentEmotionalOpen, setIsLatentEmotionalOpen] = useState(false);
-  const [isWordComparisonOpen, setIsWordComparisonOpen] = useState(false);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [isKeywordsOpen, setIsKeywordsOpen] = useState(false);
 
@@ -604,40 +604,6 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
                                 </p>
                               )}
                             </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-
-                        {/* 4. Word Comparison */}
-                        <Collapsible open={isWordComparisonOpen} onOpenChange={setIsWordComparisonOpen} className="mb-4 border rounded-lg overflow-hidden">
-                          <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <h3 className="text-lg font-medium font-pacifico">Word Comparison</h3>
-                            {isWordComparisonOpen ? (
-                              <ChevronUp className="h-5 w-5" />
-                            ) : (
-                              <ChevronDown className="h-5 w-5" />
-                            )}
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="p-4 bg-white">
-                            <p className="text-gray-700 mb-4">
-                              Compare the emotional relationships between key words in your entry.
-                            </p>
-                            {bertAnalysis?.keywords?.length > 5 ? (
-                              <div className="grid grid-cols-3 gap-3">
-                                {bertAnalysis.keywords.slice(0, 9).map((kw: any, i: number) => (
-                                  <div key={i} className="flex items-center bg-gray-50 p-2 rounded-lg">
-                                    <div 
-                                      className="w-3 h-3 rounded-full mr-2"
-                                      style={{ backgroundColor: kw.color || "#aaaaaa" }}
-                                    ></div>
-                                    <span className="text-sm">{kw.word}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-center text-gray-500">
-                                Not enough keywords for meaningful comparison
-                              </p>
-                            )}
                           </CollapsibleContent>
                         </Collapsible>
 

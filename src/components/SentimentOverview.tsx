@@ -23,8 +23,14 @@ interface SentimentOverviewProps {
 export const SentimentOverview = ({ data, sourceDescription }: SentimentOverviewProps) => {
   const { t } = useLanguage();
   
-  const { score, label } = data.overallSentiment;
-  const { positive, neutral, negative } = data.distribution;
+  // Ensure we have valid data with defaults
+  const score = data?.overallSentiment?.score ?? 0.5;
+  const label = data?.overallSentiment?.label ?? t("neutral");
+  
+  // Ensure distribution values are numeric and non-zero
+  const positive = Math.max(1, data?.distribution?.positive ?? 33);
+  const neutral = Math.max(1, data?.distribution?.neutral ?? 34);
+  const negative = Math.max(1, data?.distribution?.negative ?? 33);
   
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -35,20 +41,20 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
         <CardContent>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <HelpCircle className="h-8 w-8 text-blue-500 mr-3" />
+              <HelpCircle className="h-8 w-8 text-purple-500 mr-3" />
               <div>
                 <p className="font-semibold">{label}</p>
-                <p className="text-sm text-muted-foreground">scoreLabel: {(score * 100).toFixed(0)}%</p>
+                <p className="text-sm text-muted-foreground">{t("scoreLabel")}: {(score * 100).toFixed(0)}%</p>
               </div>
             </div>
-            <div className="h-16 w-16 rounded-full bg-blue-500 text-white flex items-center justify-center text-xl font-bold">
+            <div className="h-16 w-16 rounded-full bg-purple-500 text-white flex items-center justify-center text-xl font-bold">
               {Math.round(score * 100)}
             </div>
           </div>
           
           <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
             <div 
-              className="bg-blue-500 h-2.5 rounded-full"
+              className="bg-purple-500 h-2.5 rounded-full"
               style={{ width: `${score * 100}%` }}
             />
           </div>
@@ -81,7 +87,7 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
               </div>
               <div className="bg-gray-200 rounded-full h-5 w-full">
                 <div 
-                  className="bg-yellow-400 h-5 rounded-full" 
+                  className="bg-green-400 h-5 rounded-full" 
                   style={{ width: `${positive}%` }}
                 />
               </div>
@@ -94,7 +100,7 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
               </div>
               <div className="bg-gray-200 rounded-full h-5 w-full">
                 <div 
-                  className="bg-yellow-400 h-5 rounded-full" 
+                  className="bg-blue-400 h-5 rounded-full" 
                   style={{ width: `${neutral}%` }}
                 />
               </div>
@@ -107,7 +113,7 @@ export const SentimentOverview = ({ data, sourceDescription }: SentimentOverview
               </div>
               <div className="bg-gray-200 rounded-full h-5 w-full">
                 <div 
-                  className="bg-yellow-400 h-5 rounded-full" 
+                  className="bg-red-400 h-5 rounded-full" 
                   style={{ width: `${negative}%` }}
                 />
               </div>

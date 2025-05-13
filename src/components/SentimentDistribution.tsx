@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -24,41 +23,34 @@ export const SentimentDistribution = ({
   
   // Ensure we have non-zero values for each sentiment type
   const ensureValidDistribution = (dist: typeof distribution) => {
-    console.log("SentimentDistribution: Original distribution data:", dist);
-    
     // Only use default values if all values are zero or undefined
-    if ((dist.positive || 0) === 0 && (dist.neutral || 0) === 0 && (dist.negative || 0) === 0) {
-      console.log("Using default distribution values because all values were zero");
+    if ((dist?.positive || 0) === 0 && (dist?.neutral || 0) === 0 && (dist?.negative || 0) === 0) {
       return { positive: 20, neutral: 60, negative: 20 };
     }
     
     // Calculate the sum to check if percentages need normalization
-    const sum = (dist.positive || 0) + (dist.neutral || 0) + (dist.negative || 0);
+    const sum = (dist?.positive || 0) + (dist?.neutral || 0) + (dist?.negative || 0);
     
     // If sum is not close to 100, normalize to percentages
     if (Math.abs(sum - 100) > 5 && sum > 0) {
-      console.log(`Distribution sum (${sum}) is not close to 100, normalizing values`);
       return {
-        positive: Math.round((dist.positive || 0) / sum * 100),
-        neutral: Math.round((dist.neutral || 0) / sum * 100),
-        negative: Math.round((dist.negative || 0) / sum * 100)
+        positive: Math.round((dist?.positive || 0) / sum * 100),
+        neutral: Math.round((dist?.neutral || 0) / sum * 100),
+        negative: Math.round((dist?.negative || 0) / sum * 100)
       };
     }
     
     // Otherwise keep the existing values but ensure they're not zero
     const result = {
-      positive: Math.max(1, dist.positive || 0),
-      neutral: Math.max(1, dist.neutral || 0),
-      negative: Math.max(1, dist.negative || 0)
+      positive: Math.max(1, dist?.positive || 0),
+      neutral: Math.max(1, dist?.neutral || 0),
+      negative: Math.max(1, dist?.negative || 0)
     };
     
-    console.log("Using validated distribution values:", result);
     return result;
   };
   
-  const validDistribution = ensureValidDistribution(distribution);
-  console.log("Distribution before validation:", distribution);
-  console.log("Distribution after validation:", validDistribution);
+  const validDistribution = ensureValidDistribution(distribution || { positive: 0, neutral: 0, negative: 0 });
   
   // Format the data
   const data = [
