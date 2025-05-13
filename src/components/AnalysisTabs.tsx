@@ -23,6 +23,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollToSection } from "@/components/ScrollToSection";
 import { SentimentDistribution } from "@/components/SentimentDistribution";
+import { WellbeingResources } from "@/components/WellbeingResources";
 
 interface AnalysisTabsProps {
   activeTab: string;
@@ -82,7 +83,7 @@ export const AnalysisTabs = ({
   const hasBertData = bertAnalysis || sentimentData?.bertAnalysis;
 
   // Extract text from either sentimentData or create a simulated journal entry for suggestions
-  const textForSuggestions = sentimentData?.text || "";
+  const textForSuggestions = sentimentData?.text || sentimentData?.pdfText || "";
   const journalEntries = textForSuggestions ? [{ text: textForSuggestions, date: new Date().toISOString() }] : [];
 
   // Ensure we have text data for visualization
@@ -249,6 +250,12 @@ export const AnalysisTabs = ({
                 </div>
                 <CollapsibleContent>
                   <div id="suggestions-section">
+                    {hasTextData && hasEmbeddingData && (
+                      <WellbeingResources
+                        embeddingPoints={sentimentData.embeddingPoints || []}
+                        sourceDescription="Based on your journal entry"
+                      />
+                    )}
                     {(hasBertData || hasTextData) && (
                       <MentalHealthSuggestions 
                         journalEntries={journalEntries}
@@ -287,4 +294,3 @@ export const AnalysisTabs = ({
     </Tabs>
   );
 };
-

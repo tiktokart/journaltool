@@ -24,6 +24,8 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SentimentDistribution } from "@/components/SentimentDistribution";
+import { WellbeingResources } from "@/components/WellbeingResources";
+import { Point } from "@/types/embedding";
 
 interface JournalAnalysisSectionProps {
   journalEntries: any[];
@@ -49,6 +51,7 @@ const JournalAnalysisSection = ({
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
   const [formattedTimelineData, setFormattedTimelineData] = useState<any[]>([]);
   const [processedTimelineData, setProcessedTimelineData] = useState<any[]>([]);
+  const [embeddingPoints, setEmbeddingPoints] = useState<Point[]>([]);
   const [wordCounts, setWordCounts] = useState({
     positive: 0,
     neutral: 0,
@@ -86,7 +89,7 @@ const JournalAnalysisSection = ({
     }
   }, [timelineData, journalEntries]);
 
-  // Run BERT analysis on journal entries
+  // Run BERT analysis on journal entries and extract embedding points
   useEffect(() => {
     const runAnalysis = async () => {
       if (!journalEntries.length) return;
@@ -110,8 +113,16 @@ const JournalAnalysisSection = ({
           }));
         }
         
-        // Fix: Don't access embeddingPoints directly from bertAnalysis
-        // Instead, use the main analysis object which should contain the embeddingPoints
+        // Create embedding points based on keywords for wellbeing resources
+        if (analysis && analysis.keywords) {
+          const points: Point[] = analysis.keywords.map((keyword: any) => ({
+            word: keyword.text,
+            emotionalTone: keyword.tone || "Neutral",
+            sentiment: keyword.sentiment || 0.5,
+            color: keyword.color
+          }));
+          setEmbeddingPoints(points);
+        }
         
         // Count positive/negative/neutral words
         const positiveWords = analysis?.keywords?.filter((k: any) => k.sentiment > 0.6) || [];
@@ -233,6 +244,14 @@ const JournalAnalysisSection = ({
                 <div className="mt-6" id="keywords">
                   <KeyPhrases 
                     data={bertAnalysis?.keywords || []} 
+                  />
+                </div>
+                
+                {/* Wellbeing Resources Section */}
+                <div className="my-6">
+                  <WellbeingResources
+                    embeddingPoints={embeddingPoints}
+                    sourceDescription="Based on your journal entries"
                   />
                 </div>
                 
