@@ -11,12 +11,20 @@ const EmotionCategories: React.FC<EmotionCategoriesProps> = ({
   emotionCategories,
   emotionTones
 }) => {
+  // Check if we have any emotions to display
+  const hasEmotions = Object.entries(emotionCategories)
+    .some(([_, words]) => words.length > 0) || 
+    emotionTones.size > 0;
+  
+  // If no emotions to display, return null
+  if (!hasEmotions) return null;
+  
   // Emotion category styling
   const getEmotionBadgeStyles = (emotion: string) => {
     switch(emotion) {
       case "Joy":
       case "Joyful":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-100 text-amber-800"; // Updated from yellow to amber for better readability
       case "Sadness":
       case "Sad":
         return "bg-blue-100 text-blue-800";
@@ -67,21 +75,23 @@ const EmotionCategories: React.FC<EmotionCategoriesProps> = ({
               </div>
             ))}
           
-          {/* Emotional tones count display */}
-          <div className="mt-4">
-            <p className="text-sm font-medium mb-2">Emotional tones in your text:</p>
-            <div className="flex flex-wrap gap-2">
-              {Array.from(emotionTones.entries())
-                .map(([emotion, count], idx) => (
-                  <span 
-                    key={idx} 
-                    className={`px-3 py-1 rounded-full ${getEmotionBadgeStyles(emotion)}`}
-                  >
-                    {emotion} <span className="font-semibold ml-1">{count}</span>
-                  </span>
-                ))}
+          {/* Emotional tones count display - only show if there are emotions */}
+          {emotionTones.size > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-medium mb-2">Emotional tones in your text:</p>
+              <div className="flex flex-wrap gap-2">
+                {Array.from(emotionTones.entries())
+                  .map(([emotion, count], idx) => (
+                    <span 
+                      key={idx} 
+                      className={`px-3 py-1 rounded-full ${getEmotionBadgeStyles(emotion)}`}
+                    >
+                      {emotion} <span className="font-semibold ml-1">{count}</span>
+                    </span>
+                  ))}
+              </div>
             </div>
-          </div>
+          )}
           
           <p className="text-xs text-gray-500 mt-4">
             Based on these emotions, we've created personalized action plans to help support your wellbeing.

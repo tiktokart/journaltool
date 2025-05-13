@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Heart } from "lucide-react";
@@ -229,7 +228,11 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
     setSuggestions(generateSuggestions());
   }, [journalEntries, bertAnalysis]);
   
-  if (suggestions.length === 0) {
+  // Check if we have any emotions or suggestions to display
+  const hasEmotions = emotionTones.length > 0;
+  const hasSuggestions = suggestions.length > 0;
+  
+  if (!hasSuggestions && !hasEmotions) {
     return null;
   }
   
@@ -242,7 +245,7 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
         </CardTitle>
         <CardDescription className="mb-4">Based on the text analysis, here are some suggestions that might help.</CardDescription>
         
-        {/* Emotion summary chips */}
+        {/* Emotion summary chips - only show if emotions detected */}
         {emotionTones.length > 0 && (
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-2 flex items-center">
@@ -261,7 +264,7 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
                       tone.category === 'Fear' ? 'bg-amber-100 text-amber-800' :
                       tone.category === 'Anger' ? 'bg-red-100 text-red-800' : 
                       tone.category === 'Disgust' ? 'bg-green-100 text-green-800' :
-                      tone.category === 'Joy' ? 'bg-yellow-100 text-yellow-800' :
+                      tone.category === 'Joy' ? 'bg-amber-100 text-amber-800' :
                       tone.category === 'Surprise' ? 'bg-teal-100 text-teal-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
@@ -274,62 +277,71 @@ const MentalHealthSuggestions: React.FC<MentalHealthSuggestionsProps> = ({
           </div>
         )}
         
-        {/* Emotional tones count display */}
-        <div className="mb-6">
-          <h4 className="text-sm font-medium mb-2">Emotional tones in your text:</h4>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { tone: "Joyful", count: emotionTones.find(e => e.category === "Joy")?.count || 0, color: "bg-yellow-100 text-yellow-800" },
-              { tone: "Excited", count: emotionTones.find(e => e.category.includes("Joy") || e.category.includes("Surprise"))?.count || 0, color: "bg-orange-100 text-orange-800" },
-              { tone: "Angry", count: emotionTones.find(e => e.category === "Anger")?.count || 0, color: "bg-red-100 text-red-800" },
-              { tone: "Sad", count: emotionTones.find(e => e.category === "Sadness")?.count || 0, color: "bg-blue-100 text-blue-800" },
-              { tone: "Surprised", count: emotionTones.find(e => e.category === "Surprise")?.count || 0, color: "bg-green-100 text-green-800" },
-              { tone: "Anxious", count: emotionTones.find(e => e.category === "Fear")?.count || 0, color: "bg-amber-100 text-amber-800" },
-              { tone: "Neutral", count: emotionTones.find(e => e.category === "Neutral")?.count || 0, color: "bg-gray-100 text-gray-800" },
-              { tone: "Fearful", count: emotionTones.find(e => e.category === "Fear")?.count || 0, color: "bg-purple-100 text-purple-800" },
-              { tone: "Disgusted", count: emotionTones.find(e => e.category === "Disgust")?.count || 0, color: "bg-emerald-100 text-emerald-800" },
-              { tone: "Calm", count: emotionTones.find(e => e.category === "Joy" || e.category === "Neutral")?.count || 0, color: "bg-sky-100 text-sky-800" }
-            ].filter(item => item.count > 0)
-              .sort((a, b) => b.count - a.count)
-              .map((item) => (
-                <span key={item.tone} className={`px-3 py-1 rounded-full ${item.color}`}>
-                  {item.tone} <span className="font-semibold ml-1">{item.count}</span>
-                </span>
-              ))}
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            The suggestions below provide wellbeing resources based on detected emotions.
-          </p>
-        </div>
-        
-        <div className="space-y-6">
-          {suggestions.map(suggestion => (
-            <div key={suggestion.id} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-              <div className="flex justify-between items-start mb-2">
-                <h4 className="font-medium text-orange-700">{suggestion.solutionStatement}</h4>
-                {suggestion.triggeringWords && suggestion.triggeringWords.length > 0 && (
-                  <span className="text-xs px-2 py-1 bg-orange-100 rounded-full text-orange-800">
-                    Triggered by: "{suggestion.triggeringWords.join(', ')}"
+        {/* Emotional tones count display - only if emotions exist */}
+        {emotionTones.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-sm font-medium mb-2">Emotional tones in your text:</h4>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { tone: "Joyful", count: emotionTones.find(e => e.category === "Joy")?.count || 0, color: "bg-amber-100 text-amber-800" },
+                { tone: "Excited", count: emotionTones.find(e => e.category.includes("Joy") || e.category.includes("Surprise"))?.count || 0, color: "bg-orange-100 text-orange-800" },
+                { tone: "Angry", count: emotionTones.find(e => e.category === "Anger")?.count || 0, color: "bg-red-100 text-red-800" },
+                { tone: "Sad", count: emotionTones.find(e => e.category === "Sadness")?.count || 0, color: "bg-blue-100 text-blue-800" },
+                { tone: "Surprised", count: emotionTones.find(e => e.category === "Surprise")?.count || 0, color: "bg-green-100 text-green-800" },
+                { tone: "Anxious", count: emotionTones.find(e => e.category === "Fear")?.count || 0, color: "bg-amber-100 text-amber-800" },
+                { tone: "Neutral", count: emotionTones.find(e => e.category === "Neutral")?.count || 0, color: "bg-gray-100 text-gray-800" },
+                { tone: "Fearful", count: emotionTones.find(e => e.category === "Fear")?.count || 0, color: "bg-purple-100 text-purple-800" },
+                { tone: "Disgusted", count: emotionTones.find(e => e.category === "Disgust")?.count || 0, color: "bg-emerald-100 text-emerald-800" },
+                { tone: "Calm", count: emotionTones.find(e => e.category === "Joy" || e.category === "Neutral")?.count || 0, color: "bg-sky-100 text-sky-800" }
+              ].filter(item => item.count > 0)
+                .sort((a, b) => b.count - a.count)
+                .map((item) => (
+                  <span key={item.tone} className={`px-3 py-1 rounded-full ${item.color}`}>
+                    {item.tone} <span className="font-semibold ml-1">{item.count}</span>
                   </span>
-                )}
-              </div>
-              <div className="mt-4">
-                <h5 className="text-sm font-medium mb-1 text-orange-700">Action Plan:</h5>
-                <div className="text-sm text-gray-700 whitespace-pre-line">
-                  {suggestion.actionPlan}
-                </div>
-                <a 
-                  href={suggestion.resourceLink}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="mt-3 text-xs text-orange-600 hover:text-orange-800 inline-block"
-                >
-                  Learn more about managing {suggestion.keyword}
-                </a>
-              </div>
+                ))}
             </div>
-          ))}
-        </div>
+            <p className="text-xs text-gray-500 mt-2">
+              The suggestions below provide wellbeing resources based on detected emotions.
+            </p>
+          </div>
+        )}
+        
+        {suggestions.length > 0 ? (
+          <div className="space-y-6">
+            {suggestions.map(suggestion => (
+              <div key={suggestion.id} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium text-orange-700">{suggestion.solutionStatement}</h4>
+                  {suggestion.triggeringWords && suggestion.triggeringWords.length > 0 && (
+                    <span className="text-xs px-2 py-1 bg-orange-100 rounded-full text-orange-800">
+                      Triggered by: "{suggestion.triggeringWords.join(', ')}"
+                    </span>
+                  )}
+                </div>
+                <div className="mt-4">
+                  <h5 className="text-sm font-medium mb-1 text-orange-700">Action Plan:</h5>
+                  <div className="text-sm text-gray-700 whitespace-pre-line">
+                    {suggestion.actionPlan}
+                  </div>
+                  <a 
+                    href={suggestion.resourceLink}
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="mt-3 text-xs text-orange-600 hover:text-orange-800 inline-block"
+                  >
+                    Learn more about managing {suggestion.keyword}
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-muted-foreground py-4 bg-yellow-soft/50 rounded-lg">
+            <p className="font-medium">No specific suggestions available</p>
+            <p className="text-sm mt-1">Not enough emotional patterns detected in your content.</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

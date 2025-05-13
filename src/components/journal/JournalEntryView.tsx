@@ -49,6 +49,12 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
   } = useEmotionalAnalysis(selectedEntry, bertAnalysis);
   
   const { subjects, actions } = extractSubjectsAndActions();
+  
+  // Check if we have any suggestions to display
+  const hasSuggestions = 
+    (Object.entries(emotionCategories).some(([_, words]) => words.length > 0) || 
+    emotionTones.size > 0 || 
+    actionPlans.length > 0);
 
   if (!selectedEntry) {
     return (
@@ -61,7 +67,7 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
   }
 
   return (
-    <div>
+    <div className="relative">
       <div className="mb-4">
         <h2 className="text-xl font-semibold mb-1 font-pacifico flex items-center">
           <BookOpen className="h-5 w-5 mr-2 text-purple-500" />
@@ -104,7 +110,7 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
           )}
         </CollapsibleTrigger>
         <CollapsibleContent className="p-4 bg-white">
-          <ScrollArea className="h-[500px]">
+          <ScrollArea className="h-[500px] pr-2">
             <ContentOverview 
               documentStats={documentStats}
               subjects={subjects}
@@ -114,46 +120,62 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Suggestions Section */}
-      <Collapsible open={isSuggestionsOpen} onOpenChange={setIsSuggestionsOpen} className="mb-4 border rounded-lg overflow-hidden">
-        <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-          <h3 className="text-lg font-medium flex items-center">
-            <Heart className="h-5 w-5 mr-2 text-rose-500" />
-            Suggestions
-          </h3>
-          {isSuggestionsOpen ? (
-            <ChevronUp className="h-5 w-5" />
-          ) : (
-            <ChevronDown className="h-5 w-5" />
-          )}
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          {/* Use ScrollArea to ensure all content is scrollable */}
-          <ScrollArea className="max-h-[500px]">
-            <div className="p-4 bg-white">
-              <p className="text-gray-700 mb-4">
-                Based on the text analysis, here are some suggestions that might help.
-              </p>
+      {/* Suggestions Section - Only show if we have suggestions */}
+      {hasSuggestions && (
+        <Collapsible open={isSuggestionsOpen} onOpenChange={setIsSuggestionsOpen} className="mb-4 border rounded-lg overflow-hidden">
+          <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+            <h3 className="text-lg font-medium flex items-center">
+              <Heart className="h-5 w-5 mr-2 text-rose-500" />
+              Suggestions
+            </h3>
+            {isSuggestionsOpen ? (
+              <ChevronUp className="h-5 w-5" />
+            ) : (
+              <ChevronDown className="h-5 w-5" />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            {/* Use ScrollArea to ensure all content is scrollable */}
+            <ScrollArea className="max-h-[600px]">
+              <div className="p-4 bg-white">
+                <p className="text-gray-700 mb-4">
+                  Based on the text analysis, here are some suggestions that might help.
+                </p>
 
-              {/* Detected emotions section with new styling */}
-              <div className="flex items-start">
-                <AlertTriangle className="h-5 w-5 mr-2 text-amber-500 mt-0.5 flex-shrink-0" />
-                <EmotionCategories 
-                  emotionCategories={emotionCategories} 
-                  emotionTones={emotionTones} 
-                />
+                {/* Detected emotions section with improved conditional rendering */}
+                {(Object.entries(emotionCategories).some(([_, words]) => words.length > 0) || emotionTones.size > 0) && (
+                  <div className="flex items-start">
+                    <AlertTriangle className="h-5 w-5 mr-2 text-amber-500 mt-0.5 flex-shrink-0" />
+                    <EmotionCategories 
+                      emotionCategories={emotionCategories} 
+                      emotionTones={emotionTones} 
+                    />
+                  </div>
+                )}
+                
+                {/* Action Plans - only show if we have any */}
+                {actionPlans.length > 0 && (
+                  <ActionPlans 
+                    actionPlans={actionPlans}
+                    expandedPlans={expandedPlans}
+                    togglePlanExpansion={togglePlanExpansion}
+                  />
+                )}
+                
+                {/* Show a message if no specific suggestions are available */}
+                {!Object.entries(emotionCategories).some(([_, words]) => words.length > 0) && 
+                 emotionTones.size === 0 && 
+                 actionPlans.length === 0 && (
+                  <div className="flex items-center justify-center p-4 text-gray-500">
+                    <Info className="h-5 w-5 mr-2" />
+                    <p>No specific emotional patterns detected in this entry.</p>
+                  </div>
+                )}
               </div>
-              
-              {/* Action Plans */}
-              <ActionPlans 
-                actionPlans={actionPlans}
-                expandedPlans={expandedPlans}
-                togglePlanExpansion={togglePlanExpansion}
-              />
-            </div>
-          </ScrollArea>
-        </CollapsibleContent>
-      </Collapsible>
+            </ScrollArea>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
     </div>
   );
 };
