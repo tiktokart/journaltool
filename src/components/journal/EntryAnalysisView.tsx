@@ -1,12 +1,14 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/collapsible";
 import { ScrollArea } from "../ui/scroll-area";
 import { TextEmotionViewer } from "../TextEmotionViewer";
 import { SentimentTimeline } from "../SentimentTimeline";
+import JournalSentimentChart from "../reflections/JournalSentimentChart";
 import { KeyPhrases } from "../KeyPhrases";
+import { generateTimeline } from "@/utils/timelineGeneration";
 
 interface Entry {
   id: string;
@@ -55,6 +57,55 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
   isKeywordsOpen,
   setIsKeywordsOpen
 }) => {
+  const [timelineData, setTimelineData] = useState<any[]>([]);
+  
+  // Generate timeline data from the entry text
+  useEffect(() => {
+    const fetchTimelineData = async () => {
+      if (selectedEntry?.text) {
+        try {
+          // Generate timeline points from the entry text
+          const timelinePoints = await generateTimeline(selectedEntry.text);
+          setTimelineData(timelinePoints);
+        } catch (error) {
+          console.error("Error generating timeline:", error);
+          // Fallback to simple timeline based on sentiment
+          if (bertAnalysis?.sentiment?.score) {
+            const score = bertAnalysis.sentiment.score;
+            // Create a simple 3-point timeline with slight variations
+            setTimelineData([
+              { 
+                page: 1, 
+                score: Math.max(0.1, Math.min(0.9, score - 0.05)), 
+                time: "Beginning",
+                event: selectedEntry.text.substring(0, 50) + "..." 
+              },
+              { 
+                page: 2, 
+                score: Math.max(0.1, Math.min(0.9, score)), 
+                time: "Middle",
+                event: selectedEntry.text.substring(
+                  Math.floor(selectedEntry.text.length / 2), 
+                  Math.floor(selectedEntry.text.length / 2) + 50
+                ) + "..."
+              },
+              { 
+                page: 3, 
+                score: Math.max(0.1, Math.min(0.9, score + 0.05)), 
+                time: "End",
+                event: selectedEntry.text.substring(
+                  Math.max(0, selectedEntry.text.length - 50)
+                ) + "..."
+              }
+            ]);
+          }
+        }
+      }
+    };
+    
+    fetchTimelineData();
+  }, [selectedEntry, bertAnalysis]);
+
   if (!selectedEntry) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -71,6 +122,63 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
       </div>
     );
   }
+
+  // Extract key paragraphs or sentences for timeline points
+  const extractTimelinePoints = () => {
+    if (!selectedEntry?.text) return [];
+    
+    // Split text into paragraphs or sentences
+    const paragraphs = selectedEntry.text.split('\n').filter(p => p.trim().length > 0);
+    
+    if (paragraphs.length <= 2) {
+      // If few paragraphs, split into sentences
+      const sentences = selectedEntry.text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+      
+      // Take first, middle and last sentence
+      return [
+        {
+          page: 1,
+          score: bertAnalysis?.sentiment?.score ? Math.max(0.1, Math.min(0.9, bertAnalysis.sentiment.score - 0.05)) : 0.5,
+          time: "Start",
+          textSnippet: sentences[0]?.trim()
+        },
+        {
+          page: 2,
+          score: bertAnalysis?.sentiment?.score || 0.5,
+          time: "Middle",
+          textSnippet: sentences[Math.floor(sentences.length / 2)]?.trim()
+        },
+        {
+          page: 3,
+          score: bertAnalysis?.sentiment?.score ? Math.max(0.1, Math.min(0.9, bertAnalysis.sentiment.score + 0.05)) : 0.5,
+          time: "End",
+          textSnippet: sentences[sentences.length - 1]?.trim()
+        }
+      ];
+    }
+    
+    // Use paragraphs for longer entries
+    return [
+      {
+        page: 1,
+        score: bertAnalysis?.sentiment?.score ? Math.max(0.1, Math.min(0.9, bertAnalysis.sentiment.score - 0.05)) : 0.5,
+        time: "Beginning",
+        textSnippet: paragraphs[0]?.substring(0, 50) + "..."
+      },
+      {
+        page: Math.floor(paragraphs.length / 2),
+        score: bertAnalysis?.sentiment?.score || 0.5,
+        time: "Middle",
+        textSnippet: paragraphs[Math.floor(paragraphs.length / 2)]?.substring(0, 50) + "..."
+      },
+      {
+        page: paragraphs.length,
+        score: bertAnalysis?.sentiment?.score ? Math.max(0.1, Math.min(0.9, bertAnalysis.sentiment.score + 0.05)) : 0.5,
+        time: "End",
+        textSnippet: paragraphs[paragraphs.length - 1]?.substring(0, 50) + "..."
+      }
+    ];
+  };
 
   return (
     <ScrollArea className="h-[calc(100vh-200px)]">
@@ -242,29 +350,28 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
             )}
           </CollapsibleTrigger>
           <CollapsibleContent className="p-4 bg-white">
-            <SentimentTimeline 
-              data={[
-                { 
-                  page: 1, 
-                  score: bertAnalysis?.sentiment?.score || 0.5, 
-                  time: "Beginning",
-                  event: selectedEntry ? selectedEntry.text.substring(0, 30) + "..." : "Start of entry"
-                },
-                { 
-                  page: 2, 
-                  score: bertAnalysis?.sentiment?.score ? bertAnalysis.sentiment.score * 0.9 + 0.05 : 0.5, 
-                  time: "Middle",
-                  event: selectedEntry ? selectedEntry.text.substring(Math.floor(selectedEntry.text.length / 2), Math.floor(selectedEntry.text.length / 2) + 30) + "..." : "Middle of entry" 
-                },
-                { 
-                  page: 3, 
-                  score: bertAnalysis?.sentiment?.score || 0.5, 
-                  time: "End",
-                  event: selectedEntry ? selectedEntry.text.substring(selectedEntry.text.length - 30) + "..." : "End of entry"
-                },
-              ]}
-              sourceDescription="Emotional flow through journal entry"
-            />
+            {/* Use our enhanced JournalSentimentChart if we have timeline data */}
+            {timelineData && timelineData.length > 0 ? (
+              <div className="h-[300px]">
+                <JournalSentimentChart 
+                  timelineData={timelineData.map(item => ({
+                    date: item.time || `Point ${item.page || item.index || 1}`,
+                    sentiment: item.sentiment || item.score || 0.5,
+                    textSnippet: item.event || item.textSnippet || ''
+                  }))}
+                />
+              </div>
+            ) : (
+              <div className="h-[250px]">
+                <SentimentTimeline 
+                  data={extractTimelinePoints()}
+                  sourceDescription="Emotional flow through journal entry"
+                />
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground mt-3 text-center">
+              Hover over points to see text excerpts and sentiment scores
+            </div>
           </CollapsibleContent>
         </Collapsible>
 

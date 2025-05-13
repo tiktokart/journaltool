@@ -5,6 +5,7 @@ import { Info, Calendar } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface TimelineEntry {
   page: number; 
@@ -27,6 +28,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
   const [averageSentiment, setAverageSentiment] = useState(0.5);
   const [isDataValid, setIsDataValid] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState<TimelineEntry | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<TimelineEntry | null>(null);
 
   useEffect(() => {
     try {
@@ -35,11 +37,11 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
         console.warn("SentimentTimeline received invalid data:", data);
         // Create sample data if none is provided to show visualization
         const sampleData = [
-          { page: 1, score: 0.4, time: "Day 1", textSnippet: "Started feeling anxious about the project" },
-          { page: 2, score: 0.3, time: "Day 2", textSnippet: "Struggled with deadlines and pressure" },
-          { page: 3, score: 0.5, time: "Day 3", textSnippet: "Found some solutions to my problems" },
-          { page: 4, score: 0.6, time: "Day 4", textSnippet: "Made progress on difficult tasks" },
-          { page: 5, score: 0.7, time: "Day 5", textSnippet: "Feeling more confident about the outcome" }
+          { page: 1, score: 0.4, time: "Beginning", textSnippet: "Started feeling anxious about the project" },
+          { page: 2, score: 0.3, time: "Challenge", textSnippet: "Struggled with deadlines and pressure" },
+          { page: 3, score: 0.5, time: "Progress", textSnippet: "Found some solutions to my problems" },
+          { page: 4, score: 0.6, time: "Development", textSnippet: "Made progress on difficult tasks" },
+          { page: 5, score: 0.7, time: "Conclusion", textSnippet: "Feeling more confident about the outcome" }
         ];
         setNormalizedData(sampleData);
         setAverageSentiment(0.5);
@@ -127,15 +129,19 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-3 rounded-lg shadow-md border border-gray-100">
-          <p className="font-medium text-sm">{data.time || data.event || `Point ${data.page}`}</p>
-          <p className="text-sm text-muted-foreground">
-            Sentiment: {(data.score * 100).toFixed(0)}%
-          </p>
-          {data.textSnippet && (
-            <p className="text-xs mt-1 max-w-[200px] text-muted-foreground italic">
-              "{data.textSnippet}"
+        <div className="bg-white p-4 border border-gray-200 shadow-lg rounded-md max-w-xs">
+          <p className="text-sm font-semibold mb-1">{data.time || `Point ${data.page}`}</p>
+          <div className="border-t border-gray-200 pt-2 mt-2">
+            <p className="font-medium">
+              Sentiment: <span className="text-purple-700">{(data.score * 100).toFixed(0)}%</span>
             </p>
+          </div>
+          {data.textSnippet && (
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <p className="text-xs italic">
+                "{data.textSnippet}"
+              </p>
+            </div>
           )}
         </div>
       );
@@ -183,6 +189,14 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   setSelectedPoint(data.activePayload[0].payload);
                 }
               }}
+              onMouseMove={(data) => {
+                if (data && data.activePayload && data.activePayload.length) {
+                  setHoveredPoint(data.activePayload[0].payload);
+                } else {
+                  setHoveredPoint(null);
+                }
+              }}
+              onMouseLeave={() => setHoveredPoint(null)}
             >
               <defs>
                 <linearGradient id="sentimentGradient" x1="0" y1="0" x2="0" y2="1">
@@ -197,7 +211,9 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                 tickFormatter={(value, index) => {
                   // Show every nth tick or just a few for cleaner display
                   if (normalizedData.length <= 5 || index % Math.ceil(normalizedData.length/5) === 0) {
-                    return `${value}`;
+                    // Try to use time if available, otherwise just show the point number
+                    const point = normalizedData.find(p => p.page === value);
+                    return point?.time?.substring(0, 4) || `${value}`;
                   }
                   return '';
                 }}
@@ -248,15 +264,102 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                   },
                   style: { cursor: 'pointer' }
                 }}
+                dot={(props: any) => {
+                  if (!props || !props.cx || !props.cy || !props.payload) return null;
+                  
+                  // Show dots at significant sentiment changes or endpoints
+                  const isEndpoint = props.index === 0 || props.index === normalizedData.length - 1;
+                  const hasTextSnippet = !!props.payload.textSnippet;
+                  
+                  // Get color based on sentiment
+                  let fill = '#27AE60';  // positive
+                  if (props.payload.score < 0.4) fill = '#E74C3C';  // negative
+                  else if (props.payload.score < 0.6) fill = '#3498DB';  // neutral
+                  
+                  if (isEndpoint || hasTextSnippet) {
+                    return (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <circle 
+                            cx={props.cx} 
+                            cy={props.cy} 
+                            r={4} 
+                            fill={fill} 
+                            stroke="#fff"
+                            strokeWidth={2}
+                            style={{ cursor: 'pointer' }}
+                          />
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-0">
+                          <div className="p-4 border-b">
+                            <p className="font-medium">{props.payload.time || `Point ${props.payload.page}`}</p>
+                            <p className="text-sm text-gray-500">Sentiment: {(props.payload.score * 100).toFixed(0)}%</p>
+                          </div>
+                          {props.payload.textSnippet && (
+                            <div className="p-4">
+                              <p className="italic text-sm">{props.payload.textSnippet}</p>
+                            </div>
+                          )}
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  }
+                  return null;
+                }}
               />
+              
+              {/* Text labels for important points */}
+              {normalizedData.map((point, index) => {
+                // Only show labels for endpoints and points with text snippets
+                if ((index === 0 || index === normalizedData.length - 1 || point.textSnippet) && index % 2 === 0) {
+                  const xPercent = (index / (normalizedData.length - 1)) * 100;
+                  return (
+                    <foreignObject
+                      key={`text-${index}`}
+                      x={`${xPercent}%`}
+                      y={point.score > 0.5 ? 5 : 35}
+                      width="100"
+                      height="20"
+                      style={{ overflow: 'visible', transform: 'translateX(-50px)' }}
+                    >
+                      <div className="text-xs font-medium text-purple-800 truncate">
+                        {point.time?.substring(0, 10)}
+                      </div>
+                    </foreignObject>
+                  );
+                }
+                return null;
+              })}
             </AreaChart>
           </ResponsiveContainer>
         </div>
         
+        {/* Selected point details */}
         {selectedPoint && (
           <div className="mt-4 p-3 bg-gray-50 rounded-md">
-            <h4 className="font-medium">{selectedPoint.time || `Point ${selectedPoint.page}`}</h4>
-            <p className="text-sm mt-1">
+            <div className="flex justify-between items-center">
+              <h4 className="font-medium">{selectedPoint.time || `Point ${selectedPoint.page}`}</h4>
+              <button 
+                onClick={() => setSelectedPoint(null)}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ 
+                  backgroundColor: selectedPoint.score > 0.6 ? '#27AE60' : 
+                                  selectedPoint.score < 0.4 ? '#E74C3C' : 
+                                  '#3498DB' 
+                }} 
+              />
+              <p className="text-sm">
+                Sentiment score: <span className="font-medium">{(selectedPoint.score * 100).toFixed(0)}%</span>
+              </p>
+            </div>
+            <p className="text-sm mt-2">
               {selectedPoint.textSnippet || "No text available"}
             </p>
           </div>
