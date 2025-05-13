@@ -82,7 +82,12 @@ const AnalysisDataProcessor = ({
 
   // Ensure we have properly structured distribution data
   const ensureDistribution = () => {
-    // First check BERT analysis for distribution data
+    // First check if the sentimentData already has distribution
+    if (sentimentData.distribution) {
+      return sentimentData.distribution;
+    }
+    
+    // Check BERT analysis for distribution data
     if (sentimentData.bertAnalysis) {
       // Try multiple paths to get distribution data
       
@@ -131,11 +136,6 @@ const AnalysisDataProcessor = ({
           negative: Math.round((negative / total) * 100)
         };
       }
-    }
-    
-    // Fallback to sentimentData distribution
-    if (sentimentData.distribution) {
-      return sentimentData.distribution;
     }
     
     // Generate a basic distribution based on overall sentiment
