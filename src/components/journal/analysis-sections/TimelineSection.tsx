@@ -1,78 +1,106 @@
 
-import React, { useState, useCallback } from 'react';
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { TimelineEntry } from '../../../types/bertAnalysis';
+import React from 'react';
+import { ChevronUp, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../../ui/collapsible";
+import { SentimentTimeline } from "../../SentimentTimeline";
+import JournalSentimentChart from "../../reflections/JournalSentimentChart";
+import { TimelineEntry } from "../../../types/bertAnalysis";
 
 interface TimelineSectionProps {
-  selectedEntry: {
-    id: string;
-    text: string;
-    date: string;
-    [key: string]: any;
-  } | null;
-  bertAnalysis: any;
-  timelinePoints: TimelineEntry[];
-  setTimelinePoints: React.Dispatch<React.SetStateAction<TimelineEntry[]>>;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  timelineData?: any[];
+  timelineData: any[];
+  selectedEntry: { id: string; text: string; date: string } | null;
+  bertAnalysis: any;
 }
 
-const TimelineSection: React.FC<TimelineSectionProps> = ({ 
-  selectedEntry, 
-  bertAnalysis,
-  timelinePoints,
-  setTimelinePoints,
+const TimelineSection: React.FC<TimelineSectionProps> = ({
   isOpen,
   setIsOpen,
-  timelineData
+  timelineData,
+  selectedEntry,
+  bertAnalysis
 }) => {
-  const [selectedTimelinePoint, setSelectedTimelinePoint] = useState<TimelineEntry | null>(null);
+  // Function to extract timeline points from the entry text
+  const extractTimelinePoints = (): TimelineEntry[] => {
+    if (!selectedEntry || !bertAnalysis) {
+      return [];
+    }
+    
+    // Extract sentences for timeline
+    const sentences = selectedEntry.text
+      .split(/(?<=[.!?])\s+/)
+      .filter((s: string) => s.trim().length > 5)
+      .map((s: string, i: number) => ({ 
+        text: s.trim(), 
+        index: i,
+        sentiment: 0.5 // Default sentiment
+      }));
+    
+    // If we have keywords with sentiments, use them to assign sentence sentiments
+    if (bertAnalysis.keywords && bertAnalysis.keywords.length > 0) {
+      bertAnalysis.keywords.forEach((keyword: any) => {
+        if (keyword.sentiment !== undefined && keyword.word) {
+          // Find sentences containing this keyword
+          sentences.forEach((sentence: any) => {
+            if (sentence.text.toLowerCase().includes(keyword.word.toLowerCase())) {
+              // Blend the sentiments (weighted average favoring any existing value)
+              sentence.sentiment = sentence.sentiment !== 0.5
+                ? (sentence.sentiment * 0.7) + (keyword.sentiment * 0.3)
+                : keyword.sentiment;
+            }
+          });
+        }
+      });
+    }
+    
+    // Format for timeline visualization
+    return sentences.map((s: any, i: number) => ({
+      time: `${i + 1}`,
+      sentiment: s.sentiment,
+      score: s.sentiment,
+      event: s.text.length > 70 ? s.text.substring(0, 70) + '...' : s.text,
+      textSnippet: s.text,
+      page: i + 1,
+      index: i
+    }));
+  };
 
-  const handleTimelineSelect = useCallback((point: TimelineEntry) => {
-    setSelectedTimelinePoint(point);
-  }, []);
-  
-  // Use timeline data if provided, otherwise use timelinePoints
-  const displayData = timelineData || timelinePoints;
-  
   return (
-    <Card className="shadow-md">
-      <CardContent className="p-4">
-        <h4 className="text-lg font-semibold mb-2">Timeline</h4>
-        <ScrollArea className="h-[300px] mb-4">
-          {displayData.length > 0 ? (
-            <div className="timeline-container">
-              {/* Placeholder for timeline visualization - we'll implement a simple version */}
-              <div className="timeline-events">
-                {displayData.map((point, index) => (
-                  <div 
-                    key={index} 
-                    className="timeline-event p-2 mb-2 border rounded cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleTimelineSelect(point)}
-                  >
-                    <div className="font-medium">{point.time}</div>
-                    <div className="text-sm text-gray-600">{point.event}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-500">No timeline events available.</p>
-          )}
-        </ScrollArea>
-
-        {selectedTimelinePoint && (
-          <div className="mt-4">
-            <h5 className="text-md font-semibold">Selected Event</h5>
-            <Badge variant="secondary">{selectedTimelinePoint.event}</Badge>
-            <p className="text-sm mt-1">{selectedTimelinePoint.textSnippet}</p>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mb-4 border rounded-lg overflow-hidden">
+      <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+        <h3 className="text-lg font-medium font-pacifico">Timeline</h3>
+        {isOpen ? (
+          <ChevronUp className="h-5 w-5" />
+        ) : (
+          <ChevronDown className="h-5 w-5" />
+        )}
+      </CollapsibleTrigger>
+      <CollapsibleContent className="p-4 bg-white">
+        {/* Use our enhanced JournalSentimentChart if we have timeline data */}
+        {timelineData && timelineData.length > 0 ? (
+          <div className="h-[300px]">
+            <JournalSentimentChart 
+              timelineData={timelineData.map(item => ({
+                date: item.time || `Point ${item.page || item.index || 1}`,
+                sentiment: item.sentiment || item.score || 0.5,
+                textSnippet: item.event || item.textSnippet || ''
+              }))}
+            />
+          </div>
+        ) : (
+          <div className="h-[250px]">
+            <SentimentTimeline 
+              data={extractTimelinePoints()}
+              sourceDescription="Emotional flow through journal entry"
+            />
           </div>
         )}
-      </CardContent>
-    </Card>
+        <div className="text-xs text-muted-foreground mt-3 text-center">
+          Hover over points to see text excerpts and sentiment scores
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 

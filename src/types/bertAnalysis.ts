@@ -1,59 +1,45 @@
 
-// Add additional types related to BERT analysis here
+import { Point } from './embedding';
 
-export interface TimelineEntry {
-  time: string;
-  event: string;
-  textSnippet: string;
-  sentiment: number;
-  score?: number;
-  page?: number;
-  index: number;
+/**
+ * Interface for BERT analysis results
+ */
+export interface BertAnalysisResult {
+  bertAnalysis: any;
+  embeddingPoints: Point[];
+  overallSentiment: { score: number; label: string };
+  distribution: { positive: number; neutral: number; negative: number };
+  summary?: string;
+  text: string;
+  sourceDescription?: string;
+  fileName?: string;
+  fileSize?: number;
+  wordCount: number;
+  timestamp: string;
 }
 
+/**
+ * Interface for keyword analysis
+ */
 export interface KeywordAnalysis {
   word: string;
+  text?: string;
   sentiment: number;
   tone?: string;
   relatedConcepts?: string[];
   frequency?: number;
-  color?: string; // Changed to only allow string type for color
+  color?: string;
 }
 
-export interface BertAnalysisResult {
-  sentiment: {
-    score: number;
-    label: string;
-  };
-  keywords?: Array<{
-    word: string;
-    sentiment: number;
-    tone?: string;
-    color?: string;
-    relatedConcepts?: string[];
-  }>;
-  distribution: {
-    positive: number;
-    negative: number;
-    neutral: number;
-  };
-  timeline?: TimelineEntry[];
-  bertAnalysis?: any; // Add this field to match usage in components
-  embeddingPoints?: any[]; // Add this field to match usage in components
-  overallSentiment?: { score: number; label: string }; // Add this field to match usage in components
-  text?: string; // Add this field to match usage in components
-  sourceDescription?: string; // Add this field to match usage
-  timestamp?: string; // Add this field to match usage
-  wordCount?: number; // Add this field to match usage
-  fileName?: string; // Add this field to match usage
-  fileSize?: number; // Add this field to match usage
-  summary?: string; // Add this field to match usage
-}
-
-export interface BertAnalysisConfig {
-  model: string;
-  settings: {
-    threshold: number;
-    maxKeywords: number;
-  };
+/**
+ * Interface for timeline entry
+ */
+export interface TimelineEntry {
+  time: string;
+  sentiment: number;
+  score: number;
+  event: string;
+  textSnippet: string;
+  page?: number;
+  index?: number;
 }

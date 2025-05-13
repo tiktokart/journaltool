@@ -1,5 +1,20 @@
 
-import { KeywordAnalysis, BertAnalysisResult } from '../types/bertAnalysis';
+interface KeywordAnalysis {
+  word: string;
+  sentiment: number;
+  tone?: string;
+  relatedConcepts?: string[];
+  frequency?: number;
+  color?: string | [number, number, number];
+}
+
+interface BertAnalysisResult {
+  keywords: KeywordAnalysis[];
+  overallSentiment: number;
+  overallTone: string;
+  emotionalTone?: string;
+  analysis?: string;
+}
 
 const stopWords = [
   'the', 'a', 'an', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 
@@ -138,7 +153,7 @@ export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisRes
         }
       }
       
-      // Get color for this emotional tone - ensure it's a string, not an array
+      // Get color for this emotional tone
       const color = emotionalColors[tone] || emotionalColors.Neutral;
       
       // Find related words based on co-occurrence in the text
@@ -183,20 +198,11 @@ export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisRes
     const analysis = `The text shows ${overallTone.toLowerCase()} with an overall sentiment score of ${overallSentiment.toFixed(2)}. Analysis identified ${keywords.length} significant words or phrases.`;
     
     return {
-      sentiment: {
-        score: overallSentiment,
-        label: overallTone
-      },
       keywords,
       overallSentiment,
       overallTone,
       emotionalTone,
-      analysis,
-      distribution: {
-        positive: Math.round(overallSentiment * 100),
-        negative: Math.round((1 - overallSentiment) * 0.7 * 100),
-        neutral: 100 - Math.round(overallSentiment * 100) - Math.round((1 - overallSentiment) * 0.7 * 100)
-      }
+      analysis
     };
   } catch (error) {
     console.error("Error in BERT analysis:", error);

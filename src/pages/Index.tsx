@@ -1,8 +1,9 @@
 
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { Flower, Target, Book, BarChart } from "lucide-react";
+import { Flower, Target, Book, BarChart, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import VectorDecorations from "@/components/VectorDecorations";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -13,6 +14,14 @@ export default function Index() {
   useEffect(() => {
     // Check if the user has visited before
     const hasVisited = localStorage.getItem('hasVisitedOnboarding');
+    
+    // If they have, we could automatically redirect to the dashboard
+    // Uncomment this to enable auto-redirect after first visit
+    /*
+    if (hasVisited) {
+      window.location.href = '/dashboard';
+    }
+    */
     
     // Mark that the user has visited the onboarding page
     localStorage.setItem('hasVisitedOnboarding', 'true');
@@ -29,6 +38,13 @@ export default function Index() {
           <p className="text-xl mb-8 text-black">
             Track your thoughts, analyze your emotions, and gain insights into your mental well-being.
           </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-white">
+              <Link to="/dashboard" className="flex items-center gap-2">
+                Get Started <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Feature highlights with icons */}
@@ -119,6 +135,11 @@ export default function Index() {
           <p className="text-gray-700 mb-6">
             Start recording your thoughts today and unlock powerful insights about yourself.
           </p>
+          <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-white">
+            <Link to="/dashboard">
+              Go to Dashboard
+            </Link>
+          </Button>
         </div>
       </div>
     </div>

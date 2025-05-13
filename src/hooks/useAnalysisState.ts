@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Point } from "@/types/embedding";
 import { toast } from "sonner";
@@ -84,14 +85,14 @@ export function useAnalysisState(
       );
       
       console.log("Analysis complete with results:", {
-        bertKeywordsCount: analysis.keywords?.length,
+        bertKeywordsCount: analysis.bertAnalysis?.keywords?.length,
         embeddingPointsCount: analysis.embeddingPoints?.length,
         distribution: analysis.distribution
       });
       
       // Clean up emotion labels by removing "Theme" suffix
-      if (analysis.keywords) {
-        analysis.keywords = analysis.keywords.map((kw: any) => ({
+      if (analysis.bertAnalysis?.keywords) {
+        analysis.bertAnalysis.keywords = analysis.bertAnalysis.keywords.map((kw: any) => ({
           ...kw,
           tone: kw.tone?.replace(/\s*Theme\s*$/i, '') || kw.tone
         }));

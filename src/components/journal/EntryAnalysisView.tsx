@@ -103,8 +103,6 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
           setIsOpen={setIsTimelineOpen}
           selectedEntry={selectedEntry}
           bertAnalysis={bertAnalysis}
-          timelinePoints={[]}
-          setTimelinePoints={() => {}}
           timelineData={timelineData}
         />
 

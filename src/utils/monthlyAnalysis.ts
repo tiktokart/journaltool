@@ -1,203 +1,126 @@
 
 import { BertAnalysisResult } from '../types/bertAnalysis';
-import { analyzeTextWithBert } from './bertIntegration';
+import { Point } from '../types/embedding';
+import { getJournalEntries } from './journalStorage';
 
 /**
- * Generate monthly analysis by combining journal entries
- * @param journalEntries The entries to analyze
- * @returns Monthly BERT analysis
+ * Generate monthly analysis from journal entries
+ * @param month - Month in YYYY-MM format
+ * @returns Aggregated analysis for the month
  */
-export const generateMonthlyAnalysis = async (journalEntries: any[]): Promise<BertAnalysisResult> => {
+export const generateMonthlyAnalysis = (month: string): BertAnalysisResult | null => {
   try {
-    // Combine all journal entry texts with separator
-    const combinedText = journalEntries
-      .map(entry => entry.text || '')
-      .filter(text => text.length > 0)
-      .join('\n\n');
-      
-    if (!combinedText || combinedText.length < 10) {
-      throw new Error('Not enough text content to analyze');
+    const entries = getJournalEntries();
+    
+    // Filter entries for the specified month
+    const monthEntries = entries.filter(entry => {
+      const entryDate = new Date(entry.timestamp);
+      const entryMonth = `${entryDate.getFullYear()}-${String(entryDate.getMonth() + 1).padStart(2, '0')}`;
+      return entryMonth === month;
+    });
+    
+    if (monthEntries.length === 0) {
+      console.log("No entries found for month:", month);
+      return null;
     }
     
-    // Analyze the combined text
-    const analysis = await analyzeTextWithBert(combinedText);
+    console.log(`Generating monthly analysis for ${month} with ${monthEntries.length} entries`);
     
-    // Get sentiment data and other statistics
-    let positiveWordCount = 0;
-    let negativeWordCount = 0;
-    let neutralWordCount = 0;
+    // Combine text from all entries
+    const combinedText = monthEntries.map(entry => entry.text).join("\n\n");
     
-    // Count sentiment distributions from keywords
-    if (analysis.keywords) {
-      analysis.keywords.forEach(keyword => {
-        const sentiment = keyword.sentiment || 0.5;
-        if (sentiment > 0.6) positiveWordCount++;
-        else if (sentiment < 0.4) negativeWordCount++;
-        else neutralWordCount++;
-      });
-    }
+    // Combine embedding points
+    const combinedPoints: Point[] = [];
+    monthEntries.forEach(entry => {
+      if (entry.embeddingPoints && Array.isArray(entry.embeddingPoints)) {
+        // Deduplicate points
+        const existingWords = combinedPoints.map(p => p.word);
+        const newPoints = entry.embeddingPoints.filter(
+          (p: Point) => !existingWords.includes(p.word)
+        );
+        combinedPoints.push(...newPoints);
+      }
+    });
     
-    // Create distribution data
-    const totalWordCount = positiveWordCount + negativeWordCount + neutralWordCount || 1;
-    const sentimentDistribution = {
-      positive: Math.round((positiveWordCount / totalWordCount) * 100),
-      negative: Math.round((negativeWordCount / totalWordCount) * 100),
-      neutral: Math.round((neutralWordCount / totalWordCount) * 100)
-    };
+    // Calculate average sentiment
+    const totalSentiment = monthEntries.reduce(
+      (sum, entry) => sum + entry.overallSentiment.score, 
+      0
+    );
+    const averageSentiment = totalSentiment / monthEntries.length;
     
-    // Ensure distribution adds up to 100%
-    const sumPercentages = sentimentDistribution.positive + 
-                          sentimentDistribution.negative + 
-                          sentimentDistribution.neutral;
-                          
-    if (sumPercentages !== 100) {
-      // Adjust neutral to make total 100%
-      sentimentDistribution.neutral += (100 - sumPercentages);
-    }
+    // Create a summary
+    const summary = `Monthly analysis for ${month} based on ${monthEntries.length} journal entries.`;
     
-    // Return BertAnalysisResult format with relevant fields
+    // Return aggregated result
     return {
-      sentiment: analysis.sentiment,
-      keywords: analysis.keywords,
-      distribution: sentimentDistribution,
-      bertAnalysis: analysis,
-      overallSentiment: {
-        score: analysis.sentiment.score,
-        label: analysis.sentiment.label
+      bertAnalysis: {
+        keywords: monthEntries.flatMap(entry => entry.bertAnalysis?.keywords || []),
+        overallSentiment: averageSentiment,
+        overallTone: averageSentiment > 0.6 ? "Positive" : averageSentiment < 0.4 ? "Negative" : "Neutral",
+        analysis: summary
       },
+      embeddingPoints: combinedPoints,
+      overallSentiment: {
+        score: averageSentiment,
+        label: averageSentiment > 0.6 ? "Positive" : averageSentiment < 0.4 ? "Negative" : "Neutral"
+      },
+      distribution: {
+        positive: Math.round(averageSentiment * 100),
+        negative: Math.round((1 - averageSentiment) * 0.7 * 100),
+        neutral: 100 - Math.round(averageSentiment * 100) - Math.round((1 - averageSentiment) * 0.7 * 100)
+      },
+      summary,
       text: combinedText,
-      timestamp: new Date().toISOString(),
-      sourceDescription: "Monthly Journal Analysis",
-      wordCount: combinedText.split(/\s+/).filter(word => word.trim().length > 0).length
+      sourceDescription: `Monthly analysis for ${month}`,
+      wordCount: combinedText.split(/\s+/).filter(word => word.trim().length > 0).length,
+      timestamp: new Date().toISOString()
     };
   } catch (error) {
-    console.error('Error generating monthly analysis:', error);
-    // Return minimal valid object on error
-    return {
-      sentiment: { score: 0.5, label: "Neutral" },
-      distribution: { positive: 33, neutral: 34, negative: 33 },
-      keywords: []
-    };
-  }
-};
-
-/**
- * Save monthly analysis to localStorage
- * @param analysis The analysis to save
- * @param month Month identifier (e.g., "2023-05")
- */
-export const saveMonthlyAnalysis = (analysis: BertAnalysisResult, month: string): void => {
-  try {
-    const storageKey = `monthlyAnalysis-${month}`;
-    localStorage.setItem(storageKey, JSON.stringify(analysis));
-  } catch (error) {
-    console.error('Error saving monthly analysis:', error);
-  }
-};
-
-/**
- * Get monthly analysis from localStorage
- * @param month Month identifier (e.g., "2023-05")
- * @returns The saved monthly analysis or null
- */
-export const getMonthlyAnalysis = (month: string): BertAnalysisResult | null => {
-  try {
-    const storageKey = `monthlyAnalysis-${month}`;
-    const data = localStorage.getItem(storageKey);
-    return data ? JSON.parse(data) : null;
-  } catch (error) {
-    console.error('Error getting monthly analysis:', error);
+    console.error("Error generating monthly analysis:", error);
     return null;
   }
 };
 
 /**
- * Generate a text summary of monthly journal sentiment
- * @param journalEntries Array of journal entries
- * @returns Summary text and sentiment trends
+ * Save monthly analysis to local storage
+ * @param month - Month in YYYY-MM format
+ * @param analysisResult - The analysis result to save
  */
-export const generateMonthlySummary = (journalEntries: any[]): { 
-  summary: string;
-  averageSentiment: number;
-  trendDescription: string;
-} => {
-  // Default values
-  if (!journalEntries || journalEntries.length === 0) {
-    return {
-      summary: "No journal entries to analyze",
-      averageSentiment: 0.5,
-      trendDescription: "Neutral - no entries detected"
-    };
-  }
-  
+export const saveMonthlyAnalysis = (
+  month: string,
+  analysisResult: BertAnalysisResult
+): void => {
   try {
-    // Calculate average sentiment
-    let totalSentiment = 0;
-    let validEntries = 0;
+    // Get existing monthly analyses
+    const analysesJson = localStorage.getItem('monthlyAnalyses');
+    const analyses = analysesJson ? JSON.parse(analysesJson) : {};
     
-    journalEntries.forEach(entry => {
-      if (entry.sentiment?.score !== undefined) {
-        totalSentiment += entry.sentiment.score;
-        validEntries++;
-      } else if (entry.overallSentiment?.score !== undefined) {
-        totalSentiment += entry.overallSentiment.score;
-        validEntries++;
-      }
-    });
+    // Add/update analysis for this month
+    analyses[month] = analysisResult;
     
-    const averageSentiment = validEntries > 0 ? totalSentiment / validEntries : 0.5;
-    
-    // Look for trends over time
-    let trendDescription = "Your emotional state has been relatively steady this month.";
-    if (journalEntries.length >= 3) {
-      // Compare earlier and later entries
-      const firstHalf = journalEntries.slice(0, Math.floor(journalEntries.length / 2));
-      const secondHalf = journalEntries.slice(Math.floor(journalEntries.length / 2));
-      
-      let firstHalfSentiment = 0;
-      let secondHalfSentiment = 0;
-      
-      firstHalf.forEach(entry => {
-        firstHalfSentiment += entry.sentiment?.score || entry.overallSentiment?.score || 0.5;
-      });
-      
-      secondHalf.forEach(entry => {
-        secondHalfSentiment += entry.sentiment?.score || entry.overallSentiment?.score || 0.5;
-      });
-      
-      const firstAvg = firstHalf.length > 0 ? firstHalfSentiment / firstHalf.length : 0.5;
-      const secondAvg = secondHalf.length > 0 ? secondHalfSentiment / secondHalf.length : 0.5;
-      const difference = secondAvg - firstAvg;
-      
-      if (difference > 0.15) {
-        trendDescription = "Your emotional state shows significant improvement over the month.";
-      } else if (difference > 0.05) {
-        trendDescription = "Your emotional state has been slightly improving this month.";
-      } else if (difference < -0.15) {
-        trendDescription = "Your emotional state shows a significant decline over the month.";
-      } else if (difference < -0.05) {
-        trendDescription = "Your emotional state has been slightly declining this month.";
-      }
-    }
-    
-    // Generate basic summary
-    let sentiment = "neutral";
-    if (averageSentiment > 0.6) sentiment = "positive";
-    else if (averageSentiment < 0.4) sentiment = "negative";
-    
-    const summary = `This month's journals show a generally ${sentiment} tone. ${trendDescription}`;
-    
-    return {
-      summary,
-      averageSentiment,
-      trendDescription
-    };
+    // Save back to localStorage
+    localStorage.setItem('monthlyAnalyses', JSON.stringify(analyses));
+    console.log("Monthly analysis saved for:", month);
   } catch (error) {
-    console.error("Error generating monthly summary:", error);
-    return {
-      summary: "Unable to analyze journal entries",
-      averageSentiment: 0.5,
-      trendDescription: "Error analyzing trend"
-    };
+    console.error("Error saving monthly analysis:", error);
+  }
+};
+
+/**
+ * Get monthly analysis from local storage
+ * @param month - Month in YYYY-MM format
+ * @returns Analysis for the month
+ */
+export const getMonthlyAnalysis = (month: string): BertAnalysisResult | null => {
+  try {
+    const analysesJson = localStorage.getItem('monthlyAnalyses');
+    if (!analysesJson) return null;
+    
+    const analyses = JSON.parse(analysesJson);
+    return analyses[month] || null;
+  } catch (error) {
+    console.error("Error getting monthly analysis:", error);
+    return null;
   }
 };

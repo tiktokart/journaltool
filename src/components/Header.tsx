@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Flower } from "lucide-react";
+import { Pencil, Flower } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -73,11 +73,12 @@ export const Header = () => {
               <span className="font-bold text-xl text-black">Journal Analysis</span>
             </Link>
             
-            <Link to="/dashboard">
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                Go to Dashboard
-              </Button>
-            </Link>
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => window.location.href = '/dashboard'} 
+            >
+              Get Started
+            </Button>
           </div>
         </div>
       </header>
@@ -125,6 +126,7 @@ export const Header = () => {
             className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
             onClick={() => setIsJournalWriteOpen(true)}
           >
+            <Pencil className="h-4 w-4" />
             <span>Journal</span>
           </Button>
         </div>

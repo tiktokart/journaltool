@@ -51,29 +51,3 @@ export const getJournalEntries = (): any[] => {
     return [];
   }
 };
-
-// Add aliases for compatibility
-export const saveJournalEntry = saveBertAnalysisToJournal;
-export const retrieveJournalEntries = getJournalEntries;
-
-// Add placeholder functions for monthly reflections
-export const saveMonthlyReflection = (reflection: any): void => {
-  try {
-    const reflectionsJson = localStorage.getItem('monthlyReflections');
-    const reflections = reflectionsJson ? JSON.parse(reflectionsJson) : [];
-    reflections.push({...reflection, date: new Date().toISOString()});
-    localStorage.setItem('monthlyReflections', JSON.stringify(reflections));
-  } catch (error) {
-    console.error("Error saving monthly reflection:", error);
-  }
-};
-
-export const retrieveMonthlyReflections = (): any[] => {
-  try {
-    const reflectionsJson = localStorage.getItem('monthlyReflections');
-    return reflectionsJson ? JSON.parse(reflectionsJson) : [];
-  } catch (error) {
-    console.error("Error retrieving monthly reflections:", error);
-    return [];
-  }
-};

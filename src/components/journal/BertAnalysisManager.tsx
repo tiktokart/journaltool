@@ -58,39 +58,31 @@ const BertAnalysisManager: React.FC<BertAnalysisManagerProps> = ({
         const analysis = await analyzeTextWithBert(selectedEntry.text);
         console.log("BERT analysis result:", analysis);
         
-        // Create full BertAnalysisResult with required distribution data
-        const fullAnalysis: BertAnalysisResult = {
-          sentiment: analysis.sentiment || { score: 0.5, label: "Neutral" },
-          keywords: analysis.keywords || [],
-          distribution: analysis.distribution || {
-            positive: 33,
-            neutral: 34,
-            negative: 33
-          }
-        };
-        
-        // Calculate distribution if missing or ensure it exists
-        if (analysis.keywords && analysis.keywords.length > 0 && !analysis.distribution) {
+        // Ensure distribution data is present in the analysis
+        if (!analysis.distribution) {
+          // Calculate distribution if missing
           let positive = 0;
           let neutral = 0;
           let negative = 0;
           
-          analysis.keywords.forEach((keyword: any) => {
-            const sentiment = keyword.sentiment || 0.5;
-            if (sentiment > 0.6) positive++;
-            else if (sentiment < 0.4) negative++;
-            else neutral++;
-          });
+          if (analysis.keywords && analysis.keywords.length > 0) {
+            analysis.keywords.forEach((keyword: any) => {
+              const sentiment = keyword.sentiment || 0.5;
+              if (sentiment > 0.6) positive++;
+              else if (sentiment < 0.4) negative++;
+              else neutral++;
+            });
+          }
           
           const total = Math.max(1, positive + negative + neutral);
-          fullAnalysis.distribution = {
+          analysis.distribution = {
             positive: Math.round((positive / total) * 100),
             neutral: Math.round((neutral / total) * 100),
             negative: Math.round((negative / total) * 100)
           };
         }
         
-        setBertAnalysis(fullAnalysis);
+        setBertAnalysis(analysis);
         
         // Create theme categories from keywords
         if (analysis?.keywords && Array.isArray(analysis.keywords)) {
@@ -147,7 +139,7 @@ const BertAnalysisManager: React.FC<BertAnalysisManagerProps> = ({
       } catch (error) {
         console.error("Error analyzing entry:", error);
         // Provide fallback analysis with default values
-        const fallbackAnalysis: BertAnalysisResult = {
+        const fallbackAnalysis = {
           sentiment: { score: 0.5, label: "Neutral" },
           distribution: { positive: 33, neutral: 34, negative: 33 },
           keywords: []

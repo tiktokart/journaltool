@@ -1,39 +1,27 @@
 
-// Re-export with proper type declarations
-import { analyzeTextWithBert } from './bertIntegration';
-import { analyzeSentiment } from './bertSentimentAnalysis';
+/**
+ * Centralized data flow handler for BERT analysis
+ * This ensures data consistency across all components and journal entries
+ */
+import { BertAnalysisResult } from '../types/bertAnalysis';
 import { processBertAnalysis } from './bertAnalysisProcessor';
-
-// Import storage functions
-import {
-  saveBertAnalysisToJournal,
-  getJournalEntries,
-  saveJournalEntry,
-  retrieveJournalEntries
+import { 
+  saveBertAnalysisToJournal, 
+  getJournalEntries 
 } from './journalStorage';
-
-// Import monthly analysis functions
-import {
-  generateMonthlyAnalysis,
-  saveMonthlyAnalysis,
-  getMonthlyAnalysis,
-  generateMonthlySummary
+import { 
+  generateMonthlyAnalysis, 
+  saveMonthlyAnalysis, 
+  getMonthlyAnalysis 
 } from './monthlyAnalysis';
 
-// Use 'export type' for type re-exports when isolatedModules is enabled
-export type { TimelineEntry, BertAnalysisResult, BertAnalysisConfig, KeywordAnalysis } from '../types/bertAnalysis';
-
-// Export functions
+// Re-export all functions
 export {
+  BertAnalysisResult,
   processBertAnalysis,
-  analyzeTextWithBert,
-  analyzeSentiment,
   saveBertAnalysisToJournal,
   getJournalEntries,
-  saveJournalEntry,
-  retrieveJournalEntries,
   generateMonthlyAnalysis,
   saveMonthlyAnalysis,
-  getMonthlyAnalysis,
-  generateMonthlySummary
+  getMonthlyAnalysis
 };
