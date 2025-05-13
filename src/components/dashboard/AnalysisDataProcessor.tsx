@@ -29,10 +29,14 @@ const AnalysisDataProcessor = ({
         // Fallback to BERT analysis overall sentiment
         score = sentimentData.bertAnalysis.overallSentiment;
         setParsedScore(Math.max(0, Math.min(1, score)));
+      } else if (sentimentData?.bertAnalysis?.sentiment?.score) {
+        // Try another potential path in the BERT data
+        score = sentimentData.bertAnalysis.sentiment.score;
+        setParsedScore(Math.max(0, Math.min(1, score)));
       }
       
       // Set sentiment label
-      const label = sentimentData?.overallSentiment?.label || '';
+      const label = sentimentData?.overallSentiment?.label || sentimentData?.bertAnalysis?.sentiment?.label || '';
       if (label) {
         setSentimentLabel(label);
       } else {
@@ -80,20 +84,51 @@ const AnalysisDataProcessor = ({
   const ensureDistribution = () => {
     // First check BERT analysis for distribution data
     if (sentimentData.bertAnalysis) {
-      // Try to use BERT-specific distribution if available
-      const bertDistribution = sentimentData.bertAnalysis.distribution || {
+      // Try multiple paths to get distribution data
+      
+      // Direct distribution in BERT analysis
+      if (sentimentData.bertAnalysis.distribution) {
+        return sentimentData.bertAnalysis.distribution;
+      }
+      
+      // Try to use BERT-specific word counts if available
+      const bertCounts = {
         positive: sentimentData.bertAnalysis.positiveWordCount || 0,
         neutral: sentimentData.bertAnalysis.neutralWordCount || 0,
         negative: sentimentData.bertAnalysis.negativeWordCount || 0
       };
       
-      // Calculate percentages if needed
-      const sum = bertDistribution.positive + bertDistribution.neutral + bertDistribution.negative;
-      if (sum > 0) {
+      // If we have valid counts, use them
+      if (bertCounts.positive > 0 || bertCounts.neutral > 0 || bertCounts.negative > 0) {
+        // Calculate percentages
+        const sum = bertCounts.positive + bertCounts.neutral + bertCounts.negative;
+        if (sum > 0) {
+          return {
+            positive: Math.round((bertCounts.positive / sum) * 100),
+            neutral: Math.round((bertCounts.neutral / sum) * 100),
+            negative: Math.round((bertCounts.negative / sum) * 100)
+          };
+        }
+      }
+      
+      // Try to calculate from keywords if available
+      if (sentimentData.bertAnalysis.keywords && sentimentData.bertAnalysis.keywords.length > 0) {
+        let positive = 0;
+        let negative = 0;
+        let neutral = 0;
+        
+        sentimentData.bertAnalysis.keywords.forEach((keyword: any) => {
+          const sentiment = keyword.sentiment || 0.5;
+          if (sentiment > 0.6) positive++;
+          else if (sentiment < 0.4) negative++;
+          else neutral++;
+        });
+        
+        const total = positive + negative + neutral || 1;
         return {
-          positive: Math.round((bertDistribution.positive / sum) * 100),
-          neutral: Math.round((bertDistribution.neutral / sum) * 100),
-          negative: Math.round((bertDistribution.negative / sum) * 100)
+          positive: Math.round((positive / total) * 100),
+          neutral: Math.round((neutral / total) * 100),
+          negative: Math.round((negative / total) * 100)
         };
       }
     }
@@ -105,6 +140,7 @@ const AnalysisDataProcessor = ({
     
     // Generate a basic distribution based on overall sentiment
     const overallSentiment = sentimentData.overallSentiment?.score || 
+                           sentimentData.bertAnalysis?.sentiment?.score ||
                            sentimentData.overallSentiment || 0.5;
                            
     return {

@@ -61,23 +61,55 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
   const [timelineData, setTimelineData] = useState<any[]>([]);
   const [sentimentScore, setSentimentScore] = useState(0.5);
   const [sentimentLabel, setSentimentLabel] = useState("Neutral");
+  const [sentimentDistribution, setSentimentDistribution] = useState({
+    positive: 33,
+    neutral: 34,
+    negative: 33
+  });
   
   // Process BERT analysis data when available
   useEffect(() => {
-    if (bertAnalysis?.sentiment) {
-      // Ensure score is between 0-1
-      const score = Math.max(0, Math.min(1, bertAnalysis.sentiment.score || 0.5));
-      setSentimentScore(score);
+    if (bertAnalysis) {
+      // Process sentiment score
+      if (bertAnalysis.sentiment) {
+        // Ensure score is between 0-1
+        const score = Math.max(0, Math.min(1, bertAnalysis.sentiment.score || 0.5));
+        setSentimentScore(score);
+        
+        // Set sentiment label based on score or use the one provided
+        if (bertAnalysis.sentiment.label) {
+          setSentimentLabel(bertAnalysis.sentiment.label);
+        } else {
+          if (score >= 0.7) setSentimentLabel("Very Positive");
+          else if (score >= 0.55) setSentimentLabel("Positive");
+          else if (score >= 0.45) setSentimentLabel("Neutral");
+          else if (score >= 0.3) setSentimentLabel("Negative");
+          else setSentimentLabel("Very Negative");
+        }
+      }
       
-      // Set sentiment label based on score or use the one provided
-      if (bertAnalysis.sentiment.label) {
-        setSentimentLabel(bertAnalysis.sentiment.label);
-      } else {
-        if (score >= 0.7) setSentimentLabel("Very Positive");
-        else if (score >= 0.55) setSentimentLabel("Positive");
-        else if (score >= 0.45) setSentimentLabel("Neutral");
-        else if (score >= 0.3) setSentimentLabel("Negative");
-        else setSentimentLabel("Very Negative");
+      // Process distribution data
+      if (bertAnalysis.distribution) {
+        setSentimentDistribution(bertAnalysis.distribution);
+      } else if (bertAnalysis.keywords && bertAnalysis.keywords.length > 0) {
+        // Calculate distribution from keywords if direct distribution is not available
+        let positive = 0;
+        let negative = 0;
+        let neutral = 0;
+        
+        bertAnalysis.keywords.forEach((keyword: any) => {
+          const sentiment = keyword.sentiment || 0.5;
+          if (sentiment > 0.6) positive++;
+          else if (sentiment < 0.4) negative++;
+          else neutral++;
+        });
+        
+        const total = positive + negative + neutral || 1;
+        setSentimentDistribution({
+          positive: Math.round((positive / total) * 100),
+          neutral: Math.round((neutral / total) * 100),
+          negative: Math.round((negative / total) * 100)
+        });
       }
     }
   }, [bertAnalysis]);
@@ -258,12 +290,12 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
                   <div>
                     <div className="flex justify-between mb-1 text-sm">
                       <span>Positive</span>
-                      <span>{bertAnalysis?.distribution?.positive || 0}%</span>
+                      <span>{sentimentDistribution.positive || 0}%</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-green-500"
-                        style={{ width: `${bertAnalysis?.distribution?.positive || 0}%` }}
+                        style={{ width: `${sentimentDistribution.positive || 0}%` }}
                       ></div>
                     </div>
                   </div>
@@ -271,12 +303,12 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
                   <div>
                     <div className="flex justify-between mb-1 text-sm">
                       <span>Neutral</span>
-                      <span>{bertAnalysis?.distribution?.neutral || 0}%</span>
+                      <span>{sentimentDistribution.neutral || 0}%</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-blue-400"
-                        style={{ width: `${bertAnalysis?.distribution?.neutral || 0}%` }}
+                        style={{ width: `${sentimentDistribution.neutral || 0}%` }}
                       ></div>
                     </div>
                   </div>
@@ -284,12 +316,12 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
                   <div>
                     <div className="flex justify-between mb-1 text-sm">
                       <span>Negative</span>
-                      <span>{bertAnalysis?.distribution?.negative || 0}%</span>
+                      <span>{sentimentDistribution.negative || 0}%</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-red-500"
-                        style={{ width: `${bertAnalysis?.distribution?.negative || 0}%` }}
+                        style={{ width: `${sentimentDistribution.negative || 0}%` }}
                       ></div>
                     </div>
                   </div>

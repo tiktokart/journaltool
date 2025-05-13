@@ -100,9 +100,32 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
         console.log("Analyzing entry with BERT...");
         const analysis = await analyzeTextWithBert(selectedEntry.text);
         console.log("BERT analysis result:", analysis);
-        setBertAnalysis(analysis);
         
-        // Extract main subjects and emotion groups as before
+        // Ensure distribution data is present in the analysis
+        if (!analysis.distribution) {
+          // Calculate distribution if missing
+          let positive = 0;
+          let neutral = 0;
+          let negative = 0;
+          
+          if (analysis.keywords && analysis.keywords.length > 0) {
+            analysis.keywords.forEach((keyword: any) => {
+              const sentiment = keyword.sentiment || 0.5;
+              if (sentiment > 0.6) positive++;
+              else if (sentiment < 0.4) negative++;
+              else neutral++;
+            });
+          }
+          
+          const total = Math.max(1, positive + negative + neutral);
+          analysis.distribution = {
+            positive: Math.round((positive / total) * 100),
+            neutral: Math.round((neutral / total) * 100),
+            negative: Math.round((negative / total) * 100)
+          };
+        }
+        
+        setBertAnalysis(analysis);
         
         // Create theme categories from keywords
         if (analysis?.keywords && Array.isArray(analysis.keywords)) {
@@ -123,7 +146,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
           Object.entries(toneGroups).forEach(([tone, keywords]) => {
             if (keywords.length >= 2) {
               // Extract words for this theme
-              const themeWords = keywords.map((k: any) => k.word);
+              const themeWords = keywords.map((k: any) => k.word || k.text);
               
               // Use the first keyword's color for the theme
               const themeColor = keywords[0]?.color || '#CCCCCC';
@@ -158,6 +181,13 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
         console.log("BERT analysis complete with themes");
       } catch (error) {
         console.error("Error analyzing entry:", error);
+        // Provide fallback analysis with default values
+        const fallbackAnalysis = {
+          sentiment: { score: 0.5, label: "Neutral" },
+          distribution: { positive: 33, neutral: 34, negative: 33 },
+          keywords: []
+        };
+        setBertAnalysis(fallbackAnalysis);
       } finally {
         setIsAnalyzing(false);
       }
