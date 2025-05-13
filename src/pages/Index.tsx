@@ -28,9 +28,9 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-green overflow-hidden">
+    <div className="min-h-screen bg-green">
       <Header />
-      <div className="container mx-auto px-4 py-8 relative">
+      <div className="container mx-auto px-4 py-8 pb-16">
         <VectorDecorations type="home" className="absolute inset-0 pointer-events-none" />
         
         <div className="text-center max-w-3xl mx-auto mb-12 relative z-10">
@@ -130,7 +130,7 @@ export default function Index() {
         </div>
 
         {/* CTA Section */}
-        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-2xl mx-auto relative z-10 journal-card">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-2xl mx-auto relative z-10 journal-card mb-16">
           <h2 className="text-2xl font-bold mb-4 text-black">Ready to Begin Your Journey?</h2>
           <p className="text-gray-700 mb-6">
             Start recording your thoughts today and unlock powerful insights about yourself.
