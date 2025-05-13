@@ -1,5 +1,5 @@
 
-import { BertAnalysisResult } from '../types/bertAnalysis';
+import { BertAnalysisResult, KeywordAnalysis } from '../types/bertAnalysis';
 import { analyzeTextWithBert } from './bertIntegration';
 import { analyzeSentiment } from './bertSentimentAnalysis';
 import { generateEmbeddingPoints } from './embeddingGeneration';

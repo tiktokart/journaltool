@@ -60,12 +60,9 @@ const BertAnalysisManager: React.FC<BertAnalysisManagerProps> = ({
         
         // Create full BertAnalysisResult with required distribution data
         const fullAnalysis: BertAnalysisResult = {
-          sentiment: {
-            score: analysis.sentiment?.score || 0.5,
-            label: analysis.sentiment?.label || "Neutral"
-          },
-          keywords: analysis.keywords,
-          distribution: {
+          sentiment: analysis.sentiment || { score: 0.5, label: "Neutral" },
+          keywords: analysis.keywords || [],
+          distribution: analysis.distribution || {
             positive: 33,
             neutral: 34,
             negative: 33
@@ -73,7 +70,7 @@ const BertAnalysisManager: React.FC<BertAnalysisManagerProps> = ({
         };
         
         // Calculate distribution if missing or ensure it exists
-        if (analysis.keywords && analysis.keywords.length > 0) {
+        if (analysis.keywords && analysis.keywords.length > 0 && !analysis.distribution) {
           let positive = 0;
           let neutral = 0;
           let negative = 0;

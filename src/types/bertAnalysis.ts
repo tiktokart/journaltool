@@ -11,6 +11,15 @@ export interface TimelineEntry {
   index: number;
 }
 
+export interface KeywordAnalysis {
+  word: string;
+  sentiment: number;
+  tone?: string;
+  relatedConcepts?: string[];
+  frequency?: number;
+  color?: string; // Changed to only allow string type for color
+}
+
 export interface BertAnalysisResult {
   sentiment: {
     score: number;

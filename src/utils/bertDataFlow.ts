@@ -7,18 +7,21 @@ import { processBertAnalysis } from './bertAnalysisProcessor';
 // Import storage functions
 import {
   saveBertAnalysisToJournal,
-  getJournalEntries
+  getJournalEntries,
+  saveJournalEntry,
+  retrieveJournalEntries
 } from './journalStorage';
 
 // Import monthly analysis functions
 import {
   generateMonthlyAnalysis,
   saveMonthlyAnalysis,
-  getMonthlyAnalysis
+  getMonthlyAnalysis,
+  generateMonthlySummary
 } from './monthlyAnalysis';
 
 // Use 'export type' for type re-exports when isolatedModules is enabled
-export type { TimelineEntry, BertAnalysisResult, BertAnalysisConfig } from '../types/bertAnalysis';
+export type { TimelineEntry, BertAnalysisResult, BertAnalysisConfig, KeywordAnalysis } from '../types/bertAnalysis';
 
 // Export functions
 export {
@@ -27,7 +30,10 @@ export {
   analyzeSentiment,
   saveBertAnalysisToJournal,
   getJournalEntries,
+  saveJournalEntry,
+  retrieveJournalEntries,
   generateMonthlyAnalysis,
   saveMonthlyAnalysis,
-  getMonthlyAnalysis
+  getMonthlyAnalysis,
+  generateMonthlySummary
 };
