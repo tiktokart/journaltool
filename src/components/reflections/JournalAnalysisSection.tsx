@@ -24,7 +24,6 @@ import { KeyPhrases } from "@/components/KeyPhrases";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SentimentDistribution } from "@/components/SentimentDistribution";
-import { WellbeingResources } from "@/components/WellbeingResources";
 import { Point } from "@/types/embedding";
 
 interface JournalAnalysisSectionProps {
@@ -260,13 +259,7 @@ const JournalAnalysisSection = ({
                   />
                 </div>
                 
-                {/* Wellbeing Resources Section */}
-                <div className="my-6">
-                  <WellbeingResources
-                    embeddingPoints={embeddingPoints}
-                    sourceDescription="Based on your journal entries"
-                  />
-                </div>
+                {/* Removed WellbeingResources component from here */}
                 
                 {/* Mental Health Suggestions - Single instance only to avoid redundancy */}
                 <MentalHealthSuggestions 

@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { TextEmotionViewer } from "@/components/TextEmotionViewer";
-import { WellbeingResources } from "@/components/WellbeingResources";
 import AnalysisResults from "@/components/dashboard/AnalysisResults";
 import { Point } from "@/types/embedding";
 
