@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { X, BarChart, ArrowDownUp, Circle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Point, getSentimentLabel } from '@/types/embedding';
+import { Point } from '@/types/embedding';
 import { useState, useEffect } from 'react';
 
 interface WordComparisonProps {
@@ -199,10 +199,13 @@ const WordComparison = ({
   // Calculate circle sizes based on word counts
   const maxWordCount = Math.max(...Object.values(groupedWords).map(group => group.length));
   const getCircleSize = (count: number) => {
-    const minSize = 100;
-    const maxSize = 220;
-    const size = minSize + (count / maxWordCount) * (maxSize - minSize);
-    return size;
+    const minSize = 90; // Smaller minimum size
+    const maxSize = 180; // Smaller maximum size
+    const sizeRange = maxSize - minSize;
+    // Use a sqrt scale for better visual representation - prevents tiny circles
+    const scaleFactor = Math.sqrt(count / Math.max(1, maxWordCount));
+    const size = minSize + (scaleFactor * sizeRange);
+    return Math.max(minSize, size);
   };
   
   return (
@@ -240,22 +243,29 @@ const WordComparison = ({
           </div>
         ) : (
           <>
-            {/* Emotion Circles Visualization */}
-            <div className="flex flex-wrap justify-center items-center gap-3 mb-6">
+            {/* Emotion Circles Visualization - Now with improved sizing and layout */}
+            <div className="flex flex-wrap justify-center items-center gap-4 mb-6">
               {sortedEmotions.map(emotion => {
                 const count = groupedWords[emotion].length;
                 const size = getCircleSize(count);
+                // Calculate relative percentage for this emotion group
+                const percentage = Math.round((count / words.length) * 100);
+                
                 return (
                   <div 
                     key={`circle-${emotion}`}
-                    className={`rounded-full flex flex-col justify-center items-center border ${getEmotionColor(emotion)} shadow-md transition-all hover:scale-105`}
+                    className={`rounded-full flex flex-col justify-center items-center border ${getEmotionColor(emotion)} shadow-sm hover:shadow-md transition-all hover:scale-105 cursor-pointer`}
                     style={{ 
                       width: `${size}px`, 
                       height: `${size}px`,
                     }}
+                    onClick={() => {
+                      console.log(`Emotion group ${emotion} clicked with ${count} words`);
+                    }}
                   >
-                    <div className="font-semibold">{emotion}</div>
+                    <div className="font-semibold text-sm">{emotion}</div>
                     <div className="text-sm font-medium">{count} words</div>
+                    <div className="text-xs text-muted-foreground">({percentage}%)</div>
                   </div>
                 );
               })}
@@ -278,7 +288,11 @@ const WordComparison = ({
                       <Badge 
                         key={word.id} 
                         variant="secondary"
-                        className={`cursor-pointer transition-colors ${getBadgeColor(emotion)}`}
+                        className={`cursor-pointer transition-colors ${
+                          selectedWord?.id === word.id 
+                            ? 'ring-2 ring-offset-1 ring-primary' 
+                            : ''
+                        } ${getBadgeColor(emotion)}`}
                         onClick={() => handleWordClick(word)}
                       >
                         {word.word}
@@ -307,9 +321,9 @@ const WordComparison = ({
         
         {selectedWord && (
           <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
-            <p className="text-sm flex items-center">
-              <span className="font-medium">Selected:</span> 
-              <span className="ml-2 font-semibold">{selectedWord.word}</span>
+            <p className="text-sm flex items-center flex-wrap">
+              <span className="font-medium mr-2">Selected:</span> 
+              <span className="font-semibold">{selectedWord.word}</span>
               <Badge className="ml-2" variant="outline">
                 {selectedWord.emotionalTone || "Other"}
               </Badge>

@@ -121,7 +121,7 @@ export const SentimentDistribution = ({
               <Legend />
               <Tooltip 
                 formatter={(value: number, name: string) => [
-                  `${value} words (${getPercentage(value)}%)`,
+                  `${value}% (${Math.round(value * (totalWordCount || 100) / 100)} words)`,
                   name
                 ]}
                 contentStyle={{
@@ -137,18 +137,24 @@ export const SentimentDistribution = ({
         <div className="grid grid-cols-3 gap-4 mt-4">
           <div className="border rounded-md p-2 text-center bg-green-50">
             <div className="text-green-600 font-medium">Positive</div>
-            <div className="text-xl font-semibold">{data[0].value}</div>
-            <div className="text-xs text-muted-foreground">words ({getPercentage(data[0].value)}%)</div>
+            <div className="text-xl font-semibold">{validDistribution.positive}%</div>
+            <div className="text-xs text-muted-foreground">
+              ~{Math.round(validDistribution.positive * (totalWordCount || 100) / 100)} words
+            </div>
           </div>
           <div className="border rounded-md p-2 text-center bg-blue-50">
             <div className="text-blue-600 font-medium">Neutral</div>
-            <div className="text-xl font-semibold">{data[1].value}</div>
-            <div className="text-xs text-muted-foreground">words ({getPercentage(data[1].value)}%)</div>
+            <div className="text-xl font-semibold">{validDistribution.neutral}%</div>
+            <div className="text-xs text-muted-foreground">
+              ~{Math.round(validDistribution.neutral * (totalWordCount || 100) / 100)} words
+            </div>
           </div>
           <div className="border rounded-md p-2 text-center bg-red-50">
             <div className="text-red-600 font-medium">Negative</div>
-            <div className="text-xl font-semibold">{data[2].value}</div>
-            <div className="text-xs text-muted-foreground">words ({getPercentage(data[2].value)}%)</div>
+            <div className="text-xl font-semibold">{validDistribution.negative}%</div>
+            <div className="text-xs text-muted-foreground">
+              ~{Math.round(validDistribution.negative * (totalWordCount || 100) / 100)} words
+            </div>
           </div>
         </div>
       </CardContent>

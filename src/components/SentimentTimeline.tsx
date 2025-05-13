@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Info, Calendar, ArrowRight } from "lucide-react";
@@ -27,6 +26,7 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
   const [averageSentiment, setAverageSentiment] = useState(0.5);
   const [isDataValid, setIsDataValid] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState<TimelineEntry | null>(null);
+  const [sensitivityFactor, setSensitivityFactor] = useState(2.5); // Higher number = more sensitivity
 
   useEffect(() => {
     try {
@@ -66,20 +66,35 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
         };
       });
 
-      setNormalizedData(processed);
+      // Increase sensitivity to smaller changes by amplifying the differences from neutral
+      const enhancedData = processed.map(item => {
+        const neutralDeviation = item.score - 0.5; // How far from neutral
+        // Amplify the deviation but keep within bounds
+        const enhancedScore = 0.5 + (neutralDeviation * sensitivityFactor);
+        const boundedScore = Math.max(0.1, Math.min(0.9, enhancedScore));
+        
+        return {
+          ...item,
+          score: boundedScore,
+          originalScore: item.score // Keep original for reference
+        };
+      });
+      
+      setNormalizedData(enhancedData);
       
       // Calculate average sentiment
-      const avg = processed.length > 0 
-        ? processed.reduce((acc, item) => acc + item.score, 0) / processed.length
+      const avg = enhancedData.length > 0 
+        ? enhancedData.reduce((acc, item) => acc + item.score, 0) / enhancedData.length
         : 0.5;
       setAverageSentiment(avg);
       
       setIsDataValid(true);
+      console.log("Enhanced timeline data:", enhancedData);
     } catch (error) {
       console.error("Error processing timeline data:", error);
       setIsDataValid(false);
     }
-  }, [data]);
+  }, [data, sensitivityFactor]);
   
   // Get color based on score
   const getColor = (score: number) => {
@@ -107,33 +122,43 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
       firstHalfAvg, 
       secondHalfAvg, 
       difference,
-      trend: difference > 0.1 ? "improving" : difference < -0.1 ? "declining" : "stable"
+      trend: difference > 0.08 ? "improving" : difference < -0.08 ? "declining" : "stable" // More sensitive threshold
     });
     
-    if (difference > 0.1) return "improving";
-    if (difference < -0.1) return "declining";
+    // More sensitive threshold for trend detection
+    if (difference > 0.08) return "improving";
+    if (difference < -0.08) return "declining";
     return "stable";
   };
 
-  // Find significant sentiment changes for displaying text snippets
+  // Determine significant points - now with increased sensitivity
   const findSignificantPoints = () => {
     if (normalizedData.length <= 2) return normalizedData;
+    
+    // More points will be considered significant with the lower threshold
+    const significanceThreshold = 0.05; // Lowered from 0.1
     
     return normalizedData.filter((point, index) => {
       if (index === 0 || index === normalizedData.length - 1) return true;
       
       const prevPoint = normalizedData[index - 1];
-      const nextPoint = normalizedData[index + 1];
+      const nextPoint = index < normalizedData.length - 1 ? normalizedData[index + 1] : null;
       
       const diffPrev = Math.abs(point.score - prevPoint.score);
-      const diffNext = Math.abs(point.score - nextPoint.score);
+      const diffNext = nextPoint ? Math.abs(point.score - nextPoint.score) : 0;
       
-      return diffPrev > 0.1 || diffNext > 0.1;
+      // Also consider points that are local maxima or minima
+      const isLocalExtremum = 
+        (prevPoint && nextPoint && 
+         ((point.score > prevPoint.score && point.score > nextPoint.score) || // Local max
+          (point.score < prevPoint.score && point.score < nextPoint.score))); // Local min
+      
+      return diffPrev > significanceThreshold || diffNext > significanceThreshold || isLocalExtremum;
     });
   };
 
   const significantPoints = findSignificantPoints();
-  console.log("Significant timeline points:", significantPoints);
+  console.log("Significant timeline points:", significantPoints.length, "out of", normalizedData.length);
 
   return (
     <Card className="border-0 shadow-md w-full bg-white">
@@ -260,11 +285,12 @@ export const SentimentTimeline = ({ data, sourceDescription }: SentimentTimeline
                       const { cx, cy, payload } = props;
                       if (!payload) return null;
                       
-                      // Check if this is a significant point
+                      // Show more dots by using the significant points array
                       const isSignificant = significantPoints.some(p => p.page === payload.page);
                       
+                      // Always show first, last point, and now more significant points
                       if (!isSignificant && payload.page !== 1 && payload.page !== normalizedData.length) {
-                        return null; // Don't show dots for insignificant points
+                        return null; // Skip dots for non-significant points
                       }
                       
                       const dotColor = getColor(payload.score);

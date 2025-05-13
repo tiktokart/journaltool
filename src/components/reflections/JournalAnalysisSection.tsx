@@ -49,6 +49,12 @@ const JournalAnalysisSection = ({
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
   const [formattedTimelineData, setFormattedTimelineData] = useState<any[]>([]);
   const [processedTimelineData, setProcessedTimelineData] = useState<any[]>([]);
+  const [wordCounts, setWordCounts] = useState({
+    positive: 0,
+    neutral: 0,
+    negative: 0,
+    total: 0
+  });
 
   // Transform timeline data for SentimentTimeline and JournalSentimentChart components
   useEffect(() => {
@@ -58,7 +64,8 @@ const JournalAnalysisSection = ({
         page: index + 1,
         score: item.sentiment,
         time: item.date,
-        event: item.date
+        event: item.date,
+        textSnippet: journalEntries[index]?.text?.substring(0, 40) || item.date
       }));
       setFormattedTimelineData(formattedForTimeline);
       
@@ -87,7 +94,41 @@ const JournalAnalysisSection = ({
       setIsAnalyzing(true);
       try {
         const combinedText = journalEntries.map(entry => entry.text).join(" ");
+        
+        // Count words for sentiment distribution
+        const words = combinedText.split(/\s+/).filter(word => word.trim().length > 0);
+        setWordCounts(prevCounts => ({...prevCounts, total: words.length}));
+        
+        // Get BERT analysis
         const analysis = await analyzeTextWithBert(combinedText);
+        
+        // Clean up any Theme suffix from emotion labels
+        if (analysis && analysis.keywords) {
+          analysis.keywords = analysis.keywords.map((kw: any) => ({
+            ...kw,
+            tone: kw.tone?.replace(/\s*Theme\s*$/i, '') || kw.tone
+          }));
+        }
+        
+        if (analysis && analysis.embeddingPoints) {
+          analysis.embeddingPoints = analysis.embeddingPoints.map((point: any) => ({
+            ...point,
+            emotionalTone: point.emotionalTone?.replace(/\s*Theme\s*$/i, '') || point.emotionalTone
+          }));
+        }
+        
+        // Count positive/negative/neutral words
+        const positiveWords = analysis?.keywords?.filter((k: any) => k.sentiment > 0.6) || [];
+        const negativeWords = analysis?.keywords?.filter((k: any) => k.sentiment < 0.4) || [];
+        const neutralWords = analysis?.keywords?.filter((k: any) => k.sentiment >= 0.4 && k.sentiment <= 0.6) || [];
+        
+        setWordCounts({
+          positive: positiveWords.length,
+          neutral: neutralWords.length,
+          negative: negativeWords.length,
+          total: words.length
+        });
+        
         setBertAnalysis(analysis);
       } catch (error) {
         console.error("Error running BERT analysis on journal entries:", error);
@@ -101,6 +142,30 @@ const JournalAnalysisSection = ({
 
   const combinedJournalText = journalEntries.map(entry => entry.text).join(" ");
   const totalWordCount = combinedJournalText ? combinedJournalText.split(/\s+/).filter(word => word.trim().length > 0).length : 0;
+
+  // Calculate percentages for distribution
+  const getDistributionPercentages = () => {
+    if (!bertAnalysis) {
+      // Calculate based on average sentiment when BERT analysis is not available
+      return {
+        positive: Math.round(averageSentiment * 100),
+        neutral: Math.round((1 - Math.abs(averageSentiment - 0.5) * 2) * 50),
+        negative: Math.round((1 - averageSentiment) * 100)
+      };
+    }
+    
+    const totalKeywords = wordCounts.positive + wordCounts.neutral + wordCounts.negative;
+    
+    if (totalKeywords === 0) {
+      return { positive: 33, neutral: 34, negative: 33 };
+    }
+    
+    return {
+      positive: Math.round((wordCounts.positive / totalKeywords) * 100),
+      neutral: Math.round((wordCounts.neutral / totalKeywords) * 100),
+      negative: Math.round((wordCounts.negative / totalKeywords) * 100)
+    };
+  };
 
   return (
     <div className="mt-6">
@@ -155,21 +220,15 @@ const JournalAnalysisSection = ({
                 {/* Add Sentiment Distribution */}
                 <div className="my-6">
                   <SentimentDistribution
-                    distribution={{
-                      positive: bertAnalysis?.positiveWordCount || Math.round(averageSentiment * 100),
-                      neutral: bertAnalysis?.neutralWordCount || 50,
-                      negative: bertAnalysis?.negativeWordCount || Math.round((1 - averageSentiment) * 100)
-                    }}
+                    distribution={getDistributionPercentages()}
+                    totalWordCount={totalWordCount}
                   />
                 </div>
                 
                 {/* Timeline Visualization with actual text snippets */}
                 <div className="my-6" id="timeline">
                   <SentimentTimeline
-                    data={formattedTimelineData.map((item, index) => ({
-                      ...item,
-                      textSnippet: journalEntries[index]?.text.substring(0, 40)
-                    }))}
+                    data={formattedTimelineData}
                     sourceDescription="Emotional flow over time"
                   />
                 </div>

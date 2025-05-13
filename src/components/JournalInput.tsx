@@ -84,6 +84,8 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
     }
   };
 
+  const placeholderText = "Type your journal entry here... Express your thoughts and feelings about your day, experiences, or emotions. Include both actions (what you did) and subjects (people, places, things) for better emotional analysis.";
+
   return (
     <Card className="border border-border shadow-md mb-6 bg-white">
       <CardHeader>
@@ -95,7 +97,7 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
       <CardContent>
         <div className="space-y-4">
           <Textarea 
-            placeholder="Type your journal entry here... Express your thoughts and feelings freely."
+            placeholder={placeholderText}
             className="min-h-[150px] resize-y text-black bg-white"
             value={journalText}
             onChange={(e) => setJournalText(e.target.value)}

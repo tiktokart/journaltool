@@ -39,11 +39,18 @@ const BertAnalysisPage = ({
     if (sentimentData?.embeddingPoints && sentimentData.embeddingPoints.length > 0) {
       console.log("Setting up unique words from embedding points", sentimentData.embeddingPoints.length);
       
-      // Clean up emotion labels by removing "Theme" suffix
-      const cleanedPoints = sentimentData.embeddingPoints.map((point: Point) => ({
-        ...point,
-        emotionalTone: point.emotionalTone?.replace(/\sTheme$/, '') || point.emotionalTone
-      }));
+      // Clean up emotion labels by removing "Theme" suffix - more aggressive cleaning
+      const cleanedPoints = sentimentData.embeddingPoints.map((point: Point) => {
+        // Remove any "Theme" suffix from emotional tones
+        let cleanedTone = point.emotionalTone;
+        if (cleanedTone && typeof cleanedTone === 'string') {
+          cleanedTone = cleanedTone.replace(/\s*Theme\s*$/i, '');
+        }
+        return {
+          ...point,
+          emotionalTone: cleanedTone || point.emotionalTone
+        };
+      });
       
       const words = cleanedPoints
         .filter((point: Point) => point.word && point.emotionalTone)
@@ -52,6 +59,8 @@ const BertAnalysisPage = ({
       // Fixed TS error by ensuring we have array of strings
       setUniqueWords([...new Set(words)] as string[]);
       setFilteredPoints(cleanedPoints);
+      
+      console.log("Cleaned points for analysis:", cleanedPoints.slice(0, 5));
     }
   }, [sentimentData?.embeddingPoints]);
   
@@ -98,14 +107,14 @@ const BertAnalysisPage = ({
       if (analysis.bertAnalysis?.keywords) {
         analysis.bertAnalysis.keywords = analysis.bertAnalysis.keywords.map((kw: any) => ({
           ...kw,
-          tone: kw.tone?.replace(/\sTheme$/, '') || kw.tone
+          tone: kw.tone?.replace(/\s*Theme\s*$/i, '') || kw.tone
         }));
       }
       
       if (analysis.embeddingPoints) {
         analysis.embeddingPoints = analysis.embeddingPoints.map((point: Point) => ({
           ...point,
-          emotionalTone: point.emotionalTone?.replace(/\sTheme$/, '') || point.emotionalTone
+          emotionalTone: point.emotionalTone?.replace(/\s*Theme\s*$/i, '') || point.emotionalTone
         }));
       }
       
@@ -113,7 +122,8 @@ const BertAnalysisPage = ({
       setSentimentData({
         ...analysis,
         pdfText: text,
-        dataSource: "uploaded" // Mark data as coming from upload
+        dataSource: "uploaded", // Mark data as coming from upload
+        totalWordCount: text.split(/\s+/).filter(word => word.trim().length > 0).length
       });
       
       toast.success("Analysis complete!");

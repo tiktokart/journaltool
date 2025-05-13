@@ -1,3 +1,4 @@
+
 interface TimelineEvent {
   time: string;
   event: string;
@@ -38,12 +39,13 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
     // Generate timeline events from text units
     const timeline: TimelineEvent[] = [];
     
-    // Time expressions to look for - focused list for timeline markers
+    // Time expressions to look for - expanded list for better timeline markers
     const timeExpressions = [
-      'first', 'initially', 'then', 'after', 'before', 'during', 'finally', 
-      'later', 'next', 'previously', 'yesterday', 'today', 
-      'tomorrow', 'morning', 'afternoon', 'evening', 'night',
-      'suddenly', 'gradually', 'immediately', 'eventually'
+      'first', 'initially', 'begin', 'start', 'then', 'after', 'before', 'during', 'finally', 
+      'later', 'next', 'previously', 'yesterday', 'today', 'tomorrow', 'morning', 'afternoon', 
+      'evening', 'night', 'suddenly', 'gradually', 'immediately', 'eventually', 'soon',
+      'once', 'while', 'meanwhile', 'thereafter', 'simultaneously', 'subsequently', 'formerly',
+      'recently', 'lately', 'currently', 'presently', 'now', 'always', 'never', 'sometimes'
     ];
     
     // Color mapping for emotional tones - more distinctive colors
@@ -75,15 +77,30 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
       return "Point";
     };
     
-    // Calculate sentiment for text unit (improved version)
+    // Enhanced sentiment calculation to detect more subtle changes
     const calculateSentimentForText = (text: string): number => {
       if (!text) return 0.5;
       
-      // These are simplistic just for the demonstration
-      const positiveWords = ['good', 'great', 'happy', 'excellent', 'love', 'enjoy', 'wonderful', 'joy',
-                           'pleased', 'delighted', 'thankful', 'excited', 'hopeful', 'optimistic'];
-      const negativeWords = ['bad', 'sad', 'terrible', 'hate', 'awful', 'horrible', 'poor', 'worry',
-                           'annoyed', 'angry', 'upset', 'disappointed', 'frustrated', 'anxious', 'afraid'];
+      // Enhanced lists with more emotional words
+      const positiveWords = [
+        'good', 'great', 'happy', 'excellent', 'love', 'enjoy', 'wonderful', 'joy',
+        'pleased', 'delighted', 'thankful', 'excited', 'hopeful', 'optimistic',
+        'amazing', 'awesome', 'fantastic', 'superb', 'terrific', 'brilliant',
+        'glad', 'cheerful', 'content', 'satisfied', 'proud', 'enthusiastic',
+        'grateful', 'calm', 'peaceful', 'relaxed', 'comfortable', 'safe',
+        'honored', 'privileged', 'blessed', 'fortunate', 'lucky', 'inspired'
+      ];
+      
+      const negativeWords = [
+        'bad', 'sad', 'terrible', 'hate', 'awful', 'horrible', 'poor', 'worry',
+        'annoyed', 'angry', 'upset', 'disappointed', 'frustrated', 'anxious', 'afraid',
+        'stressed', 'miserable', 'depressed', 'gloomy', 'painful', 'hurt', 'unhappy',
+        'tragedy', 'tragic', 'failure', 'fail', 'lose', 'lost', 'worst', 'trouble',
+        'difficult', 'trauma', 'suffering', 'suffer', 'pain', 'agony', 'distress',
+        'grief', 'sorrow', 'despair', 'hopeless', 'helpless', 'lonely', 'abandoned',
+        'rejected', 'worthless', 'useless', 'pathetic', 'embarrassed', 'ashamed',
+        'guilty', 'regretful', 'scared', 'terrified', 'horrified', 'disgusted'
+      ];
                            
       const words = text.toLowerCase().split(/\s+/);
       let positiveCount = 0;
@@ -153,12 +170,18 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
           }
         }
         
-        // Only add significant points to timeline to avoid too many points
+        // Calculate sentiment for this text unit
         const sentiment = calculateSentimentForText(unit);
-        const sentimentChange = prevSentiment !== null ? Math.abs(sentiment - prevSentiment) : 0;
-        const isSignificantChange = sentimentChange > 0.15;
         
-        if (isSignificantChange || index === 0 || index === textUnits.length - 1 || index % Math.max(1, Math.floor(textUnits.length / 10)) === 0) {
+        // Detect significant changes in sentiment - lower threshold for more points
+        const sentimentChange = prevSentiment !== null ? Math.abs(sentiment - prevSentiment) : 0;
+        const isSignificantChange = sentimentChange > 0.08; // More sensitive
+        
+        // Add more points to the timeline - lower threshold to show more data points
+        const addThisPoint = isSignificantChange || index === 0 || index === textUnits.length - 1 || 
+          index % Math.max(1, Math.floor(textUnits.length / 15)) === 0; // More frequent sampling
+          
+        if (addThisPoint) {
           // Extract a suitable event description (first 50 chars or so)
           const event = unit.length > 50 ? unit.substring(0, 50) + '...' : unit;
           
