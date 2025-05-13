@@ -8,6 +8,7 @@ import { Point } from "@/types/embedding";
 import { toast } from "sonner";
 import { processBertAnalysis, saveBertAnalysisToJournal } from "@/utils/bertDataFlow";
 import { TextEmotionViewer } from "@/components/TextEmotionViewer";
+import MentalHealthSuggestions from "../suggestions/MentalHealthSuggestions";
 
 interface BertAnalysisPageProps {
   onJournalEntryAdded?: () => void;
@@ -223,6 +224,13 @@ const BertAnalysisPage = ({
               onMonthlyReflectionAdded={onMonthlyReflectionAdded}
               connectedPoints={connectedPoints}
               setConnectedPoints={setConnectedPoints}
+            />
+          </div>
+          
+          <div className="mt-8">
+            <MentalHealthSuggestions 
+              journalEntries={[{text: sentimentData.pdfText || pdfText}]}
+              bertAnalysis={sentimentData.bertAnalysis}
             />
           </div>
           

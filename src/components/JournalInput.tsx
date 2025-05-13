@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Mic, FileText, Calendar } from "lucide-react";
+import MentalHealthSuggestions from "./suggestions/MentalHealthSuggestions";
 
 interface JournalInputProps {
   onJournalEntrySubmit: (text: string) => void;
@@ -15,6 +16,8 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
   const [journalText, setJournalText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [analyzedEntry, setAnalyzedEntry] = useState<string | null>(null);
+  const [bertAnalysis, setBertAnalysis] = useState<any>(null);
 
   const handleSubmit = () => {
     if (journalText.trim().length < 10) {
@@ -22,6 +25,10 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
       return;
     }
 
+    // Save the current text for suggestions display
+    setAnalyzedEntry(journalText);
+    
+    // Pass to parent for processing
     onJournalEntrySubmit(journalText);
     toast.success("Journal entry submitted for analysis");
   };
@@ -78,6 +85,9 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
       return;
     }
 
+    // Save the current text for suggestions display
+    setAnalyzedEntry(journalText);
+    
     if (onAddToMonthlyReflection) {
       onAddToMonthlyReflection(journalText);
       toast.success("Added to your monthly reflections section");
@@ -87,72 +97,82 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
   const placeholderText = "Type your journal entry here... Express your thoughts and feelings about your day, experiences, or emotions. Include both actions (what you did) and subjects (people, places, things) for better emotional analysis.";
 
   return (
-    <Card className="border border-border shadow-md mb-6 bg-white">
-      <CardHeader>
-        <CardTitle className="flex items-center text-xl text-black">
-          <FileText className="h-5 w-5 mr-2 text-black" />
-          Journal Entry
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <Textarea 
-            placeholder={placeholderText}
-            className="min-h-[150px] resize-y text-black bg-white"
-            value={journalText}
-            onChange={(e) => setJournalText(e.target.value)}
-          />
-          
-          <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={handleSubmit}
-              disabled={journalText.trim().length < 10}
-              className="text-black bg-orange text-white"
-            >
-              Submit for Analysis
-            </Button>
+    <div className="space-y-6">
+      <Card className="border border-border shadow-md mb-6 bg-white">
+        <CardHeader>
+          <CardTitle className="flex items-center text-xl text-black">
+            <FileText className="h-5 w-5 mr-2 text-black" />
+            Journal Entry
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Textarea 
+              placeholder={placeholderText}
+              className="min-h-[150px] resize-y text-black bg-white"
+              value={journalText}
+              onChange={(e) => setJournalText(e.target.value)}
+            />
             
-            {!isRecording ? (
+            <div className="flex flex-wrap gap-2">
               <Button
-                variant="outline"
-                onClick={startVoiceRecognition}
-                className="flex items-center gap-2 text-black border-orange"
+                onClick={handleSubmit}
+                disabled={journalText.trim().length < 10}
+                className="text-black bg-orange text-white"
               >
-                <Mic className="h-4 w-4" />
-                Record Voice
+                Submit for Analysis
               </Button>
-            ) : (
-              <Button
-                variant="destructive"
-                onClick={stopVoiceRecognition}
-                className="flex items-center gap-2 animate-pulse text-black"
-              >
-                <Mic className="h-4 w-4" />
-                Stop Recording
-              </Button>
+              
+              {!isRecording ? (
+                <Button
+                  variant="outline"
+                  onClick={startVoiceRecognition}
+                  className="flex items-center gap-2 text-black border-orange"
+                >
+                  <Mic className="h-4 w-4" />
+                  Record Voice
+                </Button>
+              ) : (
+                <Button
+                  variant="destructive"
+                  onClick={stopVoiceRecognition}
+                  className="flex items-center gap-2 animate-pulse text-black"
+                >
+                  <Mic className="h-4 w-4" />
+                  Stop Recording
+                </Button>
+              )}
+            </div>
+            
+            {onAddToMonthlyReflection && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-black">
+                    Save this entry to the Monthly Reflections section in the dashboard.
+                  </p>
+                  <Button
+                    variant="secondary"
+                    onClick={handleAddToMonthlyReflection}
+                    disabled={journalText.trim().length < 10}
+                    className="flex items-center gap-1 text-black"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Add to Monthly Reflections Section
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
-          
-          {onAddToMonthlyReflection && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex flex-col gap-2">
-                <p className="text-sm text-black">
-                  Save this entry to the Monthly Reflections section in the dashboard.
-                </p>
-                <Button
-                  variant="secondary"
-                  onClick={handleAddToMonthlyReflection}
-                  disabled={journalText.trim().length < 10}
-                  className="flex items-center gap-1 text-black"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Add to Monthly Reflections Section
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Only display suggestions if we have analyzed text */}
+      {analyzedEntry && (
+        <MentalHealthSuggestions 
+          journalEntries={[{ text: analyzedEntry }]} 
+          bertAnalysis={bertAnalysis}
+        />
+      )}
+    </div>
   );
 }
