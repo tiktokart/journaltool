@@ -4,6 +4,7 @@ import { ChevronUp, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../../ui/collapsible";
 import { SentimentTimeline } from "../../SentimentTimeline";
 import JournalSentimentChart from "../../reflections/JournalSentimentChart";
+import { TimelineEntry } from "../../../types/bertAnalysis";
 
 interface TimelineSectionProps {
   isOpen: boolean;
@@ -21,7 +22,7 @@ const TimelineSection: React.FC<TimelineSectionProps> = ({
   bertAnalysis
 }) => {
   // Function to extract timeline points from the entry text
-  const extractTimelinePoints = () => {
+  const extractTimelinePoints = (): TimelineEntry[] => {
     if (!selectedEntry || !bertAnalysis) {
       return [];
     }
@@ -59,7 +60,9 @@ const TimelineSection: React.FC<TimelineSectionProps> = ({
       sentiment: s.sentiment,
       score: s.sentiment,
       event: s.text.length > 70 ? s.text.substring(0, 70) + '...' : s.text,
-      textSnippet: s.text
+      textSnippet: s.text,
+      page: i + 1,
+      index: i
     }));
   };
 

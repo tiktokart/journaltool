@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { analyzeTextWithBert } from '@/utils/bertIntegration';
+import { BertAnalysisResult } from '@/types/bertAnalysis';
 
 interface BertAnalysisManagerProps {
   selectedEntry: {

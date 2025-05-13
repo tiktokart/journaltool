@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { TimelineEntry } from '../../types/bertAnalysis';
 
 interface TimelineExtractorProps {
   selectedEntry: {
@@ -9,12 +10,12 @@ interface TimelineExtractorProps {
     [key: string]: any;
   } | null;
   bertAnalysis: any;
-  onExtract: (points: any[]) => void;
+  onExtract: (points: TimelineEntry[]) => void;
 }
 
 const TimelineExtractor: React.FC<TimelineExtractorProps> = ({ selectedEntry, bertAnalysis, onExtract }) => {
   
-  const extractTimelinePoints = () => {
+  const extractTimelinePoints = (): TimelineEntry[] => {
     if (!selectedEntry || !bertAnalysis) {
       return [];
     }
@@ -52,7 +53,9 @@ const TimelineExtractor: React.FC<TimelineExtractorProps> = ({ selectedEntry, be
       sentiment: s.sentiment,
       score: s.sentiment,
       event: s.text.length > 70 ? s.text.substring(0, 70) + '...' : s.text,
-      textSnippet: s.text
+      textSnippet: s.text,
+      page: i + 1,
+      index: i
     }));
   };
 
