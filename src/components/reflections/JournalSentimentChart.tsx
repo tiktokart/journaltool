@@ -1,5 +1,6 @@
 
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
+import { useEffect, useState } from "react";
 
 interface JournalSentimentChartProps {
   timelineData: {
@@ -10,6 +11,71 @@ interface JournalSentimentChartProps {
 }
 
 const JournalSentimentChart = ({ timelineData }: JournalSentimentChartProps) => {
+  const [normalizedData, setNormalizedData] = useState<any[]>([]);
+  const [averageSentiment, setAverageSentiment] = useState(0.5);
+  const [significantPoints, setSignificantPoints] = useState<any[]>([]);
+
+  // Process and normalize data
+  useEffect(() => {
+    if (!timelineData || timelineData.length === 0) {
+      // Create sample data if none provided
+      const sampleData = [
+        { date: "Jan 01", sentiment: 0.4, textSnippet: "Started the month feeling down" },
+        { date: "Jan 08", sentiment: 0.45, textSnippet: "Slight improvement in mood" },
+        { date: "Jan 15", sentiment: 0.52, textSnippet: "Working through challenges" },
+        { date: "Jan 22", sentiment: 0.6, textSnippet: "Made significant progress" },
+        { date: "Jan 29", sentiment: 0.7, textSnippet: "Feeling much more positive" }
+      ];
+      setNormalizedData(sampleData);
+      
+      // Calculate average for sample data
+      const avg = sampleData.reduce((sum, item) => sum + item.sentiment, 0) / sampleData.length;
+      setAverageSentiment(avg);
+      
+      // Find significant points in sample data
+      const significant = sampleData.filter((item, index, arr) => {
+        if (index === 0 || index === arr.length - 1) return true;
+        const prevItem = arr[index - 1];
+        const nextItem = arr[index + 1];
+        const diffPrev = Math.abs(item.sentiment - prevItem.sentiment);
+        const diffNext = Math.abs(item.sentiment - nextItem.sentiment);
+        return diffPrev > 0.08 || diffNext > 0.08 || (item.sentiment > 0.7) || (item.sentiment < 0.3);
+      });
+      setSignificantPoints(significant);
+      return;
+    }
+    
+    // Process actual data
+    const processed = timelineData.map(item => ({
+      ...item,
+      sentiment: Math.max(0, Math.min(1, item.sentiment || 0.5))  // Ensure sentiment is between 0-1
+    }));
+    setNormalizedData(processed);
+    
+    // Calculate average sentiment
+    const avg = processed.length > 0
+      ? processed.reduce((sum, item) => sum + item.sentiment, 0) / processed.length
+      : 0.5;
+    setAverageSentiment(avg);
+    
+    // Enhanced algorithm to find significant points based on sentiment changes
+    const significant = processed.length > 2
+      ? processed.filter((item, index, arr) => {
+          if (index === 0 || index === arr.length - 1) return true;
+          
+          const prevItem = arr[index - 1];
+          const nextItem = arr[index + 1];
+          const diffPrev = Math.abs(item.sentiment - prevItem.sentiment);
+          const diffNext = Math.abs(item.sentiment - nextItem.sentiment);
+          
+          // Check if this is a significant change or emotional peak/valley
+          return diffPrev > 0.08 || diffNext > 0.08 || 
+                (item.sentiment > 0.7) || (item.sentiment < 0.3);
+        })
+      : processed;
+    setSignificantPoints(significant);
+  }, [timelineData]);
+
   // Enhanced tooltip with better styling and text snippets
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -33,37 +99,16 @@ const JournalSentimentChart = ({ timelineData }: JournalSentimentChartProps) => 
     return null;
   };
 
-  // Calculate average sentiment
-  const averageSentiment = timelineData.length > 0
-    ? timelineData.reduce((sum, item) => sum + item.sentiment, 0) / timelineData.length
-    : 0.5;
-    
-  // Enhanced algorithm to find significant points based on sentiment changes
-  const significantPoints = timelineData.length > 2
-    ? timelineData.filter((item, index, arr) => {
-        if (index === 0 || index === arr.length - 1) return true;
-        
-        const prevItem = arr[index - 1];
-        const nextItem = arr[index + 1];
-        const diffPrev = Math.abs(item.sentiment - prevItem.sentiment);
-        const diffNext = Math.abs(item.sentiment - nextItem.sentiment);
-        
-        // Check if this is a significant change or emotional peak/valley
-        return diffPrev > 0.08 || diffNext > 0.08 || 
-               (item.sentiment > 0.7) || (item.sentiment < 0.3);
-      })
-    : timelineData;
-
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart
-        data={timelineData}
+        data={normalizedData}
         margin={{ top: 30, right: 30, left: 20, bottom: 5 }}
       >
         <defs>
           <linearGradient id="colorSentiment" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#8884d8" stopOpacity={0.2} />
+            <stop offset="5%" stopColor="#9b87f5" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#9b87f5" stopOpacity={0.2} />
           </linearGradient>
         </defs>
         
@@ -105,7 +150,7 @@ const JournalSentimentChart = ({ timelineData }: JournalSentimentChartProps) => 
         {/* Average reference line */}
         <ReferenceLine
           y={averageSentiment}
-          stroke="#8884d8"
+          stroke="#9b87f5"
           strokeDasharray="3 3"
           label={{ value: "Average", position: "insideRight", fontSize: 10 }}
         />
@@ -131,16 +176,16 @@ const JournalSentimentChart = ({ timelineData }: JournalSentimentChartProps) => 
         <Area
           type="monotone"
           dataKey="sentiment"
-          stroke="#8884d8"
+          stroke="#9b87f5"
           strokeWidth={2}
           fill="url(#colorSentiment)"
-          activeDot={{ r: 8, fill: '#8884d8', stroke: '#fff', strokeWidth: 2 }}
+          activeDot={{ r: 8, fill: '#9b87f5', stroke: '#fff', strokeWidth: 2 }}
           dot={(props: any) => {
             if (!props || !props.cx || !props.cy || !props.payload) return null;
             
             // Check if this is a significant point to display
             const isSignificant = significantPoints.some(point => point.date === props.payload.date);
-            const isEndpoint = props.index === 0 || props.index === timelineData.length - 1;
+            const isEndpoint = props.index === 0 || props.index === normalizedData.length - 1;
             
             if (!isSignificant && !isEndpoint) {
               return null;

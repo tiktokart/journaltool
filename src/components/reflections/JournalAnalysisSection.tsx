@@ -52,6 +52,7 @@ const JournalAnalysisSection = ({
   const [formattedTimelineData, setFormattedTimelineData] = useState<any[]>([]);
   const [processedTimelineData, setProcessedTimelineData] = useState<any[]>([]);
   const [embeddingPoints, setEmbeddingPoints] = useState<Point[]>([]);
+  const [keyPhrases, setKeyPhrases] = useState<any[]>([]);
   const [wordCounts, setWordCounts] = useState({
     positive: 0,
     neutral: 0,
@@ -109,20 +110,32 @@ const JournalAnalysisSection = ({
         if (analysis && analysis.keywords) {
           analysis.keywords = analysis.keywords.map((kw: any) => ({
             ...kw,
-            tone: kw.tone?.replace(/\s*Theme\s*$/i, '') || kw.tone
+            tone: kw.tone?.replace(/\s*Theme\s*$/i, '') || kw.tone,
+            word: kw.text || kw.word,
+            phrase: kw.text || kw.word,
+            score: kw.sentiment || 0.5,
+            count: 1
           }));
         }
         
         // Create embedding points based on keywords for wellbeing resources
         if (analysis && analysis.keywords) {
           const points: Point[] = analysis.keywords.map((keyword: any, index: number) => ({
-            id: `journal-keyword-${index}`, // Add the required ID property
-            word: keyword.text,
+            id: `journal-keyword-${index}`,
+            word: keyword.text || keyword.word || "",
             emotionalTone: keyword.tone || "Neutral",
             sentiment: keyword.sentiment || 0.5,
             color: keyword.color
           }));
           setEmbeddingPoints(points);
+          
+          // Set key phrases data
+          const keyphrases = analysis.keywords.map((keyword: any) => ({
+            phrase: keyword.text || keyword.word || "",
+            score: keyword.sentiment || 0.5,
+            count: 1
+          }));
+          setKeyPhrases(keyphrases);
         }
         
         // Count positive/negative/neutral words
@@ -205,7 +218,6 @@ const JournalAnalysisSection = ({
               <>
                 {/* Add scroll helpers for accordion sections */}
                 <ScrollToSection isOpen={activeAccordion === 'text-analysis'} elementId="text-analysis-section" />
-                <ScrollToSection isOpen={activeAccordion === 'emotional-analysis'} elementId="emotional-analysis" />
                 <ScrollToSection isOpen={activeAccordion === 'timeline'} elementId="timeline" />
                 <ScrollToSection isOpen={activeAccordion === 'keywords'} elementId="keywords" />
                 
@@ -244,7 +256,7 @@ const JournalAnalysisSection = ({
                 {/* Add Keywords section using KeyPhrases component */}
                 <div className="mt-6" id="keywords">
                   <KeyPhrases 
-                    data={bertAnalysis?.keywords || []} 
+                    data={keyPhrases.length > 0 ? keyPhrases : (bertAnalysis?.keywords || [])} 
                   />
                 </div>
                 
@@ -256,34 +268,7 @@ const JournalAnalysisSection = ({
                   />
                 </div>
                 
-                {/* Emotional Analysis Accordion */}
-                <Accordion 
-                  type="single" 
-                  collapsible 
-                  className="mt-6"
-                  onValueChange={(value) => {
-                    setActiveAccordion(value);
-                  }}
-                >
-                  <AccordionItem value="emotional-analysis" id="emotional-analysis">
-                    <AccordionTrigger className="text-purple-700 hover:text-purple-800">
-                      Emotional Analysis
-                    </AccordionTrigger>
-                    <AccordionContent className="p-2">
-                      <div className="space-y-4">
-                        <div className="border rounded-md p-3 bg-purple-50">
-                          <h4 className="font-medium mb-2">Overview</h4>
-                          <p className="text-sm">
-                            Your overall emotional state this month has been {overallSentimentChange.includes("positive") ? "positive" : 
-                            overallSentimentChange.includes("negative") ? "negative" : "neutral"} with {" "}
-                            {timelineData.length} recorded emotional data points.
-                          </p>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-                
+                {/* Mental Health Suggestions - Single instance only to avoid redundancy */}
                 <MentalHealthSuggestions 
                   journalEntries={journalEntries} 
                   bertAnalysis={bertAnalysis}

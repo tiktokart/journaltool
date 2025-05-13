@@ -1,10 +1,13 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "../ui/button";
 import { format } from 'date-fns';
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, BookOpen, FileText, Activity } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/collapsible";
 import { ScrollArea } from "../ui/scroll-area";
+import { WellbeingResources } from "@/components/WellbeingResources";
+import { Point } from "@/types/embedding";
+import { Badge } from "../ui/badge";
 
 interface Entry {
   id: string;
@@ -34,6 +37,22 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
   isSuggestionsOpen,
   setIsSuggestionsOpen
 }) => {
+  const [embeddingPoints, setEmbeddingPoints] = useState<Point[]>([]);
+  
+  // Generate embedding points from BERT analysis for WellbeingResources
+  useEffect(() => {
+    if (bertAnalysis?.keywords) {
+      const points: Point[] = bertAnalysis.keywords.map((keyword: any, index: number) => ({
+        id: `entry-keyword-${index}`,
+        word: keyword.word || keyword.text || "",
+        emotionalTone: keyword.tone || "Neutral",
+        sentiment: keyword.sentiment || 0.5,
+        color: keyword.color || "#9b87f5"
+      }));
+      setEmbeddingPoints(points);
+    }
+  }, [bertAnalysis]);
+
   if (!selectedEntry) {
     return (
       <div className="h-full flex items-center justify-center text-center p-4">
@@ -47,7 +66,8 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-1 font-pacifico">
+        <h2 className="text-xl font-semibold mb-1 font-pacifico flex items-center">
+          <BookOpen className="h-5 w-5 mr-2 text-purple-500" />
           Journal Entry
         </h2>
         <p className="text-gray-600">
@@ -58,7 +78,10 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
       
       <Collapsible defaultOpen={true} className="mb-4">
         <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-purple-50 rounded-lg font-medium">
-          <span className="font-pacifico">Entry Content</span>
+          <span className="font-pacifico flex items-center">
+            <FileText className="h-4 w-4 mr-2" />
+            Entry Content
+          </span>
           <ChevronDown className="h-4 w-4" />
         </CollapsibleTrigger>
         <CollapsibleContent>
@@ -73,7 +96,10 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
       {/* Detailed Analyzed Data Section */}
       <Collapsible open={isDetailedAnalysisOpen} onOpenChange={setIsDetailedAnalysisOpen} className="mb-4 border rounded-lg overflow-hidden">
         <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-          <h3 className="text-lg font-medium font-pacifico">Detailed Analyzed Data</h3>
+          <h3 className="text-lg font-medium font-pacifico flex items-center">
+            <Activity className="h-5 w-5 mr-2 text-blue-500" />
+            Detailed Analyzed Data
+          </h3>
           {isDetailedAnalysisOpen ? (
             <ChevronUp className="h-5 w-5" />
           ) : (
@@ -88,9 +114,9 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
                 <div>
                   <p className="mb-4">Document Statistics</p>
                   <p className="text-gray-700 mb-1">
-                    This document contains {documentStats.wordCount} words, 
-                    {documentStats.sentenceCount} sentences, and 
-                    approximately {documentStats.paragraphCount} paragraphs.
+                    This document contains {documentStats.wordCount || 0} words, 
+                    {documentStats.sentenceCount || 0} sentences, and 
+                    approximately {documentStats.paragraphCount || 0} paragraphs.
                   </p>
                 </div>
                 
@@ -98,16 +124,16 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
                   <p className="mb-4">Document Structure</p>
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
-                      <p className="text-3xl font-bold">{documentStats.wordCount}</p>
+                      <p className="text-3xl font-bold">{documentStats.wordCount || 0}</p>
                       <p className="text-sm text-gray-600">Words</p>
                     </div>
                     <div>
-                      <p className="text-3xl font-bold text-purple-600">{documentStats.sentenceCount}</p>
+                      <p className="text-3xl font-bold text-purple-600">{documentStats.sentenceCount || 0}</p>
                       <p className="text-sm text-gray-600">Sentences</p>
                     </div>
                     <div>
                       <p className="text-3xl font-bold text-blue-600">
-                        {documentStats.paragraphCount}
+                        {documentStats.paragraphCount || 0}
                       </p>
                       <p className="text-sm text-gray-600">Paragraphs</p>
                     </div>
@@ -127,7 +153,7 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
                           (keyword.sentiment > 0 ? '#68D391' : '#FC8181')
                       }}
                     >
-                      {keyword.word}
+                      {keyword.word || keyword.text || ""}
                     </div>
                   ))}
                   {(!bertAnalysis?.keywords || bertAnalysis.keywords.length === 0) && (
@@ -138,15 +164,14 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
                 <div className="mt-6">
                   <h4 className="text-md font-medium mb-2">Main Subjects</h4>
                   <div className="flex flex-wrap gap-2">
-                    {mainSubjects.map((subject, index) => (
+                    {mainSubjects && mainSubjects.length > 0 ? mainSubjects.map((subject, index) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
                       >
                         {subject}
                       </span>
-                    ))}
-                    {mainSubjects.length === 0 && (
+                    )) : (
                       <p className="text-gray-500">No main subjects detected</p>
                     )}
                   </div>
@@ -157,7 +182,7 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Suggestions Section */}
+      {/* Suggestions Section using WellbeingResources */}
       <Collapsible open={isSuggestionsOpen} onOpenChange={setIsSuggestionsOpen} className="mb-4 border rounded-lg overflow-hidden">
         <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
           <h3 className="text-lg font-medium font-pacifico">Suggestions</h3>
@@ -171,8 +196,14 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
           <p className="text-gray-700 mb-4">
             Based on your journal entry, here are some suggestions that might be helpful:
           </p>
-          {bertAnalysis ? (
-            <div className="space-y-4">
+          
+          {embeddingPoints && embeddingPoints.length > 0 ? (
+            <WellbeingResources
+              embeddingPoints={embeddingPoints}
+              sourceDescription="Based on your journal entry"
+            />
+          ) : (
+            <div className="flex flex-col space-y-4">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <h4 className="font-medium mb-1">Consider adding more details</h4>
                 <p className="text-sm">Your entry could benefit from more specific examples or situations.</p>
@@ -182,10 +213,6 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
                 <p className="text-sm">Try exploring why you felt the way you did during these events.</p>
               </div>
             </div>
-          ) : (
-            <p className="text-center text-gray-500 py-4">
-              No suggestions available yet
-            </p>
           )}
         </CollapsibleContent>
       </Collapsible>

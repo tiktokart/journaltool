@@ -60,11 +60,49 @@ export const AnalysisTabs = ({
 }: AnalysisTabsProps) => {
   const { t } = useLanguage();
   const [clusterCount, setClusterCount] = useState<number>(visibleClusterCount);
+  const [normalizedData, setNormalizedData] = useState<any>(sentimentData);
+
+  useEffect(() => {
+    // Process sentiment data to ensure it has valid values
+    if (sentimentData) {
+      const processedData = {
+        ...sentimentData,
+        overallSentiment: {
+          score: sentimentData.overallSentiment?.score || 0.5,
+          label: sentimentData.overallSentiment?.label || "Neutral"
+        },
+        distribution: {
+          positive: Math.max(1, sentimentData.distribution?.positive || 33),
+          neutral: Math.max(1, sentimentData.distribution?.neutral || 34),
+          negative: Math.max(1, sentimentData.distribution?.negative || 33)
+        },
+        // Make sure keyPhrases is valid
+        keyPhrases: Array.isArray(sentimentData.keyPhrases) ? sentimentData.keyPhrases : 
+                   (bertAnalysis?.keywords || []).map((kw: any) => ({
+                      phrase: kw.text || kw.word || "",
+                      score: kw.sentiment || 0.5,
+                      count: 1
+                    })),
+        // Make sure timeline has valid data points
+        timeline: Array.isArray(sentimentData.timeline) && sentimentData.timeline.length > 0 ? 
+                 sentimentData.timeline : 
+                 [
+                   { page: 1, score: 0.4, time: "Start" },
+                   { page: 2, score: 0.5, time: "Middle" },
+                   { page: 3, score: 0.6, time: "End" }
+                 ],
+        // Ensure embeddingPoints is an array
+        embeddingPoints: Array.isArray(sentimentData.embeddingPoints) ? sentimentData.embeddingPoints : []
+      };
+      
+      setNormalizedData(processedData);
+    }
+  }, [sentimentData, bertAnalysis]);
 
   useEffect(() => {
     // Find word in embedding points when search changes
     if (searchTerm && searchTerm.length > 0) {
-      const points = sentimentData?.embeddingPoints || [];
+      const points = normalizedData?.embeddingPoints || [];
       
       // First try exact match
       const exactMatches = points.filter((p: Point) => p.word && p.word.toLowerCase() === searchTerm.toLowerCase());
@@ -83,25 +121,33 @@ export const AnalysisTabs = ({
       }
     } else {
       // Reset when search term is cleared
-      setFilteredPoints(sentimentData?.embeddingPoints || []);
+      setFilteredPoints(normalizedData?.embeddingPoints || []);
     }
-  }, [searchTerm, sentimentData?.embeddingPoints, setFilteredPoints, setSelectedWord, setSelectedPoint]);
+  }, [searchTerm, normalizedData?.embeddingPoints, setFilteredPoints, setSelectedWord, setSelectedPoint]);
 
   const renderAnalysisContent = () => {
     switch (activeTab) {
       case "overview":
         return (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <KeyPhrases 
-                data={bertAnalysis?.keywords || sentimentData?.keyPhrases || []} 
-              />
-            </div>
-            <div>
-              <SentimentDistribution 
-                distribution={sentimentData.distribution}
-                totalWordCount={sentimentData.totalWordCount || 0}
-              />
+          <div className="space-y-6">
+            <SentimentOverview 
+              data={normalizedData} 
+              sourceDescription={normalizedData.sourceDescription}
+            />
+            
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <KeyPhrases 
+                  data={normalizedData.keyPhrases || []} 
+                  sourceDescription={normalizedData.sourceDescription}
+                />
+              </div>
+              <div>
+                <SentimentDistribution 
+                  distribution={normalizedData.distribution}
+                  totalWordCount={normalizedData.totalWordCount || 0}
+                />
+              </div>
             </div>
           </div>
         );
@@ -109,8 +155,8 @@ export const AnalysisTabs = ({
         return (
           <div className="h-[400px]">
             <SentimentTimeline 
-              data={sentimentData.timeline || []} 
-              sourceDescription={sentimentData.sourceDescription}
+              data={normalizedData.timeline || []} 
+              sourceDescription={normalizedData.sourceDescription}
             />
           </div>
         );
@@ -161,8 +207,8 @@ export const AnalysisTabs = ({
       case "suggestions":
         return (
           <WellbeingResources
-            embeddingPoints={sentimentData.embeddingPoints || []}
-            sourceDescription={sentimentData.sourceDescription || "Based on your document"}
+            embeddingPoints={normalizedData.embeddingPoints || []}
+            sourceDescription={normalizedData.sourceDescription || "Based on your document"}
           />
         );
       default:

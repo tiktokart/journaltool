@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from "../ui/button";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { Calendar } from "lucide-react";
 
 interface Entry {
   id: string;
@@ -27,13 +28,23 @@ const WeeklyEntriesList: React.FC<WeeklyEntriesListProps> = ({
   onPreviousWeek,
   onNextWeek
 }) => {
+  // Generate days of the week to ensure we always display all days
+  const daysOfWeek = eachDayOfInterval({
+    start: startOfWeek(currentWeekStart),
+    end: endOfWeek(currentWeekStart)
+  });
+  
+  // Format date string for lookup
+  const formatDateForLookup = (date: Date) => format(date, 'yyyy-MM-dd');
+  
   return (
     <div className="md:col-span-1 border-r">
       <div className="p-4 border-b flex justify-between items-center bg-gray-50">
         <Button variant="outline" size="sm" onClick={onPreviousWeek}>
           Previous
         </Button>
-        <h3 className="font-medium">
+        <h3 className="font-medium flex items-center">
+          <Calendar className="h-4 w-4 mr-1 text-purple-500" />
           {format(currentWeekStart, 'MMM d')} - {format(endOfWeek(currentWeekStart), 'MMM d, yyyy')}
         </h3>
         <Button variant="outline" size="sm" onClick={onNextWeek}>
@@ -41,9 +52,10 @@ const WeeklyEntriesList: React.FC<WeeklyEntriesListProps> = ({
         </Button>
       </div>
       <div className="overflow-y-auto h-[calc(100%-60px)]">
-        {Object.keys(weeklyEntries).map(dateStr => {
-          const day = new Date(dateStr);
-          const entries = weeklyEntries[dateStr];
+        {daysOfWeek.map(day => {
+          const dateStr = formatDateForLookup(day);
+          const entries = weeklyEntries[dateStr] || [];
+          
           return (
             <div key={dateStr} className="border-b">
               <div className="p-3 bg-gray-50 font-medium">
