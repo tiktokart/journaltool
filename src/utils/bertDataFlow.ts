@@ -1,28 +1,35 @@
 
-/**
- * Centralized data flow handler for BERT analysis
- * This ensures data consistency across all components and journal entries
- */
-import { processBertAnalysis } from './bertAnalysisProcessor';
-import { 
-  saveBertAnalysisToJournal, 
-  getJournalEntries 
+// Re-export with proper type declarations
+import {
+  processAnalysisResults,
+  processBertTimeline,
+  groupEmotionsByType,
+  extractMainSubjects,
+  createThemeCategories
+} from './bertAnalysisProcessor';
+
+import { generateMonthlySummary } from './monthlyAnalysis';
+
+import {
+  saveJournalEntry,
+  retrieveJournalEntries,
+  saveMonthlyReflection,
+  retrieveMonthlyReflections
 } from './journalStorage';
-import { 
-  generateMonthlyAnalysis, 
-  saveMonthlyAnalysis, 
-  getMonthlyAnalysis 
-} from './monthlyAnalysis';
 
-// Export types separately
-export type { BertAnalysisResult, KeywordAnalysis, TimelineEntry } from '../types/bertAnalysis';
+// Use 'export type' for type re-exports when isolatedModules is enabled
+export type { TimelineEntry, BertAnalysisResult, BertAnalysisConfig } from '../types/bertAnalysis';
 
-// Re-export all functions
+// Export functions
 export {
-  processBertAnalysis,
-  saveBertAnalysisToJournal,
-  getJournalEntries,
-  generateMonthlyAnalysis,
-  saveMonthlyAnalysis,
-  getMonthlyAnalysis
+  processAnalysisResults,
+  processBertTimeline,
+  groupEmotionsByType,
+  extractMainSubjects,
+  createThemeCategories,
+  generateMonthlySummary,
+  saveJournalEntry,
+  retrieveJournalEntries,
+  saveMonthlyReflection,
+  retrieveMonthlyReflections
 };

@@ -1,45 +1,40 @@
 
-import { Point } from './embedding';
+// Add additional types related to BERT analysis here
 
-/**
- * Interface for BERT analysis results
- */
-export interface BertAnalysisResult {
-  bertAnalysis: any;
-  embeddingPoints: Point[];
-  overallSentiment: { score: number; label: string };
-  distribution: { positive: number; neutral: number; negative: number };
-  summary?: string;
-  text: string;
-  sourceDescription?: string;
-  fileName?: string;
-  fileSize?: number;
-  wordCount: number;
-  timestamp: string;
-}
-
-/**
- * Interface for keyword analysis
- */
-export interface KeywordAnalysis {
-  word: string;
-  text?: string;
-  sentiment: number;
-  tone?: string;
-  relatedConcepts?: string[];
-  frequency?: number;
-  color?: string;
-}
-
-/**
- * Interface for timeline entry
- */
 export interface TimelineEntry {
   time: string;
-  sentiment: number;
-  score: number;
   event: string;
   textSnippet: string;
-  page: number;
+  sentiment: number;
+  score?: number;
+  page?: number;
   index: number;
+}
+
+export interface BertAnalysisResult {
+  sentiment: {
+    score: number;
+    label: string;
+  };
+  keywords?: Array<{
+    word: string;
+    sentiment: number;
+    tone?: string;
+    color?: string;
+    relatedConcepts?: string[];
+  }>;
+  distribution: {
+    positive: number;
+    negative: number;
+    neutral: number;
+  };
+  timeline?: TimelineEntry[];
+}
+
+export interface BertAnalysisConfig {
+  model: string;
+  settings: {
+    threshold: number;
+    maxKeywords: number;
+  };
 }
