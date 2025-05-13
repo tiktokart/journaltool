@@ -23,8 +23,8 @@ export const processBertAnalysis = async (
   
   try {
     // Run BERT analysis
-    const bertAnalysis = await analyzeTextWithBert(text);
-    console.log("BERT analysis complete with", bertAnalysis.keywords?.length || 0, "keywords");
+    const bertResult = await analyzeTextWithBert(text);
+    console.log("BERT analysis complete with", bertResult.keywords?.length || 0, "keywords");
     
     // Generate embedding points
     const embeddingPoints = await generateEmbeddingPoints(text);
@@ -53,7 +53,7 @@ export const processBertAnalysis = async (
         .slice(0, 2)
         .join(". ");
       
-      summary = `${firstSentences}... ${bertAnalysis.analysis || ""}`;
+      summary = `${firstSentences}... ${bertResult.analysis || ""}`;
     } else {
       summary = text;
     }
@@ -61,21 +61,27 @@ export const processBertAnalysis = async (
     // Create timestamp
     const timestamp = new Date().toISOString();
     
+    // Return structured result that matches BertAnalysisResult interface
     return {
-      bertAnalysis,
+      sentiment: {
+        score: sentimentResult.normalizedScore,
+        label: sentimentResult.label
+      },
+      keywords: bertResult.keywords,
+      distribution,
+      bertAnalysis: bertResult,
       embeddingPoints,
       overallSentiment: {
         score: sentimentResult.normalizedScore,
         label: sentimentResult.label
       },
-      distribution,
-      summary,
       text,
       sourceDescription: sourceDescription || `Analysis of ${fileName || "text"}`,
       fileName,
       fileSize,
       wordCount,
-      timestamp
+      timestamp,
+      summary
     };
   } catch (error) {
     console.error("Error in BERT data flow processing:", error);

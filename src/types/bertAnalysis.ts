@@ -29,6 +29,16 @@ export interface BertAnalysisResult {
     neutral: number;
   };
   timeline?: TimelineEntry[];
+  bertAnalysis?: any; // Add this field to match usage in components
+  embeddingPoints?: any[]; // Add this field to match usage in components
+  overallSentiment?: { score: number; label: string }; // Add this field to match usage in components
+  text?: string; // Add this field to match usage in components
+  sourceDescription?: string; // Add this field to match usage
+  timestamp?: string; // Add this field to match usage
+  wordCount?: number; // Add this field to match usage
+  fileName?: string; // Add this field to match usage
+  fileSize?: number; // Add this field to match usage
+  summary?: string; // Add this field to match usage
 }
 
 export interface BertAnalysisConfig {

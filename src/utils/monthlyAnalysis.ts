@@ -54,6 +54,16 @@ export const generateMonthlyAnalysis = (month: string): BertAnalysisResult | nul
     
     // Return aggregated result
     return {
+      sentiment: {
+        score: averageSentiment,
+        label: averageSentiment > 0.6 ? "Positive" : averageSentiment < 0.4 ? "Negative" : "Neutral"
+      },
+      distribution: {
+        positive: Math.round(averageSentiment * 100),
+        negative: Math.round((1 - averageSentiment) * 0.7 * 100),
+        neutral: 100 - Math.round(averageSentiment * 100) - Math.round((1 - averageSentiment) * 0.7 * 100)
+      },
+      keywords: monthEntries.flatMap(entry => entry.bertAnalysis?.keywords || []),
       bertAnalysis: {
         keywords: monthEntries.flatMap(entry => entry.bertAnalysis?.keywords || []),
         overallSentiment: averageSentiment,
@@ -65,16 +75,11 @@ export const generateMonthlyAnalysis = (month: string): BertAnalysisResult | nul
         score: averageSentiment,
         label: averageSentiment > 0.6 ? "Positive" : averageSentiment < 0.4 ? "Negative" : "Neutral"
       },
-      distribution: {
-        positive: Math.round(averageSentiment * 100),
-        negative: Math.round((1 - averageSentiment) * 0.7 * 100),
-        neutral: 100 - Math.round(averageSentiment * 100) - Math.round((1 - averageSentiment) * 0.7 * 100)
-      },
-      summary,
       text: combinedText,
       sourceDescription: `Monthly analysis for ${month}`,
       wordCount: combinedText.split(/\s+/).filter(word => word.trim().length > 0).length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      summary
     };
   } catch (error) {
     console.error("Error generating monthly analysis:", error);

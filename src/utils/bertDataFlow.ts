@@ -1,35 +1,33 @@
 
 // Re-export with proper type declarations
-import {
-  processAnalysisResults,
-  processBertTimeline,
-  groupEmotionsByType,
-  extractMainSubjects,
-  createThemeCategories
-} from './bertAnalysisProcessor';
+import { analyzeTextWithBert } from './bertIntegration';
+import { analyzeSentiment } from './bertSentimentAnalysis';
+import { processBertAnalysis } from './bertAnalysisProcessor';
 
-import { generateMonthlySummary } from './monthlyAnalysis';
-
+// Import storage functions
 import {
-  saveJournalEntry,
-  retrieveJournalEntries,
-  saveMonthlyReflection,
-  retrieveMonthlyReflections
+  saveBertAnalysisToJournal,
+  getJournalEntries
 } from './journalStorage';
+
+// Import monthly analysis functions
+import {
+  generateMonthlyAnalysis,
+  saveMonthlyAnalysis,
+  getMonthlyAnalysis
+} from './monthlyAnalysis';
 
 // Use 'export type' for type re-exports when isolatedModules is enabled
 export type { TimelineEntry, BertAnalysisResult, BertAnalysisConfig } from '../types/bertAnalysis';
 
 // Export functions
 export {
-  processAnalysisResults,
-  processBertTimeline,
-  groupEmotionsByType,
-  extractMainSubjects,
-  createThemeCategories,
-  generateMonthlySummary,
-  saveJournalEntry,
-  retrieveJournalEntries,
-  saveMonthlyReflection,
-  retrieveMonthlyReflections
+  processBertAnalysis,
+  analyzeTextWithBert,
+  analyzeSentiment,
+  saveBertAnalysisToJournal,
+  getJournalEntries,
+  generateMonthlyAnalysis,
+  saveMonthlyAnalysis,
+  getMonthlyAnalysis
 };
