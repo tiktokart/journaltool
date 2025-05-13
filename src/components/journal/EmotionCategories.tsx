@@ -77,7 +77,7 @@ const EmotionCategories: React.FC<EmotionCategoriesProps> = ({
           
           {/* Emotional tones count display - only show if there are emotions */}
           {emotionTones.size > 0 && (
-            <div className="mt-4">
+            <div className="mt-2">
               <p className="text-sm font-medium mb-2">Emotional tones in your text:</p>
               <div className="flex flex-wrap gap-2">
                 {Array.from(emotionTones.entries())

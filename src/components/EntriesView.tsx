@@ -32,7 +32,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   
   // States to control collapsible sections
   const [isDetailedAnalysisOpen, setIsDetailedAnalysisOpen] = useState(true);
-  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(true);
   
   // States for Entry Analysis tab sections
   const [isOverviewOpen, setIsOverviewOpen] = useState(true);
@@ -99,15 +99,16 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
         // Run BERT analysis
         console.log("Analyzing entry with BERT...");
         const analysis = await analyzeTextWithBert(selectedEntry.text);
+        console.log("BERT analysis result:", analysis);
         setBertAnalysis(analysis);
         
         // Extract main subjects and emotion groups as before
         
         // Create theme categories from keywords
-        if (analysis.keywords && Array.isArray(analysis.keywords)) {
+        if (analysis?.keywords && Array.isArray(analysis.keywords)) {
           // Group by tones first
           const toneGroups: {[key: string]: any[]} = {};
-          analysis.keywords.forEach(kw => {
+          analysis.keywords.forEach((kw: any) => {
             const tone = kw.tone || 'Neutral';
             if (!toneGroups[tone]) {
               toneGroups[tone] = [];
@@ -122,7 +123,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
           Object.entries(toneGroups).forEach(([tone, keywords]) => {
             if (keywords.length >= 2) {
               // Extract words for this theme
-              const themeWords = keywords.map(k => k.word);
+              const themeWords = keywords.map((k: any) => k.word);
               
               // Use the first keyword's color for the theme
               const themeColor = keywords[0]?.color || '#CCCCCC';
@@ -137,9 +138,9 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
           
           // Add additional themes based on related concepts if available
           const relatedConcepts = new Set<string>();
-          analysis.keywords.forEach(kw => {
+          analysis.keywords.forEach((kw: any) => {
             if (kw.relatedConcepts && Array.isArray(kw.relatedConcepts)) {
-              kw.relatedConcepts.forEach(concept => relatedConcepts.add(concept));
+              kw.relatedConcepts.forEach((concept: string) => relatedConcepts.add(concept));
             }
           });
           
@@ -198,7 +199,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
         />
         
         {/* Entry and Analysis - Right Side */}
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 h-full overflow-hidden">
           <Tabs defaultValue="entry" className="h-full flex flex-col">
             <div className="border-b">
               <TabsList className="p-3">
@@ -207,7 +208,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
               </TabsList>
             </div>
             
-            <TabsContent value="entry" className="flex-grow overflow-y-auto p-4">
+            <TabsContent value="entry" className="flex-grow overflow-hidden p-0">
               <JournalEntryView 
                 selectedEntry={selectedEntry}
                 documentStats={documentStats}
@@ -220,7 +221,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
               />
             </TabsContent>
             
-            <TabsContent value="analysis" className="flex-grow overflow-y-auto">
+            <TabsContent value="analysis" className="flex-grow overflow-auto">
               <EntryAnalysisView 
                 selectedEntry={selectedEntry}
                 isAnalyzing={isAnalyzing}

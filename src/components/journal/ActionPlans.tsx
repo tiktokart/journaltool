@@ -69,7 +69,7 @@ const ActionPlans: React.FC<ActionPlansProps> = ({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pb-4">
       <h3 className="font-medium mb-3">Action plans for your wellbeing:</h3>
       {actionPlans.map((plan, index) => (
         <div 
