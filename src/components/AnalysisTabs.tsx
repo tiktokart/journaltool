@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { KeyPhrases } from "@/components/KeyPhrases";
 import { SentimentTimeline } from "@/components/SentimentTimeline";
-import { EmotionalClusterView } from "@/components/EmotionalClusterView";
+import { EmotionalClusterView } from "@/components/embedding/EmotionalClusterView";
 import { SentimentDistribution } from "@/components/SentimentDistribution";
 import { WellbeingResources } from "@/components/WellbeingResources";
 import { useLanguage } from "@/contexts/LanguageContext";
