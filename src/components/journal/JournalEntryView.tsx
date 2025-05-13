@@ -1,13 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-import { Button } from "../ui/button";
 import { format } from 'date-fns';
 import { ChevronUp, ChevronDown, BookOpen, FileText, Activity } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/collapsible";
 import { ScrollArea } from "../ui/scroll-area";
 import { WellbeingResources } from "@/components/WellbeingResources";
 import { Point } from "@/types/embedding";
-import { Badge } from "../ui/badge";
 
 interface Entry {
   id: string;
@@ -41,8 +39,11 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
   
   // Generate embedding points from BERT analysis for WellbeingResources
   useEffect(() => {
-    if (bertAnalysis?.keywords) {
-      const points: Point[] = bertAnalysis.keywords.map((keyword: any, index: number) => ({
+    if (selectedEntry && bertAnalysis?.keywords) {
+      // Filter to only use keywords from this specific entry
+      const entryKeywords = bertAnalysis.keywords.filter((keyword: any) => keyword.text || keyword.word);
+      
+      const points: Point[] = entryKeywords.map((keyword: any, index: number) => ({
         id: `entry-keyword-${index}`,
         word: keyword.word || keyword.text || "",
         emotionalTone: keyword.tone || "Neutral",
@@ -51,7 +52,40 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
       }));
       setEmbeddingPoints(points);
     }
-  }, [bertAnalysis]);
+  }, [bertAnalysis, selectedEntry]);
+
+  // Extract nouns/objects (subjects) and verbs/actions (emotions) from BERT analysis
+  const extractSubjectsAndActions = () => {
+    if (!bertAnalysis?.keywords) return { subjects: [], actions: [] };
+    
+    const subjects: any[] = [];
+    const actions: any[] = [];
+    
+    bertAnalysis.keywords.forEach((keyword: any) => {
+      // Check if keyword has POS (part of speech) information
+      if (keyword.pos) {
+        // Nouns, proper nouns, and noun phrases are subjects
+        if (keyword.pos.includes('NOUN') || keyword.pos.includes('PROPN') || keyword.pos.includes('NN')) {
+          subjects.push(keyword);
+        }
+        // Verbs and action words are actions
+        else if (keyword.pos.includes('VERB') || keyword.pos.includes('VB')) {
+          actions.push(keyword);
+        }
+      } else {
+        // If no POS data, use tone to categorize
+        if (keyword.tone && keyword.tone.toLowerCase().includes('action')) {
+          actions.push(keyword);
+        } else {
+          subjects.push(keyword);
+        }
+      }
+    });
+    
+    return { subjects, actions };
+  };
+  
+  const { subjects, actions } = extractSubjectsAndActions();
 
   if (!selectedEntry) {
     return (
@@ -142,37 +176,42 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
               </div>
               
               <div className="bg-white p-4 rounded-lg border shadow-sm">
-                <h3 className="text-lg font-medium mb-3">Emotional Analysis</h3>
-                <div className="flex flex-wrap gap-2">
-                  {bertAnalysis?.keywords?.slice(0, 5).map((keyword: any, i: number) => (
-                    <div 
-                      key={i} 
-                      className="px-3 py-2 rounded-full text-white text-sm"
-                      style={{ 
-                        backgroundColor: keyword.color || 
-                          (keyword.sentiment > 0 ? '#68D391' : '#FC8181')
-                      }}
-                    >
-                      {keyword.word || keyword.text || ""}
-                    </div>
-                  ))}
-                  {(!bertAnalysis?.keywords || bertAnalysis.keywords.length === 0) && (
-                    <p className="text-gray-500">No emotional keywords detected</p>
-                  )}
-                </div>
+                <h3 className="text-lg font-medium mb-3">Content Analysis</h3>
                 
-                <div className="mt-6">
+                {/* Main Subjects - Nouns, Objects, Concepts */}
+                <div className="mb-5">
                   <h4 className="text-md font-medium mb-2">Main Subjects</h4>
                   <div className="flex flex-wrap gap-2">
-                    {mainSubjects && mainSubjects.length > 0 ? mainSubjects.map((subject, index) => (
+                    {subjects && subjects.length > 0 ? subjects.slice(0, 7).map((subject: any, index: number) => (
                       <span
                         key={index}
-                        className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                        className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm"
                       >
-                        {subject}
+                        {subject.word || subject.text}
                       </span>
                     )) : (
                       <p className="text-gray-500">No main subjects detected</p>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Emotional Analysis - Actions, Verbs */}
+                <div>
+                  <h4 className="text-md font-medium mb-2">Emotional Analysis</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {actions && actions.length > 0 ? actions.slice(0, 5).map((action: any, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 rounded-full text-sm text-white"
+                        style={{ 
+                          backgroundColor: action.color || 
+                            (action.sentiment && action.sentiment > 0.5 ? '#68D391' : '#FC8181')
+                        }}
+                      >
+                        {action.word || action.text}
+                      </span>
+                    )) : (
+                      <p className="text-gray-500">No emotional keywords detected</p>
                     )}
                   </div>
                 </div>
@@ -182,7 +221,7 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Suggestions Section using WellbeingResources */}
+      {/* Suggestions Section using WellbeingResources specific to this entry */}
       <Collapsible open={isSuggestionsOpen} onOpenChange={setIsSuggestionsOpen} className="mb-4 border rounded-lg overflow-hidden">
         <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
           <h3 className="text-lg font-medium font-pacifico">Suggestions</h3>
@@ -194,7 +233,7 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
         </CollapsibleTrigger>
         <CollapsibleContent className="p-4 bg-white">
           <p className="text-gray-700 mb-4">
-            Based on your journal entry, here are some suggestions that might be helpful:
+            Based on this specific journal entry, here are some suggestions that might be helpful:
           </p>
           
           {embeddingPoints && embeddingPoints.length > 0 ? (
@@ -216,21 +255,6 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
           )}
         </CollapsibleContent>
       </Collapsible>
-      
-      <div className="flex justify-end gap-2 mt-6">
-        <Button 
-          variant="outline" 
-          className="border-purple-200 text-purple-700"
-        >
-          Export as PDF
-        </Button>
-        <Button 
-          variant="outline" 
-          className="border-red-200 text-red-700"
-        >
-          Delete
-        </Button>
-      </div>
     </div>
   );
 };

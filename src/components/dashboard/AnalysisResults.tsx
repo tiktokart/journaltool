@@ -5,6 +5,7 @@ import { Point } from "@/types/embedding";
 import { AnalysisTabs } from "@/components/AnalysisTabs";
 import { ScrollToSection } from "@/components/ScrollToSection";
 import { useLanguage } from "@/contexts/LanguageContext"; 
+import { HelpCircle, Info } from "lucide-react";
 
 interface AnalysisResultsProps {
   sentimentData: any;
@@ -57,6 +58,8 @@ const AnalysisResults = ({
 }: AnalysisResultsProps) => {
   const { t } = useLanguage();
   const [processedData, setProcessedData] = useState<any>(null);
+  const [parsedScore, setParsedScore] = useState(0.5);
+  const [sentimentLabel, setSentimentLabel] = useState("Neutral");
 
   // Expose points to window object for use in visualization
   useEffect(() => {
@@ -69,33 +72,56 @@ const AnalysisResults = ({
   useEffect(() => {
     if (!sentimentData) return;
     
-    // Extract text snippets for timeline data
-    const processTimeline = (timeline: any[]) => {
-      if (!timeline || !Array.isArray(timeline)) return timeline;
+    try {
+      // Validate overall sentiment
+      const score = sentimentData?.overallSentiment?.score;
+      if (score !== undefined && !isNaN(score)) {
+        setParsedScore(Math.max(0, Math.min(1, score))); // Clamp between 0-1
+      }
       
-      return timeline.map((item, index) => {
-        // Try to extract text snippets from the document
-        let textSnippet = item.event || "";
-        if (pdfText) {
-          const wordCount = 20;
-          const position = Math.floor((index / timeline.length) * pdfText.length);
-          const startPos = Math.max(0, pdfText.indexOf(' ', position - 100) + 1);
-          const endPos = pdfText.indexOf('.', startPos + 10) + 1 || startPos + wordCount;
-          textSnippet = pdfText.substring(startPos, endPos).trim();
-        }
+      // Set sentiment label
+      const label = sentimentData?.overallSentiment?.label || '';
+      if (label) {
+        setSentimentLabel(label);
+      } else {
+        // Generate label based on score
+        if (parsedScore >= 0.7) setSentimentLabel("Very Positive");
+        else if (parsedScore >= 0.55) setSentimentLabel("Positive");
+        else if (parsedScore >= 0.45) setSentimentLabel("Neutral");
+        else if (parsedScore >= 0.3) setSentimentLabel("Negative");
+        else setSentimentLabel("Very Negative");
+      }
+      
+      // Extract text snippets for timeline data
+      const processTimeline = (timeline: any[]) => {
+        if (!timeline || !Array.isArray(timeline)) return timeline;
         
-        return {
-          ...item,
-          textSnippet
-        };
+        return timeline.map((item, index) => {
+          // Try to extract text snippets from the document
+          let textSnippet = item.event || "";
+          if (pdfText) {
+            const wordCount = 20;
+            const position = Math.floor((index / timeline.length) * pdfText.length);
+            const startPos = Math.max(0, pdfText.indexOf(' ', position - 100) + 1);
+            const endPos = pdfText.indexOf('.', startPos + 10) + 1 || startPos + wordCount;
+            textSnippet = pdfText.substring(startPos, endPos).trim();
+          }
+          
+          return {
+            ...item,
+            textSnippet
+          };
+        });
+      };
+      
+      // Process data for visualization
+      setProcessedData({
+        ...sentimentData,
+        timeline: processTimeline(sentimentData.timeline)
       });
-    };
-    
-    // Process data for visualization
-    setProcessedData({
-      ...sentimentData,
-      timeline: processTimeline(sentimentData.timeline)
-    });
+    } catch (error) {
+      console.error("Error processing data:", error);
+    }
   }, [sentimentData, pdfText]);
   
   // Add total word count to data for distribution stats
@@ -163,32 +189,91 @@ const AnalysisResults = ({
         <ScrollToSection isOpen={activeTab === 'timeline'} elementId="timeline-section" />
       </CardHeader>
       <CardContent id="overview-section">
-        <div className="flex flex-wrap gap-4 mb-6">
-          <div className="flex-1 min-w-[150px]">
-            <div className="text-sm text-muted-foreground">{t("overallSentiment")}</div>
-            <div className="text-2xl font-semibold">
-              {formatSentiment(sentimentData.overallSentiment?.score || sentimentData.overallSentiment)}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="p-4 border rounded-lg bg-white">
+            <div className="mb-4">
+              <h3 className="text-lg font-medium">{t("overallSentiment")}</h3>
             </div>
-            <div className={`text-sm ${
-              calculateSentimentChange() === "improving" ? "text-green-600" :
-              calculateSentimentChange() === "declining" ? "text-red-600" :
-              "text-blue-600"
-            }`}>
-              {t(calculateSentimentChange())}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <HelpCircle className="h-8 w-8 text-purple-500 mr-3" />
+                <div>
+                  <p className="font-semibold">{sentimentLabel}</p>
+                  <p className="text-sm text-muted-foreground">{t("scoreLabel")}: {(parsedScore * 100).toFixed(0)}%</p>
+                </div>
+              </div>
+              <div className="h-16 w-16 rounded-full bg-purple-500 text-white flex items-center justify-center text-xl font-bold">
+                {Math.round(parsedScore * 100)}
+              </div>
+            </div>
+            
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
+              <div 
+                className="bg-purple-500 h-2.5 rounded-full"
+                style={{ width: `${parsedScore * 100}%` }}
+              />
+            </div>
+            
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{t("negative")}</span>
+              <span>{t("neutral")}</span>
+              <span>{t("positive")}</span>
+            </div>
+            
+            <div className="mt-4 flex items-center text-xs text-muted-foreground">
+              <Info className="h-4 w-4 mr-1" />
+              <p>Analysis with BERT Model</p>
             </div>
           </div>
           
-          <div className="flex-1 min-w-[150px]">
-            <div className="text-sm text-muted-foreground">{t("keywordCount")}</div>
-            <div className="text-2xl font-semibold">
-              {sentimentData.keyPhrases?.length || (sentimentData.bertAnalysis?.keywords?.length) || 0}
+          <div className="p-4 border rounded-lg bg-white">
+            <div className="mb-4">
+              <h3 className="text-lg font-medium">{t("sentimentDistribution")}</h3>
             </div>
-          </div>
-          
-          <div className="flex-1 min-w-[150px]">
-            <div className="text-sm text-muted-foreground">{t("textLength")}</div>
-            <div className="text-2xl font-semibold">
-              {formatNumber(sentimentData.pdfText?.length || pdfText.length)} {t("chars")}
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium">{t("positive")}</span>
+                  <span className="text-sm text-muted-foreground">{ensureDistribution().positive}%</span>
+                </div>
+                <div className="bg-gray-200 rounded-full h-5 w-full">
+                  <div 
+                    className="bg-green-400 h-5 rounded-full" 
+                    style={{ width: `${ensureDistribution().positive}%` }}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium">{t("neutral")}</span>
+                  <span className="text-sm text-muted-foreground">{ensureDistribution().neutral}%</span>
+                </div>
+                <div className="bg-gray-200 rounded-full h-5 w-full">
+                  <div 
+                    className="bg-blue-400 h-5 rounded-full" 
+                    style={{ width: `${ensureDistribution().neutral}%` }}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium">{t("negative")}</span>
+                  <span className="text-sm text-muted-foreground">{ensureDistribution().negative}%</span>
+                </div>
+                <div className="bg-gray-200 rounded-full h-5 w-full">
+                  <div 
+                    className="bg-red-400 h-5 rounded-full" 
+                    style={{ width: `${ensureDistribution().negative}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-4 flex items-center text-xs text-muted-foreground">
+              <Info className="h-4 w-4 mr-1" />
+              <p>Analysis with BERT Model</p>
             </div>
           </div>
         </div>

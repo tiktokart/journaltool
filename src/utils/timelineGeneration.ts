@@ -48,12 +48,12 @@ export const generateTimeline = async (text: string): Promise<TimelineEvent[]> =
       'recently', 'lately', 'currently', 'presently', 'now', 'always', 'never', 'sometimes'
     ];
     
-    // Color mapping for emotional tones - more distinctive colors
+    // Color mapping for emotional tones - use pastel colors including pastel yellow
     const getColorForSentiment = (score: number): string => {
       if (score >= 0.7) return "#27AE60"; // Positive - Green
       if (score >= 0.6) return "#2ECC71"; // Positive - Light Green
       if (score >= 0.5) return "#3498DB"; // Neutral-positive - Blue
-      if (score >= 0.4) return "#F1C40F"; // Neutral - Yellow
+      if (score >= 0.4) return "#FEF7CD"; // Neutral - Pastel Yellow (replaced #F1C40F)
       if (score >= 0.3) return "#E67E22"; // Neutral-negative - Orange
       return "#E74C3C"; // Negative - Red
     };
@@ -241,7 +241,7 @@ function generateFallbackTimeline(): TimelineEvent[] {
       score: 0.45, 
       event: "Development of key themes and emotions", 
       sentiment: 0.45,
-      color: "#F39C12" // Orange
+      color: "#FEF7CD" // Pastel Yellow (changed from #F39C12)
     },
     { 
       time: "End", 

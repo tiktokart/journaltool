@@ -44,7 +44,7 @@ const WeeklyEntriesList: React.FC<WeeklyEntriesListProps> = ({
     if (sentiment === undefined) return 'bg-gray-200';
     if (sentiment >= 0.7) return 'bg-green-500';
     if (sentiment >= 0.55) return 'bg-green-300';
-    if (sentiment >= 0.45) return 'bg-yellow-300';
+    if (sentiment >= 0.45) return 'bg-yellow-200'; // Changed to pastel yellow (bg-yellow-200)
     if (sentiment >= 0.3) return 'bg-orange-300';
     return 'bg-red-400';
   };
