@@ -73,12 +73,7 @@ export const Header = () => {
               <span className="font-bold text-xl text-black">Journal Analysis</span>
             </Link>
             
-            <Button 
-              className="bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => window.location.href = '/dashboard'} 
-            >
-              Get Started
-            </Button>
+            {/* Get Started button removed */}
           </div>
         </div>
       </header>

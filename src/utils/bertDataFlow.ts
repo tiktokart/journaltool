@@ -3,7 +3,6 @@
  * Centralized data flow handler for BERT analysis
  * This ensures data consistency across all components and journal entries
  */
-import { BertAnalysisResult } from '../types/bertAnalysis';
 import { processBertAnalysis } from './bertAnalysisProcessor';
 import { 
   saveBertAnalysisToJournal, 
@@ -15,9 +14,11 @@ import {
   getMonthlyAnalysis 
 } from './monthlyAnalysis';
 
+// Export types separately
+export type { BertAnalysisResult, KeywordAnalysis, TimelineEntry } from '../types/bertAnalysis';
+
 // Re-export all functions
 export {
-  BertAnalysisResult,
   processBertAnalysis,
   saveBertAnalysisToJournal,
   getJournalEntries,
