@@ -110,12 +110,8 @@ const JournalAnalysisSection = ({
           }));
         }
         
-        if (analysis && analysis.embeddingPoints) {
-          analysis.embeddingPoints = analysis.embeddingPoints.map((point: any) => ({
-            ...point,
-            emotionalTone: point.emotionalTone?.replace(/\s*Theme\s*$/i, '') || point.emotionalTone
-          }));
-        }
+        // Fix: Don't access embeddingPoints directly from bertAnalysis
+        // Instead, use the main analysis object which should contain the embeddingPoints
         
         // Count positive/negative/neutral words
         const positiveWords = analysis?.keywords?.filter((k: any) => k.sentiment > 0.6) || [];
