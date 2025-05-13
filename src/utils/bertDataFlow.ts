@@ -1,9 +1,3 @@
-
-import { analyzeTextWithBert } from './bertIntegration';
-import { analyzeSentiment, batchAnalyzeSentiment } from './bertSentimentAnalysis';
-import { generateEmbeddingPoints } from './embeddingGeneration';
-import { Point } from '../types/embedding';
-
 /**
  * Centralized data flow handler for BERT analysis
  * This ensures data consistency across all components and journal entries
@@ -21,6 +15,11 @@ export interface BertAnalysisResult {
   wordCount: number;
   timestamp: string;
 }
+
+import { analyzeTextWithBert } from './bertIntegration';
+import { analyzeSentiment, batchAnalyzeSentiment } from './bertSentimentAnalysis';
+import { generateEmbeddingPoints } from './embeddingGeneration';
+import { Point } from '../types/embedding';
 
 /**
  * Process text through BERT analysis

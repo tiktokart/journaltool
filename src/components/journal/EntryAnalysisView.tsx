@@ -1,15 +1,15 @@
 
 import React, { useEffect, useState } from 'react';
-import { format } from 'date-fns';
-import { ChevronUp, ChevronDown } from "lucide-react";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/collapsible";
 import { ScrollArea } from "../ui/scroll-area";
-import { TextEmotionViewer } from "../TextEmotionViewer";
-import { SentimentTimeline } from "../SentimentTimeline";
-import JournalSentimentChart from "../reflections/JournalSentimentChart";
-import { KeyPhrases } from "../KeyPhrases";
 import { generateTimeline } from "@/utils/timelineGeneration";
-import { Slider } from "../ui/slider";
+
+// Import our new section components
+import OverviewSection from './analysis-sections/OverviewSection';
+import DocumentTextAnalysisSection from './analysis-sections/DocumentTextAnalysisSection';
+import LatentEmotionalAnalysisSection from './analysis-sections/LatentEmotionalAnalysisSection';
+import TimelineSection from './analysis-sections/TimelineSection';
+import ThemeCategoriesSection from './analysis-sections/ThemeCategoriesSection';
+import FullTextSection from './analysis-sections/FullTextSection';
 
 interface Entry {
   id: string;
@@ -249,248 +249,52 @@ const EntryAnalysisView: React.FC<EntryAnalysisViewProps> = ({
         </div>
         
         {/* 1. Overview Section */}
-        <Collapsible open={isOverviewOpen} onOpenChange={setIsOverviewOpen} className="mb-4 border rounded-lg overflow-hidden">
-          <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-            <h3 className="text-lg font-medium font-pacifico">Overview</h3>
-            {isOverviewOpen ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 bg-white">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Overall Sentiment</h4>
-                <p className="text-xl font-semibold mb-1">
-                  {sentimentLabel}
-                </p>
-                <p className="text-gray-700">
-                  Score: {Math.round(sentimentScore * 100)}%
-                </p>
-                <div className="mt-4">
-                  <Slider
-                    value={[sentimentScore * 100]}
-                    max={100}
-                    step={1}
-                    disabled={true}
-                    className="cursor-default"
-                  />
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>Negative</span>
-                  <span>Neutral</span>
-                  <span>Positive</span>
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Sentiment Distribution</h4>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span>Positive</span>
-                      <span>{sentimentDistribution.positive || 0}%</span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-green-500"
-                        style={{ width: `${sentimentDistribution.positive || 0}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span>Neutral</span>
-                      <span>{sentimentDistribution.neutral || 0}%</span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-blue-400"
-                        style={{ width: `${sentimentDistribution.neutral || 0}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span>Negative</span>
-                      <span>{sentimentDistribution.negative || 0}%</span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-red-500"
-                        style={{ width: `${sentimentDistribution.negative || 0}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        <OverviewSection 
+          isOpen={isOverviewOpen}
+          setIsOpen={setIsOverviewOpen}
+          sentimentLabel={sentimentLabel}
+          sentimentScore={sentimentScore}
+          sentimentDistribution={sentimentDistribution}
+          documentStats={documentStats}
+        />
 
         {/* 2. Document Text Analysis */}
-        <Collapsible open={isDocTextAnalysisOpen} onOpenChange={setIsDocTextAnalysisOpen} className="mb-4 border rounded-lg overflow-hidden">
-          <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-            <h3 className="text-lg font-medium font-pacifico">Document Text Analysis</h3>
-            {isDocTextAnalysisOpen ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 bg-white">
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium mb-2">Text Structure</h4>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-3xl font-bold">{documentStats.wordCount}</p>
-                    <p className="text-sm text-gray-600">Words</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-3xl font-bold">{documentStats.sentenceCount}</p>
-                    <p className="text-sm text-gray-600">Sentences</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-3xl font-bold">{documentStats.paragraphCount}</p>
-                    <p className="text-sm text-gray-600">Paragraphs</p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4">
-                <h4 className="font-medium mb-2">Text Sample</h4>
-                <div className="bg-gray-50 p-3 rounded-lg border">
-                  <p className="text-gray-700">{selectedEntry.text.substring(0, 200)}...</p>
-                </div>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        <DocumentTextAnalysisSection
+          isOpen={isDocTextAnalysisOpen}
+          setIsOpen={setIsDocTextAnalysisOpen}
+          documentStats={documentStats}
+          entryText={selectedEntry.text}
+        />
 
         {/* 3. Latent Emotional Analysis */}
-        <Collapsible open={isLatentEmotionalOpen} onOpenChange={setIsLatentEmotionalOpen} className="mb-4 border rounded-lg overflow-hidden">
-          <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-            <h3 className="text-lg font-medium font-pacifico">Latent Emotional Analysis</h3>
-            {isLatentEmotionalOpen ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 bg-white">
-            <div className="bg-gray-50 rounded-lg p-5">
-              {bertAnalysis ? (
-                <TextEmotionViewer 
-                  pdfText={selectedEntry.text}
-                  bertAnalysis={bertAnalysis}
-                />
-              ) : (
-                <p className="text-center text-gray-500 py-4">
-                  No emotional analysis available
-                </p>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        <LatentEmotionalAnalysisSection
+          isOpen={isLatentEmotionalOpen}
+          setIsOpen={setIsLatentEmotionalOpen}
+          bertAnalysis={bertAnalysis}
+          entryText={selectedEntry.text}
+          isAnalyzing={isAnalyzing}
+        />
 
         {/* 4. Timeline */}
-        <Collapsible open={isTimelineOpen} onOpenChange={setIsTimelineOpen} className="mb-4 border rounded-lg overflow-hidden">
-          <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-            <h3 className="text-lg font-medium font-pacifico">Timeline</h3>
-            {isTimelineOpen ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 bg-white">
-            {/* Use our enhanced JournalSentimentChart if we have timeline data */}
-            {timelineData && timelineData.length > 0 ? (
-              <div className="h-[300px]">
-                <JournalSentimentChart 
-                  timelineData={timelineData.map(item => ({
-                    date: item.time || `Point ${item.page || item.index || 1}`,
-                    sentiment: item.sentiment || item.score || 0.5,
-                    textSnippet: item.event || item.textSnippet || ''
-                  }))}
-                />
-              </div>
-            ) : (
-              <div className="h-[250px]">
-                <SentimentTimeline 
-                  data={extractTimelinePoints()}
-                  sourceDescription="Emotional flow through journal entry"
-                />
-              </div>
-            )}
-            <div className="text-xs text-muted-foreground mt-3 text-center">
-              Hover over points to see text excerpts and sentiment scores
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        <TimelineSection
+          isOpen={isTimelineOpen}
+          setIsOpen={setIsTimelineOpen}
+          timelineData={timelineData}
+          selectedEntry={selectedEntry}
+          bertAnalysis={bertAnalysis}
+          extractTimelinePoints={extractTimelinePoints}
+        />
 
         {/* 5. Theme Categories */}
-        <Collapsible open={isKeywordsOpen} onOpenChange={setIsKeywordsOpen} className="mb-4 border rounded-lg overflow-hidden">
-          <CollapsibleTrigger className="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-            <h3 className="text-lg font-medium font-pacifico">Theme Categories</h3>
-            {isKeywordsOpen ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 bg-white">
-            {themeCategories.length > 0 ? (
-              <div className="space-y-4">
-                {themeCategories.map((theme, index) => (
-                  <div key={index} className="border rounded-lg p-3" style={{ borderColor: theme.color }}>
-                    <h4 className="font-medium mb-2 flex items-center">
-                      <span 
-                        className="inline-block w-3 h-3 rounded-full mr-2"
-                        style={{ backgroundColor: theme.color }}
-                      ></span>
-                      {theme.name}
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {theme.words.map((word, i) => (
-                        <span 
-                          key={i} 
-                          className="px-2 py-1 rounded-full text-xs"
-                          style={{ 
-                            backgroundColor: `${theme.color}22`,
-                            color: theme.color,
-                            border: `1px solid ${theme.color}`
-                          }}
-                        >
-                          {word}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-gray-500 py-4">
-                {isAnalyzing ? (
-                  <p>Analyzing themes...</p>
-                ) : (
-                  <p>No theme categories extracted</p>
-                )}
-              </div>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
+        <ThemeCategoriesSection
+          isOpen={isKeywordsOpen}
+          setIsOpen={setIsKeywordsOpen}
+          themeCategories={themeCategories}
+          isAnalyzing={isAnalyzing}
+        />
 
         {/* Full Text Section */}
-        <div className="mt-8">
-          <h3 className="text-lg font-medium mb-3 font-pacifico">Full Text</h3>
-          <div className="p-4 bg-gray-50 rounded-lg border">
-            <pre className="whitespace-pre-wrap text-sm font-georgia">{selectedEntry.text}</pre>
-          </div>
-        </div>
+        <FullTextSection entryText={selectedEntry.text} />
       </div>
     </ScrollArea>
   );
