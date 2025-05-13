@@ -24,7 +24,7 @@ const EmotionCategories: React.FC<EmotionCategoriesProps> = ({
     switch(emotion) {
       case "Joy":
       case "Joyful":
-        return "bg-amber-100 text-amber-800"; // Updated from yellow to amber for better readability
+        return "bg-amber-100 text-amber-800"; // Amber for better readability
       case "Sadness":
       case "Sad":
         return "bg-blue-100 text-blue-800";
@@ -51,7 +51,7 @@ const EmotionCategories: React.FC<EmotionCategoriesProps> = ({
   };
 
   return (
-    <div className="bg-gray-50 p-4 rounded-lg mb-6">
+    <div className="bg-gray-50 p-4 rounded-lg mb-3">
       <div className="flex items-start">
         <div className="w-full">
           <p className="font-medium mb-3">Detected emotions:</p>
@@ -92,10 +92,6 @@ const EmotionCategories: React.FC<EmotionCategoriesProps> = ({
               </div>
             </div>
           )}
-          
-          <p className="text-xs text-gray-500 mt-4">
-            Based on these emotions, we've created personalized action plans to help support your wellbeing.
-          </p>
         </div>
       </div>
     </div>

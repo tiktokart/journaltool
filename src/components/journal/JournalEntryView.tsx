@@ -51,10 +51,9 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
   const { subjects, actions } = extractSubjectsAndActions();
   
   // Check if we have any suggestions to display
-  const hasSuggestions = 
-    (Object.entries(emotionCategories).some(([_, words]) => words.length > 0) || 
-    emotionTones.size > 0 || 
-    actionPlans.length > 0);
+  const hasEmotions = Object.entries(emotionCategories).some(([_, words]) => words.length > 0) || emotionTones.size > 0;
+  const hasActionPlans = actionPlans.length > 0;
+  const hasSuggestions = hasEmotions || hasActionPlans;
 
   if (!selectedEntry) {
     return (
@@ -142,9 +141,9 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
                   Based on the text analysis, here are some suggestions that might help.
                 </p>
 
-                {/* Detected emotions section with improved conditional rendering */}
-                {(Object.entries(emotionCategories).some(([_, words]) => words.length > 0) || emotionTones.size > 0) && (
-                  <div className="flex items-start">
+                {/* Detected emotions section - only show if emotions are detected */}
+                {hasEmotions && (
+                  <div className="flex items-start mb-6">
                     <AlertTriangle className="h-5 w-5 mr-2 text-amber-500 mt-0.5 flex-shrink-0" />
                     <EmotionCategories 
                       emotionCategories={emotionCategories} 
@@ -153,19 +152,15 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
                   </div>
                 )}
                 
-                {/* Action Plans - only show if we have any */}
-                {actionPlans.length > 0 && (
-                  <ActionPlans 
-                    actionPlans={actionPlans}
-                    expandedPlans={expandedPlans}
-                    togglePlanExpansion={togglePlanExpansion}
-                  />
-                )}
+                {/* Action Plans */}
+                <ActionPlans 
+                  actionPlans={actionPlans}
+                  expandedPlans={expandedPlans}
+                  togglePlanExpansion={togglePlanExpansion}
+                />
                 
                 {/* Show a message if no specific suggestions are available */}
-                {!Object.entries(emotionCategories).some(([_, words]) => words.length > 0) && 
-                 emotionTones.size === 0 && 
-                 actionPlans.length === 0 && (
+                {!hasEmotions && !hasActionPlans && (
                   <div className="flex items-center justify-center p-4 text-gray-500">
                     <Info className="h-5 w-5 mr-2" />
                     <p>No specific emotional patterns detected in this entry.</p>

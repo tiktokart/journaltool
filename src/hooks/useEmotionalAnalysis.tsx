@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Point } from '@/types/embedding';
 import { mentalHealthDatabase } from '@/utils/mentalHealthDatabase';
@@ -118,8 +117,13 @@ export const useEmotionalAnalysis = (selectedEntry: Entry | null, bertAnalysis: 
         }
       });
       
+      // Only keep categories that have words
+      const filteredCategoryMap = Object.fromEntries(
+        Object.entries(categoryMap).filter(([_, words]) => words.length > 0)
+      );
+      
       setEmotionTones(toneMap);
-      setEmotionCategories(categoryMap);
+      setEmotionCategories(filteredCategoryMap);
       
       // Generate action plans based on text content and emotion analysis
       const detectedPlans: ActionPlan[] = [];
@@ -145,7 +149,6 @@ export const useEmotionalAnalysis = (selectedEntry: Entry | null, bertAnalysis: 
             steps: plan.steps,
             category: category,
             triggerWords: matchedTriggers,
-            expanded: detectedPlans.length === 0 // Expand first plan by default
           });
           addedCategories.add(category);
         }
@@ -161,33 +164,39 @@ export const useEmotionalAnalysis = (selectedEntry: Entry | null, bertAnalysis: 
             title: mentalHealthDatabase.emotions[normalizedTone].title,
             steps: mentalHealthDatabase.emotions[normalizedTone].steps,
             category: normalizedTone,
-            triggerWords: categoryMap[normalizedTone] || [],
-            expanded: detectedPlans.length === 0 // Expand first plan by default
+            triggerWords: filteredCategoryMap[normalizedTone] || [],
           });
           addedCategories.add(normalizedTone);
         }
       });
       
       // Add general wellness plan if no specific plans were detected
-      if (detectedPlans.length === 0) {
+      if (detectedPlans.length === 0 && toneMap.size > 0) {
         detectedPlans.push({
           title: mentalHealthDatabase.emotions.General.title,
           steps: mentalHealthDatabase.emotions.General.steps,
           category: "General",
           triggerWords: [],
-          expanded: true
         });
       }
       
       // Limit to 3 most relevant plans
-      setActionPlans(detectedPlans.slice(0, 3));
+      const finalPlans = detectedPlans.slice(0, 3);
+      setActionPlans(finalPlans);
       
       // Set initial expanded states
       const initialExpandedState: Record<string, boolean> = {};
-      detectedPlans.slice(0, 3).forEach((plan, index) => {
+      finalPlans.forEach((plan, index) => {
         initialExpandedState[plan.title] = index === 0; // Only expand first plan
       });
       setExpandedPlans(initialExpandedState);
+    } else {
+      // Reset states if no entry or analysis
+      setEmbeddingPoints([]);
+      setEmotionTones(new Map());
+      setEmotionCategories({});
+      setActionPlans([]);
+      setExpandedPlans({});
     }
   }, [bertAnalysis, selectedEntry]);
 
