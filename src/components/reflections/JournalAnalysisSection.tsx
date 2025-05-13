@@ -115,7 +115,8 @@ const JournalAnalysisSection = ({
         
         // Create embedding points based on keywords for wellbeing resources
         if (analysis && analysis.keywords) {
-          const points: Point[] = analysis.keywords.map((keyword: any) => ({
+          const points: Point[] = analysis.keywords.map((keyword: any, index: number) => ({
+            id: `journal-keyword-${index}`, // Add the required ID property
             word: keyword.text,
             emotionalTone: keyword.tone || "Neutral",
             sentiment: keyword.sentiment || 0.5,

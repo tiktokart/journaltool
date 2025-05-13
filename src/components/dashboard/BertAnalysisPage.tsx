@@ -230,7 +230,7 @@ const BertAnalysisPage = ({
           <div className="mt-8">
             <WellbeingResources 
               embeddingPoints={sentimentData.embeddingPoints || []}
-              sourceDescription="Based on your journal entry"
+              sourceDescription="Based on your analysis"
             />
           </div>
           

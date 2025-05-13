@@ -1,11 +1,14 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Mic, FileText, Calendar } from "lucide-react";
 import MentalHealthSuggestions from "./suggestions/MentalHealthSuggestions";
+import { WellbeingResources } from "./WellbeingResources";
+import { analyzeTextWithBert } from "@/utils/bertIntegration";
+import { Point } from "@/types/embedding";
 
 interface JournalInputProps {
   onJournalEntrySubmit: (text: string) => void;
@@ -18,6 +21,48 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [analyzedEntry, setAnalyzedEntry] = useState<string | null>(null);
   const [bertAnalysis, setBertAnalysis] = useState<any>(null);
+  const [embeddingPoints, setEmbeddingPoints] = useState<Point[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Analyze journal text when it gets submitted
+    const analyzeJournalEntry = async () => {
+      if (!analyzedEntry) return;
+      
+      setIsAnalyzing(true);
+      try {
+        const analysis = await analyzeTextWithBert(analyzedEntry);
+        
+        // Clean up any Theme suffix from emotion labels
+        if (analysis && analysis.keywords) {
+          analysis.keywords = analysis.keywords.map((kw: any) => ({
+            ...kw,
+            tone: kw.tone?.replace(/\s*Theme\s*$/i, '') || kw.tone
+          }));
+        }
+        
+        // Create embedding points based on keywords for wellbeing resources
+        if (analysis && analysis.keywords) {
+          const points: Point[] = analysis.keywords.map((keyword: any, index: number) => ({
+            id: `journal-input-keyword-${index}`,
+            word: keyword.text,
+            emotionalTone: keyword.tone || "Neutral",
+            sentiment: keyword.sentiment || 0.5,
+            color: keyword.color
+          }));
+          setEmbeddingPoints(points);
+        }
+        
+        setBertAnalysis(analysis);
+      } catch (error) {
+        console.error("Error analyzing journal entry:", error);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+    
+    analyzeJournalEntry();
+  }, [analyzedEntry]);
 
   const handleSubmit = () => {
     if (journalText.trim().length < 10) {
@@ -168,10 +213,17 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
 
       {/* Only display suggestions if we have analyzed text */}
       {analyzedEntry && (
-        <MentalHealthSuggestions 
-          journalEntries={[{ text: analyzedEntry }]} 
-          bertAnalysis={bertAnalysis}
-        />
+        <div className="space-y-6">
+          <MentalHealthSuggestions 
+            journalEntries={[{ text: analyzedEntry }]} 
+            bertAnalysis={bertAnalysis}
+          />
+          
+          <WellbeingResources
+            embeddingPoints={embeddingPoints}
+            sourceDescription="Based on your journal entry"
+          />
+        </div>
       )}
     </div>
   );
