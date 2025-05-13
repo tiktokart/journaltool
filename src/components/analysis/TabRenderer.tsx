@@ -45,12 +45,39 @@ export const TabRenderer = ({
 }: TabRendererProps) => {
   const { t } = useLanguage();
 
+  // Make sure sentimentData is properly formatted for the tabs
+  const prepareData = () => {
+    if (!sentimentData) return sentimentData;
+    
+    // Check if we need to process BERT analysis data
+    if (sentimentData.bertAnalysis) {
+      // Update any Joy theme colors for better legibility
+      const processedData = {...sentimentData};
+      
+      if (processedData.bertAnalysis.keywords) {
+        processedData.bertAnalysis.keywords = processedData.bertAnalysis.keywords.map((kw: any) => {
+          // If this is a "Joy" related keyword, update its color for better legibility
+          if (kw.tone && kw.tone.toLowerCase().includes('joy')) {
+            return {...kw, color: '#FFC107'}; // More visible amber color for Joy
+          }
+          return kw;
+        });
+      }
+      
+      return processedData;
+    }
+    
+    return sentimentData;
+  };
+
+  const processedData = prepareData();
+
   switch (activeTab) {
     case "overview":
-      return <OverviewTabContent data={sentimentData} />;
+      return <OverviewTabContent data={processedData} />;
       
     case "timeline":
-      return <TimelineTabContent data={sentimentData} />;
+      return <TimelineTabContent data={processedData} />;
       
     case "clustering":
       return (
@@ -70,7 +97,7 @@ export const TabRenderer = ({
       );
       
     case "suggestions":
-      return <SuggestionsTabContent data={sentimentData} />;
+      return <SuggestionsTabContent data={processedData} />;
       
     default:
       return <div>{t("selectTab")}</div>;

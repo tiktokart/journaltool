@@ -1,12 +1,13 @@
+
 import seedrandom from 'seedrandom';
 
 // Create a deterministic random number generator for consistent colors
 const rng = seedrandom('emotion-color-seed-123');
 
-// Pastel color palette specifically for homepage emotional groups
+// Updated pastel color palette with more legible yellow for Joy Theme
 const homepagePastelColors = [
   '#F2FCE2', // Soft Green
-  '#FEF7CD', // Soft Yellow
+  '#FFC107', // Amber (more legible yellow)
   '#FEC6A1', // Soft Orange
   '#E5DEFF', // Soft Purple
   '#FFDEE2', // Soft Pink
@@ -36,6 +37,11 @@ export const getHomepageEmotionColor = (emotionalTone: string, isHomepage: boole
   // If not homepage or no emotional tone, return empty
   if (!isHomepage || !emotionalTone) {
     return '';
+  }
+  
+  // Special case for Joy to use a more legible color
+  if (emotionalTone.toLowerCase().includes('joy')) {
+    return '#FFC107'; // Amber color for Joy
   }
   
   // If we've already assigned a color to this emotion, return it

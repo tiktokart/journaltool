@@ -6,6 +6,8 @@ import { AnalysisTabs } from "@/components/AnalysisTabs";
 import { ScrollToSection } from "@/components/ScrollToSection";
 import { useLanguage } from "@/contexts/LanguageContext"; 
 import { HelpCircle, Info } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { SentimentDistribution } from "@/components/SentimentDistribution";
 
 interface AnalysisResultsProps {
   sentimentData: any;
@@ -74,9 +76,13 @@ const AnalysisResults = ({
     
     try {
       // Validate overall sentiment
-      const score = sentimentData?.overallSentiment?.score;
+      let score = sentimentData?.overallSentiment?.score;
       if (score !== undefined && !isNaN(score)) {
         setParsedScore(Math.max(0, Math.min(1, score))); // Clamp between 0-1
+      } else if (sentimentData?.bertAnalysis?.overallSentiment) {
+        // Fallback to BERT analysis overall sentiment
+        score = sentimentData.bertAnalysis.overallSentiment;
+        setParsedScore(Math.max(0, Math.min(1, score)));
       }
       
       // Set sentiment label
@@ -122,7 +128,7 @@ const AnalysisResults = ({
     } catch (error) {
       console.error("Error processing data:", error);
     }
-  }, [sentimentData, pdfText]);
+  }, [sentimentData, pdfText, parsedScore]);
   
   // Add total word count to data for distribution stats
   const totalWordCount = pdfText ? pdfText.split(/\s+/).filter(word => word.trim().length > 0).length : 0;
@@ -160,26 +166,43 @@ const AnalysisResults = ({
 
   // Ensure we have properly structured distribution data
   const ensureDistribution = () => {
-    if (sentimentData.distribution) return sentimentData.distribution;
-    
+    // First check BERT analysis for distribution data
     if (sentimentData.bertAnalysis) {
-      return {
-        positive: sentimentData.bertAnalysis.positiveWordCount || 25,
-        neutral: sentimentData.bertAnalysis.neutralWordCount || 50,
-        negative: sentimentData.bertAnalysis.negativeWordCount || 25
+      // Try to use BERT-specific distribution if available
+      const bertDistribution = sentimentData.bertAnalysis.distribution || {
+        positive: sentimentData.bertAnalysis.positiveWordCount || 0,
+        neutral: sentimentData.bertAnalysis.neutralWordCount || 0,
+        negative: sentimentData.bertAnalysis.negativeWordCount || 0
       };
+      
+      // Calculate percentages if needed
+      const sum = bertDistribution.positive + bertDistribution.neutral + bertDistribution.negative;
+      if (sum > 0) {
+        return {
+          positive: Math.round((bertDistribution.positive / sum) * 100),
+          neutral: Math.round((bertDistribution.neutral / sum) * 100),
+          negative: Math.round((bertDistribution.negative / sum) * 100)
+        };
+      }
+    }
+    
+    // Fallback to sentimentData distribution
+    if (sentimentData.distribution) {
+      return sentimentData.distribution;
     }
     
     // Generate a basic distribution based on overall sentiment
     const overallSentiment = sentimentData.overallSentiment?.score || 
-                            sentimentData.overallSentiment || 0.5;
-                            
+                           sentimentData.overallSentiment || 0.5;
+                           
     return {
       positive: Math.round(overallSentiment * 100),
       negative: Math.round((1 - overallSentiment) * 0.7 * 100),
       neutral: 100 - Math.round(overallSentiment * 100) - Math.round((1 - overallSentiment) * 0.7 * 100)
     };
   };
+
+  const distribution = ensureDistribution();
 
   return (
     <Card className="border border-border shadow-md">
@@ -207,10 +230,13 @@ const AnalysisResults = ({
               </div>
             </div>
             
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
-              <div 
-                className="bg-purple-500 h-2.5 rounded-full"
-                style={{ width: `${parsedScore * 100}%` }}
+            <div className="mb-3">
+              <Slider 
+                value={[parsedScore * 100]} 
+                max={100} 
+                step={1}
+                disabled={true}
+                className="cursor-default"
               />
             </div>
             
@@ -226,56 +252,11 @@ const AnalysisResults = ({
             </div>
           </div>
           
-          <div className="p-4 border rounded-lg bg-white">
-            <div className="mb-4">
-              <h3 className="text-lg font-medium">{t("sentimentDistribution")}</h3>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium">{t("positive")}</span>
-                  <span className="text-sm text-muted-foreground">{ensureDistribution().positive}%</span>
-                </div>
-                <div className="bg-gray-200 rounded-full h-5 w-full">
-                  <div 
-                    className="bg-green-400 h-5 rounded-full" 
-                    style={{ width: `${ensureDistribution().positive}%` }}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium">{t("neutral")}</span>
-                  <span className="text-sm text-muted-foreground">{ensureDistribution().neutral}%</span>
-                </div>
-                <div className="bg-gray-200 rounded-full h-5 w-full">
-                  <div 
-                    className="bg-blue-400 h-5 rounded-full" 
-                    style={{ width: `${ensureDistribution().neutral}%` }}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium">{t("negative")}</span>
-                  <span className="text-sm text-muted-foreground">{ensureDistribution().negative}%</span>
-                </div>
-                <div className="bg-gray-200 rounded-full h-5 w-full">
-                  <div 
-                    className="bg-red-400 h-5 rounded-full" 
-                    style={{ width: `${ensureDistribution().negative}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-4 flex items-center text-xs text-muted-foreground">
-              <Info className="h-4 w-4 mr-1" />
-              <p>Analysis with BERT Model</p>
-            </div>
-          </div>
+          <SentimentDistribution 
+            distribution={distribution}
+            sourceDescription="BERT Analysis"
+            totalWordCount={totalWordCount}
+          />
         </div>
 
         <AnalysisTabs 
@@ -283,7 +264,7 @@ const AnalysisResults = ({
           setActiveTab={setActiveTab}
           sentimentData={{
             ...sentimentData,
-            distribution: ensureDistribution(),
+            distribution: distribution,
             timeline: processedData?.timeline || sentimentData.timeline
           }}
           searchTerm={searchTerm}

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ChevronUp, ChevronDown, BookOpen, FileText, Activity, Heart, AlertTriangle, ArrowRight } from "lucide-react";
@@ -491,153 +490,156 @@ const JournalEntryView: React.FC<JournalEntryViewProps> = ({
           )}
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="p-4 bg-white">
-            <p className="text-gray-700 mb-4">
-              Based on the text analysis, here are some suggestions that might help.
-            </p>
+          {/* Use ScrollArea to ensure all content is scrollable */}
+          <ScrollArea className="max-h-[500px]">
+            <div className="p-4 bg-white">
+              <p className="text-gray-700 mb-4">
+                Based on the text analysis, here are some suggestions that might help.
+              </p>
 
-            {/* Detected emotions section with new styling */}
-            <div className="bg-gray-50 p-4 rounded-lg mb-6">
-              <div className="flex items-start">
-                <AlertTriangle className="h-5 w-5 mr-2 text-amber-500 mt-0.5" />
-                <div className="w-full">
-                  <p className="font-medium mb-3">Detected emotions:</p>
-                  
-                  {/* Render emotion categories */}
-                  {Object.entries(emotionCategories)
-                    .filter(([category, words]) => words.length > 0)
-                    .map(([category, words]) => (
-                      <div key={category} className="mb-3">
-                        <div className="text-gray-600 mb-1">{category}:</div>
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {words.slice(0, 5).map((word, idx) => (
-                            <span 
-                              key={idx} 
-                              className={`inline-block px-2 py-1 rounded-full text-xs ${getEmotionBadgeStyles(category)}`}
-                            >
-                              {word}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  
-                  {/* Emotional tones count display */}
-                  <div className="mt-4">
-                    <p className="text-sm font-medium mb-2">Emotional tones in your text:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {Array.from(emotionTones.entries())
-                        .map(([emotion, count], idx) => (
-                          <span 
-                            key={idx} 
-                            className={`px-3 py-1 rounded-full ${getEmotionBadgeStyles(emotion)}`}
-                          >
-                            {emotion} <span className="font-semibold ml-1">{count}</span>
-                          </span>
-                        ))}
-                    </div>
-                  </div>
-                  
-                  <p className="text-xs text-gray-500 mt-4">
-                    Based on these emotions, we've created personalized action plans to help support your wellbeing.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Action Plans */}
-            <div className="space-y-5">
-              {actionPlans.length > 0 ? (
-                actionPlans.map((plan, index) => (
-                  <div 
-                    key={index} 
-                    className="border rounded-lg overflow-hidden"
-                    style={{
-                      borderColor: plan.category === "Joy" ? "#FDE68A" :
-                                  plan.category === "Sadness" ? "#BFDBFE" :
-                                  plan.category === "Anxiety" ? "#FDE68A" :
-                                  plan.category === "Anger" ? "#FCA5A5" :
-                                  plan.category === "Contentment" ? "#A7F3D0" :
-                                  plan.category === "Overwhelm" ? "#FDBA74" :
-                                  plan.category === "Sleep" ? "#C7D2FE" :
-                                  plan.category === "Loneliness" ? "#99F6E4" : "#E5E7EB"
-                    }}
-                  >
-                    <div 
-                      className="p-4"
-                      style={{
-                        backgroundColor: plan.category === "Joy" ? "#FFFBEB" :
-                                      plan.category === "Sadness" ? "#EFF6FF" :
-                                      plan.category === "Anxiety" ? "#FFFBEB" :
-                                      plan.category === "Anger" ? "#FEF2F2" :
-                                      plan.category === "Contentment" ? "#ECFDF5" :
-                                      plan.category === "Overwhelm" ? "#FFF7ED" :
-                                      plan.category === "Sleep" ? "#EEF2FF" :
-                                      plan.category === "Loneliness" ? "#F0FDFA" : "#F9FAFB"
-                      }}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="font-medium text-lg">{plan.title}</h3>
-                        <Badge className={getEmotionBadgeStyles(plan.category)}>
-                          {plan.category}
-                        </Badge>
-                      </div>
-                      
-                      {/* Display trigger words if any */}
-                      {plan.triggerWords.length > 0 && (
-                        <div className="mb-3">
-                          <p className="text-xs text-gray-500 mb-1">Triggered by:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {plan.triggerWords.slice(0, 3).map((word, i) => (
-                              <Badge key={i} variant="outline" className="text-xs">
+              {/* Detected emotions section with new styling */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <div className="flex items-start">
+                  <AlertTriangle className="h-5 w-5 mr-2 text-amber-500 mt-0.5" />
+                  <div className="w-full">
+                    <p className="font-medium mb-3">Detected emotions:</p>
+                    
+                    {/* Render emotion categories */}
+                    {Object.entries(emotionCategories)
+                      .filter(([category, words]) => words.length > 0)
+                      .map(([category, words]) => (
+                        <div key={category} className="mb-3">
+                          <div className="text-gray-600 mb-1">{category}:</div>
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {words.slice(0, 5).map((word, idx) => (
+                              <span 
+                                key={idx} 
+                                className={`inline-block px-2 py-1 rounded-full text-xs ${getEmotionBadgeStyles(category)}`}
+                              >
                                 {word}
-                              </Badge>
+                              </span>
                             ))}
                           </div>
                         </div>
-                      )}
-                      
-                      {/* Action plan steps with expand/collapse */}
-                      <div className="mt-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-0 h-auto flex items-center gap-1 mb-2 hover:bg-transparent"
-                          onClick={() => togglePlanExpansion(plan.title)}
-                        >
-                          <ArrowRight className={`h-4 w-4 transition-transform ${expandedPlans[plan.title] ? 'rotate-90' : ''}`} />
-                          <span className="text-sm">
-                            {expandedPlans[plan.title] ? "Hide action plan" : "Show action plan"}
-                          </span>
-                        </Button>
-                        
-                        {expandedPlans[plan.title] && (
-                          <div className="pl-5 border-l-2 border-gray-200 mt-3 space-y-2 animate-fadeIn">
-                            <ol className="list-decimal list-outside space-y-2 text-sm ml-4">
-                              {plan.steps.map((step, stepIdx) => (
-                                <li key={stepIdx} className="text-gray-700">{step}</li>
-                              ))}
-                            </ol>
-                          </div>
-                        )}
+                      ))}
+                    
+                    {/* Emotional tones count display */}
+                    <div className="mt-4">
+                      <p className="text-sm font-medium mb-2">Emotional tones in your text:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.from(emotionTones.entries())
+                          .map(([emotion, count], idx) => (
+                            <span 
+                              key={idx} 
+                              className={`px-3 py-1 rounded-full ${getEmotionBadgeStyles(emotion)}`}
+                            >
+                              {emotion} <span className="font-semibold ml-1">{count}</span>
+                            </span>
+                          ))}
                       </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="flex flex-col space-y-4">
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="font-medium mb-1">Consider adding more details</h4>
-                    <p className="text-sm">Your entry could benefit from more specific examples or situations.</p>
-                  </div>
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <h4 className="font-medium mb-1">Reflect on your emotions</h4>
-                    <p className="text-sm">Try exploring why you felt the way you did during these events.</p>
+                    
+                    <p className="text-xs text-gray-500 mt-4">
+                      Based on these emotions, we've created personalized action plans to help support your wellbeing.
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
+              
+              {/* Action Plans */}
+              <div className="space-y-5">
+                {actionPlans.length > 0 ? (
+                  actionPlans.map((plan, index) => (
+                    <div 
+                      key={index} 
+                      className="border rounded-lg overflow-hidden"
+                      style={{
+                        borderColor: plan.category === "Joy" ? "#FDE68A" :
+                                    plan.category === "Sadness" ? "#BFDBFE" :
+                                    plan.category === "Anxiety" ? "#FDE68A" :
+                                    plan.category === "Anger" ? "#FCA5A5" :
+                                    plan.category === "Contentment" ? "#A7F3D0" :
+                                    plan.category === "Overwhelm" ? "#FDBA74" :
+                                    plan.category === "Sleep" ? "#C7D2FE" :
+                                    plan.category === "Loneliness" ? "#99F6E4" : "#E5E7EB"
+                      }}
+                    >
+                      <div 
+                        className="p-4"
+                        style={{
+                          backgroundColor: plan.category === "Joy" ? "#FFFBEB" :
+                                        plan.category === "Sadness" ? "#EFF6FF" :
+                                        plan.category === "Anxiety" ? "#FFFBEB" :
+                                        plan.category === "Anger" ? "#FEF2F2" :
+                                        plan.category === "Contentment" ? "#ECFDF5" :
+                                        plan.category === "Overwhelm" ? "#FFF7ED" :
+                                        plan.category === "Sleep" ? "#EEF2FF" :
+                                        plan.category === "Loneliness" ? "#F0FDFA" : "#F9FAFB"
+                        }}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="font-medium text-lg">{plan.title}</h3>
+                          <Badge className={getEmotionBadgeStyles(plan.category)}>
+                            {plan.category}
+                          </Badge>
+                        </div>
+                        
+                        {/* Display trigger words if any */}
+                        {plan.triggerWords.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs text-gray-500 mb-1">Triggered by:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {plan.triggerWords.slice(0, 3).map((word, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">
+                                  {word}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Action plan steps with expand/collapse */}
+                        <div className="mt-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-0 h-auto flex items-center gap-1 mb-2 hover:bg-transparent"
+                            onClick={() => togglePlanExpansion(plan.title)}
+                          >
+                            <ArrowRight className={`h-4 w-4 transition-transform ${expandedPlans[plan.title] ? 'rotate-90' : ''}`} />
+                            <span className="text-sm">
+                              {expandedPlans[plan.title] ? "Hide action plan" : "Show action plan"}
+                            </span>
+                          </Button>
+                          
+                          {expandedPlans[plan.title] && (
+                            <div className="pl-5 border-l-2 border-gray-200 mt-3 space-y-2 animate-fadeIn">
+                              <ol className="list-decimal list-outside space-y-2 text-sm ml-4">
+                                {plan.steps.map((step, stepIdx) => (
+                                  <li key={stepIdx} className="text-gray-700">{step}</li>
+                                ))}
+                              </ol>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col space-y-4">
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 className="font-medium mb-1">Consider adding more details</h4>
+                      <p className="text-sm">Your entry could benefit from more specific examples or situations.</p>
+                    </div>
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <h4 className="font-medium mb-1">Reflect on your emotions</h4>
+                      <p className="text-sm">Try exploring why you felt the way you did during these events.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </ScrollArea>
         </CollapsibleContent>
       </Collapsible>
     </div>
