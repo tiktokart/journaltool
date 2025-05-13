@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Mic, FileText, Calendar } from "lucide-react";
-import MentalHealthSuggestions from "./suggestions/MentalHealthSuggestions";
-import { WellbeingResources } from "./WellbeingResources";
+import { FileText, Calendar } from "lucide-react";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
 import { Point } from "@/types/embedding";
+import { VoiceRecorder } from './journal/VoiceRecorder';
+import { AnalysisDisplay } from './journal/AnalysisDisplay';
 
 interface JournalInputProps {
   onJournalEntrySubmit: (text: string) => void;
@@ -18,7 +18,6 @@ interface JournalInputProps {
 export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }: JournalInputProps) => {
   const [journalText, setJournalText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [analyzedEntry, setAnalyzedEntry] = useState<string | null>(null);
   const [bertAnalysis, setBertAnalysis] = useState<any>(null);
   const [embeddingPoints, setEmbeddingPoints] = useState<Point[]>([]);
@@ -78,50 +77,8 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
     toast.success("Journal entry submitted for analysis");
   };
 
-  const startVoiceRecognition = () => {
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
-      
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
-      
-      recognitionInstance.onstart = () => {
-        setIsRecording(true);
-        toast.info("Voice recording started. Speak clearly.");
-      };
-      
-      recognitionInstance.onresult = (event) => {
-        let transcript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        setJournalText(transcript);
-      };
-      
-      recognitionInstance.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
-        toast.error("Error recording voice. Please try again.");
-        setIsRecording(false);
-      };
-      
-      recognitionInstance.onend = () => {
-        setIsRecording(false);
-      };
-      
-      recognitionInstance.start();
-      setRecognition(recognitionInstance);
-    } else {
-      toast.error("Speech recognition is not supported in your browser");
-    }
-  };
-
-  const stopVoiceRecognition = () => {
-    if (recognition) {
-      recognition.stop();
-      setIsRecording(false);
-      toast.success("Voice recording stopped");
-    }
+  const handleTranscriptUpdate = (transcript: string) => {
+    setJournalText(transcript);
   };
 
   const handleAddToMonthlyReflection = () => {
@@ -168,25 +125,11 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
                 Submit for Analysis
               </Button>
               
-              {!isRecording ? (
-                <Button
-                  variant="outline"
-                  onClick={startVoiceRecognition}
-                  className="flex items-center gap-2 text-black border-orange"
-                >
-                  <Mic className="h-4 w-4" />
-                  Record Voice
-                </Button>
-              ) : (
-                <Button
-                  variant="destructive"
-                  onClick={stopVoiceRecognition}
-                  className="flex items-center gap-2 animate-pulse text-black"
-                >
-                  <Mic className="h-4 w-4" />
-                  Stop Recording
-                </Button>
-              )}
+              <VoiceRecorder
+                isRecording={isRecording}
+                setIsRecording={setIsRecording}
+                onTranscriptUpdate={handleTranscriptUpdate}
+              />
             </div>
             
             {onAddToMonthlyReflection && (
@@ -211,20 +154,12 @@ export const JournalInput = ({ onJournalEntrySubmit, onAddToMonthlyReflection }:
         </CardContent>
       </Card>
 
-      {/* Only display suggestions if we have analyzed text */}
-      {analyzedEntry && (
-        <div className="space-y-6">
-          <MentalHealthSuggestions 
-            journalEntries={[{ text: analyzedEntry }]} 
-            bertAnalysis={bertAnalysis}
-          />
-          
-          <WellbeingResources
-            embeddingPoints={embeddingPoints}
-            sourceDescription="Based on your journal entry"
-          />
-        </div>
-      )}
+      <AnalysisDisplay 
+        analyzedEntry={analyzedEntry} 
+        bertAnalysis={bertAnalysis}
+        embeddingPoints={embeddingPoints}
+        isAnalyzing={isAnalyzing}
+      />
     </div>
   );
 }
