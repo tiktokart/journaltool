@@ -93,13 +93,6 @@ const AnalysisResultsDisplay = ({
       </div>
       
       <div className="mt-8">
-        <WellbeingResources 
-          embeddingPoints={sentimentData.embeddingPoints || []}
-          sourceDescription="Based on your analysis"
-        />
-      </div>
-      
-      <div className="mt-8 flex justify-end">
         <Button 
           onClick={onSaveToJournal}
           className="bg-green-600 hover:bg-green-700"

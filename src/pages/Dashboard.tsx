@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -29,7 +28,7 @@ import {
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FileDown, Bell, Share2, Lightbulb } from "lucide-react";
+import { Bell, Lightbulb } from "lucide-react";
 import { analyzePdfContent } from "@/utils/documentAnalysis";
 import { initBertModel } from "@/utils/bertSentimentAnalysis";
 import JournalWritePopup from "@/components/JournalWritePopup";
@@ -630,26 +629,6 @@ const Dashboard = () => {
               className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
             >
               {isEntriesView ? 'Monthly View' : 'Entries View'}
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={shareJournalAnalysis}
-              className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportMonthlyAnalysis}
-              className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
-            >
-              <FileDown className="h-4 w-4 mr-2" />
-              Export Monthly Analysis
             </Button>
             
             <Button 
