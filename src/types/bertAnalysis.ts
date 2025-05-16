@@ -43,4 +43,3 @@ export interface TimelineEntry {
   page?: number;
   index?: number;
 }
-
