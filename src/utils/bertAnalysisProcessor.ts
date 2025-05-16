@@ -53,7 +53,7 @@ export const processBertAnalysis = async (
         .slice(0, 2)
         .join(". ");
       
-      summary = `${firstSentences}... ${bertAnalysis.analysis || ""}`;
+      summary = `${firstSentences}... ${bertAnalysis.keywords ? "Key topics: " + bertAnalysis.keywords.slice(0, 3).map(k => k.word).join(', ') : ""}`;
     } else {
       summary = text;
     }

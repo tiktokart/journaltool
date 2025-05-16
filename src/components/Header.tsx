@@ -85,7 +85,7 @@ export const Header = () => {
     );
   }
 
-  // Main dashboard header with tabs
+  // Main dashboard header with tabs - Reversed tab order here
   return (
     <header className="border-b border-border bg-green backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
@@ -98,17 +98,6 @@ export const Header = () => {
           <div className="flex items-center space-x-4">
             <nav className="flex items-center">
               <Link 
-                to="/dashboard" 
-                className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  location.pathname === "/dashboard" && !location.hash.includes("entries") 
-                    ? "bg-green-600/10 text-green-800" 
-                    : "text-black hover:bg-green-600/5"
-                )}
-              >
-                Monthly
-              </Link>
-              <Link 
                 to="/dashboard#entries" 
                 className={cn(
                   "px-3 py-2 rounded-md text-sm font-medium transition-colors",
@@ -118,6 +107,17 @@ export const Header = () => {
                 )}
               >
                 Entries
+              </Link>
+              <Link 
+                to="/dashboard" 
+                className={cn(
+                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  location.pathname === "/dashboard" && !location.hash.includes("entries") 
+                    ? "bg-green-600/10 text-green-800" 
+                    : "text-black hover:bg-green-600/5"
+                )}
+              >
+                Monthly
               </Link>
             </nav>
           </div>
