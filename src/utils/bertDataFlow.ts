@@ -16,8 +16,8 @@ import {
 } from './monthlyAnalysis';
 
 // Re-export all functions
+export type { BertAnalysisResult };
 export {
-  BertAnalysisResult,
   processBertAnalysis,
   saveBertAnalysisToJournal,
   getJournalEntries,

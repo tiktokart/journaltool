@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { analyzeTextWithBert } from '@/utils/bertIntegration';
 import { BertAnalysisResult } from '@/types/bertAnalysis';
 
@@ -58,7 +58,7 @@ const BertAnalysisManager: React.FC<BertAnalysisManagerProps> = ({
         const analysis = await analyzeTextWithBert(selectedEntry.text);
         console.log("BERT analysis result:", analysis);
         
-        // Ensure distribution data is present in the analysis
+        // Ensure we have all required properties for the UI
         if (!analysis.distribution) {
           // Calculate distribution if missing
           let positive = 0;
@@ -106,7 +106,7 @@ const BertAnalysisManager: React.FC<BertAnalysisManagerProps> = ({
               const themeWords = keywords.map((k: any) => k.word || k.text);
               
               // Use the first keyword's color for the theme
-              const themeColor = keywords[0]?.color || '#CCCCCC';
+              const themeColor = keywords[0]?.color?.toString() || '#CCCCCC';
               
               themes.push({
                 name: `${tone} Theme`,

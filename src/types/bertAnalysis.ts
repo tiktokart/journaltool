@@ -28,7 +28,7 @@ export interface KeywordAnalysis {
   tone?: string;
   relatedConcepts?: string[];
   frequency?: number;
-  color?: string;
+  color?: string | [number, number, number];
 }
 
 /**
@@ -37,9 +37,10 @@ export interface KeywordAnalysis {
 export interface TimelineEntry {
   time: string;
   sentiment: number;
-  score: number;
-  event: string;
+  score?: number;
+  event?: string;
   textSnippet: string;
   page?: number;
   index?: number;
 }
+
