@@ -1,258 +1,211 @@
 
-import { KeywordAnalysis } from '../types/bertAnalysis';
+interface KeywordAnalysis {
+  word: string;
+  sentiment: number;
+  tone?: string;
+  relatedConcepts?: string[];
+  frequency?: number;
+  color?: string | [number, number, number];
+}
 
-// Mock implementations of the TensorFlow models
-// This is a simplified version that doesn't rely on external dependencies
-// but still provides the necessary functionality for the app to work
+interface BertAnalysisResult {
+  keywords: KeywordAnalysis[];
+  overallSentiment: number;
+  overallTone: string;
+  emotionalTone?: string;
+  analysis?: string;
+}
 
-/**
- * Processes keywords to enhance their analysis data.
- * @param keywords - Array of keyword analysis results.
- * @param text - The text from which keywords were extracted.
- * @returns Enhanced keyword analysis results.
- */
-const processKeywords = async (keywords: KeywordAnalysis[], text: string): Promise<KeywordAnalysis[]> => {
-  return keywords.map(keyword => {
-    // Simple sentiment score calculation
-    const sentimentScore = calculateSentiment(keyword.word);
-    const snippet = extractSnippet(text, keyword.word);
+const stopWords = [
+  'the', 'a', 'an', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 
+  'in', 'out', 'with', 'about', 'against', 'before', 'after', 'during', 'he', 'she', 
+  'it', 'they', 'we', 'you', 'i', 'me', 'him', 'her', 'them', 'us', 'is', 'am', 'are',
+  'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+  'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'can', 'could', 'uh', 'um',
+  'eh', 'oh', 'ah', 'hmm', 'like', 'just', 'very', 'really', 'so', 'then', 
+  'of', 'as', 'if', 'that', 'what', 'when', 'where', 'why', 'how', 'because', 'since',
+  'while', 'although', 'though', 'whether', 'which', 'whose', 'whom', 'this', 'these',
+  'those', 'there', 'here', 'who'
+];
+
+// Emotional colors map - now with string values for easier CSS usage
+const emotionalColors: Record<string, string> = {
+  Joy: '#FFE600',          // Bright Yellow
+  Sadness: '#3399FF',      // Bright Blue
+  Anxiety: '#FF8000',      // Bright Orange
+  Contentment: '#33E666',  // Bright Green
+  Confusion: '#CC66FF',    // Bright Purple
+  Anger: '#FF3333',        // Bright Red
+  Fear: '#E633E6',         // Bright Magenta
+  Surprise: '#33FFFF',     // Bright Cyan
+  Neutral: '#CCCCCC',      // Bright Gray
+};
+
+export const analyzeTextWithBert = async (text: string): Promise<BertAnalysisResult> => {
+  try {
+    console.log("Analyzing text with BERT:", text.substring(0, 100) + "...");
+    
+    if (!text || typeof text !== 'string') {
+      throw new Error("Invalid text provided for analysis");
+    }
+    
+    // Extract and clean words
+    const words = text.split(/\s+/)
+      .map(word => word.replace(/[^\w]/g, '').toLowerCase())
+      .filter(word => word.length > 3 && !stopWords.includes(word));
+    
+    // Count word frequency
+    const wordFrequency: Record<string, number> = {};
+    for (const word of words) {
+      wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+    }
+    
+    // Get unique words sorted by frequency
+    const uniqueWords = [...new Set(words)]
+      .filter(word => wordFrequency[word] > 1 || word.length > 5)
+      .sort((a, b) => wordFrequency[b] - wordFrequency[a])
+      .slice(0, 50); // Limit to top 50 words
+    
+    // Perform contextual analysis
+    // In a real implementation, this would use an actual BERT model
+    const keywords: KeywordAnalysis[] = [];
+    let totalSentiment = 0;
+    
+    // Map of words to common emotional associations for contextual analysis
+    const emotionalAssociations: Record<string, { tone: string, sentiment: number }> = {
+      // Positive emotions
+      "happy": { tone: "Joy", sentiment: 0.8 },
+      "joy": { tone: "Joy", sentiment: 0.9 },
+      "love": { tone: "Joy", sentiment: 0.85 },
+      "peaceful": { tone: "Contentment", sentiment: 0.75 },
+      "calm": { tone: "Contentment", sentiment: 0.7 },
+      "excited": { tone: "Joy", sentiment: 0.8 },
+      "hopeful": { tone: "Joy", sentiment: 0.75 },
+      "grateful": { tone: "Contentment", sentiment: 0.8 },
+      "relaxed": { tone: "Contentment", sentiment: 0.7 },
+      
+      // Negative emotions
+      "sad": { tone: "Sadness", sentiment: 0.2 },
+      "angry": { tone: "Anger", sentiment: 0.15 },
+      "anxious": { tone: "Anxiety", sentiment: 0.25 },
+      "fear": { tone: "Fear", sentiment: 0.2 },
+      "worried": { tone: "Anxiety", sentiment: 0.3 },
+      "stressed": { tone: "Anxiety", sentiment: 0.25 },
+      "depressed": { tone: "Sadness", sentiment: 0.1 },
+      "confused": { tone: "Confusion", sentiment: 0.4 },
+      "frustrated": { tone: "Anger", sentiment: 0.25 },
+      
+      // Neutral/mixed emotions
+      "surprised": { tone: "Surprise", sentiment: 0.5 },
+      "curious": { tone: "Surprise", sentiment: 0.6 },
+      "thinking": { tone: "Neutral", sentiment: 0.5 },
+      "wondering": { tone: "Confusion", sentiment: 0.45 },
+    };
+    
+    // Generate fake context windows around each unique word for analysis
+    for (const word of uniqueWords) {
+      const contextWindow = text
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((_, i, arr) => i < arr.indexOf(word) + 5 && i > arr.indexOf(word) - 5)
+        .join(' ');
+      
+      // Simple sentiment analysis based on contextual associations
+      let sentiment = 0.5; // Neutral by default
+      let tone = "Neutral";
+      const relatedConcepts: string[] = [];
+      
+      // Check for direct emotional associations
+      if (emotionalAssociations[word]) {
+        sentiment = emotionalAssociations[word].sentiment;
+        tone = emotionalAssociations[word].tone;
+      } else {
+        // Check for emotional words in context
+        let emotionalWordCount = 0;
+        let totalEmotionalSentiment = 0;
+        
+        for (const emotionalWord of Object.keys(emotionalAssociations)) {
+          if (contextWindow.includes(emotionalWord)) {
+            emotionalWordCount++;
+            totalEmotionalSentiment += emotionalAssociations[emotionalWord].sentiment;
+            tone = emotionalAssociations[emotionalWord].tone;
+            
+            // Add as a related concept if it's not the word itself
+            if (emotionalWord !== word) {
+              relatedConcepts.push(emotionalWord);
+            }
+          }
+        }
+        
+        if (emotionalWordCount > 0) {
+          sentiment = totalEmotionalSentiment / emotionalWordCount;
+        } else {
+          // Generate pseudo-random but consistent sentiment based on word
+          const hash = Array.from(word).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+          sentiment = 0.3 + ((hash % 50) / 100);
+          
+          // Assign emotional tone based on sentiment range
+          if (sentiment > 0.65) tone = "Joy";
+          else if (sentiment > 0.6) tone = "Contentment";
+          else if (sentiment < 0.35) tone = "Sadness";
+          else if (sentiment < 0.4) tone = "Anxiety";
+          else tone = "Neutral";
+        }
+      }
+      
+      // Get color for this emotional tone
+      const color = emotionalColors[tone] || emotionalColors.Neutral;
+      
+      // Find related words based on co-occurrence in the text
+      const wordIndex = words.indexOf(word);
+      const surroundingWords = words
+        .slice(Math.max(0, wordIndex - 10), wordIndex + 10)
+        .filter(w => w !== word && w.length > 3);
+        
+      // Add some surrounding words to related concepts
+      if (relatedConcepts.length < 3) {
+        const additionalConcepts = surroundingWords
+          .filter(w => !relatedConcepts.includes(w))
+          .slice(0, 3 - relatedConcepts.length);
+          
+        relatedConcepts.push(...additionalConcepts);
+      }
+      
+      keywords.push({
+        word,
+        sentiment,
+        tone,
+        relatedConcepts,
+        frequency: wordFrequency[word],
+        color
+      });
+      
+      totalSentiment += sentiment;
+    }
+    
+    // Calculate overall sentiment
+    const overallSentiment = keywords.length > 0 ? totalSentiment / keywords.length : 0.5;
+    
+    // Determine overall emotional tone
+    let overallTone = "Neutral";
+    if (overallSentiment > 0.65) overallTone = "Joy";
+    else if (overallSentiment > 0.6) overallTone = "Contentment";
+    else if (overallSentiment < 0.35) overallTone = "Sadness";
+    else if (overallSentiment < 0.4) overallTone = "Anxiety";
+    
+    // Generate a simple analysis text
+    const emotionalTone = overallTone;
+    const analysis = `The text shows ${overallTone.toLowerCase()} with an overall sentiment score of ${overallSentiment.toFixed(2)}. Analysis identified ${keywords.length} significant words or phrases.`;
     
     return {
-      ...keyword,
-      sentiment: sentimentScore,
-      text: snippet
+      keywords,
+      overallSentiment,
+      overallTone,
+      emotionalTone,
+      analysis
     };
-  });
-};
-
-/**
- * Extracts a snippet of text around a keyword.
- * @param text - The full text.
- * @param keyword - The keyword to find the snippet for.
- * @returns A snippet of text containing the keyword.
- */
-const extractSnippet = (text: string, keyword: string): string => {
-  const index = text.toLowerCase().indexOf(keyword.toLowerCase());
-  if (index === -1) return '';
-
-  const start = Math.max(0, index - 50);
-  const end = Math.min(text.length, index + keyword.length + 50);
-  return text.substring(start, end);
-};
-
-/**
- * Simple sentiment calculation function
- * @param text The text to analyze
- * @returns A sentiment score between -1 and 1
- */
-const calculateSentiment = (text: string): number => {
-  // This is a very simplified version of sentiment analysis
-  // In a real app, this would use a proper sentiment analysis library
-  const positiveWords = ['good', 'great', 'excellent', 'happy', 'joy', 'love', 'positive', 'wonderful'];
-  const negativeWords = ['bad', 'awful', 'terrible', 'sad', 'angry', 'hate', 'negative', 'horrible'];
-  
-  text = text.toLowerCase();
-  
-  let score = 0;
-  
-  // Check for positive words
-  positiveWords.forEach(word => {
-    if (text.includes(word)) score += 0.2;
-  });
-  
-  // Check for negative words
-  negativeWords.forEach(word => {
-    if (text.includes(word)) score -= 0.2;
-  });
-  
-  // Clamp score between -1 and 1
-  return Math.max(-1, Math.min(1, score));
-};
-
-/**
- * Performs sentiment analysis on a given text.
- * @param text - The text to analyze.
- * @returns Sentiment score and label.
- */
-const performSentimentAnalysis = (text: string): { score: number; label: string } => {
-  // Simple sentiment analysis
-  const words = text.split(/\s+/).filter(w => w.trim().length > 0);
-  let totalScore = 0;
-  
-  words.forEach(word => {
-    totalScore += calculateSentiment(word);
-  });
-  
-  // Normalize by word count
-  const score = words.length > 0 ? totalScore / words.length : 0;
-  
-  let sentimentLabel = 'Neutral';
-  if (score > 0.1) {
-    sentimentLabel = 'Positive';
-  } else if (score < -0.1) {
-    sentimentLabel = 'Negative';
+  } catch (error) {
+    console.error("Error in BERT analysis:", error);
+    throw error;
   }
-  
-  return { score, label: sentimentLabel };
 };
-
-/**
- * Generates a timeline of sentiment analysis for a given text.
- * @param text - The text to analyze.
- * @returns Timeline data with sentiment scores.
- */
-const generateSentimentTimeline = (text: string): any[] => {
-  const sentences = text.split(/[.!?]/).filter(sentence => sentence.trim() !== '');
-  const timeline = sentences.map((sentence, index) => {
-    const { score, label } = performSentimentAnalysis(sentence);
-    return {
-      time: `Sentence ${index + 1}`,
-      sentiment: score,
-      textSnippet: sentence.substring(0, 50) + '...'
-    };
-  });
-  return timeline;
-};
-
-/**
- * Groups emotions based on sentiment scores.
- * @param keywords - Array of keyword analysis results.
- * @returns Grouped emotions.
- */
-const groupEmotions = (keywords: KeywordAnalysis[]): { [key: string]: KeywordAnalysis[] } => {
-  const emotionGroups: { [key: string]: KeywordAnalysis[] } = {};
-  
-  keywords.forEach(keyword => {
-    const tone = keyword.tone || 'Neutral';
-    if (emotionGroups[tone]) {
-      emotionGroups[tone].push(keyword);
-    } else {
-      emotionGroups[tone] = [keyword];
-    }
-  });
-  
-  return emotionGroups;
-};
-
-/**
- * Calculates the emotional spectrum based on sentiment scores.
- * @param keywords - Array of keyword analysis results.
- * @returns Emotional spectrum data.
- */
-const calculateEmotionalSpectrum = (keywords: KeywordAnalysis[]): { [key: string]: number } => {
-  const emotionalSpectrum: { [key: string]: number } = {
-    Positive: 0,
-    Negative: 0,
-    Neutral: 0
-  };
-  
-  keywords.forEach(keyword => {
-    if (keyword.sentiment > 0) {
-      emotionalSpectrum.Positive += keyword.sentiment;
-    } else if (keyword.sentiment < 0) {
-      emotionalSpectrum.Negative -= keyword.sentiment;
-    } else {
-      emotionalSpectrum.Neutral += 1;
-    }
-  });
-  
-  return emotionalSpectrum;
-};
-
-/**
- * Analyze text with BERT model
- * @param text Input text to analyze
- * @returns BERT analysis results
- */
-export const analyzeTextWithBert = async (text: string) => {
-  console.log("Starting simplified BERT analysis");
-  
-  // Extract words from text (excluding common words)
-  const words = text
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(w => w.length > 3 && !['the', 'and', 'for', 'but', 'not', 'with', 'that', 'this', 'from'].includes(w))
-    .slice(0, 50);
-  
-  // Create a frequency map
-  const wordFreq: Record<string, number> = {};
-  words.forEach(word => {
-    wordFreq[word] = (wordFreq[word] || 0) + 1;
-  });
-  
-  // Sort by frequency
-  const sortedWords = Object.keys(wordFreq)
-    .sort((a, b) => wordFreq[b] - wordFreq[a])
-    .slice(0, 10);
-  
-  // Create keywords with initial sentiment scores
-  const keywords: KeywordAnalysis[] = sortedWords.map(word => ({
-    word,
-    sentiment: calculateSentiment(word),
-    frequency: wordFreq[word],
-    tone: word.length > 5 ? 'Theme' : 'Neutral',
-    color: '#' + Math.floor(Math.random()*16777215).toString(16) // Random color
-  }));
-  
-  // Process Keywords
-  const processedKeywords = await processKeywords(keywords, text);
-  
-  // Timeline Generation
-  const timeline = generateSentimentTimeline(text);
-  
-  // Emotion Grouping
-  const emotionGroups = groupEmotions(processedKeywords);
-  
-  // Emotional Spectrum Calculation
-  const emotionalSpectrum = calculateEmotionalSpectrum(processedKeywords);
-  
-  // Overall Sentiment Calculation
-  let overallSentiment = 0;
-  processedKeywords.forEach(keyword => {
-    overallSentiment += keyword.sentiment;
-  });
-  
-  // Determine Sentiment Label
-  let sentimentLabel = 'Neutral';
-  if (overallSentiment > 0) {
-    sentimentLabel = 'Positive';
-  } else if (overallSentiment < 0) {
-    sentimentLabel = 'Negative';
-  }
-  
-  // Create a distribution object from emotional spectrum data
-  const distribution = {
-    positive: Math.round((emotionalSpectrum.Positive / (emotionalSpectrum.Positive + emotionalSpectrum.Negative + emotionalSpectrum.Neutral)) * 100) || 33,
-    negative: Math.round((emotionalSpectrum.Negative / (emotionalSpectrum.Positive + emotionalSpectrum.Negative + emotionalSpectrum.Neutral)) * 100) || 33,
-    neutral: Math.round((emotionalSpectrum.Neutral / (emotionalSpectrum.Positive + emotionalSpectrum.Negative + emotionalSpectrum.Neutral)) * 100) || 34
-  };
-  
-  // Ensure distribution sums to 100
-  const totalDist = distribution.positive + distribution.negative + distribution.neutral;
-  if (totalDist !== 100) {
-    distribution.neutral += (100 - totalDist);
-  }
-  
-  console.log("Simplified BERT analysis complete");
-  
-  // Return properly formatted object with score and label
-  return {
-    keywords: processedKeywords,
-    timeline,
-    emotionGroups,
-    emotionalSpectrum,
-    distribution, // Add distribution to make BertAnalysisManager happy
-    overallSentiment: {
-      score: overallSentiment,
-      label: sentimentLabel
-    }
-  };
-};
-
-// Export empty functions that were previously using TF dependencies
-export const loadToxicityModel = async () => null;
-export const loadUseModel = async () => null;
-export const loadNsfwModel = async () => null;
-export const analyzeTextForToxicity = async () => ({});
-export const getSentenceEmbeddings = async () => [];
-export const analyzeImageForNsfw = async () => [];

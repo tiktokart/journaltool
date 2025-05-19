@@ -1,17 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { analyzeTextWithBert } from '@/utils/bertIntegration';
 import WeeklyEntriesList from './journal/WeeklyEntriesList';
-import BertAnalysisManager from './journal/BertAnalysisManager';
-import WeekNavigator from './journal/WeekNavigator';
-import JournalTabs from './journal/JournalTabs';
-import TimelineExtractor from './journal/TimelineExtractor';
+import JournalEntryView from './journal/JournalEntryView';
+import EntryAnalysisView from './journal/EntryAnalysisView';
 
 interface Entry {
   id: string;
   text: string;
   date: string;
-  [key: string]: any;
+  [key: string]: any; // Allow for additional properties
 }
 
 interface EntriesViewProps {
@@ -29,7 +28,6 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [documentStats, setDocumentStats] = useState({ wordCount: 0, sentenceCount: 0, paragraphCount: 0 });
   const [mainSubjects, setMainSubjects] = useState<string[]>([]);
   const [emotionGroups, setEmotionGroups] = useState<{[key: string]: any[]}>({});
-  const [timelineData, setTimelineData] = useState<any[]>([]);
   
   // States to control collapsible sections
   const [isDetailedAnalysisOpen, setIsDetailedAnalysisOpen] = useState(true);
@@ -42,7 +40,7 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [isKeywordsOpen, setIsKeywordsOpen] = useState(false);
 
-  // State for theme categories
+  // Add a new state for theme categories
   const [themeCategories, setThemeCategories] = useState<{name: string, words: string[], color: string}[]>([]);
   
   useEffect(() => {
@@ -70,6 +68,132 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
     
     setWeeklyEntries(entriesByDay);
   }, [entries, currentWeekStart]);
+
+  // Analyze entry text with BERT when entry changes
+  useEffect(() => {
+    const analyzeEntry = async () => {
+      if (!selectedEntry) {
+        setBertAnalysis(null);
+        setDocumentStats({ wordCount: 0, sentenceCount: 0, paragraphCount: 0 });
+        setMainSubjects([]);
+        setEmotionGroups({});
+        setThemeCategories([]);
+        return;
+      }
+      
+      setIsAnalyzing(true);
+      try {
+        // Calculate document stats
+        const text = selectedEntry.text;
+        const words = text.split(/\s+/).filter(w => w.length > 0);
+        const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+        
+        setDocumentStats({
+          wordCount: words.length,
+          sentenceCount: sentences.length,
+          paragraphCount: Math.max(1, paragraphs.length)
+        });
+        
+        // Run BERT analysis
+        console.log("Analyzing entry with BERT...");
+        const analysis = await analyzeTextWithBert(selectedEntry.text);
+        console.log("BERT analysis result:", analysis);
+        
+        // Ensure distribution data is present in the analysis
+        if (!analysis.distribution) {
+          // Calculate distribution if missing
+          let positive = 0;
+          let neutral = 0;
+          let negative = 0;
+          
+          if (analysis.keywords && analysis.keywords.length > 0) {
+            analysis.keywords.forEach((keyword: any) => {
+              const sentiment = keyword.sentiment || 0.5;
+              if (sentiment > 0.6) positive++;
+              else if (sentiment < 0.4) negative++;
+              else neutral++;
+            });
+          }
+          
+          const total = Math.max(1, positive + negative + neutral);
+          analysis.distribution = {
+            positive: Math.round((positive / total) * 100),
+            neutral: Math.round((neutral / total) * 100),
+            negative: Math.round((negative / total) * 100)
+          };
+        }
+        
+        setBertAnalysis(analysis);
+        
+        // Create theme categories from keywords
+        if (analysis?.keywords && Array.isArray(analysis.keywords)) {
+          // Group by tones first
+          const toneGroups: {[key: string]: any[]} = {};
+          analysis.keywords.forEach((kw: any) => {
+            const tone = kw.tone || 'Neutral';
+            if (!toneGroups[tone]) {
+              toneGroups[tone] = [];
+            }
+            toneGroups[tone].push(kw);
+          });
+          
+          // Create theme categories based on emotional tones and related concepts
+          const themes: {name: string, words: string[], color: string}[] = [];
+          
+          // Process each emotional tone group
+          Object.entries(toneGroups).forEach(([tone, keywords]) => {
+            if (keywords.length >= 2) {
+              // Extract words for this theme
+              const themeWords = keywords.map((k: any) => k.word || k.text);
+              
+              // Use the first keyword's color for the theme
+              const themeColor = keywords[0]?.color || '#CCCCCC';
+              
+              themes.push({
+                name: `${tone} Theme`,
+                words: themeWords.slice(0, 5),
+                color: themeColor
+              });
+            }
+          });
+          
+          // Add additional themes based on related concepts if available
+          const relatedConcepts = new Set<string>();
+          analysis.keywords.forEach((kw: any) => {
+            if (kw.relatedConcepts && Array.isArray(kw.relatedConcepts)) {
+              kw.relatedConcepts.forEach((concept: string) => relatedConcepts.add(concept));
+            }
+          });
+          
+          if (relatedConcepts.size >= 3) {
+            themes.push({
+              name: 'Related Concepts',
+              words: Array.from(relatedConcepts).slice(0, 5),
+              color: '#6C5CE7'
+            });
+          }
+          
+          setThemeCategories(themes);
+        }
+        
+        console.log("BERT analysis complete with themes");
+      } catch (error) {
+        console.error("Error analyzing entry:", error);
+        // Provide fallback analysis with default values
+        const fallbackAnalysis = {
+          sentiment: { score: 0.5, label: "Neutral" },
+          distribution: { positive: 33, neutral: 34, negative: 33 },
+          keywords: []
+        };
+        setBertAnalysis(fallbackAnalysis);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+    
+    analyzeEntry();
+  }, [selectedEntry]);
 
   const handleEntryClick = (entry: Entry) => {
     setSelectedEntry(entry);
@@ -105,46 +229,47 @@ const EntriesView: React.FC<EntriesViewProps> = ({ entries, onSelectEntry }) => 
         
         {/* Entry and Analysis - Right Side */}
         <div className="md:col-span-2 h-full overflow-hidden">
-          {/* Invisible components for logic handling */}
-          <BertAnalysisManager
-            selectedEntry={selectedEntry}
-            setDocumentStats={setDocumentStats}
-            setMainSubjects={setMainSubjects}
-            setBertAnalysis={setBertAnalysis}
-            setEmotionGroups={setEmotionGroups}
-            setThemeCategories={setThemeCategories}
-            setIsAnalyzing={setIsAnalyzing}
-          />
-          
-          <TimelineExtractor
-            selectedEntry={selectedEntry}
-            bertAnalysis={bertAnalysis}
-            onExtract={setTimelineData}
-          />
-          
-          {/* UI Components */}
-          <JournalTabs
-            selectedEntry={selectedEntry}
-            documentStats={documentStats}
-            mainSubjects={mainSubjects}
-            bertAnalysis={bertAnalysis}
-            isAnalyzing={isAnalyzing}
-            isDetailedAnalysisOpen={isDetailedAnalysisOpen}
-            setIsDetailedAnalysisOpen={setIsDetailedAnalysisOpen}
-            isSuggestionsOpen={isSuggestionsOpen}
-            setIsSuggestionsOpen={setIsSuggestionsOpen}
-            isOverviewOpen={isOverviewOpen}
-            setIsOverviewOpen={setIsOverviewOpen}
-            isDocTextAnalysisOpen={isDocTextAnalysisOpen}
-            setIsDocTextAnalysisOpen={setIsDocTextAnalysisOpen}
-            isLatentEmotionalOpen={isLatentEmotionalOpen}
-            setIsLatentEmotionalOpen={setIsLatentEmotionalOpen}
-            isTimelineOpen={isTimelineOpen}
-            setIsTimelineOpen={setIsTimelineOpen}
-            isKeywordsOpen={isKeywordsOpen}
-            setIsKeywordsOpen={setIsKeywordsOpen}
-            themeCategories={themeCategories}
-          />
+          <Tabs defaultValue="entry" className="h-full flex flex-col">
+            <div className="border-b">
+              <TabsList className="p-3">
+                <TabsTrigger value="entry">Journal Entry</TabsTrigger>
+                <TabsTrigger value="analysis">Entry Analysis</TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <TabsContent value="entry" className="flex-grow overflow-hidden p-0">
+              <JournalEntryView 
+                selectedEntry={selectedEntry}
+                documentStats={documentStats}
+                mainSubjects={mainSubjects}
+                bertAnalysis={bertAnalysis}
+                isDetailedAnalysisOpen={isDetailedAnalysisOpen}
+                setIsDetailedAnalysisOpen={setIsDetailedAnalysisOpen}
+                isSuggestionsOpen={isSuggestionsOpen}
+                setIsSuggestionsOpen={setIsSuggestionsOpen}
+              />
+            </TabsContent>
+            
+            <TabsContent value="analysis" className="flex-grow overflow-auto">
+              <EntryAnalysisView 
+                selectedEntry={selectedEntry}
+                isAnalyzing={isAnalyzing}
+                bertAnalysis={bertAnalysis}
+                documentStats={documentStats}
+                themeCategories={themeCategories}
+                isOverviewOpen={isOverviewOpen}
+                setIsOverviewOpen={setIsOverviewOpen}
+                isDocTextAnalysisOpen={isDocTextAnalysisOpen}
+                setIsDocTextAnalysisOpen={setIsDocTextAnalysisOpen}
+                isLatentEmotionalOpen={isLatentEmotionalOpen}
+                setIsLatentEmotionalOpen={setIsLatentEmotionalOpen}
+                isTimelineOpen={isTimelineOpen}
+                setIsTimelineOpen={setIsTimelineOpen}
+                isKeywordsOpen={isKeywordsOpen}
+                setIsKeywordsOpen={setIsKeywordsOpen}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
