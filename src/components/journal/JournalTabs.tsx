@@ -57,7 +57,7 @@ const JournalTabs: React.FC<JournalTabsProps> = ({
   return (
     <Tabs defaultValue="entry" className="h-full flex flex-col">
       <div className="border-b">
-        <TabsList className="p-3">
+        <TabsList className="p-3 flex justify-center items-center w-full">
           <TabsTrigger value="entry">Journal Entry</TabsTrigger>
           <TabsTrigger value="analysis">Entry Analysis</TabsTrigger>
         </TabsList>
