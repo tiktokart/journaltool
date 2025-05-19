@@ -37,7 +37,7 @@ export interface KeywordAnalysis {
 export interface TimelineEntry {
   time: string;
   sentiment: number;
-  score: number; // Making this required to fix the TypeScript error
+  score: number;
   event: string;
   textSnippet: string;
   page?: number;
