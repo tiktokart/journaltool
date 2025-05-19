@@ -40,6 +40,6 @@ export interface TimelineEntry {
   score: number;
   event: string;
   textSnippet: string;
-  page?: number;
-  index?: number;
+  page: number;
+  index: number;
 }

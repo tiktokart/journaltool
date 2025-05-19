@@ -28,7 +28,7 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-green">
+    <div className="min-h-screen bg-green overflow-hidden">
       <Header />
       <div className="container mx-auto px-4 py-8 pb-16">
         <VectorDecorations type="home" className="absolute inset-0 pointer-events-none" />
