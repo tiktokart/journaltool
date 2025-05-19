@@ -8,24 +8,8 @@ import EntriesView from "@/components/EntriesView";
 import VectorDecorations from "@/components/VectorDecorations";
 import { format, isSameDay } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { 
-  Drawer, 
-  DrawerClose, 
-  DrawerContent, 
-  DrawerDescription, 
-  DrawerFooter, 
-  DrawerHeader, 
-  DrawerTitle, 
-  DrawerTrigger 
-} from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Bell, Lightbulb } from "lucide-react";
@@ -47,7 +31,6 @@ const Goals = () => {
       const storedDailyGoals = localStorage.getItem('perfectLifeDailyPlan');
       const storedWeeklyGoals = localStorage.getItem('perfectLifeWeeklyPlan');
       const storedMonthlyGoals = localStorage.getItem('perfectLifeMonthlyPlan');
-      
       if (storedDailyGoals) setDailyGoals(storedDailyGoals);
       if (storedWeeklyGoals) setWeeklyGoals(storedWeeklyGoals);
       if (storedMonthlyGoals) setMonthlyGoals(storedMonthlyGoals);
@@ -68,9 +51,7 @@ const Goals = () => {
       toast.error("Failed to save goals");
     }
   };
-
-  return (
-    <Card className="rounded-xl overflow-hidden shadow-sm bg-white border border-purple-100">
+  return <Card className="rounded-xl overflow-hidden shadow-sm bg-white border border-purple-100">
       <div className="p-4 bg-purple-50 border-b border-purple-100">
         <h2 className="text-xl font-semibold text-purple-900">Goals</h2>
       </div>
@@ -78,44 +59,25 @@ const Goals = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1 text-purple-900">Daily</label>
-            <textarea 
-              className="w-full p-3 border border-purple-200 rounded-md min-h-[60px]"
-              placeholder="What are your goals for today?"
-              value={dailyGoals}
-              onChange={(e) => setDailyGoals(e.target.value)}
-            />
+            <textarea className="w-full p-3 border border-purple-200 rounded-md min-h-[60px]" placeholder="What are your goals for today?" value={dailyGoals} onChange={e => setDailyGoals(e.target.value)} />
           </div>
           
           <div>
             <label className="block text-sm font-medium mb-1 text-purple-900">Weekly</label>
-            <textarea 
-              className="w-full p-3 border border-purple-200 rounded-md min-h-[60px]"
-              placeholder="What do you want to accomplish this week?"
-              value={weeklyGoals}
-              onChange={(e) => setWeeklyGoals(e.target.value)}
-            />
+            <textarea className="w-full p-3 border border-purple-200 rounded-md min-h-[60px]" placeholder="What do you want to accomplish this week?" value={weeklyGoals} onChange={e => setWeeklyGoals(e.target.value)} />
           </div>
           
           <div>
             <label className="block text-sm font-medium mb-1 text-purple-900">Monthly</label>
-            <textarea 
-              className="w-full p-3 border border-purple-200 rounded-md min-h-[60px]"
-              placeholder="What are your goals for this month?"
-              value={monthlyGoals}
-              onChange={(e) => setMonthlyGoals(e.target.value)}
-            />
+            <textarea className="w-full p-3 border border-purple-200 rounded-md min-h-[60px]" placeholder="What are your goals for this month?" value={monthlyGoals} onChange={e => setMonthlyGoals(e.target.value)} />
           </div>
           
-          <button 
-            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
-            onClick={handleSaveGoals}
-          >
+          <button className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors" onClick={handleSaveGoals}>
             Save Goals
           </button>
         </div>
       </div>
-    </Card>
-  );
+    </Card>;
 };
 
 // Import MonthlyReflections and JournalAnalysisSection
@@ -125,8 +87,7 @@ import { DeleteEntryConfirm } from "@/components/DeleteEntryConfirm";
 
 // Science of Happiness component
 const ScienceOfHappiness = () => {
-  return (
-    <div className="p-4">
+  return <div className="p-4">
       <h2 className="text-2xl font-pacifico text-purple-900 mb-4">The Science of Happiness</h2>
       
       <div className="space-y-6">
@@ -192,16 +153,13 @@ const ScienceOfHappiness = () => {
           </ul>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 interface JournalEntry {
   id: string;
   text: string;
   date: string;
 }
-
 const Dashboard = () => {
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -215,7 +173,6 @@ const Dashboard = () => {
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isHappinessDrawerOpen, setIsHappinessDrawerOpen] = useState(false);
-  
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -229,7 +186,6 @@ const Dashboard = () => {
         console.error("Failed to initialize BERT model:", error);
       }
     };
-    
     initBert();
   }, []);
 
@@ -251,7 +207,6 @@ const Dashboard = () => {
     const handleStorageChange = () => {
       setRefreshTrigger(prev => prev + 1);
     };
-    
     window.addEventListener('storage', handleStorageChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -266,13 +221,12 @@ const Dashboard = () => {
   // Handle date selection in calendar
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
-    
+
     // Find entries for the selected date
     const entriesForDate = journalEntries.filter(entry => {
       const entryDate = new Date(entry.date);
       return isSameDay(entryDate, date);
     });
-    
     if (entriesForDate.length > 0) {
       setSelectedEntry(entriesForDate[0]);
     } else {
@@ -287,7 +241,6 @@ const Dashboard = () => {
       const textLength = entry.text.length;
       // Generate a sentiment between -0.8 and 0.8 based on text length
       const sentiment = Math.sin(textLength * 0.01) * 0.8;
-      
       return {
         date: format(new Date(entry.date), 'MMM dd'),
         sentiment: sentiment,
@@ -303,13 +256,10 @@ const Dashboard = () => {
   // Determine sentiment change direction
   const getOverallSentimentChange = () => {
     if (journalEntries.length < 2) return "neutral";
-    
     const timelineData = generateTimelineData();
     if (timelineData.length < 2) return "neutral";
-    
     const firstSentiment = timelineData[0].sentiment;
     const lastSentiment = timelineData[timelineData.length - 1].sentiment;
-    
     if (lastSentiment > firstSentiment + 0.1) return "positive";
     if (lastSentiment < firstSentiment - 0.1) return "negative";
     return "neutral";
@@ -319,7 +269,6 @@ const Dashboard = () => {
   const getAverageSentiment = () => {
     const timelineData = generateTimelineData();
     if (timelineData.length === 0) return 0;
-    
     const total = timelineData.reduce((sum, item) => sum + item.sentiment, 0);
     return total / timelineData.length;
   };
@@ -335,59 +284,47 @@ const Dashboard = () => {
   const exportMonthlyAnalysis = () => {
     try {
       toast.info("Preparing monthly analysis export...");
-      
       const currentMonth = format(new Date(), 'MMMM yyyy');
-      
+
       // Use jsPDF to create a PDF document
-      const { jsPDF } = require('jspdf');
+      const {
+        jsPDF
+      } = require('jspdf');
       const autoTable = require('jspdf-autotable').default;
-      
       const doc = new jsPDF();
-      
+
       // Title
       doc.setFontSize(22);
       doc.text(`Monthly Journal Analysis - ${currentMonth}`, 20, 20);
-      
+
       // Overview section
       doc.setFontSize(16);
       doc.text("Journal Overview", 20, 35);
-      
+
       // Journal statistics
       const monthEntries = journalEntries.filter(entry => {
         const entryDate = new Date(entry.date);
         const now = new Date();
-        return entryDate.getMonth() === now.getMonth() && 
-               entryDate.getFullYear() === now.getFullYear();
+        return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
       });
-      
       autoTable(doc, {
         startY: 40,
         head: [["Metric", "Value"]],
-        body: [
-          ["Total Entries", monthEntries.length.toString()],
-          ["Overall Sentiment", getOverallSentimentChange()],
-          ["Average Sentiment", getAverageSentiment().toFixed(2)],
-        ],
+        body: [["Total Entries", monthEntries.length.toString()], ["Overall Sentiment", getOverallSentimentChange()], ["Average Sentiment", getAverageSentiment().toFixed(2)]]
       });
-      
+
       // Timeline data
       const timelineTableEndY = (doc as any).lastAutoTable?.finalY || 70;
       doc.setFontSize(16);
       doc.text("Sentiment Timeline", 20, timelineTableEndY + 10);
-      
       const timelineData = generateTimelineData();
-      const timelineRows = timelineData.map(item => [
-        item.date,
-        item.sentiment.toFixed(2),
-        item.text.substring(0, 50) + (item.text.length > 50 ? "..." : "")
-      ]);
-      
+      const timelineRows = timelineData.map(item => [item.date, item.sentiment.toFixed(2), item.text.substring(0, 50) + (item.text.length > 50 ? "..." : "")]);
       autoTable(doc, {
         startY: timelineTableEndY + 15,
         head: [["Date", "Sentiment", "Entry Preview"]],
-        body: timelineRows,
+        body: timelineRows
       });
-      
+
       // Monthly Journal Summary
       const entryTableEndY = (doc as any).lastAutoTable?.finalY || 140;
       if (entryTableEndY > 200) {
@@ -398,39 +335,32 @@ const Dashboard = () => {
         doc.setFontSize(16);
         doc.text("Monthly Journal Summary", 20, entryTableEndY + 10);
       }
-      
+
       // Get stored monthly reflections
       const storedReflections = localStorage.getItem('monthlyReflections');
       const reflections = storedReflections ? JSON.parse(storedReflections) : [];
-      
+
       // Get most recent reflection for current month
       const currentMonthReflections = reflections.filter((ref: any) => {
         const refDate = new Date(ref.date);
         const now = new Date();
-        return refDate.getMonth() === now.getMonth() && 
-               refDate.getFullYear() === now.getFullYear();
+        return refDate.getMonth() === now.getMonth() && refDate.getFullYear() === now.getFullYear();
       });
-      
       const latestReflection = currentMonthReflections[0];
-      
       if (latestReflection) {
         const summaryStartY = entryTableEndY > 200 ? 30 : entryTableEndY + 20;
         doc.setFontSize(12);
-        doc.text(latestReflection.text.substring(0, 1000) + 
-          (latestReflection.text.length > 1000 ? "..." : ""),
-          20, 
-          summaryStartY, 
-          { maxWidth: 170 }
-        );
+        doc.text(latestReflection.text.substring(0, 1000) + (latestReflection.text.length > 1000 ? "..." : ""), 20, summaryStartY, {
+          maxWidth: 170
+        });
       } else {
         const summaryStartY = entryTableEndY > 200 ? 30 : entryTableEndY + 20;
         doc.setFontSize(12);
         doc.text("No monthly reflection available for this month.", 20, summaryStartY);
       }
-      
+
       // Save the PDF
       doc.save(`monthly-analysis-${currentMonth.replace(/\s+/g, '-')}.pdf`);
-      
       toast.success(`Monthly analysis for ${currentMonth} exported successfully`);
     } catch (error) {
       console.error("Error exporting monthly analysis:", error);
@@ -446,7 +376,6 @@ const Dashboard = () => {
         text: `I've been journaling with Journal Analysis. Here's my monthly sentiment: ${getOverallSentimentChange()}.`,
         url: window.location.href
       };
-      
       if (navigator.share && navigator.canShare(shareData)) {
         await navigator.share(shareData);
         toast.success("Shared successfully");
@@ -470,16 +399,13 @@ const Dashboard = () => {
   // Delete journal entry
   const confirmDeleteEntry = () => {
     if (!entryToDelete) return;
-    
     try {
       const updatedEntries = journalEntries.filter(entry => entry.id !== entryToDelete);
       setJournalEntries(updatedEntries);
       localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
-      
       if (selectedEntry?.id === entryToDelete) {
         setSelectedEntry(null);
       }
-      
       toast.success("Journal entry deleted");
       setRefreshTrigger(prev => prev + 1);
       setShowDeleteDialog(false);
@@ -496,13 +422,13 @@ const Dashboard = () => {
       toast.error("Please enter a valid phone number");
       return;
     }
-    
+
     // In a real implementation, this would connect to a messaging service API
     console.log("Enabling notifications for:", phoneNumber);
     setNotificationsEnabled(true);
     setShowConsentDialog(false);
     toast.success("Daily journal reminders enabled");
-    
+
     // Store in local storage
     localStorage.setItem('journalReminderPhone', phoneNumber);
     localStorage.setItem('journalRemindersEnabled', 'true');
@@ -513,11 +439,9 @@ const Dashboard = () => {
     try {
       const savedPhone = localStorage.getItem('journalReminderPhone');
       const remindersEnabled = localStorage.getItem('journalRemindersEnabled');
-      
       if (savedPhone) {
         setPhoneNumber(savedPhone);
       }
-      
       if (remindersEnabled === 'true') {
         setNotificationsEnabled(true);
       }
@@ -548,39 +472,35 @@ const Dashboard = () => {
         text: text.trim(),
         date: new Date().toISOString()
       };
-      
+
       // Get existing entries
       const existingEntriesJSON = localStorage.getItem('journalEntries');
-      const existingEntries = existingEntriesJSON 
-        ? JSON.parse(existingEntriesJSON) 
-        : [];
-      
+      const existingEntries = existingEntriesJSON ? JSON.parse(existingEntriesJSON) : [];
+
       // Add new entry to beginning
       const updatedEntries = [newEntry, ...existingEntries];
-      
+
       // Save to localStorage
       localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
-      
+
       // If addToMonthly is true, add it to monthly reflections
       if (addToMonthly) {
         // Get existing reflections
         const existingReflectionsJSON = localStorage.getItem('monthlyReflections');
-        const existingReflections = existingReflectionsJSON 
-          ? JSON.parse(existingReflectionsJSON) 
-          : [];
-        
+        const existingReflections = existingReflectionsJSON ? JSON.parse(existingReflectionsJSON) : [];
+
         // Add new reflection
         const newReflection = {
           id: uuidv4(),
           text: text.trim(),
           date: new Date().toISOString()
         };
-        
+
         // Add to beginning
         const updatedReflections = [newReflection, ...existingReflections];
         localStorage.setItem('monthlyReflections', JSON.stringify(updatedReflections));
       }
-      
+
       // Analyze the new entry using BERT
       try {
         const analysis = await analyzeTextWithBert(text);
@@ -611,9 +531,7 @@ const Dashboard = () => {
       navigate('/dashboard#entries');
     }
   };
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#F7F9FC]">
+  return <div className="min-h-screen flex flex-col bg-[#F7F9FC]">
       <Header />
       
       <main className="flex-grow container mx-auto max-w-7xl px-4 py-6 relative">
@@ -622,36 +540,21 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-purple-900">My Wellness Journal</h1>
           <div className="flex space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleView}
-              className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50"
-            >
+            <Button variant="outline" size="sm" onClick={toggleView} className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50">
               {isEntriesView ? 'Monthly View' : 'Entries View'}
             </Button>
             
-            <Button 
-              size="sm"
-              onClick={openWritePopup}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              Write
-            </Button>
+            
           </div>
         </div>
         
-        {isEntriesView ? (
-          // Entries View
-          <div className="bg-white rounded-xl overflow-hidden shadow-md h-[calc(100vh-140px)]">
-            <EntriesView 
-              entries={journalEntries}
-              onSelectEntry={setSelectedEntry}
-            />
-          </div>
-        ) : (
-          // Monthly View
-          <>
+        {isEntriesView ?
+      // Entries View
+      <div className="bg-white rounded-xl overflow-hidden shadow-md h-[calc(100vh-140px)]">
+            <EntriesView entries={journalEntries} onSelectEntry={setSelectedEntry} />
+          </div> :
+      // Monthly View
+      <>
             {/* Add the new Happiness Infographic */}
             <HappinessInfographic />
             
@@ -662,11 +565,7 @@ const Dashboard = () => {
                 <div className="absolute -left-3 top-28 z-10">
                   <Drawer>
                     <DrawerTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 shadow-md rotate-90 origin-bottom-left"
-                      >
+                      <Button variant="outline" size="sm" className="bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 shadow-md rotate-90 origin-bottom-left">
                         <Lightbulb className="h-4 w-4 mr-2" />
                         Science of Happiness
                       </Button>
@@ -689,10 +588,7 @@ const Dashboard = () => {
                   </Drawer>
                 </div>
                 
-                <MonthlyCalendar 
-                  onSelectDate={handleDateSelect}
-                  journalEntries={journalEntries}
-                />
+                <MonthlyCalendar onSelectDate={handleDateSelect} journalEntries={journalEntries} />
                 
                 <Card className="rounded-xl overflow-hidden shadow-sm border border-purple-100">
                   <div className="p-4 bg-purple-50 border-b border-purple-100 flex justify-between items-center">
@@ -703,34 +599,21 @@ const Dashboard = () => {
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={toggleNotifications}
-                        className={`${notificationsEnabled ? 'text-purple-600' : 'text-gray-400'}`}
-                      >
+                      <Button variant="ghost" size="icon" onClick={toggleNotifications} className={`${notificationsEnabled ? 'text-purple-600' : 'text-gray-400'}`}>
                         <Bell className="h-5 w-5" />
                       </Button>
                     </div>
                   </div>
                   <div className="p-4 bg-white">
-                    {journalEntries
-                      .filter(entry => {
-                        const entryDate = new Date(entry.date);
-                        return isSameDay(entryDate, selectedDate);
-                      })
-                      .map(entry => (
-                        <div key={entry.id} className="mb-4 last:mb-0">
+                    {journalEntries.filter(entry => {
+                  const entryDate = new Date(entry.date);
+                  return isSameDay(entryDate, selectedDate);
+                }).map(entry => <div key={entry.id} className="mb-4 last:mb-0">
                           <div className="flex justify-between items-start">
                             <div className="text-xs text-gray-500 mb-1">
                               {format(new Date(entry.date), 'h:mm a')}
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
-                              onClick={() => initiateDeleteEntry(entry.id)}
-                            >
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-400 hover:text-red-500" onClick={() => initiateDeleteEntry(entry.id)}>
                               <span className="sr-only">Delete</span>
                               ×
                             </Button>
@@ -738,25 +621,17 @@ const Dashboard = () => {
                           <div className="p-3 bg-gray-50 rounded-lg">
                             <p className="text-sm line-clamp-5">{entry.text}</p>
                           </div>
-                        </div>
-                      ))}
+                        </div>)}
                     
                     {journalEntries.filter(entry => {
-                        const entryDate = new Date(entry.date);
-                        return isSameDay(entryDate, selectedDate);
-                      }).length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
+                  const entryDate = new Date(entry.date);
+                  return isSameDay(entryDate, selectedDate);
+                }).length === 0 && <div className="text-center py-8 text-gray-500">
                         <p>No journal entries for this date</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={openWritePopup}
-                          className="mt-2 border-purple-200 text-purple-700 hover:bg-purple-50"
-                        >
+                        <Button variant="outline" size="sm" onClick={openWritePopup} className="mt-2 border-purple-200 text-purple-700 hover:bg-purple-50">
                           Write an entry
                         </Button>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </Card>
               </div>
@@ -765,24 +640,12 @@ const Dashboard = () => {
               <div className="space-y-6">
                 <Goals />
                 
-                <MonthlyReflections 
-                  journalText=""
-                  refreshTrigger={refreshTrigger}
-                  journalRefreshTrigger={refreshTrigger}
-                />
+                <MonthlyReflections journalText="" refreshTrigger={refreshTrigger} journalRefreshTrigger={refreshTrigger} />
                 
-                <JournalAnalysisSection 
-                  journalEntries={journalEntries}
-                  timelineData={generateTimelineData()}
-                  overallSentimentChange={getOverallSentimentChange()}
-                  averageSentiment={getAverageSentiment()}
-                  getSentimentColor={getSentimentColor}
-                  refreshTrigger={refreshTrigger}
-                />
+                <JournalAnalysisSection journalEntries={journalEntries} timelineData={generateTimelineData()} overallSentimentChange={getOverallSentimentChange()} averageSentiment={getAverageSentiment()} getSentimentColor={getSentimentColor} refreshTrigger={refreshTrigger} />
               </div>
             </div>
-          </>
-        )}
+          </>}
         
         {/* SMS Notification Consent Dialog */}
         <Dialog open={showConsentDialog} onOpenChange={setShowConsentDialog}>
@@ -805,13 +668,7 @@ const Dashboard = () => {
                 <label htmlFor="phoneNumber" className="text-right">
                   Phone
                 </label>
-                <Input
-                  id="phoneNumber"
-                  placeholder="+1 (555) 123-4567"
-                  className="col-span-3"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
+                <Input id="phoneNumber" placeholder="+1 (555) 123-4567" className="col-span-3" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} />
               </div>
             </div>
             <DialogFooter>
@@ -826,21 +683,11 @@ const Dashboard = () => {
         </Dialog>
         
         {/* Delete Entry Confirmation Dialog */}
-        <DeleteEntryConfirm
-          isOpen={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          onConfirmDelete={confirmDeleteEntry}
-        />
+        <DeleteEntryConfirm isOpen={showDeleteDialog} onOpenChange={setShowDeleteDialog} onConfirmDelete={confirmDeleteEntry} />
         
         {/* Journal Write Popup */}
-        <JournalWritePopup 
-          isOpen={isWritePopupOpen}
-          onClose={() => setIsWritePopupOpen(false)}
-          onSubmitJournal={handleSubmitJournal}
-        />
+        <JournalWritePopup isOpen={isWritePopupOpen} onClose={() => setIsWritePopupOpen(false)} onSubmitJournal={handleSubmitJournal} />
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
