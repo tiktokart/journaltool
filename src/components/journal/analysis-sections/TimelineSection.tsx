@@ -61,8 +61,8 @@ const TimelineSection: React.FC<TimelineSectionProps> = ({
       score: s.sentiment,
       event: s.text.length > 70 ? s.text.substring(0, 70) + '...' : s.text,
       textSnippet: s.text,
-      index: i,
-      page: i + 1
+      page: i + 1,
+      index: i
     }));
   };
 
