@@ -18,6 +18,13 @@ import { initBertModel } from "@/utils/bertSentimentAnalysis";
 import JournalWritePopup from "@/components/JournalWritePopup";
 import { analyzeTextWithBert } from "@/utils/bertIntegration";
 import HappinessInfographic from "@/components/HappinessInfographic";
+import FloatingBubbles from "@/components/journal/FloatingBubbles";
+import ResolvedEntries from "@/components/journal/ResolvedEntries";
+
+// Import MonthlyReflections and JournalAnalysisSection
+import { MonthlyReflections } from "@/components/MonthlyReflections";
+import JournalAnalysisSection from "@/components/reflections/JournalAnalysisSection";
+import { DeleteEntryConfirm } from "@/components/DeleteEntryConfirm";
 
 // Rename PerfectLifePlan to Goals
 const Goals = () => {
@@ -79,11 +86,6 @@ const Goals = () => {
       </div>
     </Card>;
 };
-
-// Import MonthlyReflections and JournalAnalysisSection
-import { MonthlyReflections } from "@/components/MonthlyReflections";
-import JournalAnalysisSection from "@/components/reflections/JournalAnalysisSection";
-import { DeleteEntryConfirm } from "@/components/DeleteEntryConfirm";
 
 // Science of Happiness component
 const ScienceOfHappiness = () => {
@@ -155,11 +157,13 @@ const ScienceOfHappiness = () => {
       </div>
     </div>;
 };
+
 interface JournalEntry {
   id: string;
   text: string;
   date: string;
 }
+
 const Dashboard = () => {
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -173,6 +177,8 @@ const Dashboard = () => {
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isHappinessDrawerOpen, setIsHappinessDrawerOpen] = useState(false);
+  const [resolvedEntries, setResolvedEntries] = useState<JournalEntry[]>([]);
+  const [showBubbles, setShowBubbles] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -196,6 +202,13 @@ const Dashboard = () => {
       if (storedEntries) {
         const entries: JournalEntry[] = JSON.parse(storedEntries);
         setJournalEntries(entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      }
+
+      // Load resolved entries
+      const storedResolvedEntries = localStorage.getItem('resolvedJournalEntries');
+      if (storedResolvedEntries) {
+        const resolved: JournalEntry[] = JSON.parse(storedResolvedEntries);
+        setResolvedEntries(resolved);
       }
     } catch (error) {
       console.error('Error loading journal entries:', error);
@@ -232,6 +245,28 @@ const Dashboard = () => {
     } else {
       setSelectedEntry(null);
     }
+  };
+
+  // Handle bubble pop
+  const handleBubblePop = (id: string) => {
+    // Find the entry by ID
+    const entry = journalEntries.find(e => e.id === id);
+    if (!entry) return;
+
+    // Move entry from journalEntries to resolvedEntries
+    const updatedEntries = journalEntries.filter(e => e.id !== id);
+    const updatedResolved = [entry, ...resolvedEntries];
+
+    // Update state
+    setJournalEntries(updatedEntries);
+    setResolvedEntries(updatedResolved);
+
+    // Save to localStorage
+    localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+    localStorage.setItem('resolvedJournalEntries', JSON.stringify(updatedResolved));
+
+    // Update refreshTrigger to cause a re-render
+    setRefreshTrigger(prev => prev + 1);
   };
 
   // Generate synthetic timeline data for JournalAnalysisSection
@@ -531,6 +566,12 @@ const Dashboard = () => {
       navigate('/dashboard#entries');
     }
   };
+
+  // Toggle bubbles display
+  const toggleBubbles = () => {
+    setShowBubbles(prev => !prev);
+  };
+
   return <div className="min-h-screen flex flex-col bg-[#F7F9FC]">
       <Header />
       
@@ -540,21 +581,40 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-purple-900">My Wellness Journal</h1>
           <div className="flex space-x-3">
+            <Button variant="outline" size="sm" onClick={toggleBubbles} className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50">
+              {showBubbles ? 'Hide Bubbles' : 'Show Bubbles'}
+            </Button>
             <Button variant="outline" size="sm" onClick={toggleView} className="bg-white border-purple-200 text-purple-800 hover:bg-purple-50">
               {isEntriesView ? 'Monthly View' : 'Entries View'}
             </Button>
-            
-            
           </div>
         </div>
         
         {isEntriesView ?
-      // Entries View
-      <div className="bg-white rounded-xl overflow-hidden shadow-md h-[calc(100vh-140px)]">
+          // Entries View
+          <div className="bg-white rounded-xl overflow-hidden shadow-md h-[calc(100vh-140px)]">
             <EntriesView entries={journalEntries} onSelectEntry={setSelectedEntry} />
           </div> :
-      // Monthly View
-      <>
+          // Monthly View
+          <>
+            {/* Floating Bubbles Section - Only show if showBubbles is true */}
+            {showBubbles && journalEntries.length > 0 && (
+              <div className="mb-6">
+                <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                  <div className="p-3 bg-purple-50 border-b border-purple-100">
+                    <h2 className="text-lg font-semibold text-purple-900">Journal Bubbles</h2>
+                    <p className="text-xs text-purple-700">Click to resolve entries</p>
+                  </div>
+                  <div className="h-[200px] w-full">
+                    <FloatingBubbles 
+                      entries={journalEntries} 
+                      onBubblePop={handleBubblePop} 
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Add the new Happiness Infographic */}
             <HappinessInfographic />
             
@@ -606,9 +666,9 @@ const Dashboard = () => {
                   </div>
                   <div className="p-4 bg-white">
                     {journalEntries.filter(entry => {
-                  const entryDate = new Date(entry.date);
-                  return isSameDay(entryDate, selectedDate);
-                }).map(entry => <div key={entry.id} className="mb-4 last:mb-0">
+                      const entryDate = new Date(entry.date);
+                      return isSameDay(entryDate, selectedDate);
+                    }).map(entry => <div key={entry.id} className="mb-4 last:mb-0">
                           <div className="flex justify-between items-start">
                             <div className="text-xs text-gray-500 mb-1">
                               {format(new Date(entry.date), 'h:mm a')}
@@ -624,14 +684,24 @@ const Dashboard = () => {
                         </div>)}
                     
                     {journalEntries.filter(entry => {
-                  const entryDate = new Date(entry.date);
-                  return isSameDay(entryDate, selectedDate);
-                }).length === 0 && <div className="text-center py-8 text-gray-500">
+                      const entryDate = new Date(entry.date);
+                      return isSameDay(entryDate, selectedDate);
+                    }).length === 0 && <div className="text-center py-8 text-gray-500">
                         <p>No journal entries for this date</p>
                         <Button variant="outline" size="sm" onClick={openWritePopup} className="mt-2 border-purple-200 text-purple-700 hover:bg-purple-50">
                           Write an entry
                         </Button>
                       </div>}
+                  </div>
+                </Card>
+
+                {/* Resolved Entries Section */}
+                <Card className="rounded-xl overflow-hidden shadow-sm border border-purple-100">
+                  <div className="p-4 bg-green-50 border-b border-green-100">
+                    <h2 className="text-xl font-semibold text-green-900">Resolved Entries</h2>
+                  </div>
+                  <div className="bg-white">
+                    <ResolvedEntries entries={resolvedEntries} />
                   </div>
                 </Card>
               </div>
@@ -645,7 +715,8 @@ const Dashboard = () => {
                 <JournalAnalysisSection journalEntries={journalEntries} timelineData={generateTimelineData()} overallSentimentChange={getOverallSentimentChange()} averageSentiment={getAverageSentiment()} getSentimentColor={getSentimentColor} refreshTrigger={refreshTrigger} />
               </div>
             </div>
-          </>}
+          </>
+        }
         
         {/* SMS Notification Consent Dialog */}
         <Dialog open={showConsentDialog} onOpenChange={setShowConsentDialog}>
