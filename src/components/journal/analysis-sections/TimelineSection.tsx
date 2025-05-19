@@ -54,7 +54,7 @@ const TimelineSection: React.FC<TimelineSectionProps> = ({
       });
     }
     
-    // Format for timeline visualization
+    // Format for timeline visualization 
     return sentences.map((s: any, i: number) => ({
       time: `${i + 1}`,
       sentiment: s.sentiment,
