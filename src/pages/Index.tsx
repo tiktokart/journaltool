@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -7,12 +6,10 @@ import { Flower, Target, Book, BarChart, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import VectorDecorations from "@/components/VectorDecorations";
 import { useLanguage } from "@/contexts/LanguageContext";
-
 export default function Index() {
   const {
     t
   } = useLanguage();
-  
   useEffect(() => {
     // Check if the user has visited before
     const hasVisited = localStorage.getItem('hasVisitedOnboarding');
@@ -28,7 +25,6 @@ export default function Index() {
     // Mark that the user has visited the onboarding page
     localStorage.setItem('hasVisitedOnboarding', 'true');
   }, []);
-  
   return <div className="min-h-screen bg-green relative overflow-hidden">
       <Header />
       <div className="container mx-auto px-4 py-8 pb-16 relative z-10">
@@ -49,43 +45,7 @@ export default function Index() {
         </div>
 
         {/* Feature highlights with icons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 relative z-10">
-          <Card className="border-0 shadow-md bg-white/90 backdrop-blur-sm rounded-xl overflow-hidden journal-card">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4 mx-auto">
-                <Book className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-center">Journal Entries</h3>
-              <p className="text-gray-700 text-center">
-                Write and reflect on your daily experiences. Our intuitive journal makes it easy to capture your thoughts.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-md bg-white/90 backdrop-blur-sm rounded-xl overflow-hidden journal-card">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4 mx-auto">
-                <BarChart className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-center">Emotion Analysis</h3>
-              <p className="text-gray-700 text-center">
-                AI-powered analysis helps you understand the emotions behind your journal entries.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-md bg-white/90 backdrop-blur-sm rounded-xl overflow-hidden journal-card">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4 mx-auto">
-                <Target className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-center">Personal Growth</h3>
-              <p className="text-gray-700 text-center">
-                Track your emotional journey over time and identify areas for personal growth.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        
 
         {/* How It Works Section */}
         <div className="mb-12 relative z-10">
